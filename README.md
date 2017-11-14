@@ -1,4 +1,4 @@
-# Open SapMachine
+# SapMachine
 
 This project contains a downstream version of the [OpenJDK 9](http://openjdk.java.net/projects/jdk9/) project. It is used to build and maintain a SAP supported version of OpenJDK 9 for SAP customers who wish to use OpenJDK in their production environments.
 
