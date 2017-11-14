@@ -1,9 +1,9 @@
 # SapMachine
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers who wish to use OpenJDK in their production environments.
 
-We want to stress the fact that this is clearly a *friendly fork*. One reason why we need this project is the need to quickly react on customer problems with new and fixed versions without having to wait on the upstream project or other distributors/packagers. The second reason for the existence of this project is to showcase and bring over features from our commercially licensed, closed source SAP JVM into the OpenJDK which can not be integrated up-stream in the short-term.
+We want to stress the fact that this is clearly a *friendly fork*. One reason why we need this project is the need to quickly react on customer problems with new and fixed versions without having to wait on the upstream project or other distributors/packagers. The second reason for the existence of this project is to showcase and bring over features from our commercially licensed, closed source SAP JVM into the OpenJDK which can not be integrated upstream in the short-term.
 
-SAP is one of the biggest external contributors to the OpenJDK project and will remain fully committed to the OpenJDK. Our intention is to bring as many features as possible into the up-stream project and keep the diff of this project as small as possible.
+SAP is one of the biggest external contributors to the OpenJDK project and will remain fully committed to the OpenJDK. Our intention is to bring as many features as possible into the upstream project and keep the diff of this project as small as possible.
 
 ## Requirements
 Currently this project will be only supported on Linux/x86_64 platforms
