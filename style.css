@@ -51,7 +51,7 @@ body {
 }
 
 #logo, #img_space {
-	height: 500px;
+	height: 700px;
 	opacity: 0.8;
 	
 	-moz-transition:  all 0.3s ease-in-out;
@@ -88,14 +88,14 @@ body {
 	height:130pt
 }
 
-@media only screen and (max-width: 1050px) {
+@media only screen and (max-width: 1000px) {
     #logo, #img_space {
-	height: 400px;
+	height: 600px;
 	}
 }
-@media only screen and (max-height: 720px) {
+@media only screen and (max-height: 1000px) {
     #logo, #img_space {
-	height: 400px;
+	height: 600px;
 	}
 	#img_sep {
 	height:80pt
@@ -104,7 +104,7 @@ body {
 
 @media only screen and (max-width: 800px) {
     #logo, #img_space {
-	height: 300px;
+	height: 500px;
 	}
 	#github_link {
 		font-size: 25pt;
@@ -113,9 +113,9 @@ body {
 	height:60pt
 	}
 }
-@media only screen and (max-height: 600px) {
+@media only screen and (max-height: 800px) {
     #logo, #img_space {
-	height: 300px;
+	height: 500px;
 	}
 	#github_link {
 		font-size: 25pt;
@@ -127,16 +127,16 @@ body {
 
 @media only screen and (max-width: 600px) {
     #logo, #img_space {
-	height: 200px;
+	height: 350px;
 	}
 	#github_link {
 		font-size: 20pt;
 	}
 }
 
-@media only screen and (max-height: 400px) {
+@media only screen and (max-height: 600px) {
     #logo, #img_space {
-	height: 200px;
+	height: 350px;
 	}
 	#github_link {
 		font-size: 20pt;
