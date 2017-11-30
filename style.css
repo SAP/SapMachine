@@ -20,7 +20,13 @@ body {
         -ms-animation: fadein 2s; /* Internet Explorer */
          -o-animation: fadein 2s; /* Opera < 12.1 */
             animation: fadein 2s;
-	
+            
+    
+	background: #c7efff; /* Old browsers */
+	background: -moz-radial-gradient(center, ellipse cover, #c7efff 60%, #68d4ff 100%); /* FF3.6-15 */
+	background: -webkit-radial-gradient(center, ellipse cover, #c7efff 60%,#68d4ff 100%); /* Chrome10-25,Safari5.1-6 */
+	background: radial-gradient(ellipse at center, #c7efff 60%,#68d4ff 100%); /* W3aC, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#c7efff', endColorstr='#68d4ff',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 }
 
 @keyframes fadein {
@@ -110,11 +116,11 @@ body {
     font-size: 35pt;
     color: #84abbf;
     
-    -moz-transition:  all 0.3s ease-in-out;
-    -webkit-transition:  all 0.3s ease-in-out;
-    -o-transition:  all 0.3s ease-in-out;
-    -ms-transition:  all 0.3s ease-in-out;
-    transition:  all 0.3s ease-in-out;
+    -moz-transition:  all 0.2s ease-in-out;
+    -webkit-transition:  all 0.2s ease-in-out;
+    -o-transition:  all 0.2s ease-in-out;
+    -ms-transition:  all 0.2s ease-in-out;
+    transition:  all 0.2s ease-in-out;
 }
 #github_link:hover {
 	background: #f4fbff9e;
