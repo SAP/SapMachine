@@ -700,6 +700,7 @@ FIXPATH
 BUILD_GTEST
 ENABLE_CDS
 ENABLE_AOT
+INCLUDE_SA_ATTACH
 ASAN_ENABLED
 GCOV_ENABLED
 ZIP_EXTERNAL_DEBUG_SYMBOLS
@@ -966,6 +967,7 @@ JDK_VARIANT
 USERNAME
 TOPDIR
 PATH_SEP
+HOTSPOT_BUILD_LIBC
 HOTSPOT_BUILD_CPU_DEFINE
 HOTSPOT_BUILD_CPU_ARCH
 HOTSPOT_BUILD_CPU
@@ -977,6 +979,7 @@ OPENJDK_BUILD_CPU_OSARCH
 OPENJDK_BUILD_CPU_ISADIR
 OPENJDK_BUILD_CPU_LEGACY_LIB
 OPENJDK_BUILD_CPU_LEGACY
+HOTSPOT_TARGET_LIBC
 HOTSPOT_TARGET_CPU_DEFINE
 HOTSPOT_TARGET_CPU_ARCH
 HOTSPOT_TARGET_CPU
@@ -993,6 +996,7 @@ RELEASE_FILE_OS_ARCH
 RELEASE_FILE_OS_NAME
 OPENJDK_MODULE_TARGET_PLATFORM
 COMPILE_TYPE
+OPENJDK_TARGET_LIBC
 OPENJDK_TARGET_CPU_ENDIAN
 OPENJDK_TARGET_CPU_BITS
 OPENJDK_TARGET_CPU_ARCH
@@ -1000,6 +1004,7 @@ OPENJDK_TARGET_CPU
 OPENJDK_TARGET_OS_ENV
 OPENJDK_TARGET_OS_TYPE
 OPENJDK_TARGET_OS
+OPENJDK_BUILD_LIBC
 OPENJDK_BUILD_CPU_ENDIAN
 OPENJDK_BUILD_CPU_BITS
 OPENJDK_BUILD_CPU_ARCH
@@ -1093,6 +1098,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1172,6 +1178,7 @@ enable_zip_debug_info
 enable_native_coverage
 enable_asan
 enable_dtrace
+enable_sa_attach
 enable_aot
 enable_cds
 enable_hotspot_gtest
@@ -1377,6 +1384,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1629,6 +1637,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1766,7 +1783,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1919,6 +1936,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1983,6 +2001,9 @@ Optional Features:
   --enable-dtrace[=yes/no/auto]
                           enable dtrace. Default is auto, where dtrace is
                           enabled if all dependencies are present.
+  --enable-sa-attach[=yes/no/auto]
+                          enable serviceability agent attach. Default is auto,
+                          where it is enabled if all dependencies are present.
   --enable-aot[=yes/no/auto]
                           enable ahead of time compilation feature. Default is
                           auto, where aot is enabled if all dependencies are
@@ -4327,6 +4348,11 @@ VALID_JVM_VARIANTS="server client minimal core zero custom"
 
 
 ###############################################################################
+# Check if the serviceability agent attach functionality should be included.
+#
+
+
+###############################################################################
 # Set up all JVM features for each JVM variant.
 #
 
@@ -5159,7 +5185,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1512479382
+DATE_WHEN_GENERATED=1512526005
 
 ###############################################################################
 #
@@ -15712,6 +15738,18 @@ test -n "$target_alias" &&
       ;;
   esac
 
+  case "$build_os" in
+    *linux*-musl)
+      VAR_LIBC=musl
+      ;;
+    *linux*-gnu)
+      VAR_LIBC=gnu
+      ;;
+    *)
+      VAR_LIBC=default
+      ;;
+  esac
+
 
   # First argument is the cpu name from the trip/quad
   case "$build_cpu" in
@@ -15850,6 +15888,8 @@ test -n "$target_alias" &&
   OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"
   OPENJDK_BUILD_CPU_ENDIAN="$VAR_CPU_ENDIAN"
+  OPENJDK_BUILD_LIBC="$VAR_LIBC"
+
 
 
 
@@ -15862,6 +15902,13 @@ test -n "$target_alias" &&
 $as_echo_n "checking openjdk-build os-cpu... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&5
 $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
+
+  if test "x$OPENJDK_BUILD_OS" = "xlinux"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking openjdk-build C library" >&5
+$as_echo_n "checking openjdk-build C library... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENJDK_BUILD_LIBC" >&5
+$as_echo "$OPENJDK_BUILD_LIBC" >&6; }
+  fi
 
   # Convert the autoconf OS/CPU value to our own data, into the VAR_OS/CPU variables.
 
@@ -15896,6 +15943,18 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       ;;
     *)
       as_fn_error $? "unsupported operating system $host_os" "$LINENO" 5
+      ;;
+  esac
+
+  case "$host_os" in
+    *linux*-musl)
+      VAR_LIBC=musl
+      ;;
+    *linux*-gnu)
+      VAR_LIBC=gnu
+      ;;
+    *)
+      VAR_LIBC=default
       ;;
   esac
 
@@ -16037,6 +16096,8 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
   OPENJDK_TARGET_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_TARGET_CPU_BITS="$VAR_CPU_BITS"
   OPENJDK_TARGET_CPU_ENDIAN="$VAR_CPU_ENDIAN"
+  OPENJDK_TARGET_LIBC="$VAR_LIBC"
+
 
 
 
@@ -16049,6 +16110,13 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
 $as_echo_n "checking openjdk-target os-cpu... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" >&5
 $as_echo "$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" >&6; }
+
+  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking openjdk-target C library" >&5
+$as_echo_n "checking openjdk-target C library... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENJDK_TARGET_LIBC" >&5
+$as_echo "$OPENJDK_TARGET_LIBC" >&6; }
+  fi
 
 
 
@@ -16219,7 +16287,13 @@ $as_echo "$COMPILE_TYPE" >&6; }
   else
     OPENJDK_TARGET_CPU_BUNDLE="$OPENJDK_TARGET_CPU"
   fi
-  OPENJDK_TARGET_BUNDLE_PLATFORM="${OPENJDK_TARGET_OS_BUNDLE}-${OPENJDK_TARGET_CPU_BUNDLE}"
+
+  OPENJDK_TARGET_LIBC_BUNDLE=""
+  if test "x$OPENJDK_TARGET_LIBC" = "xmusl"; then
+    OPENJDK_TARGET_LIBC_BUNDLE="-$OPENJDK_TARGET_LIBC"
+  fi
+
+  OPENJDK_TARGET_BUNDLE_PLATFORM="${OPENJDK_TARGET_OS_BUNDLE}-${OPENJDK_TARGET_CPU_BUNDLE}${OPENJDK_TARGET_LIBC_BUNDLE}"
 
 
   if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
@@ -16296,6 +16370,12 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_TARGET_CPU_DEFINE=$(echo $OPENJDK_TARGET_CPU | tr a-z A-Z)
   fi
 
+
+  if test "x$OPENJDK_TARGET_LIBC" = "xmusl"; then
+    HOTSPOT_TARGET_LIBC=$OPENJDK_TARGET_LIBC
+  else
+    HOTSPOT_TARGET_LIBC=""
+  fi
 
 
 
@@ -16377,7 +16457,13 @@ $as_echo "$COMPILE_TYPE" >&6; }
   else
     OPENJDK_BUILD_CPU_BUNDLE="$OPENJDK_BUILD_CPU"
   fi
-  OPENJDK_BUILD_BUNDLE_PLATFORM="${OPENJDK_BUILD_OS_BUNDLE}-${OPENJDK_BUILD_CPU_BUNDLE}"
+
+  OPENJDK_BUILD_LIBC_BUNDLE=""
+  if test "x$OPENJDK_BUILD_LIBC" = "xmusl"; then
+    OPENJDK_BUILD_LIBC_BUNDLE="-$OPENJDK_BUILD_LIBC"
+  fi
+
+  OPENJDK_BUILD_BUNDLE_PLATFORM="${OPENJDK_BUILD_OS_BUNDLE}-${OPENJDK_BUILD_CPU_BUNDLE}${OPENJDK_BUILD_LIBC_BUNDLE}"
 
 
   if test "x$OPENJDK_BUILD_CPU_BITS" = x64; then
@@ -16454,6 +16540,12 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_BUILD_CPU_DEFINE=$(echo $OPENJDK_BUILD_CPU | tr a-z A-Z)
   fi
 
+
+  if test "x$OPENJDK_BUILD_LIBC" = "xmusl"; then
+    HOTSPOT_BUILD_LIBC=$OPENJDK_BUILD_LIBC
+  else
+    HOTSPOT_BUILD_LIBC=""
+  fi
 
 
 
@@ -55145,6 +55237,97 @@ $as_echo "yes, dependencies present" >&6; }
   else
     as_fn_error $? "Invalid value for --enable-dtrace: $enable_dtrace" "$LINENO" 5
   fi
+
+
+  # Test for serviceability agent attach dependencies
+  # Check whether --enable-sa-attach was given.
+if test "${enable_sa_attach+set}" = set; then :
+  enableval=$enable_sa_attach;
+fi
+
+
+  SA_ATTACH_DEP_MISSING=false
+
+  for ac_header in thread_db.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "thread_db.h" "ac_cv_header_thread_db_h" "$ac_includes_default"
+if test "x$ac_cv_header_thread_db_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_THREAD_DB_H 1
+_ACEOF
+ SA_ATTACH_HEADERS_OK=yes
+else
+  SA_ATTACH_HEADERS_OK=no
+fi
+
+done
+
+  if test "x$SA_ATTACH_HEADERS_OK" != "xyes"; then
+    SA_ATTACH_DEP_MISSING=true
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if serviceability agent attach should be included" >&5
+$as_echo_n "checking if serviceability agent attach should be included... " >&6; }
+  if test "x$enable_sa_attach" = "xyes"; then
+    if test "x$SA_ATTACH_DEP_MISSING" = "xtrue"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # sa-attach is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=sa-attach
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      brew)
+        brew_help    $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Cannot enable sa-attach with missing dependencies. See above. $HELP_MSG" "$LINENO" 5
+    else
+      INCLUDE_SA_ATTACH=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
+$as_echo "yes, forced" >&6; }
+    fi
+  elif test "x$enable_sa_attach" = "xno"; then
+    INCLUDE_SA_ATTACH=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
+  elif test "x$enable_sa_attach" = "xauto" || test "x$enable_sa_attach" = "x"; then
+    if test "x$SA_ATTACH_DEP_MISSING" = "xtrue"; then
+      INCLUDE_SA_ATTACH=false
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
+$as_echo "no, missing dependencies" >&6; }
+    else
+      INCLUDE_SA_ATTACH=true
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, dependencies present" >&5
+$as_echo "yes, dependencies present" >&6; }
+    fi
+  else
+    as_fn_error $? "Invalid value for --enable-sa-attach: $enable_sa_attach" "$LINENO" 5
+  fi
+
 
 
   # Check whether --enable-aot was given.
