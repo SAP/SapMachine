@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,57 +58,58 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
             ExtendedSocketOptions.getInstance();
 
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (isClosedOrPending()) {
-            throw new SocketException("Socket closed");
-        }
-        if (supportedOptions().contains(name)) {
-            if (extendedOptions.isOptionSupported(name)) {
-                extendedOptions.setOption(fd, name, value);
-            } else {
+        if (!extendedOptions.isOptionSupported(name)) {
+            if (!name.equals(StandardSocketOptions.SO_REUSEPORT)) {
                 super.setOption(name, value);
+            } else {
+                if (supportedOptions().contains(name)) {
+                    super.setOption(name, value);
+                } else {
+                    throw new UnsupportedOperationException("unsupported option");
+                }
             }
         } else {
-            throw new UnsupportedOperationException("unsupported option");
+            if (getSocket() == null) {
+                throw new UnsupportedOperationException("unsupported option");
+            }
+            if (isClosedOrPending()) {
+                throw new SocketException("Socket closed");
+            }
+            extendedOptions.setOption(fd, name, value);
         }
     }
 
     @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (isClosedOrPending()) {
-            throw new SocketException("Socket closed");
-        }
-        if (supportedOptions().contains(name)) {
-            if (extendedOptions.isOptionSupported(name)) {
-                return (T) extendedOptions.getOption(fd, name);
-            } else {
+        if (!extendedOptions.isOptionSupported(name)) {
+            if (!name.equals(StandardSocketOptions.SO_REUSEPORT)) {
                 return super.getOption(name);
+            } else {
+                if (supportedOptions().contains(name)) {
+                    return super.getOption(name);
+                } else {
+                    throw new UnsupportedOperationException("unsupported option");
+                }
             }
         } else {
-            throw new UnsupportedOperationException("unsupported option");
+            if (getSocket() == null) {
+                throw new UnsupportedOperationException("unsupported option");
+            }
+            if (isClosedOrPending()) {
+                throw new SocketException("Socket closed");
+            }
+            return (T) extendedOptions.getOption(fd, name);
         }
     }
 
     protected Set<SocketOption<?>> supportedOptions() {
         HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        addExtSocketOptions(extendedOptions.options(), options);
+        if (getSocket() != null) {
+            options.addAll(extendedOptions.options());
+        }
         return options;
     }
 
-    private void addExtSocketOptions(Set<SocketOption<?>> extOptions,
-            Set<SocketOption<?>> options) {
-        extOptions.forEach((option) -> {
-            if (option.name().equals("SO_FLOW_SLA")) {
-                // SO_FLOW_SLA is Solaris specific option which is not applicable
-                // for ServerSockets.
-                // getSocket() will always return null for server socket
-                if (getSocket() != null) {
-                    options.add(option);
-                }
-            } else {
-                options.add(option);
-            }
-        });
-    }
     protected void socketSetOption(int opt, boolean b, Object val) throws SocketException {
         if (opt == SocketOptions.SO_REUSEPORT &&
             !supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {

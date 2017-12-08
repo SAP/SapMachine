@@ -135,7 +135,7 @@ public class CheckErrorsForSource7 {
                 boolean found = false;
 
                 for (Diagnostic<? extends JavaFileObject> d : errors.getDiagnostics()) {
-                    if (d.getKind() == Diagnostic.Kind.ERROR && EXPECTED_ERROR.equals(d.getCode())) {
+                    if (d.getKind() == Diagnostic.Kind.ERROR && EXPECTED_ERRORS.contains(d.getCode())) {
                         if (found) {
                             throw new IllegalStateException("More than one expected error found.");
                         }
@@ -149,7 +149,10 @@ public class CheckErrorsForSource7 {
         }
     }
 
-    static final String EXPECTED_ERROR = "compiler.err.feature.not.supported.in.source.plural";
+    static final Set<String> EXPECTED_ERRORS = new HashSet<>(Arrays.asList(
+        "compiler.err.type.annotations.not.supported.in.source",
+        "compiler.err.annotations.after.type.params.not.supported.in.source"
+    ));
 
     class TestFO extends SimpleJavaFileObject {
         private final String content;

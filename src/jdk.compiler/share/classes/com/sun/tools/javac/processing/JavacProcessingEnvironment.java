@@ -53,7 +53,6 @@ import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Types;
@@ -117,6 +116,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean fatalErrors;
     private final boolean werror;
     private final boolean showResolveErrors;
+    private final boolean allowModules;
 
     private final JavacFiler filer;
     private final JavacMessager messager;
@@ -233,6 +233,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         initialCompleter = ClassFinder.instance(context).getCompleter();
         chk = Check.instance(context);
         initProcessorLoader();
+
+        allowModules = source.allowModules();
     }
 
     public void setProcessors(Iterable<? extends Processor> processors) {
@@ -768,7 +770,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                 if (psi.processorIterator.hasNext()) {
                     ProcessorState ps = new ProcessorState(psi.processorIterator.next(),
-                                                           log, source, Feature.MODULES.allowedInSource(source),
+                                                           log, source, allowModules,
                                                            JavacProcessingEnvironment.this);
                     psi.procStateList.add(ps);
                     return ps;
@@ -835,7 +837,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         for(TypeElement a  : annotationsPresent) {
             ModuleElement mod = elementUtils.getModuleOf(a);
-            String moduleSpec = Feature.MODULES.allowedInSource(source) && mod != null ? mod.getQualifiedName() + "/" : "";
+            String moduleSpec = allowModules && mod != null ? mod.getQualifiedName() + "/" : "";
             unmatchedAnnotations.put(moduleSpec + a.getQualifiedName().toString(),
                                      a);
         }

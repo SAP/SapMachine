@@ -20,16 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/**
+/*
  * @test
  * @bug 8178430
  * @summary JMenu in GridBagLayout flickers when label text shows "..." and
  * is updated
- * @key headful
  * @run main LabelDotTest
  */
-
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -115,9 +112,7 @@ public class LabelDotTest
             SwingUtilities.invokeAndWait(() -> createUI());
             runTest(50);
         } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(() -> frame.dispose());
-            }
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
             if (isException)
                 throw new RuntimeException("Size of Menu bar is not correct.");
         }

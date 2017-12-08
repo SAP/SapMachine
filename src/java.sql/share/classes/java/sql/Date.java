@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around a millisecond value that allows
@@ -43,6 +45,8 @@ import java.time.LocalDate;
  * @since 1.1
  */
 public class Date extends java.util.Date {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a <code>Date</code> object initialized with the given
@@ -164,7 +168,7 @@ public class Date extends java.util.Date {
         buf[7] = '-';
         Date.formatDecimalInt(day, buf, 8, 2);
 
-        return new String(buf);
+        return jla.newStringUnsafe(buf);
     }
 
     /**

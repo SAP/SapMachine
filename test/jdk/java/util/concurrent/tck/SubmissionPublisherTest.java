@@ -33,7 +33,6 @@
  */
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
@@ -430,8 +429,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
      * Cancelling a subscription eventually causes no more onNexts to be issued
      */
     public void testCancel() {
-        SubmissionPublisher<Integer> p =
-            new SubmissionPublisher<Integer>(basicExecutor, 4); // must be < 20
+        SubmissionPublisher<Integer> p = basicPublisher();
         TestSubscriber s1 = new TestSubscriber();
         TestSubscriber s2 = new TestSubscriber();
         p.subscribe(s1);
@@ -668,6 +666,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         p.subscribe(s1);
         p.subscribe(s2);
         for (int i = 1; i <= 20; ++i) {
+            assertTrue(p.estimateMinimumDemand() <= 1);
             assertTrue(p.submit(i) >= 0);
         }
         p.close();
@@ -1006,31 +1005,4 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         assertTrue(count.get() < n);
     }
 
-    /**
-     * Tests scenario for
-     * JDK-8187947: A race condition in SubmissionPublisher
-     * cvs update -D '2017-11-25' src/main/java/util/concurrent/SubmissionPublisher.java && ant -Djsr166.expensiveTests=true -Djsr166.tckTestClass=SubmissionPublisherTest -Djsr166.methodFilter=testMissedSignal tck; cvs update -A src/main/java/util/concurrent/SubmissionPublisher.java
-     */
-    public void testMissedSignal_8187947() throws Exception {
-        final int N = expensiveTests ? (1 << 20) : (1 << 10);
-        final CountDownLatch finished = new CountDownLatch(1);
-        final SubmissionPublisher<Boolean> pub = new SubmissionPublisher<>();
-        class Sub implements Subscriber<Boolean> {
-            int received;
-            public void onSubscribe(Subscription s) {
-                s.request(N);
-            }
-            public void onNext(Boolean item) {
-                if (++received == N)
-                    finished.countDown();
-                else
-                    CompletableFuture.runAsync(() -> pub.submit(Boolean.TRUE));
-            }
-            public void onError(Throwable t) { throw new AssertionError(t); }
-            public void onComplete() {}
-        }
-        pub.subscribe(new Sub());
-        CompletableFuture.runAsync(() -> pub.submit(Boolean.TRUE));
-        await(finished);
-    }
 }

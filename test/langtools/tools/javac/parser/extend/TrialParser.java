@@ -21,7 +21,6 @@
  * questions.
  */
 
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -187,7 +186,7 @@ class TrialParser extends JavacParser {
                     List<JCAnnotation> annosAfterParams = annotationsOpt(Tag.ANNOTATION);
 
                     if (annosAfterParams.nonEmpty()) {
-                        checkSourceLevel(annosAfterParams.head.pos, Feature.ANNOTATIONS_AFTER_TYPE_PARAMS);
+                        checkAnnotationsAfterTypeParams(annosAfterParams.head.pos);
                         mods.annotations = mods.annotations.appendList(annosAfterParams);
                         if (mods.pos == Position.NOPOS) {
                             mods.pos = mods.annotations.head.pos;

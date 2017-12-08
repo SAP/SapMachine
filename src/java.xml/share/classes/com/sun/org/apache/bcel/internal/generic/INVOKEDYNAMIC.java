@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,7 +41,6 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokedynamic">
  * The invokedynamic instruction in The Java Virtual Machine Specification</a>
  * @since 6.0
- * @LastModified: Nov 2017
  */
 public class INVOKEDYNAMIC extends InvokeInstruction {
 
@@ -124,14 +124,8 @@ public class INVOKEDYNAMIC extends InvokeInstruction {
 
     /**
      * Override the parent method because our classname is held elsewhere.
-     *
-     * @param cpg the ConstantPool generator
-     * @deprecated in FieldOrMethod
-     *
-     * @return name of the referenced class/interface
      */
     @Override
-    @Deprecated
     public String getClassName( final ConstantPoolGen cpg ) {
         final ConstantPool cp = cpg.getConstantPool();
         final ConstantInvokeDynamic cid = (ConstantInvokeDynamic) cp.getConstant(super.getIndex(), Const.CONSTANT_InvokeDynamic);

@@ -55,7 +55,6 @@ import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -188,7 +187,7 @@ public class WorkArounds {
     // TODO: we need ElementUtils.getPackage to cope with input strings
     // to return the proper unnamedPackage for all supported releases.
     PackageElement getUnnamedPackage() {
-        return (Feature.MODULES.allowedInSource(toolEnv.source))
+        return (toolEnv.source.allowModules())
                 ? toolEnv.syms.unnamedModule.unnamedPackage
                 : toolEnv.syms.noModule.unnamedPackage;
     }

@@ -30,7 +30,6 @@ import java.awt.image.BufferedImage;
  * @test
  * @bug 8188081
  * @summary  Text selection does not clear after focus is lost
- * @key headful
  * @run main HidingSelectionTest
  */
 
