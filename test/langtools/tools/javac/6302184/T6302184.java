@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,9 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8188870
- * @summary Check that the JVM accepts class files with version 54
- * @run main Class54
+/**
+ * This is a test that uses ISO 8859 encoding.
  */
-
-super public class Class54 version 54:0 {
-
-    public Method "<init>":"()V" stack 1 locals 1 {
-        aload_0;
-        invokespecial    Method java/lang/Object."<init>":"()V";
-        return;
-    }
-
-    public static Method main:"([Ljava/lang/String;)V" stack 0 locals 1 {
-        return;
-    }
-
-} // end Class Class54
+class T6302184 {
+    int ¿¡¬√ƒ≈ = 1;
+}

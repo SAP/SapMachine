@@ -24,6 +24,9 @@
  */
 package java.util;
 
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
+
 /**
  * {@code StringJoiner} is used to construct a sequence of characters separated
  * by a delimiter and optionally starting with a supplied prefix
@@ -82,6 +85,8 @@ public final class StringJoiner {
      * When null, prefix + suffix is used as the empty value.
      */
     private String emptyValue;
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a {@code StringJoiner} with no characters in it, with no
@@ -184,7 +189,7 @@ public final class StringJoiner {
             }
         }
         k += getChars(suffix, chars, k);
-        return new String(chars);
+        return jla.newStringUnsafe(chars);
     }
 
     /**
@@ -247,7 +252,7 @@ public final class StringJoiner {
                 elts[i] = null;
             } while (++i < size);
             size = 1;
-            elts[0] = new String(chars);
+            elts[0] = jla.newStringUnsafe(chars);
         }
     }
 

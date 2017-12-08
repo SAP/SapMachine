@@ -392,6 +392,7 @@ public class X509Key implements PublicKey {
                 throw new InvalidKeyException ("excess key data");
 
         } catch (IOException e) {
+            // e.printStackTrace ();
             throw new InvalidKeyException("IOException: " +
                                           e.getMessage());
         }

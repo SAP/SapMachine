@@ -40,7 +40,6 @@ class RootNode extends AbstractNamedNode {
     }
 
     void document(PrintWriter writer) {
-        writer.println("<!DOCTYPE html>");
         writer.println("<html><head><title>" + comment() + "</title></head>");
         writer.println("<body bgcolor=\"white\">");
         for (Node node : components) {

@@ -34,7 +34,6 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.Log;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -79,7 +78,7 @@ class CompletenessAnalyzer {
         Context context = new Context();
         Log log = CaLog.createLog(context);
         context.put(Log.class, log);
-        context.put(Source.class, Source.JDK9);
+        context.put(Source.class, Source.JDK1_9);
         scannerFactory = ScannerFactory.instance(context);
     }
 
@@ -135,11 +134,6 @@ class CompletenessAnalyzer {
 
         @Override
         public void error(DiagnosticFlag flag, DiagnosticPosition pos, String key, Object... args) {
-            die();
-        }
-
-        @Override
-        public void error(int pos, Error errorKey) {
             die();
         }
 

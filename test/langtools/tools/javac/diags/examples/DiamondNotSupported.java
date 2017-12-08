@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source
-// key: compiler.misc.feature.diamond
+// key: compiler.err.diamond.not.supported.in.source
 // options: -source 6 -Xlint:-options
 
 import java.util.*;

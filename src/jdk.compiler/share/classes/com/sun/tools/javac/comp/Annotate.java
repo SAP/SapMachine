@@ -30,12 +30,10 @@ import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
-import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -123,7 +121,7 @@ public class Annotate {
         theUnfinishedDefaultValue =  new Attribute.Error(syms.errType);
 
         Source source = Source.instance(context);
-        allowRepeatedAnnos = Feature.REPEATED_ANNOTATIONS.allowedInSource(source);
+        allowRepeatedAnnos = source.allowRepeatedAnnotations();
         sourceName = source.name;
 
         blockCount = 1;
@@ -346,7 +344,7 @@ public class Annotate {
 
             if (annotated.containsKey(a.type.tsym)) {
                 if (!allowRepeatedAnnos) {
-                    log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
+                    log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Errors.RepeatableAnnotationsNotSupportedInSource(sourceName));
                 }
                 ListBuffer<T> l = annotated.get(a.type.tsym);
                 l = l.append(c);

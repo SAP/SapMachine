@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.intersection.types.in.cast
+// key: compiler.err.intersection.types.in.cast.not.supported.in.source
 // options: -source 7 -Xlint:-options
 
 interface IntersectionTypesInCastNotSupported {

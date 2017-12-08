@@ -29,7 +29,6 @@ import java.util.ArrayList;
 
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
@@ -129,7 +128,7 @@ public class Analyzer {
         String findOpt = options.get("find");
         //parse modes
         Source source = Source.instance(context);
-        allowDiamondWithAnonymousClassCreation = Feature.DIAMOND_WITH_ANONYMOUS_CLASS_CREATION.allowedInSource(source);
+        allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
         analyzerModes = AnalyzerMode.getAnalyzerModes(findOpt, source);
     }
 
@@ -138,17 +137,17 @@ public class Analyzer {
      * the {@code -XDfind} option.
      */
     enum AnalyzerMode {
-        DIAMOND("diamond", Feature.DIAMOND),
-        LAMBDA("lambda", Feature.LAMBDA),
-        METHOD("method", Feature.GRAPH_INFERENCE),
-        LOCAL("local", Feature.LOCAL_VARIABLE_TYPE_INFERENCE);
+        DIAMOND("diamond", Source::allowDiamond),
+        LAMBDA("lambda", Source::allowLambda),
+        METHOD("method", Source::allowGraphInference),
+        LOCAL("local", Source::allowLocalVariableTypeInference);
 
         final String opt;
-        final Feature feature;
+        final Predicate<Source> sourceFilter;
 
-        AnalyzerMode(String opt, Feature feature) {
+        AnalyzerMode(String opt, Predicate<Source> sourceFilter) {
             this.opt = opt;
-            this.feature = feature;
+            this.sourceFilter = sourceFilter;
         }
 
         /**
@@ -169,7 +168,7 @@ public class Analyzer {
             for (AnalyzerMode mode : values()) {
                 if (modes.contains(mode.opt)) {
                     res.add(mode);
-                } else if (modes.contains("-" + mode.opt) || !mode.feature.allowedInSource(source)) {
+                } else if (modes.contains("-" + mode.opt) || !mode.sourceFilter.test(source)) {
                     res.remove(mode);
                 }
             }

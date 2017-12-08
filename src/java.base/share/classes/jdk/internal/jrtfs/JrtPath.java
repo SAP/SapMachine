@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
-import java.nio.file.DirectoryStream.Filter;
+import java.nio.file.DirectoryStream.Filter;;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
@@ -274,7 +274,7 @@ final class JrtPath implements Path {
         if (o.path.length() == 0) {
             return this;
         }
-        StringBuilder sb = new StringBuilder(path.length() + o.path.length() + 1);
+        StringBuilder sb = new StringBuilder(path.length() + o.path.length());
         sb.append(path);
         if (path.charAt(path.length() - 1) != '/')
             sb.append('/');
@@ -478,15 +478,12 @@ final class JrtPath implements Path {
 
     // Remove DotSlash(./) and resolve DotDot (..) components
     private String getResolved() {
-        int length = path.length();
-        if (length == 0 || (path.indexOf("./") == -1 && path.charAt(length - 1) != '.')) {
+        if (path.length() == 0) {
             return path;
-        } else {
-            return resolvePath();
         }
-    }
-
-    private String resolvePath() {
+        if (path.indexOf('.') == -1) {
+            return path;
+        }
         int length = path.length();
         char[] to = new char[length];
         int nc = getNameCount();

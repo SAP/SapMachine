@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.type.annotations
+// key: compiler.err.type.annotations.not.supported.in.source
 // key: compiler.warn.source.no.bootclasspath
 // options: -source 7
 

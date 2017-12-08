@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around the <code>java.util.Date</code> class that allows the JDBC
@@ -40,6 +42,8 @@ import java.time.LocalTime;
  * @since 1.1
  */
 public class Time extends java.util.Date {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a <code>Time</code> object initialized with the
@@ -130,7 +134,7 @@ public class Time extends java.util.Date {
         buf[5] = ':';
         Date.formatDecimalInt(second, buf, 6, 2);
 
-        return new String(buf);
+        return jla.newStringUnsafe(buf);
     }
 
     // Override all the date operations inherited from java.util.Date;

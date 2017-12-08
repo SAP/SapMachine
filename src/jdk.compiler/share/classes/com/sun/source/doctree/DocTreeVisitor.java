@@ -145,19 +145,11 @@ public interface DocTreeVisitor<R,P> {
 
     /**
      * Visits a HiddenTree node.
-     *
-     * @implSpec Visits a {@code HiddenTree} node
-     * by calling {@code visitOther(node, p)}.
-     *
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     *
-     * @since 9
      */
-    default R visitHidden(HiddenTree node, P p)  {
-        return visitOther(node, p);
-    }
+    R visitHidden(HiddenTree node, P p);
 
     /**
      * Visits an IdentifierTree node.
@@ -169,19 +161,11 @@ public interface DocTreeVisitor<R,P> {
 
     /**
      * Visits an IndexTree node.
-     *
-     * @implSpec Visits an {@code IndexTree} node
-     * by calling {@code visitOther(node, p)}.
-     *
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     *
-     * @since 9
      */
-    default R visitIndex(IndexTree node, P p) {
-        return visitOther(node, p);
-    }
+    R visitIndex(IndexTree node, P p);
 
     /**
      * Visits an InheritDocTree node.
@@ -217,19 +201,11 @@ public interface DocTreeVisitor<R,P> {
 
     /**
      * Visits a ProvidesTree node.
-     *
-     * @implSpec Visits a {@code ProvidesTree} node
-     * by calling {@code visitOther(node, p)}.
-     *
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     *
-     * @since 9
      */
-    default R visitProvides(ProvidesTree node, P p) {
-        return visitOther(node, p);
-    }
+    R visitProvides(ProvidesTree node, P p);
 
     /**
      * Visits a ReferenceTree node.
@@ -344,19 +320,11 @@ public interface DocTreeVisitor<R,P> {
 
     /**
      * Visits a UsesTree node.
-     *
-     * @implSpec Visits a {@code UsesTree} node
-     * by calling {@code visitOther(node, p)}.
-     *
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     *
-     * @since 9
      */
-    default R visitUses(UsesTree node, P p) {
-        return visitOther(node, p);
-    }
+    R visitUses(UsesTree node, P p);
 
     /**
      * Visits a ValueTree node.

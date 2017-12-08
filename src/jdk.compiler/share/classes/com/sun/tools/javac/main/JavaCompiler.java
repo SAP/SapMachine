@@ -52,7 +52,6 @@ import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
@@ -685,7 +684,7 @@ public class JavaCompiler {
         if (sep == -1) {
             msym = modules.getDefaultModule();
             typeName = name;
-        } else if (Feature.MODULES.allowedInSource(source)) {
+        } else if (source.allowModules()) {
             Name modName = names.fromString(name.substring(0, sep));
 
             msym = moduleFinder.findModule(modName);
@@ -1545,7 +1544,7 @@ public class JavaCompiler {
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
 
-            if (Feature.LAMBDA.allowedInSource(source) && scanner.hasLambdas) {
+            if (source.allowLambda() && scanner.hasLambdas) {
                 if (shouldStop(CompileState.UNLAMBDA))
                     return;
 

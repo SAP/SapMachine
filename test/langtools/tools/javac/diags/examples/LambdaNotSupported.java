@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.lambda
+// key: compiler.err.lambda.not.supported.in.source
 // options: -source 7 -Xlint:-options
 
 class LambdaNotSupported {

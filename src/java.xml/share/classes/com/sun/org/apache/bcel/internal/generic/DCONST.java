@@ -26,7 +26,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * <PRE>Stack: ... -&gt; ..., </PRE>
  *
  * @version $Id: DCONST.java 1747278 2016-06-07 17:28:43Z britter $
- * @LastModified: Nov 2017
  */
 public class DCONST extends Instruction implements ConstantPushInstruction {
 
@@ -56,7 +55,7 @@ public class DCONST extends Instruction implements ConstantPushInstruction {
 
     @Override
     public Number getValue() {
-        return value;
+        return new Double(value);
     }
 
 

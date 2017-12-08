@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.static.intf.method.invoke
+// key: compiler.err.static.intf.method.invoke.not.supported.in.source
 // options: -source 7 -Xlint:-options
 import java.util.stream.Stream;
 

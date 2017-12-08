@@ -29,7 +29,6 @@ import java.util.*;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
@@ -95,8 +94,8 @@ public class TransTypes extends TreeTranslator {
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
         Source source = Source.instance(context);
-        allowInterfaceBridges = Feature.DEFAULT_METHODS.allowedInSource(source);
-        allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source);
+        allowInterfaceBridges = source.allowDefaultMethods();
+        allowGraphInference = source.allowGraphInference();
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
     }

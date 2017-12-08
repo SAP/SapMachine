@@ -21,8 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.underscore.lit
+// key: compiler.err.unsupported.underscore.lit
 // options: -source 6 -Xlint:-options
 
 class UnsupportedUnderscoreLiteral {

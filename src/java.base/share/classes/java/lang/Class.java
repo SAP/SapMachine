@@ -53,11 +53,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -1770,7 +1771,7 @@ public final class Class<T> implements java.io.Serializable,
         if (sm != null) {
             checkMemberAccess(sm, Member.PUBLIC, Reflection.getCallerClass(), true);
         }
-        return copyFields(privateGetPublicFields());
+        return copyFields(privateGetPublicFields(null));
     }
 
 
@@ -3025,7 +3026,7 @@ public final class Class<T> implements java.io.Serializable,
     // Returns an array of "root" fields. These Field objects must NOT
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyField.
-    private Field[] privateGetPublicFields() {
+    private Field[] privateGetPublicFields(Set<Class<?>> traversedInterfaces) {
         Field[] res;
         ReflectionData<T> rd = reflectionData();
         if (rd != null) {
@@ -3033,25 +3034,35 @@ public final class Class<T> implements java.io.Serializable,
             if (res != null) return res;
         }
 
-        // Use a linked hash set to ensure order is preserved and
-        // fields from common super interfaces are not duplicated
-        LinkedHashSet<Field> fields = new LinkedHashSet<>();
+        // No cached value available; compute value recursively.
+        // Traverse in correct order for getField().
+        List<Field> fields = new ArrayList<>();
+        if (traversedInterfaces == null) {
+            traversedInterfaces = new HashSet<>();
+        }
 
         // Local fields
-        addAll(fields, privateGetDeclaredFields(true));
+        Field[] tmp = privateGetDeclaredFields(true);
+        addAll(fields, tmp);
 
         // Direct superinterfaces, recursively
-        for (Class<?> si : getInterfaces()) {
-            addAll(fields, si.privateGetPublicFields());
+        for (Class<?> c : getInterfaces()) {
+            if (!traversedInterfaces.contains(c)) {
+                traversedInterfaces.add(c);
+                addAll(fields, c.privateGetPublicFields(traversedInterfaces));
+            }
         }
 
         // Direct superclass, recursively
-        Class<?> sc = getSuperclass();
-        if (sc != null) {
-            addAll(fields, sc.privateGetPublicFields());
+        if (!isInterface()) {
+            Class<?> c = getSuperclass();
+            if (c != null) {
+                addAll(fields, c.privateGetPublicFields(traversedInterfaces));
+            }
         }
 
-        res = fields.toArray(new Field[0]);
+        res = new Field[fields.size()];
+        fields.toArray(res);
         if (rd != null) {
             rd.publicFields = res;
         }

@@ -187,7 +187,6 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
             } catch (Exception e) {
                 // ignore, treat it like we have no keystore
                 if (debug != null) {
-                    debug.println("Debug info only. No keystore.");
                     e.printStackTrace();
                 }
                 return null;
@@ -262,7 +261,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
                 loaded_one = true;
             } catch (Exception e) {
                 if (debug != null) {
-                    debug.println("Debug info only. Error reading policy " + e);
+                    debug.println("error reading policy " + e);
                     e.printStackTrace();
                 }
                 // ignore that policy
