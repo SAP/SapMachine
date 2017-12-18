@@ -24,6 +24,7 @@
  */
 package jdk.tools.jlink.internal;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -447,13 +448,14 @@ public class JlinkTask {
 
             // java.base version is different than the current runtime version
             version = Runtime.Version.parse(v.toString());
-            if (Runtime.version().major() != version.major() ||
-                Runtime.version().minor() != version.minor()) {
+            if (Runtime.version().feature() != version.feature() ||
+                Runtime.version().interim() != version.interim())
+            {
                 // jlink version and java.base version do not match.
                 // We do not (yet) support this mode.
                 throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
-                    Runtime.version().major(), Runtime.version().minor(),
-                    version.major(), version.minor()));
+                    Runtime.version().feature(), Runtime.version().interim(),
+                    version.feature(), version.interim()));
             }
         }
 
@@ -824,10 +826,26 @@ public class JlinkTask {
 
                 return modularJarArchive;
             } else if (Files.isDirectory(path)) {
-                return new DirArchive(path);
+                Path modInfoPath = path.resolve("module-info.class");
+                if (Files.isRegularFile(modInfoPath)) {
+                    return new DirArchive(path, findModuleName(modInfoPath));
+                } else {
+                    throw new IllegalArgumentException(
+                        taskHelper.getMessage("err.not.a.module.directory", path));
+                }
             } else {
                 throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));
+            }
+        }
+
+        private static String findModuleName(Path modInfoPath) {
+            try (BufferedInputStream bis = new BufferedInputStream(
+                    Files.newInputStream(modInfoPath))) {
+                return ModuleDescriptor.read(bis).name();
+            } catch (IOException exp) {
+                throw new IllegalArgumentException(taskHelper.getMessage(
+                    "err.cannot.read.module.info", modInfoPath), exp);
             }
         }
 
