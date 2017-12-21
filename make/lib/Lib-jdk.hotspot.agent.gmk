@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,10 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   SA_CFLAGS := $(CFLAGS_JDKLIB) -D_FILE_OFFSET_BITS=64 \
       $(SA_MACHINE_FLAG_linux)
   SA_LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_MACHINE_FLAG_linux)
-  SA_LIBS := -lthread_db $(LIBDL)
+  SA_LIBS := $(LIBDL)
+  ifeq ($(INCLUDE_SA_ATTACH), true)
+    SA_LIBS += -lthread_db
+  endif
 
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
   SA_TOOLCHAIN := TOOLCHAIN_LINK_CXX
@@ -94,6 +97,12 @@ else ifeq ($(OPENJDK_TARGET_OS), windows)
     SA_LDFLAGS += -SAFESEH
   endif
 endif
+
+ifeq ($(INCLUDE_SA_ATTACH), true)
+  SA_CFLAGS += -DINCLUDE_SA_ATTACH
+endif
+
+SA_CFLAGS += -DLIBC=\"$(OPENJDK_TARGET_LIBC)\"
 
 ################################################################################
 
