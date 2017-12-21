@@ -11,9 +11,18 @@ SAP is committed to ensuring the continued success of the Java platform. We are 
 Currently this project only supports Linux/x86_64.
 
 ## Download and Installation
-Download the [latest tagged version](https://github.com/SAP/SapMachine/releases/latest) or check for all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project.
+Download the [latest tagged version](https://github.com/SAP/SapMachine/releases/latest) or check for all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
 
-Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
+Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
+
+```
+wget -q -O - http://sapmachine-ubuntu.sapcloud.io/sapmachine-debian.key | apt-key add -
+echo "deb http://sapmachine-ubuntu.sapcloud.io/amd64/ ./" >> /etc/apt/sources.list
+apt-get update
+apt-get install sapmachine-jre
+```
+
+Finally, we also provide Docker images for various versions of the SapMachine at https://hub.docker.com/r/sapmachine
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
