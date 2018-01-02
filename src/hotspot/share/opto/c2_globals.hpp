@@ -195,6 +195,9 @@
   product(bool, UseSubwordForMaxVector, true,                               \
           "Use Subword Analysis to set maximum vector size")                \
                                                                             \
+  product(bool, UseVectorCmov, false,                                       \
+          "Use Vectorized Cmov")                                            \
+                                                                            \
   develop(intx, UnrollLimitForProfileCheck, 1,                              \
           "Don't use profile_trip_cnt() to restrict unrolling until "       \
           "unrolling would push the number of unrolled iterations above "   \
@@ -740,6 +743,14 @@
                                                                             \
   develop(bool, RenumberLiveNodes, true,                                    \
           "Renumber live nodes")                                            \
+                                                                            \
+  product(uintx, LoopStripMiningIter, 0,                                    \
+          "Number of iterations in strip mined loop")                       \
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uintx, LoopStripMiningIterShortLoop, 0,                           \
+          "Loop with fewer iterations are not strip mined")                 \
+          range(0, max_juint)                                               \
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_PD_DEVELOPER_FLAG, \
