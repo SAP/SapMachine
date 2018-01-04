@@ -19,7 +19,7 @@ Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
 wget -q -O - http://sapmachine-ubuntu.sapcloud.io/sapmachine-debian.key | apt-key add -
 echo "deb http://sapmachine-ubuntu.sapcloud.io/amd64/ ./" >> /etc/apt/sources.list
 apt-get update
-apt-get install sapmachine-jre
+apt-get install sapmachine-10-jre
 ```
 
 Finally, we also provide Docker images for various versions of the SapMachine at https://hub.docker.com/r/sapmachine
