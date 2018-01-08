@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,32 @@
 
 /*
  * @test
- * @bug 8173609
- * @summary printing of modules
- * @compile/ref=module-info.out -Xprint p/P.java module-info.java
+ * @bug 8194069
+ * @summary ignore declarations in lambda expressions
+ * @modules jdk.compiler/com.sun.tools.doclint
+ * @build DocLintTester
+ * @run main DocLintTester -Xmsgs:all SyntheticTest.java
  */
 
+package acme;
+
+import java.util.Arrays;
+import java.util.Set;
+import java.util.function.Function;
+
 /**
- * Printing of modules
+ * The class has docs.
  */
-@Deprecated
-module printing {
-    requires static transitive java.compiler;
-    exports p to m.m1, m.m2;
-    opens p to m.m1, m.m2;
-    uses p.P;
-    provides p.P with p.P.P1, p.P.P2;
+public final class LambdaTest
+{
+    /**
+     * The field itself has docs.
+     */
+    // Ensure no warning for lambda parameter, at 'string ->'
+    static final Function<String, String> someFunction = string -> {
+        // Ensure no warning for 'localVariable'
+        int localVariable = 3;
+        return Integer.toString(localVariable);
+    };
 }
+
