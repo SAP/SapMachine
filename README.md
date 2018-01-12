@@ -16,8 +16,9 @@ Download the [latest tagged version](https://github.com/SAP/SapMachine/releases/
 Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
 
 ```
-wget -q -O - http://sapmachine-ubuntu.sapcloud.io/sapmachine-debian.key | apt-key add -
-echo "deb http://sapmachine-ubuntu.sapcloud.io/amd64/ ./" >> /etc/apt/sources.list
+sudo bash
+wget -q -O - https://sapmachine-ubuntu.sapcloud.io/debian/sapmachine-debian.key | apt-key add -
+echo "deb http://sapmachine-ubuntu.sapcloud.io/debian/amd64/ ./" >> /etc/apt/sources.list
 apt-get update
 apt-get install sapmachine-10-jre
 ```
