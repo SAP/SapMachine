@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,12 @@
  * questions.
  */
 
-package pkg1;
+// key: compiler.err.same.binary.name
 
-/**
- * This class is marked as deprecated and has a mixture of different types of
- * methods such as "Instance Methods", "Abstract Methods" and "Concrete
- * Methods". None of the methods are marked as deprecated but since the class is
- * deprecated, the methods will also be deprecated and "Deprecated Methods" tab
- * will also be shown with all the methods.
- */
-@Deprecated
-public abstract class D {
+class SameBinaryName {
+    private static final class Foo$Bar {}
 
-    /**
-     * This is the first abstract instance method.
-     */
-    public abstract void readObject();
-
-    /**
-     * This is the first concrete instance method.
-     */
-    public final void setStub() {
+    private static final class Foo {
+        private static final class Bar {}
     }
-
-    /**
-     * This is the second concrete instance method.
-     * @return a string
-     */
-    public String getParameter() {
-         return "test";
-     }
 }
