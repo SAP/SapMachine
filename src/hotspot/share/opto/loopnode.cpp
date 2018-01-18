@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,9 @@ bool LoopNode::is_valid_counted_loop() const {
     CountedLoopNode*    l  = as_CountedLoop();
     CountedLoopEndNode* le = l->loopexit();
     if (le != NULL &&
-        le->proj_out(1 /* true */) == l->in(LoopNode::LoopBackControl)) {
+        le->proj_out_or_null(1 /* true */) == l->in(LoopNode::LoopBackControl)) {
       Node* phi  = l->phi();
-      Node* exit = le->proj_out(0 /* false */);
+      Node* exit = le->proj_out_or_null(0 /* false */);
       if (exit != NULL && exit->Opcode() == Op_IfFalse &&
           phi != NULL && phi->is_Phi() &&
           phi->in(LoopNode::LoopBackControl) == l->incr() &&
@@ -1216,7 +1216,7 @@ IfFalseNode* OuterStripMinedLoopNode::outer_loop_exit() const {
   if (le == NULL) {
     return NULL;
   }
-  Node* c = le->proj_out(false);
+  Node* c = le->proj_out_or_null(false);
   if (c == NULL) {
     return NULL;
   }
@@ -1331,8 +1331,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
           n->set_req(i, old_new[n->in(i)->_idx]);
         }
       }
-      if (n->in(0) != NULL) {
-        assert(n->in(0) == cle_tail, "node not on backedge?");
+      if (n->in(0) != NULL && n->in(0) == cle_tail) {
         n->set_req(0, le_tail);
       }
       igvn->register_new_node_with_optimizer(n);
@@ -1394,9 +1393,14 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
           Node* uu = fast_out(j);
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
-            while (be->is_Store() && old_new[be->_idx] != NULL) {
-              ShouldNotReachHere();
-              be = be->in(MemNode::Memory);
+            if (be->is_Store() && old_new[be->_idx] != NULL) {
+              assert(false, "store on the backedge + sunk stores: unsupported");
+              // drop outer loop
+              IfNode* outer_le = outer_loop_end();
+              Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
+              igvn->replace_node(outer_le, iff);
+              inner_cl->clear_strip_mined();
+              return;
             }
             if (be == last || be == first->in(MemNode::Memory)) {
               assert(phi == NULL, "only one phi");
@@ -1449,10 +1453,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
           // Or fix the outer loop fix to include
           // that chain of stores.
           Node* be = phi->in(LoopNode::LoopBackControl);
-          while (be->is_Store() && old_new[be->_idx] != NULL) {
-            ShouldNotReachHere();
-            be = be->in(MemNode::Memory);
-          }
+          assert(!(be->is_Store() && old_new[be->_idx] != NULL), "store on the backedge + sunk stores: unsupported");
           if (be == first->in(MemNode::Memory)) {
             if (be == phi->in(LoopNode::LoopBackControl)) {
               igvn->replace_input_of(phi, LoopNode::LoopBackControl, last);
@@ -1489,8 +1490,8 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     } else {
       new_limit = igvn->transform(new SubINode(iv_phi, min));
     }
-    igvn->replace_input_of(inner_cle->cmp_node(), 2, new_limit);
     Node* cmp = inner_cle->cmp_node()->clone();
+    igvn->replace_input_of(cmp, 2, new_limit);
     Node* bol = inner_cle->in(CountedLoopEndNode::TestValue)->clone();
     cmp->set_req(2, limit);
     bol->set_req(1, igvn->transform(cmp));
