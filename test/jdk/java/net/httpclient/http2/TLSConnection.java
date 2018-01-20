@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Security;
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpRequest;
 
@@ -50,9 +51,11 @@ public class TLSConnection {
 
     private static final String KEYSTORE = System.getProperty("test.src")
             + File.separator + "keystore.p12";
-   private static final String PASSWORD = "password";
+    private static final String PASSWORD = "password";
 
     public static void main(String[] args) throws Exception {
+        // re-enable 3DES
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
         // enable all logging
         System.setProperty("jdk.httpclient.HttpClient.log", "all,frames:all");
