@@ -108,10 +108,15 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
         (*env)->DeleteLocalRef(env, jkey);                            \
     } else ((void) 0)
 
-#ifndef VENDOR /* Third party may overwrite this. */
-#define VENDOR "SAP SE"
-#define VENDOR_URL "http://sapmachine.org"
-#define VENDOR_URL_BUG "https://github.com/SAP/SapMachine/issues"
+/* Third party may overwrite these values. */
+#ifndef VENDOR
+#define VENDOR "Oracle Corporation"
+#endif
+#ifndef VENDOR_URL
+#define VENDOR_URL "http://java.oracle.com/"
+#endif
+#ifndef VENDOR_URL_BUG
+#define VENDOR_URL_BUG "http://bugreport.java.com/bugreport/"
 #endif
 
 #define JAVA_MAX_SUPPORTED_VERSION 54
