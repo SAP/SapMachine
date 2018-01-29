@@ -23,6 +23,27 @@ apt-get update
 apt-get install sapmachine-10-jre
 ```
 
+To install SapMachine on Alpine Linux, you can use our `.apk` packages:
+
+```
+FROM alpine:3.5
+
+RUN apk update; \
+    apk add bash; \
+    apk add ca-certificates; \
+    apk add wget;
+
+WORKDIR /etc/apk/keys
+RUN wget https://sapmachine-ubuntu.sapcloud.io/alpine/sapmachine%40sap.com-5a673212.rsa.pub
+
+WORKDIR /
+
+RUN echo "http://sapmachine-ubuntu.sapcloud.io/alpine" >> /etc/apk/repositories
+
+RUN apk update; \
+    apk add sapmachine-10-jre;
+```
+
 Finally, we also provide Docker images for various versions of the SapMachine at https://hub.docker.com/r/sapmachine
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
