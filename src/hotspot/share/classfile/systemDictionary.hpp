@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,7 @@ class GCTimer;
   do_klass(VolatileCallSite_klass,                      java_lang_invoke_VolatileCallSite,         Pre                 ) \
   /* Note: MethodHandle must be first, and VolatileCallSite last in group */                                             \
                                                                                                                          \
+  do_klass(AssertionStatusDirectives_klass,             java_lang_AssertionStatusDirectives,       Pre                 ) \
   do_klass(StringBuffer_klass,                          java_lang_StringBuffer,                    Pre                 ) \
   do_klass(StringBuilder_klass,                         java_lang_StringBuilder,                   Pre                 ) \
   do_klass(internal_Unsafe_klass,                       jdk_internal_misc_Unsafe,                  Pre                 ) \
@@ -531,6 +532,11 @@ public:
   static Handle    find_method_handle_type(Symbol* signature,
                                            Klass* accessing_klass,
                                            TRAPS);
+
+  // find a java.lang.Class object for a given signature
+  static Handle    find_field_handle_type(Symbol* signature,
+                                          Klass* accessing_klass,
+                                          TRAPS);
 
   // ask Java to compute a java.lang.invoke.MethodHandle object for a given CP entry
   static Handle    link_method_handle_constant(Klass* caller,
