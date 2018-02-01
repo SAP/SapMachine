@@ -1,4 +1,4 @@
-<img align="right" src="https://sap.github.io/SapMachine/logo_title.png">
+<img align="right" src="https://sap.github.io/SapMachine/assets/images/logo_title.png">
 
 # SapMachine
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers who wish to use OpenJDK in their production environments.
