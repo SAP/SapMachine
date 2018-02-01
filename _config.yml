@@ -1,0 +1,31 @@
+title: SapMachine
+email: sapmachine@sap.com
+description: >- # this means to ignore newlines until "baseurl:"
+  An OpenJDK release maintained and supported by SAP
+twitter_username: SweetSapMachine
+github_username:  SapMachine
+google_analytics: UA-113326126-1
+
+# Build settings
+#show_downloads: true
+markdown: kramdown
+theme: jekyll-theme-slate
+plugins:
+  - jekyll-feed
+  - jekyll-github-metadata
+
+jsarr:
+  - js/jquery-3.3.1.min.js
+  - js/sapmachine.js
+
+# Exclude from processing.
+# The following items will not be processed, by default. Create a custom list
+# to override the default setting.
+# exclude:
+#   - Gemfile
+#   - Gemfile.lock
+#   - node_modules
+#   - vendor/bundle/
+#   - vendor/cache/
+#   - vendor/gems/
+#   - vendor/ruby/
