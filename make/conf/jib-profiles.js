@@ -1077,7 +1077,7 @@ var versionArgs = function(input, common) {
     if (input.build_type == "promoted") {
         args = concat(args,
                       // This needs to be changed when we start building release candidates
-                      // 'ea' must be removed for fcs build
+                      // with-version-pre must be set to ea for 'ea' and empty for fcs build
                       "--with-version-pre=",
                       "--without-version-opt");
     } else {
