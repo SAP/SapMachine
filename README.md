@@ -46,6 +46,20 @@ RUN apk update; \
 
 Finally, we also provide Docker images for various versions of the SapMachine at https://hub.docker.com/r/sapmachine
 
+##### [](#Debian) Debian / Ubuntu
+
+```
+docker pull sapmachine/jdk10:latest
+docker run -it sapmachine/jdk10:latest java -version
+```
+
+##### [](#Alpine) Alpine Linux
+
+```
+docker pull sapmachine/jdk10:latest-alpine
+docker run -it sapmachine/jdk10:latest-alpine java -version
+```
+
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
 ## Repository setup
