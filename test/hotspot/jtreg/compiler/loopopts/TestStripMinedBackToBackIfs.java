@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,12 +20,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /**
- * The Graal-SDK options package contains reusable collection classes for options.
+ * @test
+ * @bug 8196296
+ * @summary Bad graph when unrolled loop bounds conflicts with range checks
  *
- * @see org.graalvm.options.OptionDescriptor
- * @see org.graalvm.options.OptionValues
+ * @run main/othervm -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=0 TestStripMinedBackToBackIfs
  *
- * @since 1.0
  */
-package org.graalvm.options;
+
+
+public class TestStripMinedBackToBackIfs {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(100);
+        }
+    }
+
+    private static double test(int limit) {
+        double v = 1;
+        for (int i = 0; i < limit; i++) {
+            v = v * 4;
+            // We don't want this test to be merged with identical
+            // loop end test
+            if (i+1 < limit) {
+                v = v * 2;
+            }
+        }
+        return v;
+    }
+}
