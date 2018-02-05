@@ -21,7 +21,16 @@
                 imageType = 'JRE'
             }
 
+            const asset_available = this._assets[this._selectedImageType]['releases'][0].hasOwnProperty(this._selectedOS)
+
             this._downloadButton.text(`Download "${this._assets[this._selectedImageType]['releases'][0]['tag']} ${imageType}"`)
+            this._downloadButton.prop('disabled', !asset_available)
+
+            if (!asset_available) {
+                this._downloadButton.addClass('download_button_disabled')
+            } else {
+                this._downloadButton.removeClass('download_button_disabled')
+            }
         }
 
         this._imageTypeSelector.change(() => {

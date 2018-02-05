@@ -45,6 +45,14 @@
     background:rgba(0, 145, 255, 0.808);
 }
 
+.download_button_disabled {
+    background:rgb(126, 149, 167);
+}
+
+.download_button_disabled:hover {
+    background:rgb(126, 149, 167);
+}
+
 .trademark_note {
     color: rgb(177, 177, 177);
     font-size: 12px;
