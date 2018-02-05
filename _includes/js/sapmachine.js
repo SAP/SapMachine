@@ -1,6 +1,6 @@
 (function (window, document, $, undefined) {
 
-    (function SapMachine() {
+    function SapMachine() {
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
         this._osSelector = $('#sapmachine_os_select')
         this._downloadButton = $('#sapmachine_download_button')
@@ -65,6 +65,8 @@
             this._assets = data.assets
             this._updateImageTypeAndOS()
         })
-    })()
+    }
+
+    const sapMachine = new SapMachine()
 
 })(window, document, jQuery)
