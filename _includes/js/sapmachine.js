@@ -1,3 +1,8 @@
+/*
+Copyright (c) 2001-2018 by SAP SE, Walldorf, Germany.
+All rights reserved. Confidential and proprietary.
+*/
+
 "use strict";
 
 (function (window, document, $, undefined) {
