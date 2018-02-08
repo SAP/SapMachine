@@ -1,4 +1,4 @@
-<img align="right" src="https://sap.github.io/SapMachine/logo_title.png">
+<img align="right" src="https://sap.github.io/SapMachine/assets/images/logo_title.png">
 
 # SapMachine
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers who wish to use OpenJDK in their production environments.
@@ -11,9 +11,54 @@ SAP is committed to ensuring the continued success of the Java platform. We are 
 Currently this project only supports Linux/x86_64.
 
 ## Download and Installation
-Download the [latest tagged version](https://github.com/SAP/SapMachine/releases/latest) or check for all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project.
+Download the [latest tagged version](https://github.com/SAP/SapMachine/releases/latest) or check for all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
 
-Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
+Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
+
+```
+sudo bash
+wget -q -O - https://sapmachine-ubuntu.sapcloud.io/debian/sapmachine-debian.key | apt-key add -
+echo "deb http://sapmachine-ubuntu.sapcloud.io/debian/amd64/ ./" >> /etc/apt/sources.list
+apt-get update
+apt-get install sapmachine-10-jre
+```
+
+To install SapMachine on Alpine Linux, you can use our `.apk` packages:
+
+```
+FROM alpine:3.5
+
+RUN apk update; \
+    apk add bash; \
+    apk add ca-certificates; \
+    apk add wget;
+
+WORKDIR /etc/apk/keys
+RUN wget https://sapmachine-ubuntu.sapcloud.io/alpine/sapmachine%40sap.com-5a673212.rsa.pub
+
+WORKDIR /
+
+RUN echo "http://sapmachine-ubuntu.sapcloud.io/alpine" >> /etc/apk/repositories
+
+RUN apk update; \
+    apk add sapmachine-10-jre;
+```
+
+Finally, we also provide Docker images for various versions of the SapMachine at https://hub.docker.com/r/sapmachine
+
+##### [](#Debian) Debian / Ubuntu
+
+```
+docker pull sapmachine/jdk10:latest
+docker run -it sapmachine/jdk10:latest java -version
+```
+
+##### [](#Alpine) Alpine Linux
+
+```
+docker pull sapmachine/jdk10:latest-alpine
+docker run -it sapmachine/jdk10:latest-alpine java -version
+```
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
