@@ -1,4 +1,4 @@
-<img align="right" src="https://sap.github.io/SapMachine/logo_title.png">
+<img align="right" src="https://sap.github.io/SapMachine/assets/images/logo_title.png">
 
 # SapMachine
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers who wish to use OpenJDK in their production environments.
@@ -45,6 +45,20 @@ RUN apk update; \
 ```
 
 Finally, we also provide Docker images for various versions of the SapMachine at https://hub.docker.com/r/sapmachine
+
+##### [](#Debian) Debian / Ubuntu
+
+```
+docker pull sapmachine/jdk10:latest
+docker run -it sapmachine/jdk10:latest java -version
+```
+
+##### [](#Alpine) Alpine Linux
+
+```
+docker pull sapmachine/jdk10:latest-alpine
+docker run -it sapmachine/jdk10:latest-alpine java -version
+```
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
