@@ -339,6 +339,9 @@ else
   LIBJLI_OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE)/jli
 endif
 
+
+LIBJLI_CFLAGS += -DLIBC=\"$(OPENJDK_TARGET_LIBC)\"
+
 LIBJLI_CFLAGS += $(addprefix -I, $(LIBJLI_SRC_DIRS))
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
