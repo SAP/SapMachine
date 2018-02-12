@@ -15,7 +15,7 @@ All rights reserved. Confidential and proprietary.
         this._selectedOS = null
         this._assets = null
 
-        this._updateImageTypeAndOS = () => {
+        this._updateImageTypeAndOS = function updateImageTypeAndOS() {
             if (this._imageTypeSelector.index() !== -1)
                 this._selectedImageType = this._imageTypeSelector.val()
 
@@ -24,13 +24,13 @@ All rights reserved. Confidential and proprietary.
 
             var imageType = 'JDK'
 
-            if (this._selectedImageType.includes('jre')) {
+            if (this._selectedImageType.indexOf('jre') !== -1) {
                 imageType = 'JRE'
             }
 
-            const asset_available = this._assets[this._selectedImageType]['releases'][0].hasOwnProperty(this._selectedOS)
+            var asset_available = this._assets[this._selectedImageType]['releases'][0].hasOwnProperty(this._selectedOS)
 
-            this._downloadButton.text(`Download "${this._assets[this._selectedImageType]['releases'][0]['tag']} ${imageType}"`)
+            this._downloadButton.text('Download "' + this._assets[this._selectedImageType]['releases'][0]['tag'] + ' ' + imageType + '"')
             this._downloadButton.prop('disabled', !asset_available)
 
             if (!asset_available) {
@@ -38,40 +38,40 @@ All rights reserved. Confidential and proprietary.
             } else {
                 this._downloadButton.removeClass('download_button_disabled')
             }
-        }
+        }.bind(this)
 
-        this._imageTypeSelector.change(() => {
+        this._imageTypeSelector.change(function imageTypeSelectorOnChange() {
             this._updateImageTypeAndOS()
-        })
+        }.bind(this))
 
-        this._osSelector.change(() => {
+        this._osSelector.change(function osSelectorOnChange() {
             this._updateImageTypeAndOS()
-        })
+        }.bind(this))
 
-        this._downloadButton.click(() => {
+        this._downloadButton.click(function downloadButtonOnClick() {
             window.location.href = this._assets[this._selectedImageType]['releases'][0][this._selectedOS]
-        })
+        }.bind(this))
 
-        $.getJSON('assets/data/sapmachine_releases.json', (data) => {
-            for (var imageType of data.imageTypes) {
+        $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
+            for (var i in data.imageTypes) {
                 var optionElement = $('<option></option>')
-                optionElement.text(imageType.value)
-                optionElement.attr({'value': imageType.key })
+                optionElement.text(data.imageTypes[i].value)
+                optionElement.attr({'value': data.imageTypes[i].key })
                 optionElement.addClass('download_select_option')
                 this._imageTypeSelector.append(optionElement)
             }
 
-            for (var os of data.os) {
+            for (var i in data.os) {
                 var optionElement = $('<option></option>')
-                optionElement.text(os.value)
-                optionElement.attr({'value': os.key })
+                optionElement.text(data.os[i].value)
+                optionElement.attr({'value': data.os[i].key })
                 optionElement.addClass('download_select_option')
                 this._osSelector.append(optionElement)
             }
 
             this._assets = data.assets
             this._updateImageTypeAndOS()
-        })
+        }.bind(this))
     }
 
     const sapMachine = new SapMachine()
