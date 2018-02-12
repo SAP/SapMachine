@@ -19,6 +19,10 @@
     background-repeat: no-repeat;
 }
 
+.download_select::-ms-expand {
+    display: none;
+}
+
 .download_select:hover {
     background-color:rgba(255, 255, 255, 0.185);
 }
