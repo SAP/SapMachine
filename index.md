@@ -32,8 +32,8 @@ Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
 
 ```
 sudo bash
-wget -q -O - https://sapmachine-ubuntu.sapcloud.io/debian/sapmachine-debian.key | apt-key add -
-echo "deb http://sapmachine-ubuntu.sapcloud.io/debian/amd64/ ./" >> /etc/apt/sources.list
+wget -q -O - https://dist.sapmachine.io/debian/sapmachine.key | apt-key add -
+echo "deb http://dist.sapmachine.io/debian/amd64/ ./" >> /etc/apt/sources.list
 apt-get update
 apt-get install sapmachine-10-jre
 ```
