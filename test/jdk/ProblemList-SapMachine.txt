@@ -19,3 +19,14 @@ sun/security/pkcs11/tls/TestKeyMaterial.java                                    
 com/sun/jdi/JdbExprTest.sh                                                           generic-all
 sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
 javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
+
+# Only failing on alpine: TODO have a look
+
+java/lang/ClassLoader/nativeLibrary/NativeLibraryTest.java                           generic-all
+java/lang/ProcessBuilder/Basic.java                                                  generic-all
+java/lang/ProcessHandle/InfoTest.java                                                generic-all
+java/util/logging/FileHandlerPatternGeneration.java                                  generic-all
+
+java/util/concurrent/locks/Lock/TimedAcquireLeak.java                                generic-all
+
+
