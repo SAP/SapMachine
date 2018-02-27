@@ -1,4 +1,7 @@
 # SapMachine Problem List for Hotspot tests
 
+# The rpath and ld_library path are handled in a different order on alpine
 gtest/GTestWrapper.java                                        generic-all
+# (*_jvm)->AttachCurrentThread(_jvm, (void**)&env, NULL); fails
+# needs further investigation.
 runtime/StackGuardPages/testme.sh                              generic-all
