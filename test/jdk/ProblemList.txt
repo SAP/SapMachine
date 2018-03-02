@@ -282,6 +282,9 @@ java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-
 
 java/lang/String/nativeEncoding/StringPlatformChars.java        8182569 windows-all,solaris-all
 
+java/lang/invoke/condy/CondyRepeatFailedResolution.java         8197944 windows-all
+java/lang/invoke/condy/CondyReturnPrimitiveTest.java            8197944 windows-all
+
 ############################################################################
 
 # jdk_instrument
@@ -464,7 +467,7 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/jimage/JImageExtractTest.java                             8198405 windows-all
+tools/jimage/JImageExtractTest.java                             8198405,8198819 generic-all
 tools/jimage/JImageListTest.java                                8198405 windows-all
 
 ############################################################################
@@ -480,6 +483,12 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
+
+com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-all
+
+com/sun/jdi/EarlyReturnTest.java                                8198803 generic-all
+com/sun/jdi/EarlyReturnNegativeTest.java                        8198803 generic-all
+com/sun/jdi/MethodExitReturnValuesTest.java                     8198803 generic-all
 
 ############################################################################
 

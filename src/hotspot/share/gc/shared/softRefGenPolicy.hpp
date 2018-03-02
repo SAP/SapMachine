@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/* @test
-   @bug 4119554
-   @summary runFinalizersOnExit(true) causes JIT to be unloaded and
-            crashes the VM.  Interim fix for 1.2 beta4 -- don't unload
-            native libraries loaded by system classes.
-   @run main/othervm ExitFinalizersAndJIT
-*/
+#ifndef SHARE_VM_GC_SHARED_SOFTREFGENPOLICY_HPP
+#define SHARE_VM_GC_SHARED_SOFTREFGENPOLICY_HPP
 
-public class ExitFinalizersAndJIT {
-    public static void main(String[] args) throws Exception {
-        System.runFinalizersOnExit(true);
-    }
-}
+#include "gc/shared/softRefPolicy.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class AdaptiveSizePolicy;
+
+class SoftRefGenPolicy : public SoftRefPolicy {
+public:
+  virtual void cleared_all_soft_refs();
+};
+
+#endif // SHARE_VM_GC_SHARED_SOFTREFGENPOLICY_HPP
