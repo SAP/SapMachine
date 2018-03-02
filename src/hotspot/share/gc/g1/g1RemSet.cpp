@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ private:
   public:
     G1ResetScanTopClosure(HeapWord** scan_top) : _scan_top(scan_top) { }
 
-    virtual bool doHeapRegion(HeapRegion* r) {
+    virtual bool do_heap_region(HeapRegion* r) {
       uint hrm_index = r->hrm_index();
       if (!r->in_collection_set() && r->is_old_or_humongous()) {
         _scan_top[hrm_index] = r->top();
@@ -204,7 +204,7 @@ public:
     if (_iter_states[region] != Unclaimed) {
       return false;
     }
-    jint res = Atomic::cmpxchg(Claimed, (jint*)(&_iter_states[region]), Unclaimed);
+    G1RemsetIterState res = Atomic::cmpxchg(Claimed, &_iter_states[region], Unclaimed);
     return (res == Unclaimed);
   }
 
@@ -214,7 +214,7 @@ public:
     if (iter_is_complete(region)) {
       return false;
     }
-    jint res = Atomic::cmpxchg(Complete, (jint*)(&_iter_states[region]), Claimed);
+    G1RemsetIterState res = Atomic::cmpxchg(Complete, &_iter_states[region], Claimed);
     return (res == Claimed);
   }
 
@@ -349,7 +349,7 @@ void G1ScanRSForRegionClosure::claim_card(size_t card_index, const uint region_i
   _scan_state->add_dirty_region(region_idx_for_card);
 }
 
-bool G1ScanRSForRegionClosure::doHeapRegion(HeapRegion* r) {
+bool G1ScanRSForRegionClosure::do_heap_region(HeapRegion* r) {
   assert(r->in_collection_set(), "should only be called on elements of CS.");
   uint region_idx = r->hrm_index();
 
@@ -522,7 +522,7 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _live_data(live_data) { }
 
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     if (!r->is_continues_humongous()) {
       r->rem_set()->scrub(_live_data);
     }
@@ -586,6 +586,20 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
     return;
   }
 
+  // While we are processing RSet buffers during the collection, we
+  // actually don't want to scan any cards on the collection set,
+  // since we don't want to update remembered sets with entries that
+  // point into the collection set, given that live objects from the
+  // collection set are about to move and such entries will be stale
+  // very soon. This change also deals with a reliability issue which
+  // involves scanning a card in the collection set and coming across
+  // an array that was being chunked and looking malformed. Note,
+  // however, that if evacuation fails, we have to scan any objects
+  // that were not moved and create any missing entries.
+  if (r->in_collection_set()) {
+    return;
+  }
+
   // The result from the hot card cache insert call is either:
   //   * pointer to the current card
   //     (implying that the current card is not 'hot'),
@@ -610,7 +624,8 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
 
       // Check whether the region formerly in the cache should be
       // ignored, as discussed earlier for the original card.  The
-      // region could have been freed while in the cache.
+      // region could have been freed while in the cache.  The cset is
+      // not relevant here, since we're in concurrent phase.
       if (!r->is_old_or_humongous()) {
         return;
       }

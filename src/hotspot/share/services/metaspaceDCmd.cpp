@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,16 @@
  * questions.
  *
  */
+#include "precompiled.hpp"
+#include "memory/metaspace.hpp"
+#include "services/diagnosticCommand.hpp"
 
-#ifndef SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
-#define SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
+MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap): DCmd(output, heap) {
+}
 
-#include "utilities/exceptions.hpp"
+void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
+  const size_t scale = 1 * K;
+  VM_PrintMetadata op(output(), scale);
+  VMThread::execute(&op);
+}
 
-class AllocationContextService: public AllStatic {
-public:
-  static inline bool should_notify();
-  static inline void notify(TRAPS);
-};
-
-bool AllocationContextService::should_notify() { return false; }
-void AllocationContextService::notify(TRAPS) { }
-
-#endif // SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,8 +181,6 @@ class Universe: AllStatic {
   // the vm thread.
   static oop          _vm_exception;
 
-  static oop          _allocation_context_notification_obj;
-
   // References waiting to be transferred to the ReferenceHandler
   static oop          _reference_pending_list;
 
@@ -334,9 +332,6 @@ class Universe: AllStatic {
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
 
-  static inline oop   allocation_context_notification_obj();
-  static inline void  set_allocation_context_notification_obj(oop obj);
-
   // Reference pending list manipulation.  Access is protected by
   // Heap_lock.  The getter, setter and predicate require the caller
   // owns the lock.  Swap is used by parallel non-concurrent reference
@@ -463,9 +458,6 @@ class Universe: AllStatic {
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);
   static void check_alignment(uintx size, uintx alignment, const char* name);
-
-  // Finalizer support.
-  static void run_finalizers_on_exit();
 
   // Iteration
 
