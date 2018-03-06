@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,9 @@ class AttachOperation: public CHeapObj<mtInternal> {
   void set_name(char* name) {
     size_t len = strlen(name);
     assert(len <= name_length_max, "exceeds maximum name length");
-    memcpy(_name, name, MIN2(len + 1, (size_t)name_length_max));
+    len = MIN2(len, (size_t)name_length_max);
+    memcpy(_name, name, len);
+    _name[len] = '\0';
   }
 
   // get an argument value
@@ -141,7 +143,9 @@ class AttachOperation: public CHeapObj<mtInternal> {
     } else {
       size_t len = strlen(arg);
       assert(len <= arg_length_max, "exceeds maximum argument length");
-      memcpy(_arg[i], arg, MIN2(len + 1, (size_t)arg_length_max));
+      len = MIN2(len, (size_t)arg_length_max);
+      memcpy(_arg[i], arg, len);
+      _arg[i][len] = '\0';
     }
   }
 
