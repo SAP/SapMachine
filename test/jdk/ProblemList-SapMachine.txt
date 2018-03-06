@@ -22,11 +22,25 @@ javax/accessibility/AccessibilityProvider/basic.sh                              
 
 # Only failing on alpine: TODO have a look
 
+# Test fails, because a native library is not removed by GC.
+# The native library should be unloaded by dlclose, but this is a noop in musl
+# https://wiki.musl-libc.org/functional-differences-from-glibc.html
+# This might be an severe problem, as native libraries will expect, that on_load is executed 
+# just once (changing static variables).
 java/lang/ClassLoader/nativeLibrary/NativeLibraryTest.java                           generic-all
-java/lang/ProcessBuilder/Basic.java                                                  generic-all
-java/lang/ProcessHandle/InfoTest.java                                                generic-all
-java/util/logging/FileHandlerPatternGeneration.java                                  generic-all
 
-java/util/concurrent/locks/Lock/TimedAcquireLeak.java                                generic-all
+# This test starts /bin/true and /bin/false which are normal executables on normal unixes
+# but on alpin just links to busybox. The test copies the executable(s) to a different file with
+# a different name and the result is not as expected.
+# An other problem is the execution of a shell command from a file without #!
+# Test could be fixed, by checking if we running on alpine/busybox
+java/lang/ProcessBuilder/Basic.java                                                  generic-all
+
+# busybox problem: /bin/sleep is a link to busybox
+java/lang/ProcessHandle/InfoTest.java                                                generic-all
+
+# Could not reproduce
+#java/util/logging/FileHandlerPatternGeneration.java                                  generic-all
+#java/util/concurrent/locks/Lock/TimedAcquireLeak.java                                generic-all
 
 
