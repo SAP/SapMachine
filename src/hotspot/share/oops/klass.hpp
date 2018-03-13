@@ -506,6 +506,9 @@ protected:
   //     and the package separators as '/'.
   virtual const char* signature_name() const;
 
+  // Returns "interface", "abstract class" or "class".
+  const char* external_kind() const;
+
   // type testing operations
 #ifdef ASSERT
  protected:
