@@ -122,7 +122,7 @@ else
 
       $(SOURCE_REVISION_TRACKER):
 	$(call MakeDir, $(@D))
-	cd $(TOPDIR) && git log --format=format:%H -1 HEAD^ > $@
+	$(ECHO) '.:'`cd $(TOPDIR) && git log --format=format:%H -1 HEAD^` > $@
 
       create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
 
