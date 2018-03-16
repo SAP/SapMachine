@@ -2,3 +2,7 @@
 
 gtest/GTestWrapper.java                                        generic-all
 runtime/StackGuardPages/testme.sh                              generic-all
+
+# The test scans the output for the pattern 'error'. Unfortunatly,
+# there is a symbol 'numa_error' in the output of NMT.
+runtime/ElfDecoder/TestElfDirectRead.java
