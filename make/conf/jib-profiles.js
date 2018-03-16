@@ -194,7 +194,7 @@ var getJibProfiles = function (input) {
 
     // Organization, product and version are used when uploading/publishing build results
     data.organization = "";
-    data.product = "jdk";
+    data.product = "jdk-portola";
     data.version = getVersion();
 
     // The base directory for the build output. JIB will assume that the
