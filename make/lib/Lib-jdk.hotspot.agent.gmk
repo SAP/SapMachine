@@ -47,12 +47,16 @@ SA_INCLUDES := \
     #
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  SA_CFLAGS := $(CFLAGS_JDKLIB) -D_FILE_OFFSET_BITS=64
+  SA_CFLAGS := $(CFLAGS_JDKLIB) -D_FILE_OFFSET_BITS=64 \
+      $(SA_MACHINE_FLAG_linux)
   ifeq ($(OPENJDK_TARGET_CPU), x86)
     SA_LDFLAGS := -march=i586
   endif
-
-  SA_LIBS := -lthread_db $(LIBDL)
+  SA_LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_MACHINE_FLAG_linux)
+  SA_LIBS := $(LIBDL)
+  ifeq ($(INCLUDE_SA_ATTACH), true)
+    SA_LIBS += -lthread_db
+  endif
 
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
   SA_TOOLCHAIN := TOOLCHAIN_LINK_CXX
@@ -84,6 +88,12 @@ else ifeq ($(OPENJDK_TARGET_OS), windows)
     SA_CXXFLAGS += -RTC1
   endif
 endif
+
+ifeq ($(INCLUDE_SA_ATTACH), true)
+  SA_CFLAGS += -DINCLUDE_SA_ATTACH
+endif
+
+SA_CFLAGS += -DLIBC=\"$(OPENJDK_TARGET_LIBC)\"
 
 ################################################################################
 
