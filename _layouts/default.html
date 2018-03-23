@@ -31,13 +31,11 @@
               return wrapper;
           }
 
-          ga('send', 'event', {
-                eventCategory: 'Download',
-                eventAction: 'click',
-                eventLabel: target,
-                hitCallback: withTimeout(function gaHitCallback() {
+            ga('send', 'pageview', {
+              location: target,
+              hitCallback: withTimeout(function gaHitCallback() {
                   window.location.href = target
-                }, 500)
+              }, 500)
             });
         }
       </script>
