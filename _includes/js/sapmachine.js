@@ -5,7 +5,22 @@ All rights reserved. Confidential and proprietary.
 
 "use strict";
 
-(function (window, document, $, undefined) {
+(function (window, document, $, ga, undefined) {
+
+    function withTimeout(callback, timeout) {
+        var called = false;
+
+        function wrapper() {
+            if (!called) {
+                called = true;
+                callback();
+            }
+        }
+
+        setTimeout(wrapper, timeout || 1000);
+        return wrapper;
+    }
+
 
     function SapMachine() {
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
@@ -49,7 +64,16 @@ All rights reserved. Confidential and proprietary.
         }.bind(this))
 
         this._downloadButton.click(function downloadButtonOnClick() {
-            window.location.href = this._assets[this._selectedImageType]['releases'][0][this._selectedOS]
+            var href = this._assets[this._selectedImageType]['releases'][0][this._selectedOS]
+
+            ga('send', 'event', {
+                eventCategory: 'Outbound Link',
+                eventAction: 'click',
+                eventLabel: href,
+                hitCallback: withTimeout(function gaHitCallback() {
+                  window.location.href = href
+                }, 500)
+            });
         }.bind(this))
 
         $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
@@ -76,4 +100,4 @@ All rights reserved. Confidential and proprietary.
 
     const sapMachine = new SapMachine()
 
-})(window, document, jQuery)
+})(window, document, jQuery, ga)
