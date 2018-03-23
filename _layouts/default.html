@@ -17,6 +17,29 @@
         })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
         ga('create', '{{ site.google_analytics }}', 'auto');
         ga('send', 'pageview');
+
+        function sendDownloadEvent(target) {
+          function withTimeout(callback, timeout) {
+              var called = false;
+              function wrapper() {
+                  if (!called) {
+                      called = true;
+                      callback();
+                  }
+              }
+              setTimeout(wrapper, timeout || 1000);
+              return wrapper;
+          }
+
+          ga('send', 'event', {
+                eventCategory: 'Download',
+                eventAction: 'click',
+                eventLabel: target,
+                hitCallback: withTimeout(function gaHitCallback() {
+                  window.location.href = target
+                }, 500)
+            });
+        }
       </script>
     {% endif %}
 

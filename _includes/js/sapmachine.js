@@ -7,21 +7,6 @@ All rights reserved. Confidential and proprietary.
 
 (function (window, document, $, ga, undefined) {
 
-    function withTimeout(callback, timeout) {
-        var called = false;
-
-        function wrapper() {
-            if (!called) {
-                called = true;
-                callback();
-            }
-        }
-
-        setTimeout(wrapper, timeout || 1000);
-        return wrapper;
-    }
-
-
     function SapMachine() {
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
         this._osSelector = $('#sapmachine_os_select')
@@ -64,16 +49,7 @@ All rights reserved. Confidential and proprietary.
         }.bind(this))
 
         this._downloadButton.click(function downloadButtonOnClick() {
-            var href = this._assets[this._selectedImageType]['releases'][0][this._selectedOS]
-
-            ga('send', 'event', {
-                eventCategory: 'Outbound Link',
-                eventAction: 'click',
-                eventLabel: href,
-                hitCallback: withTimeout(function gaHitCallback() {
-                  window.location.href = href
-                }, 500)
-            });
+            sendDownloadEvent(this._assets[this._selectedImageType]['releases'][0][this._selectedOS])
         }.bind(this))
 
         $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
