@@ -98,6 +98,8 @@ All rights reserved. Confidential and proprietary.
         }.bind(this))
     }
 
-    const sapMachine = new SapMachine()
+    $(document).ready(function () {
+        const sapMachine = new SapMachine()
+    });
 
 })(window, document, jQuery, ga)
