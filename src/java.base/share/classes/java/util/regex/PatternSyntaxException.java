@@ -112,7 +112,7 @@ public class PatternSyntaxException
         }
         sb.append(nl);
         sb.append(pattern);
-        if (index >= 0) {
+        if (index >= 0 && pattern != null && index < pattern.length()) {
             sb.append(nl);
             for (int i = 0; i < index; i++) sb.append(' ');
             sb.append('^');
