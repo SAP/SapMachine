@@ -15,16 +15,8 @@
             "key": "10-jdk"
         }, 
         {
-            "value": "SapMachine 10 jdk (pre-release)", 
-            "key": "10-jdk-ea"
-        }, 
-        {
             "value": "SapMachine 10 jre", 
             "key": "10-jre"
-        }, 
-        {
-            "value": "SapMachine 10 jre (pre-release)", 
-            "key": "10-jre-ea"
         }, 
         {
             "value": "SapMachine 11 jdk (pre-release)", 
@@ -36,93 +28,12 @@
         }
     ], 
     "assets": {
-        "10-jre-ea": {
+        "11-jdk-ea": {
             "releases": [
                 {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-1/sapmachine-jre-10-ea.46_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-1/sapmachine-jre-10-ea.46_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+46-1"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-0/sapmachine-jre-10-ea.46_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-0/sapmachine-jre-10-ea.46_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+46-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B45-0/sapmachine-jre-10-ea.45_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B45-0/sapmachine-jre-10-ea.45_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+45-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B44-0/sapmachine-jre-10-ea.44_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B44-0/sapmachine-jre-10-ea.44_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+44-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B43-0/sapmachine-jre-10-ea.43_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B43-0/sapmachine-jre-10-ea.43_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+43-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B42-0/sapmachine-jre-10-ea.42_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B42-0/sapmachine-jre-10-ea.42_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+42-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B41-0/sapmachine-jre-10-ea.41_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B41-0/sapmachine-jre-10-ea.41_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+41-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B40-0/sapmachine-jre-10-ea.40_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B40-0/sapmachine-jre-10-ea.40_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+40-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B39-1/sapmachine-jre-10-ea.39_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B39-1/sapmachine-jre-10-ea.39_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+39-1"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B39/sapmachine-jre-10-ea.39_linux-x64-musl_bin.tar.gz", 
-                    "tag": "sapmachine-10+39"
-                }
-            ]
-        }, 
-        "11-jre-ea": {
-            "releases": [
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jre-11-ea.5_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jre-11-ea.5_linux-x64_bin.tar.gz", 
+                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jdk-11-ea.5_linux-x64-musl_bin.tar.gz", 
+                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jdk-11-ea.5_linux-x64_bin.tar.gz", 
                     "tag": "sapmachine-11+5-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B3-0/sapmachine-jre-11-ea.3_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B3-0/sapmachine-jre-11-ea.3_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+3-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B2-0/sapmachine-jre-11-ea.2_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B2-0/sapmachine-jre-11-ea.2_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+2-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B1-0/sapmachine-jre-11-ea.1_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B1-0/sapmachine-jre-11-ea.1_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+1-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-2/sapmachine-jre-11-ea.0_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-2/sapmachine-jre-11-ea.0_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+0-2"
-                }, 
-                {
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-1/sapmachine-jre-11-ea.0_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+0-1"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-0/sapmachine-jre-11-ea.0_linux-x64-musl_bin.tar.gz", 
-                    "tag": "sapmachine-11+0-0"
                 }
             ]
         }, 
@@ -135,93 +46,12 @@
                 }
             ]
         }, 
-        "11-jdk-ea": {
+        "11-jre-ea": {
             "releases": [
                 {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jdk-11-ea.5_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jdk-11-ea.5_linux-x64_bin.tar.gz", 
+                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jre-11-ea.5_linux-x64-musl_bin.tar.gz", 
+                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B5-0/sapmachine-jre-11-ea.5_linux-x64_bin.tar.gz", 
                     "tag": "sapmachine-11+5-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B3-0/sapmachine-jdk-11-ea.3_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B3-0/sapmachine-jdk-11-ea.3_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+3-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B2-0/sapmachine-jdk-11-ea.2_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B2-0/sapmachine-jdk-11-ea.2_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+2-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B1-0/sapmachine-jdk-11-ea.1_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B1-0/sapmachine-jdk-11-ea.1_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+1-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-2/sapmachine-jdk-11-ea.0_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-2/sapmachine-jdk-11-ea.0_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+0-2"
-                }, 
-                {
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-1/sapmachine-jdk-11-ea.0_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-11+0-1"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B0-0/sapmachine-jdk-11-ea.0_linux-x64-musl_bin.tar.gz", 
-                    "tag": "sapmachine-11+0-0"
-                }
-            ]
-        }, 
-        "10-jdk-ea": {
-            "releases": [
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-1/sapmachine-jdk-10-ea.46_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-1/sapmachine-jdk-10-ea.46_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+46-1"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-0/sapmachine-jdk-10-ea.46_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B46-0/sapmachine-jdk-10-ea.46_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+46-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B45-0/sapmachine-jdk-10-ea.45_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B45-0/sapmachine-jdk-10-ea.45_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+45-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B44-0/sapmachine-jdk-10-ea.44_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B44-0/sapmachine-jdk-10-ea.44_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+44-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B43-0/sapmachine-jdk-10-ea.43_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B43-0/sapmachine-jdk-10-ea.43_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+43-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B42-0/sapmachine-jdk-10-ea.42_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B42-0/sapmachine-jdk-10-ea.42_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+42-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B41-0/sapmachine-jdk-10-ea.41_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B41-0/sapmachine-jdk-10-ea.41_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+41-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B40-0/sapmachine-jdk-10-ea.40_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B40-0/sapmachine-jdk-10-ea.40_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+40-0"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B39-1/sapmachine-jdk-10-ea.39_linux-x64-musl_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B39-1/sapmachine-jdk-10-ea.39_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10+39-1"
-                }, 
-                {
-                    "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10%2B39/sapmachine-jdk-10-ea.39_linux-x64-musl_bin.tar.gz", 
-                    "tag": "sapmachine-10+39"
                 }
             ]
         }, 
