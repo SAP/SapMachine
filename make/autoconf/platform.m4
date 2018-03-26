@@ -501,6 +501,13 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   fi
   AC_SUBST(HOTSPOT_$1_CPU_DEFINE)
 
+  if test "x$OPENJDK_$1_LIBC" = "xmusl"; then
+    HOTSPOT_$1_LIBC=$OPENJDK_$1_LIBC
+  else
+    HOTSPOT_$1_LIBC=""
+  fi
+  AC_SUBST(HOTSPOT_$1_LIBC)
+
   # For historical reasons, the OS include directories have odd names.
   OPENJDK_$1_OS_INCLUDE_SUBDIR="$OPENJDK_TARGET_OS"
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
