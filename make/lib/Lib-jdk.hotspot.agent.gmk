@@ -50,10 +50,9 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   ifeq ($(OPENJDK_TARGET_CPU), x86)
     SA_LDFLAGS := -march=i586
   endif
-  SA_LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_MACHINE_FLAG_linux)
-  SA_LIBS := $(LIBDL)
+
   ifeq ($(INCLUDE_SA_ATTACH), true)
-    SA_LIBS += -lthread_db
+    SA_LIBS := -lthread_db $(LIBDL)
   endif
 
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
