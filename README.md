@@ -11,7 +11,7 @@ SAP is committed to ensuring the continued success of the Java platform. We are 
 Currently this project only supports Linux/x86_64.
 
 ## Download and Installation
-Download the [latest tagged version](https://github.com/SAP/SapMachine/releases/latest) or check for all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
+Download the [latest released version](https://github.com/SAP/SapMachine/releases/latest) or check all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
 
 Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
 
