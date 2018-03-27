@@ -11,14 +11,14 @@ SAP is committed to ensuring the continued success of the Java platform. We are 
 Currently this project only supports Linux/x86_64.
 
 ## Download and Installation
-Download the [latest tagged version](https://github.com/SAP/SapMachine/releases/latest) or check for all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
+Download the [latest released version](https://github.com/SAP/SapMachine/releases/latest) or check all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
 
 Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
 
 ```
 sudo bash
-wget -q -O - https://sapmachine-ubuntu.sapcloud.io/debian/sapmachine-debian.key | apt-key add -
-echo "deb http://sapmachine-ubuntu.sapcloud.io/debian/amd64/ ./" >> /etc/apt/sources.list
+wget -q -O - https://dist.sapmachine.io/debian/sapmachine.key | apt-key add -
+echo "deb http://dist.sapmachine.io/debian/amd64/ ./" >> /etc/apt/sources.list
 apt-get update
 apt-get install sapmachine-10-jre
 ```
@@ -34,11 +34,11 @@ RUN apk update; \
     apk add wget;
 
 WORKDIR /etc/apk/keys
-RUN wget https://sapmachine-ubuntu.sapcloud.io/alpine/sapmachine%40sap.com-5a673212.rsa.pub
+RUN wget https://dist.sapmachine.io/alpine/sapmachine%40sap.com-5a673212.rsa.pub
 
 WORKDIR /
 
-RUN echo "http://sapmachine-ubuntu.sapcloud.io/alpine" >> /etc/apk/repositories
+RUN echo "http://dist.sapmachine.io/alpine/3.5" >> /etc/apk/repositories
 
 RUN apk update; \
     apk add sapmachine-10-jre;
