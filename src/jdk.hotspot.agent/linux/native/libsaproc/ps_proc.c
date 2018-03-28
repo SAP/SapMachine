@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,9 +218,11 @@ static bool ptrace_waitpid(pid_t pid) {
 static bool ptrace_attach(pid_t pid, char* err_buf, size_t err_buf_len) {
   if (ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0) {
     char buf[200];
-    char* msg = strerror_r(errno, buf, sizeof(buf));
-    snprintf(err_buf, err_buf_len, "ptrace(PTRACE_ATTACH, ..) failed for %d: %s", pid, msg);
-    print_debug("%s\n", err_buf);
+    if (strerror_r(errno, buf, sizeof(buf) == 0)) {
+      snprintf(err_buf, err_buf_len,
+               "ptrace(PTRACE_ATTACH, ..) failed for %d: %s", pid, buf);
+      print_debug("%s\n", err_buf);
+    }
     return false;
   } else {
     return ptrace_waitpid(pid);
@@ -406,7 +408,7 @@ struct ps_prochandle* Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   thr = ph->threads;
   while (thr) {
      // don't attach to the main thread again
-    if (ph->pid != thr->lwp_id && ptrace_attach(thr->lwp_id, err_buf, err_buf_len) != true) {
+     if (pid != thr->lwp_id && ptrace_attach(thr->lwp_id, err_buf, err_buf_len) != true) {
         // even if one attach fails, we get return NULL
         Prelease(ph);
         return NULL;
