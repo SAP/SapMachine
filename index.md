@@ -22,7 +22,10 @@ SAP is committed to ensuring the continued success of the Java platform. We are 
 
 <button id="sapmachine_download_button" type="button" class="download_button">Download</button>
 
-You can check for all available [releases](https://github.com/SAP/SapMachine/releases) (including nightly snapshots). Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
+You can check for all available [releases](https://github.com/SAP/SapMachine/releases) (including nightly snapshots).
+The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 10](latest/10)).
+
+Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
 Currently this project only supports Linux x64.
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
