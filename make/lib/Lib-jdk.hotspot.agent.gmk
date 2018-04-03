@@ -45,6 +45,12 @@ SA_INCLUDES := \
 ifeq ($(OPENJDK_TARGET_OS), linux)
   SA_CFLAGS := -D_FILE_OFFSET_BITS=64
 
+  ifeq ($(INCLUDE_SA_ATTACH), true)
+    SA_LIBS := -lthread_db $(LIBDL)
+  else
+    SA_LIBS := $(LIBDL)
+  endif
+
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
   SA_LDFLAGS := -mt
 
@@ -60,6 +66,12 @@ else ifeq ($(OPENJDK_TARGET_OS), windows)
   endif
 endif
 
+ifeq ($(INCLUDE_SA_ATTACH), true)
+  SA_CFLAGS += -DINCLUDE_SA_ATTACH
+endif
+
+SA_CFLAGS += -DLIBC=\"$(OPENJDK_TARGET_LIBC)\"
+
 ################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
@@ -72,7 +84,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     CFLAGS := $(CFLAGS_JDKLIB) $(SA_INCLUDES) $(SA_CFLAGS) $(SA_CUSTOM_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_INCLUDES) $(SA_CFLAGS) $(SA_CXXFLAGS), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_LDFLAGS), \
-    LIBS_linux := -lthread_db $(LIBDL), \
+    LIBS_linux := $(SA_LIBS), \
     LIBS_solaris := -ldl -ldemangle -lthread -lproc, \
     LIBS_macosx := -framework Foundation -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \
