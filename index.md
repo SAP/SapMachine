@@ -3,7 +3,7 @@ layout: default
 title: SapMachine
 ---
 
-<img align="right" src="assets/images/logo_title.png">
+<img align="right" width="350" src="assets/images/logo_circular.png">
 
 # [](#SapMachine) SapMachine
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers who wish to use OpenJDK in their production environments.
