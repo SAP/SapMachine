@@ -26,8 +26,11 @@
 #define _PROC_SERVICE_H_
 
 #include <stdio.h>
+#include <sys/procfs.h>
+#ifdef INCLUDE_SA_ATTACH
 #include <thread_db.h>
 #include "jni.h"
+#endif
 
 // Linux does not have the proc service library, though it does provide the
 // thread_db library which can be used to manipulate threads without having
@@ -44,6 +47,7 @@ typedef enum {
         PS_NOFREGS      /* FPU register set not available for given lwp */
 } ps_err_e;
 
+#ifdef INCLUDE_SA_ATTACH
 // ps_getpid() is only defined on Linux to return a thread's process ID
 JNIEXPORT pid_t JNICALL
 ps_getpid(struct ps_prochandle *ph);
@@ -83,4 +87,5 @@ ps_lgetregs(struct ps_prochandle *ph, lwpid_t lid, prgregset_t gregset);
 JNIEXPORT ps_err_e JNICALL
 ps_get_thread_area();
 
+#endif /* INCLUDE_SA_ATTACH */
 #endif /* _PROC_SERVICE_H_ */
