@@ -36,7 +36,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(STATIC_BUILD), false)
     ifeq ($(OPENJDK_TARGET_OS), linux)
       LIBJSIG_CFLAGS := -fPIC -D_GNU_SOURCE -D_REENTRANT $(EXTRA_CFLAGS)
-      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE) ${LDFLAGS_NO_EXEC_STACK} $(EXTRA_CFLAGS)
+      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE) ${LDFLAGS_NO_EXEC_STACK} $(EXTRA_LDFLAGS)
       LIBJSIG_LIBS := $(LIBDL)
 
       # NOTE: The old build compiled this library without -soname.
