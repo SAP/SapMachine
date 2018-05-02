@@ -543,7 +543,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /*******************/                                                                                                              \
   /* ClassLoaderData */                                                                                                              \
   /*******************/                                                                                                              \
-  nonstatic_field(ClassLoaderData,             _class_loader,                                 oop)                                   \
+  nonstatic_field(ClassLoaderData,             _class_loader,                                 OopHandle)                             \
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _is_anonymous,                                 bool)                                  \
@@ -999,6 +999,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                                                                                      \
   c2_nonstatic_field(MachIfNode,               _prob,                                         jfloat)                                \
   c2_nonstatic_field(MachIfNode,               _fcnt,                                         jfloat)                                \
+                                                                                                                                     \
+  c2_nonstatic_field(MachJumpNode,             _probs,                                        jfloat*)                               \
                                                                                                                                      \
   c2_nonstatic_field(CallNode,                 _entry_point,                                  address)                               \
                                                                                                                                      \
@@ -1663,6 +1665,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_c2_type(MachNullCheckNode, MachIdealNode)                       \
   declare_c2_type(MachProjNode, ProjNode)                                 \
   declare_c2_type(MachIfNode, MachNode)                                   \
+  declare_c2_type(MachJumpNode, MachNode)                                 \
   declare_c2_type(MachFastLockNode, MachNode)                             \
   declare_c2_type(MachReturnNode, MachNode)                               \
   declare_c2_type(MachSafePointNode, MachReturnNode)                      \
