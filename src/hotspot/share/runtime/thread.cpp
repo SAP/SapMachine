@@ -63,12 +63,11 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/commandLineFlagConstraintList.hpp"
-#include "runtime/commandLineFlagWriteableList.hpp"
-#include "runtime/commandLineFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagConstraintList.hpp"
+#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagWriteableList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -244,7 +243,7 @@ Thread::Thread() {
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
   _threads_hazard_ptr = NULL;
-  _nested_threads_hazard_ptr = NULL;
+  _threads_list_ptr = NULL;
   _nested_threads_hazard_ptr_cnt = 0;
   _rcu_counter = 0;
 
@@ -882,31 +881,9 @@ void Thread::print_on(outputStream* st) const {
     st->print("tid=" INTPTR_FORMAT " ", p2i(this));
     osthread()->print_on(st);
   }
-  if (_threads_hazard_ptr != NULL) {
-    st->print("_threads_hazard_ptr=" INTPTR_FORMAT, p2i(_threads_hazard_ptr));
-  }
-  if (_nested_threads_hazard_ptr != NULL) {
-    print_nested_threads_hazard_ptrs_on(st);
-  }
+  ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");
   debug_only(if (WizardMode) print_owned_locks_on(st);)
-}
-
-void Thread::print_nested_threads_hazard_ptrs_on(outputStream* st) const {
-  assert(_nested_threads_hazard_ptr != NULL, "must be set to print");
-
-  if (EnableThreadSMRStatistics) {
-    st->print(", _nested_threads_hazard_ptr_cnt=%u", _nested_threads_hazard_ptr_cnt);
-  }
-  st->print(", _nested_threads_hazard_ptrs=");
-  for (NestedThreadsList* node = _nested_threads_hazard_ptr; node != NULL;
-       node = node->next()) {
-    if (node != _nested_threads_hazard_ptr) {
-      // First node does not need a comma-space separator.
-      st->print(", ");
-    }
-    st->print(INTPTR_FORMAT, p2i(node->t_list()));
-  }
 }
 
 // Thread::print_on_error() is called by fatal error handler. Don't use
@@ -931,12 +908,7 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
     st->print(" [id=%d]", osthread()->thread_id());
   }
 
-  if (_threads_hazard_ptr != NULL) {
-    st->print(" _threads_hazard_ptr=" INTPTR_FORMAT, p2i(_threads_hazard_ptr));
-  }
-  if (_nested_threads_hazard_ptr != NULL) {
-    print_nested_threads_hazard_ptrs_on(st);
-  }
+  ThreadsSMRSupport::print_info_on(this, st);
 }
 
 void Thread::print_value_on(outputStream* st) const {
@@ -2996,12 +2968,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
             p2i(stack_end()), p2i(stack_base()));
   st->print("]");
 
-  if (_threads_hazard_ptr != NULL) {
-    st->print(" _threads_hazard_ptr=" INTPTR_FORMAT, p2i(_threads_hazard_ptr));
-  }
-  if (_nested_threads_hazard_ptr != NULL) {
-    print_nested_threads_hazard_ptrs_on(st);
-  }
+  ThreadsSMRSupport::print_info_on(this, st);
   return;
 }
 
@@ -3663,17 +3630,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (ergo_result != JNI_OK) return ergo_result;
 
   // Final check of all ranges after ergonomics which may change values.
-  if (!CommandLineFlagRangeList::check_ranges()) {
+  if (!JVMFlagRangeList::check_ranges()) {
     return JNI_EINVAL;
   }
 
   // Final check of all 'AfterErgo' constraints after ergonomics which may change values.
-  bool constraint_result = CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterErgo);
+  bool constraint_result = JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterErgo);
   if (!constraint_result) {
     return JNI_EINVAL;
   }
 
-  CommandLineFlagWriteableList::mark_startup();
+  JVMFlagWriteableList::mark_startup();
 
   if (PauseAtStartup) {
     os::pause();
