@@ -1389,15 +1389,6 @@ void G1ConcurrentMark::cleanup() {
   }
 }
 
-// Supporting Object and Oop closures for reference discovery
-// and processing in during marking
-
-bool G1CMIsAliveClosure::do_object_b(oop obj) {
-  HeapWord* addr = (HeapWord*)obj;
-  return addr != NULL &&
-         (!_g1h->is_in_g1_reserved(addr) || !_g1h->is_obj_ill(obj));
-}
-
 // 'Keep Alive' oop closure used by both serial parallel reference processing.
 // Uses the G1CMTask associated with a worker thread (for serial reference
 // processing the G1CMTask for worker 0 is used) to preserve (mark) and
@@ -1529,7 +1520,6 @@ public:
 
   // Executes the given task using concurrent marking worker threads.
   virtual void execute(ProcessTask& task);
-  virtual void execute(EnqueueTask& task);
 };
 
 class G1CMRefProcTaskProxy : public AbstractGangTask {
@@ -1572,36 +1562,6 @@ void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   // how many workers to wait for.
   _cm->set_concurrency(_active_workers);
   _workers->run_task(&proc_task_proxy);
-}
-
-class G1CMRefEnqueueTaskProxy : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::EnqueueTask EnqueueTask;
-  EnqueueTask& _enq_task;
-
-public:
-  G1CMRefEnqueueTaskProxy(EnqueueTask& enq_task) :
-    AbstractGangTask("Enqueue reference objects in parallel"),
-    _enq_task(enq_task) { }
-
-  virtual void work(uint worker_id) {
-    _enq_task.work(worker_id);
-  }
-};
-
-void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
-  assert(_workers != NULL, "Need parallel worker threads.");
-  assert(_g1h->ref_processor_cm()->processing_is_mt(), "processing is not MT");
-
-  G1CMRefEnqueueTaskProxy enq_task_proxy(enq_task);
-
-  // Not strictly necessary but...
-  //
-  // We need to reset the concurrency level before each
-  // proxy task execution, so that the termination protocol
-  // and overflow handling in G1CMTask::do_marking_step() knows
-  // how many workers to wait for.
-  _cm->set_concurrency(_active_workers);
-  _workers->run_task(&enq_task_proxy);
 }
 
 void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
@@ -1665,7 +1625,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
 
-    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_q());
+    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_queues());
 
     // Process the weak references.
     const ReferenceProcessorStats& stats =
@@ -1684,14 +1644,9 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     assert(has_overflown() || _global_mark_stack.is_empty(),
            "Mark stack should be empty (unless it has overflown)");
 
-    assert(rp->num_q() == active_workers, "why not");
-
-    rp->enqueue_discovered_references(executor, &pt);
+    assert(rp->num_queues() == active_workers, "why not");
 
     rp->verify_no_references_recorded();
-
-    pt.print_enqueue_phase();
-
     assert(!rp->discovery_enabled(), "Post condition");
   }
 

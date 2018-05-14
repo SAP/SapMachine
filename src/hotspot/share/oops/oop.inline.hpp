@@ -25,9 +25,8 @@
 #ifndef SHARE_VM_OOPS_OOP_INLINE_HPP
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
-#include "gc/shared/ageTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/generation.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
@@ -331,8 +330,8 @@ void oopDesc::forward_to(oop p) {
          "forwarding to something not aligned");
   assert(Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
-  assert(!is_archive_object(oop(this)) &&
-         !is_archive_object(p),
+  assert(!MetaspaceShared::is_archive_object(oop(this)) &&
+         !MetaspaceShared::is_archive_object(p),
          "forwarding archive object");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
@@ -350,7 +349,6 @@ bool oopDesc::cas_forward_to(oop p, markOop compare) {
   return cas_set_mark_raw(m, compare) == compare;
 }
 
-#if INCLUDE_ALL_GCS
 oop oopDesc::forward_to_atomic(oop p) {
   markOop oldMark = mark_raw();
   markOop forwardPtrMark = markOopDesc::encode_pointer_as_mark(p);
@@ -372,7 +370,6 @@ oop oopDesc::forward_to_atomic(oop p) {
   }
   return forwardee();
 }
-#endif
 
 // Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
@@ -400,7 +397,7 @@ void oopDesc::incr_age() {
   }
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
 void oopDesc::pc_follow_contents(ParCompactionManager* cm) {
   klass()->oop_pc_follow_contents(this, cm);
 }
@@ -422,7 +419,7 @@ void oopDesc::ps_push_contents(PSPromotionManager* pm) {
   }
   // Else skip it.  The TypeArrayKlass in the header never needs scavenging.
 }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_PARALLELGC
 
 #define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                 \
                                                                     \
@@ -462,7 +459,7 @@ int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
   return oop_iterate_size(&cl, mr);
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)       \
                                                                     \
 inline void oopDesc::oop_iterate_backwards(OopClosureType* blk) {   \
@@ -470,7 +467,7 @@ inline void oopDesc::oop_iterate_backwards(OopClosureType* blk) {   \
 }
 #else
 #define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif // INCLUDE_ALL_GCS
+#endif
 
 #define ALL_OOPDESC_OOP_ITERATE(OopClosureType, nv_suffix)  \
   OOP_ITERATE_DEFN(OopClosureType, nv_suffix)               \
