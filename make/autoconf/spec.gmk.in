@@ -825,17 +825,10 @@ OS_VERSION_MICRO:=@OS_VERSION_MICRO@
 # Images directory definitions
 JDK_IMAGE_SUBDIR:=jdk
 JRE_IMAGE_SUBDIR:=jre
-JRE_COMPACT1_IMAGE_SUBDIR := jre-compact1
-JRE_COMPACT2_IMAGE_SUBDIR := jre-compact2
-JRE_COMPACT3_IMAGE_SUBDIR := jre-compact3
 
 # Colon left out to be able to override output dir for bootcycle-images
 JDK_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_IMAGE_SUBDIR)
 JRE_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
-
-JRE_COMPACT1_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(JRE_COMPACT1_IMAGE_SUBDIR)
-JRE_COMPACT2_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(JRE_COMPACT2_IMAGE_SUBDIR)
-JRE_COMPACT3_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(JRE_COMPACT3_IMAGE_SUBDIR)
 
 # Test image, as above
 TEST_IMAGE_SUBDIR:=test
@@ -872,14 +865,10 @@ ifeq ($(DEBUG_LEVEL), fastdebug)
 else ifneq ($(DEBUG_LEVEL), release)
   DEBUG_PART := -$(DEBUG_LEVEL)
 endif
+
 JDK_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin$(DEBUG_PART).tar.gz
 JRE_BUNDLE_NAME := sapmachine-jre-$(BASE_NAME)_bin$(DEBUG_PART).tar.gz
-JRE_COMPACT1_BUNDLE_NAME := \
-    sapmachine-jre-$(VERSION_SHORT)+$(VERSION_BUILD)-compact1_$(OPENJDK_TARGET_BUNDLE_PLATFORM)_bin$(DEBUG_PART).tar.gz
-JRE_COMPACT2_BUNDLE_NAME := \
-    sapmachine-jre-$(VERSION_SHORT)+$(VERSION_BUILD)-compact2_$(OPENJDK_TARGET_BUNDLE_PLATFORM)_bin$(DEBUG_PART).tar.gz
-JRE_COMPACT3_BUNDLE_NAME := \
-    sapmachine-jre-$(VERSION_SHORT)+$(VERSION_BUILD)-compact3_$(OPENJDK_TARGET_BUNDLE_PLATFORM)_bin$(DEBUG_PART).tar.gz
+
 JDK_SYMBOLS_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
 JRE_SYMBOLS_BUNDLE_NAME := sapmachine-jre-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
 TEST_DEMOS_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin-tests-demos$(DEBUG_PART).tar.gz

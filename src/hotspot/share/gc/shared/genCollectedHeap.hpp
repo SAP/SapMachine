@@ -63,10 +63,11 @@ public:
     OldGen
   };
 
-private:
+protected:
   Generation* _young_gen;
   Generation* _old_gen;
 
+private:
   GenerationSpec* _young_gen_spec;
   GenerationSpec* _old_gen_spec;
 
@@ -160,8 +161,6 @@ protected:
                    Generation::Name young,
                    Generation::Name old,
                    const char* policy_counters_name);
-
-  virtual void check_gen_kinds() = 0;
 
 public:
 
@@ -436,20 +435,6 @@ public:
   // in other generations, it should call this method.
   void save_marks();
 
-  // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects
-  // allocated since the last call to save_marks in generations at or above
-  // "level".  The "cur" closure is
-  // applied to references in the generation at "level", and the "older"
-  // closure to older generations.
-#define GCH_SINCE_SAVE_MARKS_ITERATE_DECL(OopClosureType, nv_suffix)    \
-  void oop_since_save_marks_iterate(GenerationType start_gen,           \
-                                    OopClosureType* cur,                \
-                                    OopClosureType* older);
-
-  ALL_SINCE_SAVE_MARKS_CLOSURES(GCH_SINCE_SAVE_MARKS_ITERATE_DECL)
-
-#undef GCH_SINCE_SAVE_MARKS_ITERATE_DECL
-
   // Returns "true" iff no allocations have occurred since the last
   // call to "save_marks".
   bool no_allocs_since_save_marks();
@@ -502,10 +487,12 @@ private:
   void check_for_non_bad_heap_word_value(HeapWord* addr,
     size_t size) PRODUCT_RETURN;
 
+#if INCLUDE_SERIALGC
   // For use by mark-sweep.  As implemented, mark-sweep-compact is global
   // in an essential way: compaction is performed across generations, by
   // iterating over spaces.
   void prepare_for_compaction();
+#endif
 
   // Perform a full collection of the generations up to and including max_generation.
   // This is the low level interface used by the public versions of

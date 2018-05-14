@@ -28,7 +28,7 @@
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
-#include "gc/parallel/psMarkSweep.hpp"
+#include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psTasks.hpp"
@@ -58,18 +58,19 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
-HeapWord*                  PSScavenge::_to_space_top_before_gc = NULL;
-int                        PSScavenge::_consecutive_skipped_scavenges = 0;
-ReferenceProcessor*        PSScavenge::_ref_processor = NULL;
-PSCardTable*               PSScavenge::_card_table = NULL;
-bool                       PSScavenge::_survivor_overflow = false;
-uint                       PSScavenge::_tenuring_threshold = 0;
-HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
-uintptr_t                  PSScavenge::_young_generation_boundary_compressed = 0;
-elapsedTimer               PSScavenge::_accumulated_time;
-STWGCTimer                 PSScavenge::_gc_timer;
-ParallelScavengeTracer     PSScavenge::_gc_tracer;
-CollectorCounters*         PSScavenge::_counters = NULL;
+HeapWord*                     PSScavenge::_to_space_top_before_gc = NULL;
+int                           PSScavenge::_consecutive_skipped_scavenges = 0;
+SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
+ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
+PSCardTable*                  PSScavenge::_card_table = NULL;
+bool                          PSScavenge::_survivor_overflow = false;
+uint                          PSScavenge::_tenuring_threshold = 0;
+HeapWord*                     PSScavenge::_young_generation_boundary = NULL;
+uintptr_t                     PSScavenge::_young_generation_boundary_compressed = 0;
+elapsedTimer                  PSScavenge::_accumulated_time;
+STWGCTimer                    PSScavenge::_gc_timer;
+ParallelScavengeTracer        PSScavenge::_gc_tracer;
+CollectorCounters*            PSScavenge::_counters = NULL;
 
 // Define before use
 class PSIsAliveClosure: public BoolObjectClosure {
@@ -147,27 +148,8 @@ void PSRefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
   _rp_task.work(_work_id, is_alive, keep_alive, evac_followers);
 }
 
-class PSRefEnqueueTaskProxy: public GCTask {
-  typedef AbstractRefProcTaskExecutor::EnqueueTask EnqueueTask;
-  EnqueueTask& _enq_task;
-  uint         _work_id;
-
-public:
-  PSRefEnqueueTaskProxy(EnqueueTask& enq_task, uint work_id)
-    : _enq_task(enq_task),
-      _work_id(work_id)
-  { }
-
-  virtual char* name() { return (char *)"Enqueue reference objects in parallel"; }
-  virtual void do_it(GCTaskManager* manager, uint which)
-  {
-    _enq_task.work(_work_id);
-  }
-};
-
 class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
   virtual void execute(ProcessTask& task);
-  virtual void execute(EnqueueTask& task);
 };
 
 void PSRefProcTaskExecutor::execute(ProcessTask& task)
@@ -183,17 +165,6 @@ void PSRefProcTaskExecutor::execute(ProcessTask& task)
     for (uint j = 0; j < manager->active_workers(); j++) {
       q->enqueue(new StealTask(&terminator));
     }
-  }
-  manager->execute_and_wait(q);
-}
-
-
-void PSRefProcTaskExecutor::execute(EnqueueTask& task)
-{
-  GCTaskQueue* q = GCTaskQueue::create();
-  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
-  for(uint i=0; i < manager->active_workers(); i++) {
-    q->enqueue(new PSRefEnqueueTaskProxy(task, i));
   }
   manager->execute_and_wait(q);
 }
@@ -234,12 +205,23 @@ bool PSScavenge::invoke() {
     if (UseParallelOldGC) {
       full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
     } else {
-      full_gc_done = PSMarkSweep::invoke_no_policy(clear_all_softrefs);
+      full_gc_done = PSMarkSweepProxy::invoke_no_policy(clear_all_softrefs);
     }
   }
 
   return full_gc_done;
 }
+
+class PSAddThreadRootsTaskClosure : public ThreadClosure {
+private:
+  GCTaskQueue* _q;
+
+public:
+  PSAddThreadRootsTaskClosure(GCTaskQueue* q) : _q(q) { }
+  void do_thread(Thread* t) {
+    _q->enqueue(new ThreadRootsTask(t));
+  }
+};
 
 // This method contains no policy. You should probably
 // be calling invoke() instead.
@@ -381,7 +363,8 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::universe));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jni_handles));
       // We scan the thread roots in parallel
-      Threads::create_thread_roots_tasks(q);
+      PSAddThreadRootsTaskClosure cl(q);
+      Threads::java_threads_and_vm_thread_do(&cl);
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::object_synchronizer));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::management));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::system_dictionary));
@@ -416,7 +399,7 @@ bool PSScavenge::invoke_no_policy() {
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
       ReferenceProcessorStats stats;
-      ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_q());
+      ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_queues());
       if (reference_processor()->processing_is_mt()) {
         PSRefProcTaskExecutor task_executor;
         stats = reference_processor()->process_discovered_references(
@@ -429,16 +412,6 @@ bool PSScavenge::invoke_no_policy() {
 
       _gc_tracer.report_gc_reference_stats(stats);
       pt.print_all_references();
-
-      // Enqueue reference objects discovered during scavenge.
-      if (reference_processor()->processing_is_mt()) {
-        PSRefProcTaskExecutor task_executor;
-        reference_processor()->enqueue_discovered_references(&task_executor, &pt);
-      } else {
-        reference_processor()->enqueue_discovered_references(NULL, &pt);
-      }
-
-      pt.print_enqueue_phase();
     }
 
     assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
@@ -766,10 +739,9 @@ void PSScavenge::initialize() {
   set_young_generation_boundary(young_gen->eden_space()->bottom());
 
   // Initialize ref handling object for scavenging.
-  MemRegion mr = young_gen->reserved();
-
+  _span_based_discoverer.set_span(young_gen->reserved());
   _ref_processor =
-    new ReferenceProcessor(mr,                         // span
+    new ReferenceProcessor(&_span_based_discoverer,
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
                            ParallelGCThreads,          // mt processing degree
                            true,                       // mt discovery

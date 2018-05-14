@@ -396,7 +396,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "9";
+    common.boot_jdk_version = "10";
     common.boot_jdk_home = input.get("boot_jdk", "home_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -874,8 +874,9 @@ var getJibProfilesDependencies = function (input, common) {
         boot_jdk: {
             server: "jpg",
             product: "jdk",
-            version: boot_jdk_version,
-            build_number: boot_jdk_build_number,
+            version: common.boot_jdk_version,
+            build_number: "46",
+
             file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
                 + boot_jdk_platform + "_bin.tar.gz",
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,

@@ -384,8 +384,8 @@ void Klass::append_to_sibling_list() {
   debug_only(verify();)
 }
 
-void Klass::clean_weak_klass_links(bool clean_alive_klasses) {
-  if (!ClassUnloading) {
+void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses) {
+  if (!ClassUnloading || !unloading_occurred) {
     return;
   }
 
@@ -536,7 +536,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
       log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
       if (m != NULL) {
         // mirror is archived, restore
-        assert(oopDesc::is_archive_object(m), "must be archived mirror object");
+        assert(MetaspaceShared::is_archive_object(m), "must be archived mirror object");
         Handle m_h(THREAD, m);
         java_lang_Class::restore_archived_mirror(this, m_h, loader, module_handle, protection_domain, CHECK);
         return;
