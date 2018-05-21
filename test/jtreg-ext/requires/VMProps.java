@@ -263,9 +263,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if VM runs RTM supported CPU and false otherwise.
      */
     protected String vmRTMCPU() {
-        boolean vmRTMCPU = (Platform.isPPC() ? CPUInfo.hasFeature("tcheck") : CPUInfo.hasFeature("rtm"));
-
-        return "" + vmRTMCPU;
+        return "" + CPUInfo.hasFeature("rtm");
     }
 
     /**
