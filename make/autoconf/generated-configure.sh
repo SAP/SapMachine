@@ -4172,8 +4172,8 @@ cygwin_help() {
 The freetype library can now be build during the configure process.
 Download the freetype sources and unpack them into an arbitrary directory:
 
-wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz
+wget http://download.savannah.gnu.org/releases/freetype/freetype-2.9.1.tar.gz
+tar -xzf freetype-2.9.1.tar.gz
 
 Then run configure with '--with-freetype-src=<freetype_src>'. This will
 automatically build the freetype library into '<freetype_src>/lib64' for 64-bit
@@ -4183,7 +4183,7 @@ and '--with-freetype-lib=<freetype_src>/lib32|64' for other builds.
 
 Alternatively you can unpack the sources like this to use the default directory:
 
-tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz"
+tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.9.1.tar.gz"
       ;;
   esac
 }
@@ -5187,7 +5187,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1525816897
+DATE_WHEN_GENERATED=1527184944
 
 ###############################################################################
 #
@@ -59437,7 +59437,7 @@ $as_echo "$as_me: Trying to compile freetype sources with PlatformToolset=$PLATF
     $ECHO -e "@echo off\n"\
         "$MSBUILD $vcxproj_path "\
         "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-        "/p:Configuration=\"Release Multithreaded\" "\
+        "/p:Configuration=\"Release\" "\
         "/p:Platform=$freetype_platform "\
         "/p:ConfigurationType=DynamicLibrary "\
         "/p:TargetName=freetype "\
@@ -59446,20 +59446,7 @@ $as_echo "$as_me: Trying to compile freetype sources with PlatformToolset=$PLATF
     cmd /c freetype.bat
 
     if test -s "$freetype_lib_path_unix/freetype.dll"; then
-      # If that succeeds we also build freetype.lib
-      $ECHO -e "@echo off\n"\
-          "$MSBUILD $vcxproj_path "\
-          "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-          "/p:Configuration=\"Release Multithreaded\" "\
-          "/p:Platform=$freetype_platform "\
-          "/p:ConfigurationType=StaticLibrary "\
-          "/p:TargetName=freetype "\
-          "/p:OutDir=\"$freetype_lib_path\" "\
-          "/p:IntDir=\"$freetype_obj_path\" >> freetype.log" > freetype.bat
-      cmd /c freetype.bat
-
       if test -s "$freetype_lib_path_unix/freetype.lib"; then
-        # Once we build both, lib and dll, set freetype lib and include path appropriately
         POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_SRC_PATH/include"
         POTENTIAL_FREETYPE_LIB_PATH="$freetype_lib_path_unix"
         { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling freetype sources succeeded! (see freetype.log for build results)" >&5
@@ -61771,7 +61758,7 @@ $as_echo "$as_me: Trying to compile freetype sources with PlatformToolset=$PLATF
     $ECHO -e "@echo off\n"\
         "$MSBUILD $vcxproj_path "\
         "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-        "/p:Configuration=\"Release Multithreaded\" "\
+        "/p:Configuration=\"Release\" "\
         "/p:Platform=$freetype_platform "\
         "/p:ConfigurationType=DynamicLibrary "\
         "/p:TargetName=freetype "\
@@ -61780,20 +61767,7 @@ $as_echo "$as_me: Trying to compile freetype sources with PlatformToolset=$PLATF
     cmd /c freetype.bat
 
     if test -s "$freetype_lib_path_unix/freetype.dll"; then
-      # If that succeeds we also build freetype.lib
-      $ECHO -e "@echo off\n"\
-          "$MSBUILD $vcxproj_path "\
-          "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-          "/p:Configuration=\"Release Multithreaded\" "\
-          "/p:Platform=$freetype_platform "\
-          "/p:ConfigurationType=StaticLibrary "\
-          "/p:TargetName=freetype "\
-          "/p:OutDir=\"$freetype_lib_path\" "\
-          "/p:IntDir=\"$freetype_obj_path\" >> freetype.log" > freetype.bat
-      cmd /c freetype.bat
-
       if test -s "$freetype_lib_path_unix/freetype.lib"; then
-        # Once we build both, lib and dll, set freetype lib and include path appropriately
         POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_SRC_PATH/include"
         POTENTIAL_FREETYPE_LIB_PATH="$freetype_lib_path_unix"
         { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling freetype sources succeeded! (see freetype.log for build results)" >&5

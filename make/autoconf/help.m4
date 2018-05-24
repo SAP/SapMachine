@@ -81,8 +81,8 @@ cygwin_help() {
 The freetype library can now be build during the configure process.
 Download the freetype sources and unpack them into an arbitrary directory:
 
-wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz
+wget http://download.savannah.gnu.org/releases/freetype/freetype-2.9.1.tar.gz
+tar -xzf freetype-2.9.1.tar.gz
 
 Then run configure with '--with-freetype-src=<freetype_src>'. This will
 automatically build the freetype library into '<freetype_src>/lib64' for 64-bit
@@ -92,7 +92,7 @@ and '--with-freetype-lib=<freetype_src>/lib[32|64]' for other builds.
 
 Alternatively you can unpack the sources like this to use the default directory:
 
-tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz"
+tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.9.1.tar.gz"
       ;;
   esac
 }
