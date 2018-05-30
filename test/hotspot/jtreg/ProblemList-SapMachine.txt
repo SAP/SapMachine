@@ -2,6 +2,7 @@
 
 gtest/GTestWrapper.java                                        generic-all
 runtime/StackGuardPages/testme.sh                              generic-all
+applications/jcstress                                          generic-all
 
 # This test fails, because we do not have debug symbols available in all tests.
 runtime/NMT/CheckForProperDetailStackTrace.java                generic-all
