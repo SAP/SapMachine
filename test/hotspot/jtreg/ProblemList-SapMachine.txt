@@ -1,4 +1,5 @@
 # SapMachine Problem List for Hotspot tests
+applications/jcstress                                                  generic-all
 
 # This test fails, because we do not have debug symbols available in all tests.
 runtime/NMT/CheckForProperDetailStackTrace.java                        generic-all
