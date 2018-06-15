@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8189131 8198240 8191844 8189949 8191031 8196141
+ * @bug 8189131 8198240 8191844 8189949
  * @requires java.runtime.name ~= "OpenJDK.*"
  * @summary Check root CA entries in cacerts file
  */
@@ -42,7 +42,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 74;
+    private static final int COUNT = 78;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -202,7 +202,8 @@ public class VerifyCACerts {
     // Exception list to 90 days expiry policy
     private static final HashSet<String> EXPIRY_EXC_ENTRIES
             = new HashSet<String>(Arrays.asList(
-                    "gtecybertrustglobalca [jdk]"
+                    "gtecybertrustglobalca [jdk]",
+                    "equifaxsecureca [jdk]"
             ));
 
     // Ninety days in milliseconds

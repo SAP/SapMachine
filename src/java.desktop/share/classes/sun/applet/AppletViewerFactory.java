@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,20 @@
  * questions.
  */
 
-package sun.print;
+/*
+ * AppletViewerFactory.java
+ */
 
-import javax.print.attribute.standard.DialogOwner;
+package sun.applet;
 
-public abstract class DialogOwnerAccessor {
+import java.util.Hashtable;
+import java.net.URL;
+import java.awt.MenuBar;
 
-    public abstract long getOwnerID(DialogOwner owner);
-
-    public static DialogOwnerAccessor accessor = null;
-
-    public static void setAccessor(DialogOwnerAccessor acc) {
-        accessor = acc;
-    }
-
-    public static long getID(DialogOwner owner) {
-        if (accessor == null || owner == null) {
-            return 0;
-        } else {
-            return accessor.getOwnerID(owner);
-        }
-    }
+@Deprecated(since = "9")
+public interface AppletViewerFactory {
+        public AppletViewer createAppletViewer(int x, int y, URL doc,
+                                               Hashtable<String, String> atts);
+        public MenuBar getBaseMenuBar();
+        public boolean isStandalone();
 }

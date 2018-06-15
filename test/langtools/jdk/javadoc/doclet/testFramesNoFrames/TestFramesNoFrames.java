@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8162353 8164747 8173707 8196202 8204303
+ * @bug 8162353 8164747 8173707 8196202
  * @summary javadoc should provide a way to disable use of frames
  * @library /tools/lib ../lib
  * @modules
@@ -396,6 +396,10 @@ public class TestFramesNoFrames extends JavadocTester {
                         "<meta http-equiv=\"Refresh\" content=\"0;index.html\">",
                         "<p><a href=\"index.html\">index.html</a></p>");
             }
+        }
+
+        private void checkWarning() {
+            checkOutput(Output.OUT, frames, framesWarning);
         }
 
         private void checkWarning() {

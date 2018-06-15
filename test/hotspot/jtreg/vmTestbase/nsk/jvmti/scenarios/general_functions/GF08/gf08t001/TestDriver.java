@@ -69,10 +69,9 @@ public class TestDriver {
         Boolean isExplicitGCInvokesConcurrentOn = wb.getBooleanVMFlag("ExplicitGCInvokesConcurrent");
         Boolean isUseG1GCon = wb.getBooleanVMFlag("UseG1GC");
         Boolean isUseConcMarkSweepGCon = wb.getBooleanVMFlag("UseConcMarkSweepGC");
-        Boolean isUseZGCon = wb.getBooleanVMFlag("UseZGC");
 
         String keyPhrase;
-        if ((isExplicitGCInvokesConcurrentOn && (isUseG1GCon || isUseConcMarkSweepGCon)) || isUseZGCon) {
+        if (isExplicitGCInvokesConcurrentOn && (isUseG1GCon || isUseConcMarkSweepGCon)) {
             keyPhrase = "GC";
         } else {
             keyPhrase = "Pause Full";

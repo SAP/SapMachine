@@ -186,7 +186,7 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
 
   log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
   log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(referent_addr), p2i((oop)HeapAccess<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>::oop_load_at(obj, java_lang_ref_Reference::referent_offset)));
+      p2i(referent_addr), p2i(referent_addr ? RawAccess<>::oop_load(referent_addr) : (oop)NULL));
   log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
       p2i(discovered_addr), p2i((oop)HeapAccess<AS_NO_KEEPALIVE>::oop_load(discovered_addr)));
 }
