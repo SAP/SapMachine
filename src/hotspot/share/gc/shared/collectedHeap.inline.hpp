@@ -150,7 +150,6 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(Klass* klass, size_t size, T
 
     AllocTracer::send_allocation_outside_tlab(klass, result, size * HeapWordSize, THREAD);
 
-  if (result != NULL) {
     return result;
   }
 

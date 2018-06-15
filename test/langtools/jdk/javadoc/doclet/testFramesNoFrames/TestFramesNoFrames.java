@@ -402,10 +402,6 @@ public class TestFramesNoFrames extends JavadocTester {
             checkOutput(Output.OUT, frames, framesWarning);
         }
 
-        private void checkWarning() {
-            checkOutput(Output.OUT, frames, framesWarning);
-        }
-
         private long getPackageCount() {
             return this.classes.stream()
                 .filter(name -> name.contains("."))

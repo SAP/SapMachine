@@ -272,15 +272,10 @@ TARGETS += $(BUILD_LIBAWT)
 ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx), )
   ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
-    LIBAWT_XAWT_DIRS := \
-        $(wildcard $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS)/native/libawt_xawt) \
-        $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libawt_xawt \
-        $(TOPDIR)/src/java.desktop/share/native/common/awt/debug \
-        $(TOPDIR)/src/java.desktop/share/native/common/awt/utility \
-        $(TOPDIR)/src/java.desktop/share/native/common/font \
-        $(TOPDIR)/src/java.desktop/share/native/common/java2d \
-        $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/java2d \
-        $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
+    LIBAWT_XAWT_EXTRA_SRC := \
+        common/awt \
+        common/java2d \
+        common/font \
         #
 
     LIBAWT_XAWT_EXCLUDES := medialib
