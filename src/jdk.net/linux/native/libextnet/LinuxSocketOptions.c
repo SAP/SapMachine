@@ -31,6 +31,7 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include "jni_util.h"
+#include "jdk_net_LinuxSocketOptions.h"
 
 /*
  * Class:     jdk_net_LinuxSocketOptions

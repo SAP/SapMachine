@@ -89,6 +89,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 //     CMSHeap
 //   G1CollectedHeap
 //   ParallelScavengeHeap
+//   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtInternal> {
   friend class VMStructs;
@@ -203,7 +204,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     Serial,
     Parallel,
     CMS,
-    G1
+    G1,
+    Epsilon,
+    Z
   };
 
   static inline size_t filler_array_max_size() {
