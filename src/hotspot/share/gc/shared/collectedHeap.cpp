@@ -373,8 +373,7 @@ HeapWord* CollectedHeap::obj_allocate_raw(Klass* klass, size_t size,
       return result;
     }
   }
-
-  return allocate_outside_tlab(klass, size, gc_overhead_limit_was_exceeded, THREAD);
+  return Universe::heap()->mem_allocate(size, gc_overhead_limit_was_exceeded);
 }
 
 HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, size_t size, TRAPS) {

@@ -143,6 +143,14 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(Klass* klass, size_t size, T
   HeapWord* result = heap->obj_allocate_raw(klass, size, &gc_overhead_limit_was_exceeded, THREAD);
 
   if (result != NULL) {
+    NOT_PRODUCT(Universe::heap()->
+      check_for_non_bad_heap_word_value(result, size));
+    assert(!HAS_PENDING_EXCEPTION,
+           "Unexpected exception, will result in uninitialized storage");
+    THREAD->incr_allocated_bytes(size * HeapWordSize);
+
+    AllocTracer::send_allocation_outside_tlab(klass, result, size * HeapWordSize, THREAD);
+
     return result;
   }
 

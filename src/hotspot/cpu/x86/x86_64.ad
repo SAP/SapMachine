@@ -10829,7 +10829,7 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
   ins_pipe(pipe_slow);
 %}
 
-instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero, 
+instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
                         Universe dummy, rFlagsReg cr)
 %{
   predicate(((ClearArrayNode*)n)->is_large());
@@ -10873,7 +10873,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
     }
   %}
   ins_encode %{
-    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, 
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register,
                  $tmp$$XMMRegister, true);
   %}
   ins_pipe(pipe_slow);

@@ -80,7 +80,7 @@ public class TestDriver {
         }
 
         String keyPhrase;
-        if ((isExplicitGCInvokesConcurrentOn && (isUseG1GCon || isUseConcMarkSweepGCon)) || isUseZGCon) {
+        if (isExplicitGCInvokesConcurrentOn && (isUseG1GCon || isUseConcMarkSweepGCon)) {
             keyPhrase = "GC";
         } else {
             keyPhrase = "Pause Full";
