@@ -114,6 +114,8 @@ vmTestbase/nsk/jdi/stress/serial/heapwalking002/TestDescription.java            
 vmTestbase/nsk/jdi/stress/serial/mixed002/TestDescription.java                                            8203174   generic-all
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java        8203174   generic-all
 
+<<<<<<< HEAD
+=======
 vmTestbase/nsk/jdi/ClassPrepareRequest/addClassExclusionFilter/filter003/TestDescription.java   8203809   generic-all
 vmTestbase/nsk/jdi/ClassPrepareRequest/addClassFilter_s/filter_s002/TestDescription.java        8203809   generic-all
 vmTestbase/nsk/jdi/ClassPrepareRequest/addClassFilter_rt/filter_rt002/TestDescription.java      8203809   generic-all
@@ -166,3 +168,18 @@ vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java  
 vmTestbase/nsk/jvmti/AttachOnDemand/attach024/TestDescription.java                 8195630   generic-all
 
 vmTestbase/nsk/jvmti/unit/FollowReferences/followref003/TestDescription.java       8202342   generic-all
+
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java        8204506   macosx-all
+
+compiler/stable/TestStableBoolean.java                           8204347   generic-all
+compiler/stable/TestStableByte.java                              8204347   generic-all
+compiler/stable/TestStableChar.java                              8204347   generic-all
+compiler/stable/TestStableDouble.java                            8204347   generic-all
+compiler/stable/TestStableFloat.java                             8204347   generic-all
+compiler/stable/TestStableInt.java                               8204347   generic-all
+compiler/stable/TestStableLong.java                              8204347   generic-all
+compiler/stable/TestStableMismatched.java                        8204347   generic-all
+compiler/stable/TestStableObject.java                            8204347   generic-all
+compiler/stable/TestStableShort.java                             8204347   generic-all
+compiler/stable/TestStableUByte.java                             8204347   generic-all
+compiler/stable/TestStableUShort.java                            8204347   generic-all

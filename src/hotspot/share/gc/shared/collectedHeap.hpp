@@ -145,6 +145,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   inline static HeapWord* allocate_from_tlab(Klass* klass, size_t size, TRAPS);
   static HeapWord* allocate_from_tlab_slow(Klass* klass, size_t size, TRAPS);
 
+  inline static HeapWord* allocate_outside_tlab(Klass* klass, size_t size,
+                                                bool* gc_overhead_limit_was_exceeded, TRAPS);
   // Raw memory allocation facilities
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
@@ -190,6 +192,18 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   static inline void fill_with_object_impl(HeapWord* start, size_t words, bool zap = true);
 
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
+
+  // Internal allocation methods.
+  inline static HeapWord* common_allocate_memory(Klass* klass, int size,
+                                                 void (*post_setup)(Klass*, HeapWord*, int),
+                                                 int size_for_post, bool init_memory,
+                                                 TRAPS);
+
+  // Internal allocation method for common obj/class/array allocations.
+  inline static HeapWord* allocate_memory(Klass* klass, int size,
+                                          void (*post_setup)(Klass*, HeapWord*, int),
+                                          int size_for_post, bool init_memory,
+                                          TRAPS);
 
   // Verification functions
   virtual void check_for_bad_heap_word_value(HeapWord* addr, size_t size)
@@ -346,6 +360,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   static void fill_with_object(HeapWord* start, HeapWord* end, bool zap = true) {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
+
+  virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
 
   // Return the address "addr" aligned by "alignment_in_bytes" if such
   // an address is below "end".  Return NULL otherwise.

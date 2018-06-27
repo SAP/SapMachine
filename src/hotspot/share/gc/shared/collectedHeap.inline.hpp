@@ -34,6 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "utilities/align.hpp"
@@ -198,6 +199,28 @@ HeapWord* CollectedHeap::allocate_from_tlab(Klass* klass, size_t size, TRAPS) {
   return obj;
 }
 
+HeapWord* CollectedHeap::allocate_outside_tlab(Klass* klass, size_t size,
+                                               bool* gc_overhead_limit_was_exceeded, TRAPS) {
+  HeapWord* result = Universe::heap()->mem_allocate(size, gc_overhead_limit_was_exceeded);
+  if (result == NULL) {
+    return result;
+  }
+
+  NOT_PRODUCT(Universe::heap()->check_for_non_bad_heap_word_value(result, size));
+  assert(!HAS_PENDING_EXCEPTION,
+         "Unexpected exception, will result in uninitialized storage");
+  size_t size_in_bytes = size * HeapWordSize;
+  THREAD->incr_allocated_bytes(size_in_bytes);
+
+  AllocTracer::send_allocation_outside_tlab(klass, result, size_in_bytes, THREAD);
+
+  if (ThreadHeapSampler::enabled()) {
+    THREAD->heap_sampler().check_for_sampling(result, size_in_bytes);
+  }
+
+  return result;
+}
+
 void CollectedHeap::init_obj(HeapWord* obj, size_t size) {
   assert(obj != NULL, "cannot initialize NULL object");
   const size_t hs = oopDesc::header_size();
@@ -206,12 +229,58 @@ void CollectedHeap::init_obj(HeapWord* obj, size_t size) {
   Copy::fill_to_aligned_words(obj + hs, size - hs);
 }
 
+HeapWord* CollectedHeap::common_allocate_memory(Klass* klass, int size,
+                                                void (*post_setup)(Klass*, HeapWord*, int),
+                                                int size_for_post, bool init_memory,
+                                                TRAPS) {
+  HeapWord* obj;
+  if (init_memory) {
+    obj = common_mem_allocate_init(klass, size, CHECK_NULL);
+  } else {
+    obj = common_mem_allocate_noinit(klass, size, CHECK_NULL);
+  }
+  post_setup(klass, obj, size_for_post);
+  return obj;
+}
+
+HeapWord* CollectedHeap::allocate_memory(Klass* klass, int size,
+                                         void (*post_setup)(Klass*, HeapWord*, int),
+                                         int size_for_post, bool init_memory,
+                                         TRAPS) {
+  HeapWord* obj;
+
+  assert(JavaThread::current()->heap_sampler().add_sampling_collector(),
+         "Should never return false.");
+
+  if (JvmtiExport::should_post_sampled_object_alloc()) {
+    HandleMark hm(THREAD);
+    Handle obj_h;
+    {
+      JvmtiSampledObjectAllocEventCollector collector;
+      obj = common_allocate_memory(klass, size, post_setup, size_for_post,
+                                   init_memory, CHECK_NULL);
+      // If we want to be sampling, protect the allocated object with a Handle
+      // before doing the callback. The callback is done in the destructor of
+      // the JvmtiSampledObjectAllocEventCollector.
+      obj_h = Handle(THREAD, (oop) obj);
+    }
+    obj = (HeapWord*) obj_h();
+  } else {
+    obj = common_allocate_memory(klass, size, post_setup, size_for_post,
+                                 init_memory, CHECK_NULL);
+  }
+
+  assert(JavaThread::current()->heap_sampler().remove_sampling_collector(),
+         "Should never return false.");
+  return obj;
+}
+
 oop CollectedHeap::obj_allocate(Klass* klass, int size, TRAPS) {
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
-  HeapWord* obj = common_mem_allocate_init(klass, size, CHECK_NULL);
-  post_allocation_setup_obj(klass, obj, size);
+  HeapWord* obj = allocate_memory(klass, size, post_allocation_setup_obj,
+                                  size, true, CHECK_NULL);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   return (oop)obj;
 }
@@ -220,8 +289,8 @@ oop CollectedHeap::class_allocate(Klass* klass, int size, TRAPS) {
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
-  HeapWord* obj = common_mem_allocate_init(klass, size, CHECK_NULL);
-  post_allocation_setup_class(klass, obj, size); // set oop_size
+  HeapWord* obj = allocate_memory(klass, size, post_allocation_setup_class,
+                                  size, true, CHECK_NULL);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   return (oop)obj;
 }
@@ -233,8 +302,8 @@ oop CollectedHeap::array_allocate(Klass* klass,
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
-  HeapWord* obj = common_mem_allocate_init(klass, size, CHECK_NULL);
-  post_allocation_setup_array(klass, obj, length);
+  HeapWord* obj = allocate_memory(klass, size, post_allocation_setup_array,
+                                  length, true, CHECK_NULL);
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
   return (oop)obj;
 }
@@ -246,9 +315,9 @@ oop CollectedHeap::array_allocate_nozero(Klass* klass,
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
   assert(size >= 0, "int won't convert to size_t");
-  HeapWord* obj = common_mem_allocate_noinit(klass, size, CHECK_NULL);
-  ((oop)obj)->set_klass_gap(0);
-  post_allocation_setup_array(klass, obj, length);
+
+  HeapWord* obj = allocate_memory(klass, size, post_allocation_setup_array,
+                                  length, false, CHECK_NULL);
 #ifndef PRODUCT
   const size_t hs = oopDesc::header_size()+1;
   Universe::heap()->check_for_non_bad_heap_word_value(obj+hs, size-hs);
