@@ -1516,6 +1516,7 @@ public class JavacParser implements Parser {
     ParensResult analyzeParens() {
         int depth = 0;
         boolean type = false;
+        ParensResult defaultResult = ParensResult.PARENS;
         outer: for (int lookahead = 0 ; ; lookahead++) {
             TokenKind tk = S.token(lookahead).kind;
             switch (tk) {
@@ -1568,7 +1569,7 @@ public class JavacParser implements Parser {
                         case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
                             return ParensResult.CAST;
                         default:
-                            return ParensResult.PARENS;
+                            return defaultResult;
                     }
                 case UNDERSCORE:
                 case ASSERT:
@@ -1580,6 +1581,8 @@ public class JavacParser implements Parser {
                     } else if (peekToken(lookahead, RPAREN, ARROW)) {
                         // Identifier, ')' '->' -> implicit lambda
                         return ParensResult.IMPLICIT_LAMBDA;
+                    } else if (depth == 0 && peekToken(lookahead, COMMA)) {
+                        defaultResult = ParensResult.IMPLICIT_LAMBDA;
                     }
                     type = false;
                     break;
@@ -1665,7 +1668,7 @@ public class JavacParser implements Parser {
                     break;
                 default:
                     //this includes EOF
-                    return ParensResult.PARENS;
+                    return defaultResult;
             }
         }
     }
@@ -2784,7 +2787,7 @@ public class JavacParser implements Parser {
                 return variableDeclarators(modifiersOpt(), t, stats, true).toList();
             } else if ((lastmode & TYPE) != 0 && token.kind == COLON) {
                 log.error(DiagnosticFlag.SYNTAX, pos, Errors.BadInitializer("for-loop"));
-                return List.of((JCStatement)F.at(pos).VarDef(null, null, t, null));
+                return List.of((JCStatement)F.at(pos).VarDef(modifiersOpt(), names.error, t, null));
             } else {
                 return moreStatementExpressions(pos, t, stats).toList();
             }
@@ -3753,10 +3756,16 @@ public class JavacParser implements Parser {
                         return defs;
                     } else {
                         pos = token.pos;
-                        List<JCTree> err = isVoid
-                            ? List.of(toP(F.at(pos).MethodDef(mods, name, type, typarams,
-                                List.nil(), List.nil(), null, null)))
-                            : null;
+                        List<JCTree> err;
+                        if (isVoid || typarams.nonEmpty()) {
+                            JCMethodDecl m =
+                                    toP(F.at(pos).MethodDef(mods, name, type, typarams,
+                                                            List.nil(), List.nil(), null, null));
+                            attach(m, dc);
+                            err = List.of(m);
+                        } else {
+                            err = List.nil();
+                        }
                         return List.of(syntaxError(token.pos, err, Errors.Expected(LPAREN)));
                     }
                 }
