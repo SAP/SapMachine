@@ -481,7 +481,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "Fehler: \"{\" darf nicht im Ausdruck enthalten sein"},
 
     { ER_ILLEGAL_ATTRIBUTE ,
-     "{0} hat ein ung\u00FCltiges Attribut: {1}"},
+     "{0} hat ein unzul\u00E4ssiges Attribut: {1}"},
 
   {ER_NULL_SOURCENODE_APPLYIMPORTS ,
       "sourceNode ist null in xsl:apply-imports."},
@@ -526,7 +526,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "Namespace-Pr\u00E4fix kann nicht aufgel\u00F6st werden: {0}"},
 
     { ER_ILLEGAL_VALUE,
-     "xml:space hat einen ung\u00FCltigen Wert: {0}"},
+     "xml:space hat einen unzul\u00E4ssigen Wert: {0}"},
 
     { ER_NO_OWNERDOC,
       "Der untergeordnete Knoten hat kein Eigent\u00FCmerdokument."},
@@ -646,7 +646,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "Element in Ergebnisbaum kann nicht erstellt werden: {0}"},
 
     { ER_XMLSPACE_ILLEGAL_VALUE,
-      "xml:space in Quell-XML hat einen ung\u00FCltigen Wert: {0}"},
+      "xml:space in Quell-XML hat einen unzul\u00E4ssigen Wert: {0}"},
 
     { ER_NO_XSLKEY_DECLARATION,
       "Keine xsl:key-Deklaration f\u00FCr {0} vorhanden."},
@@ -673,7 +673,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "indent-result wird nicht mehr unterst\u00FCtzt. Verwenden Sie stattdessen xsl:output."},
 
     { ER_ILLEGAL_ATTRIB,
-      "(StylesheetHandler) {0} hat ein ung\u00FCltiges Attribut: {1}"},
+      "(StylesheetHandler) {0} hat ein unzul\u00E4ssiges Attribut: {1}"},
 
     { ER_UNKNOWN_XSL_ELEM,
      "Unbekanntes XSL-Element: {0}"},
@@ -706,7 +706,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "(StylesheetHandler) {0} importiert sich direkt oder indirekt selbst."},
 
     { ER_XMLSPACE_ILLEGAL_VAL,
-      "(StylesheetHandler) xml:space hat einen ung\u00FCltigen Wert: {0}"},
+      "(StylesheetHandler) xml:space hat einen unzul\u00E4ssigen Wert: {0}"},
 
     { ER_PROCESSSTYLESHEET_NOT_SUCCESSFUL,
       "processStylesheet nicht erfolgreich."},
@@ -872,7 +872,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
              "Stylesheet-Root wurde nicht gefunden."},
 
     { ER_ILLEGAL_XMLSPACE_VALUE,
-         "Ung\u00FCltiger Wert f\u00FCr xml:space"},
+         "Unzul\u00E4ssiger Wert f\u00FCr xml:space"},
 
     { ER_PROCESSFROMNODE_FAILED,
          "processFromNode nicht erfolgreich"},
@@ -1272,7 +1272,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "xsl:decimal-format-Namen m\u00FCssen eindeutig sein. Name \"{0}\" wurde dupliziert."},
 
     { WG_ILLEGAL_ATTRIBUTE,
-      "{0} hat ein ung\u00FCltiges Attribut: {1}"},
+      "{0} hat ein unzul\u00E4ssiges Attribut: {1}"},
 
     { WG_COULD_NOT_RESOLVE_PREFIX,
       "Namespace-Pr\u00E4fix konnte nicht aufgel\u00F6st werden: {0}. Der Knoten wird ignoriert."},
@@ -1281,10 +1281,10 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "xsl:stylesheet erfordert ein \"version\"-Attribut."},
 
     { WG_ILLEGAL_ATTRIBUTE_NAME,
-      "Ung\u00FCltiger Attributname: {0}"},
+      "Unzul\u00E4ssiger Attributname: {0}"},
 
     { WG_ILLEGAL_ATTRIBUTE_VALUE,
-      "Ung\u00FCltiger Wert f\u00FCr Attribut {0}: {1}"},
+      "Unzul\u00E4ssiger Wert f\u00FCr Attribut {0}: {1}"},
 
     { WG_EMPTY_SECOND_ARG,
       "Resultierendes NodeSet aus zweitem Argument von Dokumentfunktion ist leer. Geben Sie ein leeres NodeSet zur\u00FCck."},
