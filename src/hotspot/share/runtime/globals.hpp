@@ -486,9 +486,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   notproduct(bool, ZombieALot, false,                                       \
           "Create zombies (non-entrant) at exit from the runtime system")   \
                                                                             \
-  product(bool, UnlinkSymbolsALot, false,                                   \
-          "Unlink unreferenced symbols from the symbol table at safepoints")\
-                                                                            \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \
@@ -2570,9 +2567,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   experimental(intx, SurvivorAlignmentInBytes, 0,                           \
            "Default survivor space alignment in bytes")                     \
            constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
-                                                                            \
-  product(bool , AllowNonVirtualCalls, false,                               \
-          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
