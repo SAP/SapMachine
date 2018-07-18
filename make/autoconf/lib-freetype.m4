@@ -73,7 +73,7 @@ AC_DEFUN([LIB_BUILD_FREETYPE],
     $ECHO -e "@echo off\n"\
         "$MSBUILD $vcxproj_path "\
         "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-        "/p:Configuration=\"Release Multithreaded\" "\
+        "/p:Configuration=\"Release\" "\
         "/p:Platform=$freetype_platform "\
         "/p:ConfigurationType=DynamicLibrary "\
         "/p:TargetName=freetype "\
@@ -82,20 +82,7 @@ AC_DEFUN([LIB_BUILD_FREETYPE],
     cmd /c freetype.bat
 
     if test -s "$freetype_lib_path_unix/freetype.dll"; then
-      # If that succeeds we also build freetype.lib
-      $ECHO -e "@echo off\n"\
-          "$MSBUILD $vcxproj_path "\
-          "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-          "/p:Configuration=\"Release Multithreaded\" "\
-          "/p:Platform=$freetype_platform "\
-          "/p:ConfigurationType=StaticLibrary "\
-          "/p:TargetName=freetype "\
-          "/p:OutDir=\"$freetype_lib_path\" "\
-          "/p:IntDir=\"$freetype_obj_path\" >> freetype.log" > freetype.bat
-      cmd /c freetype.bat
-
       if test -s "$freetype_lib_path_unix/freetype.lib"; then
-        # Once we build both, lib and dll, set freetype lib and include path appropriately
         POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_SRC_PATH/include"
         POTENTIAL_FREETYPE_LIB_PATH="$freetype_lib_path_unix"
         AC_MSG_NOTICE([Compiling freetype sources succeeded! (see freetype.log for build results)])

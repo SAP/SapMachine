@@ -44,12 +44,12 @@ protected:
     lqarx,
     vcipher,
     vpmsumb,
-    tcheck,
     mfdscr,
     vsx,
     ldbrx,
     stdbrx,
     vshasig,
+    rtm,
     num_features // last entry to count features
   };
   enum Feature_Flag_Set {
@@ -65,13 +65,13 @@ protected:
     vand_m                = (1 << vand   ),
     lqarx_m               = (1 << lqarx  ),
     vcipher_m             = (1 << vcipher),
-    vshasig_m             = (1 << vshasig),
     vpmsumb_m             = (1 << vpmsumb),
-    tcheck_m              = (1 << tcheck ),
     mfdscr_m              = (1 << mfdscr ),
     vsx_m                 = (1 << vsx    ),
     ldbrx_m               = (1 << ldbrx  ),
     stdbrx_m              = (1 << stdbrx ),
+    vshasig_m             = (1 << vshasig),
+    rtm_m                 = (1 << rtm    ),
     all_features_m        = (unsigned long)-1
   };
 
@@ -103,13 +103,14 @@ public:
   static bool has_lqarx()   { return (_features & lqarx_m) != 0; }
   static bool has_vcipher() { return (_features & vcipher_m) != 0; }
   static bool has_vpmsumb() { return (_features & vpmsumb_m) != 0; }
-  static bool has_tcheck()  { return (_features & tcheck_m) != 0; }
   static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
   static bool has_vsx()     { return (_features & vsx_m) != 0; }
   static bool has_ldbrx()   { return (_features & ldbrx_m) != 0; }
   static bool has_stdbrx()  { return (_features & stdbrx_m) != 0; }
   static bool has_vshasig() { return (_features & vshasig_m) != 0; }
   static bool has_mtfprd()  { return has_vpmsumb(); } // alias for P8
+  // OS feature support
+  static bool has_tm()      { return (_features & rtm_m) != 0; }
 
   // Assembler testing
   static void allow_all();

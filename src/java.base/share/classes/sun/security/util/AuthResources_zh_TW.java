@@ -88,7 +88,7 @@ public class AuthResources_zh_TW extends java.util.ListResourceBundle {
         {"Keystore.alias.","\u91D1\u9470\u5132\u5B58\u5EAB\u5225\u540D: "},
         {"Keystore.password.","\u91D1\u9470\u5132\u5B58\u5EAB\u5BC6\u78BC: "},
         {"Private.key.password.optional.",
-            "\u79C1\u4EBA\u91D1\u9470\u5BC6\u78BC (\u9078\u64C7\u6027\u7684): "},
+            "\u79C1\u5BC6\u91D1\u9470\u5BC6\u78BC (\u9078\u64C7\u6027\u7684): "},
 
         // com.sun.security.auth.module.Krb5LoginModule
         {"Kerberos.username.defUsername.",

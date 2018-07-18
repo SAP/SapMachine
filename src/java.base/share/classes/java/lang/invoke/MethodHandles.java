@@ -3836,11 +3836,12 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
     MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
         filterArgumentsCheckArity(target, pos, filters);
         MethodHandle adapter = target;
-        int curPos = pos-1;  // pre-incremented
-        for (MethodHandle filter : filters) {
-            curPos += 1;
+        // process filters in reverse order so that the invocation of
+        // the resulting adapter will invoke the filters in left-to-right order
+        for (int i = filters.length - 1; i >= 0; --i) {
+            MethodHandle filter = filters[i];
             if (filter == null)  continue;  // ignore null elements of filters
-            adapter = filterArgument(adapter, curPos, filter);
+            adapter = filterArgument(adapter, pos + i, filter);
         }
         return adapter;
     }

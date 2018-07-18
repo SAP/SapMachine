@@ -784,9 +784,9 @@ var getJibProfilesDependencies = function (input, common) {
         + "-" + input.build_cpu;
 
     var freetype_version = {
-        windows_x64: "2.7.1-v120+1.1",
-        windows_x86: "2.7.1-v120+1.1",
-        macosx_x64: "2.7.1-Xcode6.3-MacOSX10.9+1.0"
+        windows_x64: "2.9.1-v120+1.0",
+        windows_x86: "2.9.1-v120+1.0",
+        macosx_x64: "2.9.1-Xcode6.3-MacOSX10.9+1.0"
     }[input.target_platform];
 
     var makeBinDir = (input.build_os == "windows"

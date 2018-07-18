@@ -88,7 +88,7 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
         {"Keystore.alias.","Nyckellageralias: "},
         {"Keystore.password.","Nyckellagerl\u00F6senord: "},
         {"Private.key.password.optional.",
-            "L\u00F6senord f\u00F6r personlig nyckel (valfritt): "},
+            "L\u00F6senord f\u00F6r privat nyckel (valfritt): "},
 
         // com.sun.security.auth.module.Krb5LoginModule
         {"Kerberos.username.defUsername.",

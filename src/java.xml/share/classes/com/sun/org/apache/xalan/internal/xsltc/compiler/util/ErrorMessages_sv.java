@@ -559,7 +559,7 @@ public class ErrorMessages_sv extends ListResourceBundle {
          * not be translated.
          */
         {ErrorMsg.NO_MAIN_TRANSLET_ERR,
-        "Templates inneh\u00E5ller inte n\u00E5gon klass med namnet ''{0}''."},
+        "Templates inneh\u00E5ller inte n\u00E5gon klass med namnet {0}."},
 
         /*
          * Note to translators:  The substitution text is the name of a class.
