@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,10 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.string.switch
-// options: -source 6 -Xlint:-options
-
-class StringSwitchNotSupported {
-    int m(String s) {
-        switch (s) {
-            case "one": return 1;
-            case "two": return 2;
-            default:    return -1;
-        }
-    }
-}
+/*
+ * @test
+ * @bug 8153029
+ * @modules java.base/com.sun.crypto.provider
+ * @run main java.base/com.sun.crypto.provider.Poly1305UnitTest
+ * @summary Unit test for com.sun.crypto.provider.Poly1305.
+ */
