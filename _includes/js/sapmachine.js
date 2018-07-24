@@ -7,20 +7,27 @@ All rights reserved. Confidential and proprietary.
 
 (function (window, document, $, ga, undefined) {
 
+    function osComparator(a, b) {
+        return a['ordinal'] - b['ordinal']
+    }
+
     function SapMachine() {
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
         this._osSelector = $('#sapmachine_os_select')
         this._downloadButton = $('#sapmachine_download_button')
         this._selectedImageType = null
         this._selectedOS = null
+        this._selectedOSName = null
         this._assets = null
 
         this._updateImageTypeAndOS = function updateImageTypeAndOS() {
             if (this._imageTypeSelector.index() !== -1)
                 this._selectedImageType = this._imageTypeSelector.val()
 
-            if (this._osSelector.index() !== -1)
+            if (this._osSelector.index() !== -1) {
                 this._selectedOS = this._osSelector.val()
+                this._selectedOSName = $("#sapmachine_os_select option:selected").text();
+            }
 
             var imageType = 'JDK'
 
@@ -30,7 +37,7 @@ All rights reserved. Confidential and proprietary.
 
             var asset_available = this._assets[this._selectedImageType]['releases'][0].hasOwnProperty(this._selectedOS)
 
-            this._downloadButton.text('Download "' + this._assets[this._selectedImageType]['releases'][0]['tag'] + ' ' + imageType + '"')
+            this._downloadButton.text('Download "' + this._assets[this._selectedImageType]['releases'][0]['tag'] + ' ' + imageType + '" for ' + this._selectedOSName)
             this._downloadButton.prop('disabled', !asset_available)
 
             if (!asset_available) {
@@ -61,7 +68,7 @@ All rights reserved. Confidential and proprietary.
                 this._imageTypeSelector.append(optionElement)
             }
 
-            for (var i in data.os) {
+            for (var i in data.os.sort(osComparator)) {
                 var optionElement = $('<option></option>')
                 optionElement.text(data.os[i].value)
                 optionElement.attr({'value': data.os[i].key })
