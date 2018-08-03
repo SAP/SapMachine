@@ -66,6 +66,7 @@
         "10-jre": {
             "releases": [
                 {
+                    "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10.0.2%2B13-1/sapmachine-jre-10.0.2.13_linux-ppc64le_bin.tar.gz", 
                     "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10.0.2%2B13-1/sapmachine-jre-10.0.2.13_linux-x64_bin.tar.gz", 
                     "tag": "sapmachine-10.0.2+13-1"
                 }
@@ -84,6 +85,7 @@
         "10-jdk": {
             "releases": [
                 {
+                    "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10.0.2%2B13-1/sapmachine-jdk-10.0.2.13_linux-ppc64le_bin.tar.gz", 
                     "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10.0.2%2B13-1/sapmachine-jdk-10.0.2.13_linux-x64_bin.tar.gz", 
                     "tag": "sapmachine-10.0.2+13-1"
                 }
