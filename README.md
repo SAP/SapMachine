@@ -8,7 +8,12 @@ We want to stress the fact that this is clearly a *friendly fork*. One reason wh
 SAP is committed to ensuring the continued success of the Java platform. We are members of the [JCP Executive committee](https://jcp.org/en/participation/committee) since 2001 and recently served in the [JSR 379 (Java SE 9)](https://www.jcp.org/en/jsr/detail?id=379) and [JSR 383 (Java SE 18.3)](https://www.jcp.org/en/jsr/detail?id=383) Expert Groups. SAP is also one of the biggest external contributors to the OpenJDK project (currently leading the [PowerPC/AIX](http://openjdk.java.net/projects/ppc-aix-port/) and [s390](http://openjdk.java.net/projects/s390x-port/) porting projects) and will remain fully committed to the OpenJDK. Our intention is to bring as many features as possible into the upstream project and keep the diff of this project as small as possible.
 
 ## Requirements
-Currently this project only supports Linux/x86_64.
+Currently this project supports the following operating systems/CPU architectures:
+
+* Linux/x86_64
+* Linux/ppc64
+* Linux/ppc64le
+* Windows/x86_64
 
 ## Download and Installation
 Download the [latest released version](https://github.com/SAP/SapMachine/releases/latest) or check all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
