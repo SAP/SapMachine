@@ -26,7 +26,12 @@ You can check for all available [releases](https://github.com/SAP/SapMachine/rel
 The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 10](latest/10)).
 
 Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
-Currently this project only supports Linux x64.
+Currently this project supports the following operating systems/CPU architectures:
+
+* Linux/x86_64
+* Linux/ppc64
+* Linux/ppc64le
+* Windows/x86_64
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
