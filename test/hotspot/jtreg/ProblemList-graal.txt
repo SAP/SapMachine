@@ -68,8 +68,6 @@ gc/TestNUMAPageSize.java                                        8194949   generi
 
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 
-gc/g1/ihop/TestIHOPStatic.java                                  8199486   generic-all
-
 gc/parallel/TestPrintGCDetailsVerbose.java                      8200186   macosx-all
 
 compiler/jvmci/compilerToVM/ReprofileTest.java                  8201333   generic-all
@@ -174,6 +172,5 @@ org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest          
 org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 org.graalvm.compiler.core.test.CountedLoopTest                   8199885
 org.graalvm.compiler.debug.test.DebugContextTest                 8203504
-org.graalvm.compiler.core.test.VerifyDebugUsageTest              8205078
 
 org.graalvm.compiler.hotspot.test.GraalOSRTest                   8206947
