@@ -661,7 +661,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
-  product(bool, PrintExtendedThreadInfo, false,                             \
+  product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \
   diagnostic(bool, TraceNMethodInstalls, false,                             \
