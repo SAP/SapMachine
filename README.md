@@ -14,6 +14,7 @@ Currently this project supports the following operating systems/CPU architecture
 * Linux/ppc64
 * Linux/ppc64le
 * Windows/x86_64
+* MacOS/x64
 
 ## Download and Installation
 Download the [latest released version](https://github.com/SAP/SapMachine/releases/latest) or check all available [builds](https://github.com/SAP/SapMachine/releases) (including nightly snapshots) in the release section of the project. Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
