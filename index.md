@@ -32,6 +32,7 @@ Currently this project supports the following operating systems/CPU architecture
 * Linux/ppc64
 * Linux/ppc64le
 * Windows/x86_64
+* MacOS/x64
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
