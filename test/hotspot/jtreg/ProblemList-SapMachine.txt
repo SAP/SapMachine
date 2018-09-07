@@ -2,3 +2,7 @@
 
 # This test fails, because we do not have debug symbols available in all tests.
 runtime/NMT/CheckForProperDetailStackTrace.java                        generic-all
+
+# This test is currently also failing in the OpenJDK weekly early access tests.
+# Enable again when this test has been fixed.
+runtime/MemberName/MemberNameLeak.java                                 generic-all
