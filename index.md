@@ -12,18 +12,13 @@ We want to stress the fact that this is clearly a *friendly fork*. One reason wh
 
 SAP is committed to ensuring the continued success of the Java platform. We are members of the [JCP Executive committee](https://jcp.org/en/participation/committee) since 2001 and recently served in the [JSR 379 (Java SE 9)](https://www.jcp.org/en/jsr/detail?id=379) and [JSR 383 (Java SE 18.3)](https://www.jcp.org/en/jsr/detail?id=383) Expert Groups. SAP is also one of the biggest external contributors to the OpenJDK project (currently leading the [PowerPC/AIX](http://openjdk.java.net/projects/ppc-aix-port/) and [s390](http://openjdk.java.net/projects/s390x-port/) porting projects) and will remain fully committed to the OpenJDK. Our intention is to bring as many features as possible into the upstream project and keep the diff of this project as small as possible.
 
-
 ## [](#Documentation) Documentation
-
-We have a Wiki with various information about the 
+We have a [Wiki](https://github.com/SAP/SapMachine/wiki) with various information about the 
 
 * Certifications 
 * Differences between SapMachine and OpenJDK
 * Features Contributed by SAP
 * SapMachine Development Process
-
-[https://github.com/SAP/SapMachine/wiki](https://github.com/SAP/SapMachine/wiki)
-
 
 ## [](#Downloads) Download and Installation
 
