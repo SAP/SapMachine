@@ -22,7 +22,7 @@ We have a Wiki with various information about the
 * Features Contributed by SAP
 * SapMachine Development Process
 
-https://github.com/SAP/SapMachine/wiki
+[https://github.com/SAP/SapMachine/wiki](https://github.com/SAP/SapMachine/wiki)
 
 
 ## [](#Downloads) Download and Installation
