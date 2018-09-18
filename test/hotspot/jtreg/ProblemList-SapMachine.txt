@@ -1,0 +1,9 @@
+# SapMachine Problem List for Hotspot tests
+
+# This test fails, because we do not have debug symbols available in all tests.
+runtime/NMT/CheckForProperDetailStackTrace.java                        generic-all
+
+# These tests are currently also failing in the OpenJDK weekly early access tests.
+# Enable again when the tests have been fixed.
+runtime/MemberName/MemberNameLeak.java                                 generic-all
+runtime/Dictionary/CleanProtectionDomain.java                          generic-all
