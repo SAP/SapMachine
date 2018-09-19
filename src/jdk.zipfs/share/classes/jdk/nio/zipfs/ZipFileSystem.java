@@ -635,6 +635,10 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
+    private int getCompressMethod(FileAttribute<?>... attrs) {
+         return defaultMethod;
+    }
+
     // Returns a Writable/ReadByteChannel for now. Might consdier to use
     // newFileChannel() instead, which dump the entry data into a regular
     // file on the default file system and create a FileChannel on top of
@@ -677,7 +681,7 @@ class ZipFileSystem extends FileSystem {
                 checkParents(path);
                 // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
                 return new EntryOutputChannel(
-                    new Entry(path, Entry.NEW, false, defaultMethod, attrs));
+                    new Entry(path, Entry.NEW, false, getCompressMethod(attrs), attrs));
 
             } finally {
                 endRead();
@@ -746,7 +750,7 @@ class ZipFileSystem extends FileSystem {
             final Entry u = isFCH ? e : new Entry(path, tmpfile, Entry.FILECH, attrs);
             if (forWrite) {
                 u.flag = FLAG_DATADESCR;
-                u.method = METHOD_DEFLATED;
+                u.method = getCompressMethod(attrs);
             }
             // is there a better way to hook into the FileChannel's close method?
             return new FileChannel() {
@@ -1431,7 +1435,7 @@ class ZipFileSystem extends FileSystem {
                 return;
             isClosed = true;
             e.size = e.csize = written;
-            e.size = crc.getValue();
+            e.crc = crc.getValue();
         }
     }
 
