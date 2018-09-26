@@ -36,12 +36,12 @@
             "key": "10-jre"
         }, 
         {
-            "value": "SapMachine 11 jdk (pre-release)", 
-            "key": "11-jdk-ea"
+            "value": "SapMachine 11 jdk", 
+            "key": "11-jdk"
         }, 
         {
-            "value": "SapMachine 11 jre (pre-release)", 
-            "key": "11-jre-ea"
+            "value": "SapMachine 11 jre", 
+            "key": "11-jre"
         }, 
         {
             "value": "SapMachine 12 jdk (pre-release)", 
@@ -64,15 +64,11 @@
                 }
             ]
         }, 
-        "11-jre-ea": {
+        "11-jdk": {
             "releases": [
                 {
-                    "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jre-11-ea.28_linux-ppc64le_bin.tar.gz", 
-                    "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jre-11-ea.28_osx-x64_bin.tar.gz", 
-                    "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jre-11-ea.28_windows-x64_bin.zip", 
-                    "tag": "sapmachine-11+28-0", 
-                    "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jre-11-ea.28_linux-ppc64_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jre-11-ea.28_linux-x64_bin.tar.gz"
+                    "tag": "sapmachine-11+28-1", 
+                    "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-1/sapmachine-jdk-11%2B28_osx-x64_bin.tar.gz"
                 }
             ]
         }, 
@@ -87,15 +83,11 @@
                 }
             ]
         }, 
-        "11-jdk-ea": {
+        "11-jre": {
             "releases": [
                 {
-                    "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jdk-11-ea.28_linux-ppc64le_bin.tar.gz", 
-                    "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jdk-11-ea.28_osx-x64_bin.tar.gz", 
-                    "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jdk-11-ea.28_windows-x64_bin.zip", 
-                    "tag": "sapmachine-11+28-0", 
-                    "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jdk-11-ea.28_linux-ppc64_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-0/sapmachine-jdk-11-ea.28_linux-x64_bin.tar.gz"
+                    "tag": "sapmachine-11+28-1", 
+                    "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11%2B28-1/sapmachine-jre-11%2B28_osx-x64_bin.tar.gz"
                 }
             ]
         }, 
