@@ -60,7 +60,37 @@ All rights reserved. Confidential and proprietary.
         }.bind(this))
 
         $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
-            for (var i in data.imageTypes) {
+            for (var i in data.imageTypes.sort(function(a, b) {
+                var aIsPreRelease = a.key.includes('-ea');
+                var bIsPreRelease = b.key.includes('-ea');
+                var re = /([0-9]+).*/;
+
+                var aMajor = a.key.match(re)[1];
+                var bMajor = b.key.match(re)[1];
+
+                if ((aIsPreRelease && bIsPreRelease) ||
+                    (!aIsPreRelease && !bIsPreRelease)) {
+                    if (aMajor < bMajor) {
+                        return 1;
+                    }
+
+                    if (aMajor > bMajor) {
+                        return -1;
+                    }
+
+                    return 0;
+                }
+
+                if (!aIsPreRelease && bIsPreRelease) {
+                    return -1;
+                }
+
+                if (aIsPreRelease && !bIsPreRelease) {
+                    return 1;
+                }
+
+                return 0;
+            })) {
                 var optionElement = $('<option></option>')
                 optionElement.text(data.imageTypes[i].value)
                 optionElement.attr({'value': data.imageTypes[i].key })
