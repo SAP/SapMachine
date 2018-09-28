@@ -7,6 +7,21 @@ All rights reserved. Confidential and proprietary.
 
 (function (window, document, $, ga, undefined) {
 
+    // polyfill for String.includes
+    if (!String.prototype.includes) {
+        String.prototype.includes = function(search, start) {
+            if (typeof start !== 'number') {
+                start = 0;
+            }
+
+            if (start + search.length > this.length) {
+                return false;
+            } else {
+                return this.indexOf(search, start) !== -1;
+            }
+        };
+    }
+
     function osComparator(a, b) {
         return a['ordinal'] - b['ordinal']
     }
