@@ -52,7 +52,7 @@ sudo bash
 wget -q -O - https://dist.sapmachine.io/debian/sapmachine.key | apt-key add -
 echo "deb http://dist.sapmachine.io/debian/amd64/ ./" >> /etc/apt/sources.list
 apt-get update
-apt-get install sapmachine-10-jre
+apt-get install sapmachine-11-jre
 ```
 
 #### [](#Docker) Docker
@@ -61,8 +61,8 @@ Finally, we also provide [Docker images](https://hub.docker.com/r/sapmachine) fo
 ##### [](#Debian) Debian / Ubuntu
 
 ```
-docker pull sapmachine/jdk10:latest
-docker run -it sapmachine/jdk10:latest java -version
+docker pull sapmachine/jdk11:latest
+docker run -it sapmachine/jdk11:latest java -version
 ```
 
 ## [](#Repository) Repository setup
