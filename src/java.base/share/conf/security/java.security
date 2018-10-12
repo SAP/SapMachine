@@ -1081,6 +1081,9 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #             java.nio.channels package will contain enhanced exception
 #             message information
 #
+#  jar      - enables more detailed information in the IOExceptions thrown
+#             by classes in the java.util.jar package
+#
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
@@ -1089,6 +1092,6 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # The SapMachine team considers host information in exception messages not an
 # undue safty risk. The SapMachine team is of the opinion that the potential
 # benefit of host information in exception messages for support engineers
-# outweighs the risk. Therefore this feature is switched on by default in 
+# outweighs the risk. Therefore this feature is switched on by default in
 # SapMachine.
 jdk.includeInExceptions=hostInfo
