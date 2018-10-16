@@ -15,6 +15,7 @@ SAP is committed to ensuring the continued success of the Java platform. We are 
 ## [](#Documentation) Documentation
 We have a [Wiki](https://github.com/SAP/SapMachine/wiki) with various information about:
 
+* [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
 * [Certifications](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
 * [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK)
 * [Features Contributed by SAP](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP)
@@ -34,13 +35,6 @@ You can check for all available [releases](https://github.com/SAP/SapMachine/rel
 The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 11](latest/11)).
 
 Unpack the archives and set `JAVA_HOME` / `PATH` environment variables accordingly.
-Currently this project supports the following operating systems/CPU architectures:
-
-* Linux/x86_64
-* Linux/ppc64
-* Linux/ppc64le
-* Windows/x86_64
-* MacOS/x64
 
 If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
