@@ -26,6 +26,92 @@ All rights reserved. Confidential and proprietary.
         return a['ordinal'] - b['ordinal']
     }
 
+    function tagComparator(a, b) {
+        var re = /(sapmachine)-(((([0-9]+)((\.([0-9]+))*)?)\+([0-9]+))(-([0-9]+))?)(\-((\S)+))?/
+
+        var aMatch = a.tag.match(re)
+        var bMatch = b.tag.match(re)
+
+        var aVersionParts   = aMatch[4].split('.')
+        var aBuildNumber    = parseInt(aMatch[9])
+        var aSapBuildNumber = parseInt(aMatch[11])
+
+        var bVersionParts   = bMatch[4].split('.')
+        var bBuildNumber    = parseInt(bMatch[9])
+        var bSapBuildNumber = parseInt(bMatch[11])
+
+        if (aVersionParts.length > bVersionParts.length) {
+            return -1
+        }
+
+        if (bVersionParts.length > aVersionParts.length) {
+            return 1
+        }
+
+        for (var i in aVersionParts) {
+            var aVersionPart = parseInt(aVersionParts[i])
+            var bVersionPart = parseInt(bVersionParts[i])
+
+            if (aVersionPart > bVersionPart) {
+                return -1
+            }
+
+            if (bVersionPart > aVersionPart) {
+                return 1
+            }
+        }
+
+        if (aBuildNumber > bBuildNumber) {
+            return -1
+        }
+
+        if (bBuildNumber > aBuildNumber) {
+            return 1
+        }
+
+        if (aSapBuildNumber > bSapBuildNumber) {
+            return -1
+        }
+
+        if (bSapBuildNumber > aSapBuildNumber) {
+            return 1
+        }
+
+        return 0
+    }
+
+    function imageTypeComparator(a, b) {
+        var aIsPreRelease = a.key.includes('-ea')
+        var bIsPreRelease = b.key.includes('-ea')
+        var re = /([0-9]+).*/;
+
+        var aMajor = a.key.match(re)[1]
+        var bMajor = b.key.match(re)[1]
+
+        if ((aIsPreRelease && bIsPreRelease) ||
+            (!aIsPreRelease && !bIsPreRelease)) {
+            if (aMajor < bMajor) {
+                return 1
+            }
+
+            if (aMajor > bMajor) {
+                return -1
+            }
+
+            return 0
+        }
+
+        if (!aIsPreRelease && bIsPreRelease) {
+            return -1
+        }
+
+        if (aIsPreRelease && !bIsPreRelease) {
+            return 1
+        }
+
+        return 0
+    }
+
     function SapMachine() {
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
         this._osSelector = $('#sapmachine_os_select')
@@ -45,59 +131,7 @@ All rights reserved. Confidential and proprietary.
 
             this._versionSelector.empty()
 
-            for (var i in this._assets[selectedImageType]['releases'].sort(function (a, b) {
-                var re = /(sapmachine)-(((([0-9]+)((\.([0-9]+))*)?)\+([0-9]+))(-([0-9]+))?)(\-((\S)+))?/
-
-                var aMatch = a.tag.match(re)
-                var bMatch = b.tag.match(re)
-
-                var aVersionParts   = aMatch[4].split('.')
-                var aBuildNumber    = parseInt(aMatch[9])
-                var aSapBuildNumber = parseInt(aMatch[11])
-
-                var bVersionParts   = bMatch[4].split('.')
-                var bBuildNumber    = parseInt(bMatch[9])
-                var bSapBuildNumber = parseInt(bMatch[11])
-
-                if (aVersionParts.length > bVersionParts.length) {
-                    return -1
-                }
-
-                if (bVersionParts.length > aVersionParts.length) {
-                    return 1
-                }
-
-                for (var i in aVersionParts) {
-                    var aVersionPart = parseInt(aVersionParts[i])
-                    var bVersionPart = parseInt(bVersionParts[i])
-                    
-                    if (aVersionPart > bVersionPart) {
-                        return -1
-                    }
-
-                    if (bVersionPart > aVersionPart) {
-                        return 1
-                    }
-                }
-
-                if (aBuildNumber > bBuildNumber) {
-                    return -1
-                }
-
-                if (bBuildNumber > aBuildNumber) {
-                    return 1
-                }
-
-                if (aSapBuildNumber > bSapBuildNumber) {
-                    return -1
-                }
-
-                if (bSapBuildNumber > aSapBuildNumber) {
-                    return 1
-                }
-
-                return 0
-            })) {
+            for (var i in this._assets[selectedImageType]['releases'].sort(tagComparator)) {
                 var release = this._assets[selectedImageType]['releases'][i]
 
                 if (release.hasOwnProperty(selectedOS)) {
@@ -121,7 +155,7 @@ All rights reserved. Confidential and proprietary.
             }
 
             this._downloadButton.prop('disabled', versionSelectorEmpty)
-            this._versionSelector.prop('disabled', versionSelectorEmpty) 
+            this._versionSelector.prop('disabled', versionSelectorEmpty)
         }.bind(this)
 
         this._imageTypeSelector.change(function imageTypeSelectorOnChange() {
@@ -141,37 +175,7 @@ All rights reserved. Confidential and proprietary.
         }.bind(this))
 
         $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
-            for (var i in data.imageTypes.sort(function(a, b) {
-                var aIsPreRelease = a.key.includes('-ea')
-                var bIsPreRelease = b.key.includes('-ea')
-                var re = /([0-9]+).*/;
-
-                var aMajor = a.key.match(re)[1]
-                var bMajor = b.key.match(re)[1]
-
-                if ((aIsPreRelease && bIsPreRelease) ||
-                    (!aIsPreRelease && !bIsPreRelease)) {
-                    if (aMajor < bMajor) {
-                        return 1
-                    }
-
-                    if (aMajor > bMajor) {
-                        return -1
-                    }
-
-                    return 0
-                }
-
-                if (!aIsPreRelease && bIsPreRelease) {
-                    return -1
-                }
-
-                if (aIsPreRelease && !bIsPreRelease) {
-                    return 1
-                }
-
-                return 0
-            })) {
+            for (var i in data.imageTypes.sort(imageTypeComparator)) {
                 var optionElement = $('<option></option>')
                 optionElement.text(data.imageTypes[i].value)
                 optionElement.attr({'value': data.imageTypes[i].key })
