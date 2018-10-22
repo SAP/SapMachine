@@ -29,6 +29,9 @@ We have a [Wiki](https://github.com/SAP/SapMachine/wiki) with various informatio
 <select id="sapmachine_os_select" class="download_select">
 </select>
 
+<select id="sapmachine_version_select" class="download_select">
+</select>
+
 <button id="sapmachine_download_button" type="button" class="download_button">Download</button>
 
 You can check for all available [releases](https://github.com/SAP/SapMachine/releases) (including nightly snapshots).

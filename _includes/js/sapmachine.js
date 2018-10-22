@@ -11,13 +11,13 @@ All rights reserved. Confidential and proprietary.
     if (!String.prototype.includes) {
         String.prototype.includes = function(search, start) {
             if (typeof start !== 'number') {
-                start = 0;
+                start = 0
             }
 
             if (start + search.length > this.length) {
-                return false;
+                return false
             } else {
-                return this.indexOf(search, start) !== -1;
+                return this.indexOf(search, start) !== -1
             }
         };
     }
@@ -29,37 +29,99 @@ All rights reserved. Confidential and proprietary.
     function SapMachine() {
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
         this._osSelector = $('#sapmachine_os_select')
+        this._versionSelector = $('#sapmachine_version_select')
         this._downloadButton = $('#sapmachine_download_button')
-        this._selectedImageType = null
-        this._selectedOS = null
-        this._selectedOSName = null
         this._assets = null
 
         this._updateImageTypeAndOS = function updateImageTypeAndOS() {
+            var selectedImageType;
+            var selectedOS;
+
             if (this._imageTypeSelector.index() !== -1)
-                this._selectedImageType = this._imageTypeSelector.val()
+                selectedImageType = this._imageTypeSelector.val()
 
-            if (this._osSelector.index() !== -1) {
-                this._selectedOS = this._osSelector.val()
-                this._selectedOSName = $("#sapmachine_os_select option:selected").text();
+            if (this._osSelector.index() !== -1)
+                selectedOS = this._osSelector.val()
+
+            this._versionSelector.empty()
+
+            for (var i in this._assets[selectedImageType]['releases'].sort(function (a, b) {
+                var re = /(sapmachine)-(((([0-9]+)((\.([0-9]+))*)?)\+([0-9]+))(-([0-9]+))?)(\-((\S)+))?/
+
+                var aMatch = a.tag.match(re)
+                var bMatch = b.tag.match(re)
+
+                var aVersionParts   = aMatch[4].split('.')
+                var aBuildNumber    = parseInt(aMatch[9])
+                var aSapBuildNumber = parseInt(aMatch[11])
+
+                var bVersionParts   = bMatch[4].split('.')
+                var bBuildNumber    = parseInt(bMatch[9])
+                var bSapBuildNumber = parseInt(bMatch[11])
+
+                if (aVersionParts.length > bVersionParts.length) {
+                    return -1
+                }
+
+                if (bVersionParts.length > aVersionParts.length) {
+                    return 1
+                }
+
+                for (var i in aVersionParts) {
+                    var aVersionPart = parseInt(aVersionParts[i])
+                    var bVersionPart = parseInt(bVersionParts[i])
+                    
+                    if (aVersionPart > bVersionPart) {
+                        return -1
+                    }
+
+                    if (bVersionPart > aVersionPart) {
+                        return 1
+                    }
+                }
+
+                if (aBuildNumber > bBuildNumber) {
+                    return -1
+                }
+
+                if (bBuildNumber > aBuildNumber) {
+                    return 1
+                }
+
+                if (aSapBuildNumber > bSapBuildNumber) {
+                    return -1
+                }
+
+                if (bSapBuildNumber > aSapBuildNumber) {
+                    return 1
+                }
+
+                return 0
+            })) {
+                var release = this._assets[selectedImageType]['releases'][i]
+
+                if (release.hasOwnProperty(selectedOS)) {
+                    var optionElement = $('<option></option>')
+                    optionElement.text(release.tag)
+                    optionElement.attr({'value': release[selectedOS]})
+                    optionElement.addClass('download_select_option')
+                    this._versionSelector.append(optionElement)
+                }
             }
 
-            var imageType = 'JDK'
+            var versionSelectorEmpty = (this._versionSelector.has('option').length <= 0)
 
-            if (this._selectedImageType.indexOf('jre') !== -1) {
-                imageType = 'JRE'
-            }
 
-            var asset_available = this._assets[this._selectedImageType]['releases'][0].hasOwnProperty(this._selectedOS)
-
-            this._downloadButton.text('Download "' + this._assets[this._selectedImageType]['releases'][0]['tag'] + ' ' + imageType + '" for ' + this._selectedOSName)
-            this._downloadButton.prop('disabled', !asset_available)
-
-            if (!asset_available) {
+            if (versionSelectorEmpty) {
                 this._downloadButton.addClass('download_button_disabled')
+                this._versionSelector.addClass('download_select_disabled')
             } else {
                 this._downloadButton.removeClass('download_button_disabled')
+                this._versionSelector.removeClass('download_select_disabled')
             }
+
+            this._downloadButton.prop('disabled', versionSelectorEmpty)
+            this._versionSelector.prop('disabled', versionSelectorEmpty) 
         }.bind(this)
 
         this._imageTypeSelector.change(function imageTypeSelectorOnChange() {
@@ -70,41 +132,45 @@ All rights reserved. Confidential and proprietary.
             this._updateImageTypeAndOS()
         }.bind(this))
 
+        this._versionSelector.change(function versionSelectorOnChange() {
+        }.bind(this))
+
         this._downloadButton.click(function downloadButtonOnClick() {
-            sendDownloadEvent(this._assets[this._selectedImageType]['releases'][0][this._selectedOS])
+            if (this._versionSelector.index() !== -1)
+                sendDownloadEvent(this._versionSelector.val())
         }.bind(this))
 
         $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
             for (var i in data.imageTypes.sort(function(a, b) {
-                var aIsPreRelease = a.key.includes('-ea');
-                var bIsPreRelease = b.key.includes('-ea');
+                var aIsPreRelease = a.key.includes('-ea')
+                var bIsPreRelease = b.key.includes('-ea')
                 var re = /([0-9]+).*/;
 
-                var aMajor = a.key.match(re)[1];
-                var bMajor = b.key.match(re)[1];
+                var aMajor = a.key.match(re)[1]
+                var bMajor = b.key.match(re)[1]
 
                 if ((aIsPreRelease && bIsPreRelease) ||
                     (!aIsPreRelease && !bIsPreRelease)) {
                     if (aMajor < bMajor) {
-                        return 1;
+                        return 1
                     }
 
                     if (aMajor > bMajor) {
-                        return -1;
+                        return -1
                     }
 
-                    return 0;
+                    return 0
                 }
 
                 if (!aIsPreRelease && bIsPreRelease) {
-                    return -1;
+                    return -1
                 }
 
                 if (aIsPreRelease && !bIsPreRelease) {
-                    return 1;
+                    return 1
                 }
 
-                return 0;
+                return 0
             })) {
                 var optionElement = $('<option></option>')
                 optionElement.text(data.imageTypes[i].value)
