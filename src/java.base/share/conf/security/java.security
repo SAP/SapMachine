@@ -1087,11 +1087,9 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
-#
-#
-# The SapMachine team considers host information in exception messages not an
-# undue safty risk. The SapMachine team is of the opinion that the potential
-# benefit of host information in exception messages for support engineers
-# outweighs the risk. Therefore this feature is switched on by default in
-# SapMachine.
-jdk.includeInExceptions=hostInfo
+# The SapMachine team considers these enhanced information in exception messages
+# not an undue safety risk. The SapMachine team is of the opinion that the
+# potential benefit of enhanced information in exception messages for support
+# engineers outweighs the risk. Therefore this feature is switched on by default
+# in SapMachine.
+jdk.includeInExceptions=hostInfo,jar
