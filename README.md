@@ -78,7 +78,7 @@ If you want to build the project yourself, please follow the instructions in [`b
 
 ## Repository setup
 
-This repository contains sevaral branches. The default *master* branch only contains this README file. The *jdk/...* branches are direct mirrors of the corresponding OpenJDK Mercurial repositories (e.g. the *jdk/jdk* branch is a mirror of *http://hg.openjdk.java.net/jdk/jdk*). Finally, the *sapmachine/...* branches are the actual source of the SapMachine releases whith specific bug fixes and enhancements. We regularly (usually on a weekly base) merge the *jdk/* branches into the corresponding *sapmachine/* branches.
+This repository contains several branches. The default *master* branch only contains this README file. The *jdk/...* branches are direct mirrors of the corresponding OpenJDK Mercurial repositories (e.g. the *jdk/jdk* branch is a mirror of *http://hg.openjdk.java.net/jdk/jdk*). Finally, the *sapmachine/...* branches are the actual source of the SapMachine releases with specific bug fixes and enhancements. We regularly (usually on a weekly base) merge the *jdk/* branches into the corresponding *sapmachine/* branches.
 
 ## How to obtain support
 Please create a [new issue](https://github.com/SAP/SapMachine/issues/new) if you find any problems.
