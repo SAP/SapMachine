@@ -10,7 +10,7 @@ SAP is committed to ensuring the continued success of the Java platform. We are 
 ## [](#Documentation) Documentation
 We have a [Wiki](https://github.com/SAP/SapMachine/wiki) with various information about:
 
-* [Certifications](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility) 
+* [Certifications](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
 * [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK)
 * [Features Contributed by SAP](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP)
 * [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
@@ -34,28 +34,7 @@ sudo bash
 wget -q -O - https://dist.sapmachine.io/debian/sapmachine.key | apt-key add -
 echo "deb http://dist.sapmachine.io/debian/amd64/ ./" >> /etc/apt/sources.list
 apt-get update
-apt-get install sapmachine-10-jre
-```
-
-To install SapMachine on Alpine Linux, you can use our `.apk` packages:
-
-```
-FROM alpine:3.5
-
-RUN apk update; \
-    apk add bash; \
-    apk add ca-certificates; \
-    apk add wget;
-
-WORKDIR /etc/apk/keys
-RUN wget https://dist.sapmachine.io/alpine/sapmachine%40sap.com-5a673212.rsa.pub
-
-WORKDIR /
-
-RUN echo "http://dist.sapmachine.io/alpine/3.5" >> /etc/apk/repositories
-
-RUN apk update; \
-    apk add sapmachine-10-jre;
+apt-get install sapmachine-11-jre
 ```
 
 Finally, we also provide Docker images for various versions of the SapMachine at https://hub.docker.com/r/sapmachine
@@ -63,18 +42,9 @@ Finally, we also provide Docker images for various versions of the SapMachine at
 ##### [](#Debian) Debian / Ubuntu
 
 ```
-docker pull sapmachine/jdk10:latest
-docker run -it sapmachine/jdk10:latest java -version
+docker pull sapmachine/jdk11:latest
+docker run -it sapmachine/jdk11:latest java -version
 ```
-
-##### [](#Alpine) Alpine Linux
-
-```
-docker pull sapmachine/jdk10:latest-alpine
-docker run -it sapmachine/jdk10:latest-alpine java -version
-```
-
-If you want to build the project yourself, please follow the instructions in [`building.md`](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
 ## Repository setup
 
