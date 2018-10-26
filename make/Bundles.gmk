@@ -154,7 +154,7 @@ else
 
   JDK_BUNDLE_SUBDIR := sapmachine-jdk-$(VERSION_NUMBER)
   JRE_BUNDLE_SUBDIR := sapmachine-jre-$(VERSION_NUMBER)
-  
+
   ifneq ($(DEBUG_LEVEL), release)
     JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
   endif

@@ -39,7 +39,7 @@ import java.util.Map;
 public class Scimark {
     public static void main(String... args) throws Exception {
         String sciMark2Cp = System.getProperty("SCIMARK_2_CP");
-        
+
         if (sciMark2Cp == null) {
             Map<String, Path> artifacts;
             try {
