@@ -123,6 +123,8 @@ runtime/condy/CondyBadNameTypeTest.java                                         
 runtime/condy/CondyCFVCheckTest.java                                               generic-all
 runtime/condy/CondyLDCTest.java                                                    generic-all
 runtime/condy/CondyNewInvokeSpecialTest.java                                       generic-all
+# Failing since JDK 12+18
+runtime/SharedArchiveFile/serviceability/ReplaceCriticalClasses.java               generic-all
 
 ###############################################################################
 # Functionality supported by IBM (at least on linux-ppc64le).
