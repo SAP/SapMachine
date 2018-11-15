@@ -52,9 +52,9 @@ If you prefer not to have SapMachine integrated in macOS' Java Framework, you ca
 SapMachine currently doesn't provied an installer on Windows. Unpack the archive and set `JAVA_HOME` / `PATH` environment variables accordingly.
 
 ### [](#Docker) Docker
-Finally, we also provide [Docker images](https://hub.docker.com/r/sapmachine) for various versions of the SapMachine.
+[Docker images](https://hub.docker.com/r/sapmachine) are available for almost all versions SapMachine.
 
-#### [](#Debian) Debian / Ubuntu
+#### [](#Debian) Debian/ Ubuntu
 ```
 docker pull sapmachine/jdk11:latest
 docker run -it sapmachine/jdk11:latest java -version
@@ -64,7 +64,7 @@ docker run -it sapmachine/jdk11:latest java -version
 We have a [Wiki](https://github.com/SAP/SapMachine/wiki) with various information about:
 
 * [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
-* [Certifications](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
+* [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
 * [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK)
 * [Features Contributed by SAP](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP)
 * [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
