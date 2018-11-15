@@ -61,7 +61,7 @@ docker run -it sapmachine/jdk11:latest java -version
 ```
 
 ## [](#Documentation) Documentation
-We have a [Wiki](https://github.com/SAP/SapMachine/wiki) with various information about:
+Check out our a [wikipages](https://github.com/SAP/SapMachine/wiki) with various information about:
 
 * [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
