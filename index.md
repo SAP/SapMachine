@@ -14,7 +14,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 * We intend to bring as many features as possible into the upstream project and keep the diff of this project as small as possible.
 
-## [](#Downloads) Download and Installation
+## [](#Download) Download and Installation
 
 You can check for all available [releases](https://github.com/SAP/SapMachine/releases) (including nightly snapshots).
 The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 11](latest/11)). Or you can download binary archives here:
@@ -69,10 +69,10 @@ Check out our a [wikipages](https://github.com/SAP/SapMachine/wiki) with various
 * [Features Contributed by SAP](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP)
 * [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
 
-## [](#Support) How to obtain support
-Please create a [new issue](https://github.com/SAP/SapMachine/issues/new) if you find any problems.
+## [](#Have) Have an issue or question...? 
+Please file a [new issue](https://github.com/SAP/SapMachine/issues/new) and let us know about.
 
-### [](#Building) Building the project from source
+## [](#Building) Building the project from source
 If you want to build the project yourself, please follow the instructions in [building.md](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
 
 ## [](#Repository) Repository setup
