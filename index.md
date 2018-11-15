@@ -33,8 +33,6 @@ The latest release for any SapMachine major version can be found at `https://sap
 ### [](#Linux) Installation on Linux
 
 Unpack the archives to an arbitrary location in the file system and set `JAVA_HOME` / `PATH` environment variables accordingly.
-
-#### [](#Debian) Debian/ Ubuntu
 Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
 
 ```
