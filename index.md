@@ -72,14 +72,5 @@ Check out our a [wikipages](https://github.com/SAP/SapMachine/wiki) with various
 ## [](#Have) Have an issue or question...? 
 Please file a [new issue](https://github.com/SAP/SapMachine/issues/new) and let us know about.
 
-## [](#Building) Building the project from source
-If you want to build the project yourself, please follow the instructions in [building.md](https://github.com/SAP/SapMachine/blob/jdk/jdk/doc/building.md).
-
-## [](#Repository) Repository setup
-This repository contains several branches. The default *master* branch only contains this README file. The *jdk/...* branches are direct mirrors of the corresponding OpenJDK Mercurial repositories (e.g. the *jdk/jdk* branch is a mirror of *http://hg.openjdk.java.net/jdk/jdk*). Finally, the *sapmachine/...* branches are the actual source of the SapMachine releases with specific bug fixes and enhancements. We regularly (usually on a weekly base) merge the *jdk/* branches into the corresponding *sapmachine/* branches.
-
-## [](#Contributing) Contributing
-We currently do not accept external contributions for this project. If you want to improve the code or fix a bug please consider contributing directly to the upstream [OpenJDK](http://openjdk.java.net/contribute/) project. Our repositories will be regularly synced with the upstream project so any improvements in the upstream OpenJDK project will directly become visible in our project as well.
-
 ## [](#License) License
 This project is run under the same licensing terms as the upstream OpenJDK project. Please see the [LICENSE](LICENSE) file in the top-level directory for more information.
