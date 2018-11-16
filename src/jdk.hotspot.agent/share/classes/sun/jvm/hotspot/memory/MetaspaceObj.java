@@ -19,42 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 4463345
- * @summary Simple test of System.clearProperty
- * @run main/othervm ClearProperty
- */
+package sun.jvm.hotspot.memory;
 
-public class ClearProperty {
-    public static void main(String [] argv) throws Exception {
-        clearTest();
-        paramTest();
-    }
+import java.util.*;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.*;
 
-    static void clearTest() throws Exception {
-        System.setProperty("blah", "blech");
-        if (!System.getProperty("blah").equals("blech"))
-            throw new RuntimeException("Clear test failed 1");
-        System.clearProperty("blah");
-        if (System.getProperty("blah") != null)
-            throw new RuntimeException("Clear test failed 2");
-    }
+public class MetaspaceObj {
+  private static Address sharedMetaspaceBaseAddr;
+  private static Address sharedMetaspaceTopAddr;
 
-    static void paramTest() throws Exception {
-        try {
-            System.clearProperty(null);
-            throw new RuntimeException("Param test failed");
-        } catch (NullPointerException npe) {
-            // Correct result
+  static {
+    VM.registerVMInitializedObserver(new Observer() {
+        public void update(Observable o, Object data) {
+          initialize(VM.getVM().getTypeDataBase());
         }
-        try {
-            System.clearProperty("");
-            throw new RuntimeException("Param test failed");
-        } catch (IllegalArgumentException iae) {
-            // Correct result
-        }
-    }
+      });
+  }
+
+  private static synchronized void initialize(TypeDataBase db) {
+    Type type = db.lookupType("MetaspaceObj");
+    sharedMetaspaceBaseAddr = type.getAddressField("_shared_metaspace_base").getStaticFieldAddress();
+    sharedMetaspaceTopAddr  = type.getAddressField("_shared_metaspace_top").getStaticFieldAddress();
+  }
+
+  public static boolean isShared(Address addr) {
+    Address base = sharedMetaspaceBaseAddr.getAddressAt(0);
+    Address top  = sharedMetaspaceTopAddr. getAddressAt(0);
+
+    return base.lessThanOrEqual(addr) && addr.lessThan(top);
+  }
 }

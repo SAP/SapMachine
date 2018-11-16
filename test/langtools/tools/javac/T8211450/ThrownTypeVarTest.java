@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,18 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#ifndef _ROBOT_COMMON_H
-#define _ROBOT_COMMON_H
 
-#include "java_awt_event_InputEvent.h"
+/*
+ * @test
+ * @bug 8211450
+ * @summary UndetVar::dup is not copying the kind field to the duplicated instance
+ * @compile ThrownTypeVarTest.java
+ */
 
-#include <X11/Xlib.h>
-#include "gdefs.h"
+import java.io.*;
 
-int QueryColorMap(Display *disp,
-                  Colormap src_cmap,
-                  Visual *src_vis,
-                  XColor **src_colors,
-                  int *rShift, int *gShift, int *bShift);
+public class ThrownTypeVarTest {
+    void repro() throws IOException {
+        when(f(any()));
+    }
 
-#endif /* _ROBOT_COMMON_H */
+    interface MyInt<T1, E1 extends Exception> {}
+
+    <T2, E2 extends Exception> T2 f(MyInt<T2, E2> g) throws IOException, E2 {
+        return null;
+    }
+
+    static <T3> T3 any() {
+        return null;
+    }
+
+    static <T4> void when(T4 methodCall) {}
+}

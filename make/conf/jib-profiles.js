@@ -361,7 +361,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "10";
+    common.boot_jdk_version = "11";
     common.boot_jdk_home = input.get("boot_jdk", "home_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -525,6 +525,27 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.debug_suffix;
         profiles[name] = concatObjects(common.main_profile_base, profiles[name]);
         profiles[debugName] = concatObjects(profiles[name], common.debug_profile_base);
+    });
+
+    // Define a profile with precompiled headers disabled. This is just used for
+    // verfication of this build configuration.
+    var noPchProfiles = {
+        "linux-x64-debug-nopch": {
+            target_os: "linux",
+            target_cpu: "x64",
+            dependencies: ["devkit"],
+            configure_args: concat(common.configure_args_64bit,
+                "--with-zlib=system", "--disable-precompiled-headers"),
+        },
+    };
+    profiles = concatObjects(profiles, noPchProfiles);
+    // Add base settings to noPch profiles
+    Object.keys(noPchProfiles).forEach(function (name) {
+        profiles[name] = concatObjects(common.main_profile_base, profiles[name]);
+        profiles[name] = concatObjects(common.debug_profile_base, profiles[name]);
+        // Override default make target with hotspot as that's the only part of
+        // the build using precompiled headers.
+        profiles[name].default_make_targets = ["hotspot"];
     });
 
     // Bootcycle profiles runs the build with itself as the boot jdk. This can
@@ -830,9 +851,10 @@ var getJibProfilesDependencies = function (input, common) {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
-            build_number: "46",
+            build_number: "28",
             file: "bundles/" + boot_jdk_platform + "/jdk-" + common.boot_jdk_version + "_"
-                + boot_jdk_platform + "_bin.tar.gz",
+                + boot_jdk_platform + "_bin"
+		+ (input.build_os == "windows" ? ".zip" : ".tar.gz"),
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
         },

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,20 @@
  * questions.
  */
 
-#include "LWCToolkit.h"
-#include "GeomUtilities.h"
+[   
+   {   
+         match: "*.*",
+ 
+         c1: {
+           // control inlining of method
+           // + force inline, - dont inline
+           inline : "-*.dontinline_*",
+         },
 
-#include "sun_awt_CGraphicsConfig.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
-/*
- * Class:     sun_awt_CGraphicsConfig
- * Method:    nativeGetBounds
- * Signature: (I)Ljava/awt/Rectangle;
- */
-JNIEXPORT jobject JNICALL Java_sun_awt_CGraphicsConfig_nativeGetBounds
-(JNIEnv *env, jclass class, jint displayID)
-{
-    jobject jrect = NULL;
-
-JNF_COCOA_ENTER(env);
-
-    CGRect rect = CGDisplayBounds((CGDirectDisplayID)displayID);
-    jrect = CGToJavaRect(env, rect);
-
-JNF_COCOA_EXIT(env);
-
-    return jrect;
-}
+         c2: {
+           // control inlining of method
+           // + force inline, - dont inline
+           inline : "-*.dontinline_*",
+         }
+   },
+]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,32 @@
  */
 
 /*
- * This class tests to see if the system property java.version is properly
- * reinitialized after setting System.setProperties(null).
- *
  * @test
- * @bug 4244670 8030781
- * @summary Test for System.setProperties(null).
+ * @bug 8213479
+ * @summary Missing x86_64.ad patterns for 8-bit logical operators with destination in memory
+ *
+ * @run main/othervm -Xcomp -XX:-Inline -XX:CompileOnly=compiler.c2.Test8bitLogicalOperators::test
+ *      compiler.c2.Test8bitLogicalOperators
  */
 
-public class SetPropertiesNull {
+package compiler.c2;
 
-    public static void main(String args[]) {
-        final String version = System.getProperty("java.version");
-        System.setProperties(null);
-        final String newVersion = System.getProperty("java.version");
-        if (!version.equals(newVersion)) {
-            throw new RuntimeException("java.version differs: '" + version + "'  '"
-                               + newVersion + "'");
-        }
+public class Test8bitLogicalOperators {
+    private static byte and = 0b0011, or = 0b0011, xor = 0b0011;
+    private static byte mask = 0b0101;
+
+    public static void main(String... args) {
+        test();
+
+        if (and != 0b0001 || or != 0b0111 || xor != 0b0110)
+            throw new AssertionError("8-bit logical operator failure");
+    }
+
+    public static void test() {
+        and &= mask;
+
+        or |= mask;
+
+        xor ^= mask;
     }
 }
