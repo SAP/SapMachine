@@ -31,18 +31,10 @@ The latest release for any SapMachine major version can be found at `https://sap
 <button id="sapmachine_download_button" type="button" class="download_button">Download</button>
 
 ## [](#Documentation) Documentation
-Check out our a [wikipages](https://github.com/SAP/SapMachine/wiki) with various information about:
-
-* [Installation](https://github.com/SAP/SapMachine/wiki/Installation)
-* [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
+Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
+* [Installation](https://github.com/SAP/SapMachine/wiki/Installation) and [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
 * [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
-* [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK)
-* [Features Contributed by SAP](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP)
-* [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
-
-## [](#Have) Have an issue or question...? 
-Please file a [new issue](https://github.com/SAP/SapMachine/issues/new) and let us know about.
 
 ## [](#License) License
 This project is run under the same licensing terms as the upstream OpenJDK project. Please see the [LICENSE](LICENSE) file in the top-level directory for more information.
