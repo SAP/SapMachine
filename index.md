@@ -14,7 +14,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 * We intend to bring as many features as possible into the upstream project and keep the diff of this project as small as possible.
 
-## [](#Download) Download and Installation
+## [](#Download) Download
 
 You can check for all available [releases](https://github.com/SAP/SapMachine/releases) (including nightly snapshots).
 The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 11](latest/11)). Or you can download binary archives here:
@@ -30,39 +30,11 @@ The latest release for any SapMachine major version can be found at `https://sap
 
 <button id="sapmachine_download_button" type="button" class="download_button">Download</button>
 
-### [](#Linux) Installation on Linux
-
-Unpack the archives to an arbitrary location in the file system and set `JAVA_HOME` / `PATH` environment variables accordingly.
-Alternatively, you can use our `.deb` packages if you're on Debian or Ubuntu:
-
-```
-sudo bash
-wget -q -O - https://dist.sapmachine.io/debian/sapmachine.key | apt-key add -
-echo "deb http://dist.sapmachine.io/debian/amd64/ ./" >> /etc/apt/sources.list
-apt-get update
-apt-get install sapmachine-11-jre
-```
-
-### [](#macOS) Installation on macOS
-Unpack the archive (double click in finder) to an arbitrary location in the file system. You may want to move the resulting directory to `/Library/Java/JavaVirtualMachines` (admin privileges required). If you do so, `/usr/libexec/java_home -V` will show SapMashine. Moreover, if SapMachine is the most recent JDK, the `java` command in the shell will use it. You can try this with `java -version`.
-
-If you prefer not to have SapMachine integrated in macOS' Java Framework, you can set `JAVA_HOME` / `PATH` environment variables accordingly and run it from an arbitrary location in the file system.
-
-### [](#Windows) Installation on Windows
-SapMachine currently doesn't provied an installer on Windows. Unpack the archive and set `JAVA_HOME` / `PATH` environment variables accordingly.
-
-### [](#Docker) Docker
-[Docker images](https://hub.docker.com/r/sapmachine) are available for almost all versions SapMachine.
-
-#### [](#Debian) Debian/ Ubuntu
-```
-docker pull sapmachine/jdk11:latest
-docker run -it sapmachine/jdk11:latest java -version
-```
-
 ## [](#Documentation) Documentation
 Check out our a [wikipages](https://github.com/SAP/SapMachine/wiki) with various information about:
 
+* [Installation](https://github.com/SAP/SapMachine/wiki/Installation)
+* [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
 * [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
 * [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK)
