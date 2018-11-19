@@ -116,7 +116,7 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 #define VENDOR_URL "http://sapmachine.org"
 #endif
 #ifndef VENDOR_URL_BUG
-#define VENDOR_URL_BUG "https://github.com/SAP/SapMachine/issues
+#define VENDOR_URL_BUG "https://github.com/SAP/SapMachine/issues"
 #endif
 
 #ifdef JAVA_SPECIFICATION_VENDOR /* Third party may NOT overwrite this. */
