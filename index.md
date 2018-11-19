@@ -16,9 +16,6 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 ## [](#Download) Download
 
-You can check for all available [releases](https://github.com/SAP/SapMachine/releases) (including nightly snapshots).
-The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 11](latest/11)). Or you can download binary archives here:
-
 <select id="sapmachine_imagetype_select" class="download_select">
 </select>
 
@@ -29,6 +26,9 @@ The latest release for any SapMachine major version can be found at `https://sap
 </select>
 
 <button id="sapmachine_download_button" type="button" class="download_button">Download</button>
+
+All [releases](https://github.com/SAP/SapMachine/releases), including nightly snapshots, are available on GitHub.
+The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 11](latest/11)). 
 
 ## [](#Documentation) Documentation
 Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
