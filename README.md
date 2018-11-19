@@ -17,7 +17,7 @@ Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for informatio
 * [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
 
 ## Have an issue? 
-Please file a [new issue](https://github.com/SAP/SapMachine/issues/new) and let us know.
+Please, file a [new issue](https://github.com/SAP/SapMachine/issues/new) and let us know about.
 
 ## Contributing
 We currently do not accept external contributions for this project. If you want to improve the code or fix a bug please consider contributing directly to the upstream [OpenJDK](http://openjdk.java.net/contribute/) project. Our repositories will be regularly synced with the upstream project so any improvements in the upstream OpenJDK project will directly become visible in our project as well.
