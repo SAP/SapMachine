@@ -21,6 +21,9 @@
  * questions.
  */
 
+
+// SapMachine 2018-11-23: SapMachine has set jdk.includeInExceptions to hostInfo,jar
+//                        by default. Therefore expect according output!
 /*
  * @test
  * @library /test/lib
@@ -31,7 +34,7 @@
  *       ExceptionText
  * @run main/othervm
  *       ExceptionText
- *       WITHOUT_Enhanced_Text
+ *       expectEnhancedText
  * @run main/othervm
  *       -Djdk.includeInExceptions=
  *       ExceptionText
@@ -93,10 +96,10 @@ public class ExceptionText {
 
     static void testSecProp() {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
-        if (incInExc != null) {
+        // SapMachine 2018-11-23: SapMachine has jdk.includeInExceptions set to hostInfo,jar 
+        if (!incInExc.equals("hostInfo,jar")) {
             throw new RuntimeException("Test failed: default value of " +
-                "jdk.includeInExceptions security property is not null: " +
-                incInExc);
+                "jdk.includeInExceptions security property is not hostInfo,jar");
         }
     }
 
