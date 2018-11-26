@@ -210,6 +210,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   _verify_remote = BytecodeVerificationRemote;
   _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
   _shared_base_address = SharedBaseAddress;
+  _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
 }
 
 void SharedClassPathEntry::init(const char* name, bool is_modules_image, TRAPS) {
@@ -286,6 +287,12 @@ bool SharedClassPathEntry::validate(bool is_class_path) {
       FileMapInfo::fail_continue("A jar file is not the one used while building"
                                  " the shared archive file: %s", name);
     }
+  }
+
+  if (PrintSharedArchiveAndExit && !ok) {
+    // If PrintSharedArchiveAndExit is enabled, don't report failure to the
+    // caller. Please see above comments for more details.
+    ok = true;
   }
   return ok;
 }
@@ -479,16 +486,17 @@ bool FileMapInfo::validate_shared_path_table() {
     if (i < module_paths_start_index) {
       if (shared_path(i)->validate()) {
         log_info(class, path)("ok");
+      } else {
+        assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+        return false;
       }
     } else if (i >= module_paths_start_index) {
       if (shared_path(i)->validate(false /* not a class path entry */)) {
         log_info(class, path)("ok");
+      } else {
+        assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+        return false;
       }
-    } else if (!PrintSharedArchiveAndExit) {
-      _validating_shared_path_table = false;
-      _shared_path_table = NULL;
-      _shared_path_table_size = 0;
-      return false;
     }
   }
 
@@ -1349,6 +1357,21 @@ bool FileMapHeader::validate() {
     FileMapInfo::fail_continue("The shared archive file was created with less restrictive "
                   "verification setting than the current setting.");
     return false;
+  }
+
+  // Java agents are allowed during run time. Therefore, the following condition is not
+  // checked: (!_allow_archiving_with_java_agent && AllowArchivingWithJavaAgent)
+  // Note: _allow_archiving_with_java_agent is set in the shared archive during dump time
+  // while AllowArchivingWithJavaAgent is set during the current run.
+  if (_allow_archiving_with_java_agent && !AllowArchivingWithJavaAgent) {
+    FileMapInfo::fail_continue("The setting of the AllowArchivingWithJavaAgent is different "
+                               "from the setting in the shared archive.");
+    return false;
+  }
+
+  if (_allow_archiving_with_java_agent) {
+    warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
+            "for testing purposes only and should not be used in a production environment");
   }
 
   return true;
