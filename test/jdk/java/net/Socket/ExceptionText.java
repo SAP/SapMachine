@@ -97,7 +97,7 @@ public class ExceptionText {
     static void testSecProp() {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
         // SapMachine 2018-11-23: SapMachine has jdk.includeInExceptions set to hostInfo,jar 
-        if (!incInExc.equals("hostInfo,jar")) {
+        if (!"hostInfo,jar".equals(incInExc)) {
             throw new RuntimeException("Test failed: default value of " +
                 "jdk.includeInExceptions security property is not hostInfo,jar");
         }
