@@ -325,7 +325,8 @@ final class ProcessImpl extends Process {
                                    byte[] envBlock, int envc,
                                    byte[] dir,
                                    int[] fds,
-                                   boolean redirectErrorStream)
+                                   boolean redirectErrorStream,
+                                   boolean doCreateNewProcessGroupsOnSpawn)
         throws IOException;
 
     private ProcessImpl(final byte[] prog,
@@ -337,6 +338,9 @@ final class ProcessImpl extends Process {
                 final boolean redirectErrorStream)
             throws IOException {
 
+        // SapMachine 2018-11-19
+        boolean doCreateNewProcessGroupsOnSpawn = createNewProcessGroupsOnSpawn();
+
         pid = forkAndExec(launchMechanism.ordinal() + 1,
                           helperpath,
                           prog,
@@ -344,7 +348,8 @@ final class ProcessImpl extends Process {
                           envBlock, envc,
                           dir,
                           fds,
-                          redirectErrorStream);
+                          redirectErrorStream,
+                          doCreateNewProcessGroupsOnSpawn);
         processHandle = ProcessHandleImpl.getInternal(pid);
 
         try {
@@ -976,4 +981,24 @@ final class ProcessImpl extends Process {
             }
         }
     }
+
+    // SapMachine 2018-11-19
+    static private boolean createNewProcessGroupsOnSpawn() {
+        String propertyName = "sap.jdk.lang.Process.createNewProcessGroupsOnSpawn";
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Boolean>) () -> {
+                    String s = System.getProperty(propertyName);
+                    if (s == null) {
+                        return false;
+                    } else {
+                        try {
+                            return Boolean.parseBoolean(s);
+                        } catch (IllegalArgumentException e) {
+                            return false;
+                        }
+                    }
+                }
+        );
+    }
+
 }
