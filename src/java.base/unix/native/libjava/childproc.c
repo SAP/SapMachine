@@ -317,6 +317,13 @@ childProcess(void *arg)
 {
     const ChildStuff* p = (const ChildStuff*) arg;
 
+    /* SapMachine 2018-11-19 */
+    if (p->createNewProcessGroupOnSpawn) {
+        if (setpgid(0, 0) != 0) {
+            goto WhyCantJohnnyExec;
+        }
+    }
+
     /* Close the parent sides of the pipes.
        Closing pipe fds here is redundant, since closeDescriptors()
        would do it anyways, but a little paranoia is a good thing. */
