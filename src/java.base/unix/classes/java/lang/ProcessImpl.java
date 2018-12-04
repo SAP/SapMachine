@@ -327,7 +327,7 @@ final class ProcessImpl extends Process {
                                    int[] fds,
                                    boolean redirectErrorStream,
                                    // SapMachine 2018-11-19
-                                   boolean doCreateNewProcessGroupOnSpawn)
+                                   boolean createNewProcessGroupOnSpawn)
         throws IOException;
 
     private ProcessImpl(final byte[] prog,
@@ -340,7 +340,6 @@ final class ProcessImpl extends Process {
             throws IOException {
 
 
-        // SapMachine 2018-11-19
         pid = forkAndExec(launchMechanism.ordinal() + 1,
                           helperpath,
                           prog,
@@ -987,7 +986,7 @@ final class ProcessImpl extends Process {
     private static final boolean createNewProcessGroupOnSpawn;
 
     static {
-        String propertyName = "sap.jdk.lang.process.createNewProcessGroupOnSpawn";
+        String propertyName = "sap.jdk.lang.Process.createNewProcessGroupOnSpawn";
         createNewProcessGroupOnSpawn = AccessController.doPrivileged((PrivilegedAction<Boolean>)
                 ()->Boolean.getBoolean(propertyName));
     }

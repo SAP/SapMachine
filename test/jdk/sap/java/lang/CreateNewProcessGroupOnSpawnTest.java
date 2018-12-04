@@ -28,7 +28,7 @@
  *          id.
  * @requires (os.family != "windows")
  * @library /test/lib
- * @run main/othervm -Xmx64M -Dsap.jdk.lang.process.createNewProcessGroupOnSpawn=true CreateNewProcessGroupOnSpawnTest
+ * @run main/othervm -Xmx64M -Dsap.jdk.lang.Process.createNewProcessGroupOnSpawn=true CreateNewProcessGroupOnSpawnTest
  * @run main/othervm -Xmx64M CreateNewProcessGroupOnSpawnTest
  */
 
@@ -37,7 +37,7 @@ public class CreateNewProcessGroupOnSpawnTest {
     static native private long getpgid0(long pid);
 
     static private boolean shouldWeCreateNewProcessGroupsOnSpawn() {
-        return Boolean.getBoolean("sap.jdk.lang.process.createNewProcessGroupOnSpawn");
+        return Boolean.getBoolean("sap.jdk.lang.Process.createNewProcessGroupOnSpawn");
     }
 
     public static void main(String[] args) throws Throwable {
