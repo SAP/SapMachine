@@ -53,9 +53,10 @@ static jdwpTransportEnv single_env = (jdwpTransportEnv) &nif;
 void log_error(char const* format, ...) {
     va_list ap;
     va_start(ap, format);
-    vsnprintf(last_error, sizeof(last_error), format, ap);
-    last_error[sizeof(last_error) - 1] = 0;
+    // Make sure the last byte is never written, since we always want it to be 0.
+    vsnprintf(last_error, sizeof(last_error) - 1, format, ap);
     va_end(ap);
+    last_error[sizeof(last_error) - 1] = '\0';
     printf("Error: %s\n", last_error);
 }
 
@@ -330,10 +331,9 @@ static jdwpTransportError JNICALL fileSocketTransport_WritePacket(jdwpTransportE
 }
 
 static jdwpTransportError JNICALL fileSocketTransport_GetLastError(jdwpTransportEnv* env, char** error) {
-    jint size = (jint) (strlen(last_error) + 3);
-    *error = (*callback->alloc)(size);
-    snprintf(*error, (int) size, "%s\n", last_error);
-    strcpy(*error, last_error);
+    *error = (*callback->alloc)(sizeof(last_error));
+    memcpy(*error, last_error, sizeof(last_error));
+    (*error)[sizeof(last_error) - 1] = '\0';
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
