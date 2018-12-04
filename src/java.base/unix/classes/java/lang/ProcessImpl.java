@@ -350,7 +350,7 @@ final class ProcessImpl extends Process {
                           fds,
                           redirectErrorStream,
                           // SapMachine 2018-11-19
-                          doCreateNewProcessGroupOnSpawn);
+                          createNewProcessGroupOnSpawn);
         processHandle = ProcessHandleImpl.getInternal(pid);
 
         try {
@@ -984,11 +984,11 @@ final class ProcessImpl extends Process {
     }
 
     // SapMachine 2018-11-19
-    private static final boolean doCreateNewProcessGroupOnSpawn;
+    private static final boolean createNewProcessGroupOnSpawn;
 
     static {
         String propertyName = "sap.jdk.lang.process.createNewProcessGroupOnSpawn";
-        doCreateNewProcessGroupOnSpawn = AccessController.doPrivileged((PrivilegedAction<Boolean>)
+        createNewProcessGroupOnSpawn = AccessController.doPrivileged((PrivilegedAction<Boolean>)
                 ()->Boolean.getBoolean(propertyName));
     }
 

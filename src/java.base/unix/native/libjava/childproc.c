@@ -319,6 +319,7 @@ childProcess(void *arg)
 
     /* SapMachine 2018-11-19 */
     if (p->createNewProcessGroupOnSpawn) {
+        /* Make this process leader of its own process group (see setpgid(2)). */
         if (setpgid(0, 0) != 0) {
             goto WhyCantJohnnyExec;
         }
