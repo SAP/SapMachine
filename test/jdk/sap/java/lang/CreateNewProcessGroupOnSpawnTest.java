@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary A VM is started with -Dsap.jdk.lang.process.createNewProcessGroupsOnSpawn=true and itself starts
+ * @summary A VM is started with -Dsap.jdk.lang.Process.createNewProcessGroupOnSpawn=true and itself starts
  *          sub processes. Test that the process group id of the sub process is different from the parent process group
  *          id.
  * @requires (os.family != "windows")
@@ -36,7 +36,7 @@ public class CreateNewProcessGroupOnSpawnTest {
 
     static native private long getpgid0(long pid);
 
-    static private boolean shouldWeCreateNewProcessGroupsOnSpawn() {
+    static private boolean shouldWeCreateNewProcessGroupOnSpawn() {
         return Boolean.getBoolean("sap.jdk.lang.Process.createNewProcessGroupOnSpawn");
     }
 
@@ -70,7 +70,7 @@ public class CreateNewProcessGroupOnSpawnTest {
         p.destroy();
         p.waitFor();
 
-        if (shouldWeCreateNewProcessGroupsOnSpawn()) {
+        if (shouldWeCreateNewProcessGroupOnSpawn()) {
             System.out.println("We expect child to be pg leader.");
             if (childpgid == childpid) {
                 System.out.println("Ok: Child created in its own process group.");
