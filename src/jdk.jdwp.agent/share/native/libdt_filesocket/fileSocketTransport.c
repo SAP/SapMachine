@@ -38,7 +38,6 @@
 
 #define MAX_FILE_SOCKET_PATH_LEN 4096
 #define MAX_DATA_SIZE 1000
-#define USE_HANDSHAKE 1
 #define HANDSHAKE "JDWP-Handshake"
 
 static jboolean fake_open = JNI_FALSE;
@@ -51,13 +50,22 @@ static struct jdwpTransportNativeInterface_ nif;
 static jdwpTransportEnv single_env = (jdwpTransportEnv) &nif;
 
 void log_error(char const* format, ...) {
+    char* tmp = (*callback->alloc)(sizeof(last_error));
     va_list ap;
-    va_start(ap, format);
-    // Make sure the last byte is never written, since we always want it to be 0.
-    vsnprintf(last_error, sizeof(last_error) - 1, format, ap);
-    va_end(ap);
-    last_error[sizeof(last_error) - 1] = '\0';
-    printf("Error: %s\n", last_error);
+
+    if (tmp != NULL) {
+        va_start(ap, format);
+        vsnprintf(tmp, sizeof(last_error) - 1, format, ap);
+        tmp[sizeof(last_error) - 1] = '\0';
+        va_end(ap);
+
+        printf("Error: %s\n", tmp);
+
+        memcpy(last_error, tmp, sizeof(last_error));
+        (*callback->free)(tmp);
+    } else {
+        printf("Could not get memory to print error.\n");
+    }
 }
 
 static jdwpTransportError JNICALL fileSocketTransport_GetCapabilities(jdwpTransportEnv* env, JDWPTransportCapabilities *capabilities_ptr) {
@@ -99,7 +107,7 @@ static jdwpTransportError JNICALL fileSocketTransport_StartListening(jdwpTranspo
     if (strlen(address) <= MAX_FILE_SOCKET_PATH_LEN) {
         strcpy(path, address);
     } else {
-        log_error("Too long address: %s", address);
+        log_error("Address too long: %s", address);
         fake_open = JNI_TRUE;
     }
 
@@ -156,7 +164,6 @@ static jdwpTransportError JNICALL fileSocketTransport_Accept(jdwpTransportEnv* e
     if (!fileSocketTransport_HasValidHandle()) {
         fake_open = JNI_TRUE;
     } else {
-#if USE_HANDSHAKE
         char buf[sizeof(HANDSHAKE)];
         fileSocketTransport_ReadFully(buf, (int) strlen(HANDSHAKE));
         fileSocketTransport_WriteFully(HANDSHAKE, (int) strlen(HANDSHAKE));
@@ -164,7 +171,6 @@ static jdwpTransportError JNICALL fileSocketTransport_Accept(jdwpTransportEnv* e
         if (strcmp(buf, HANDSHAKE) != 0) {
             fake_open = JNI_TRUE;
         }
-#endif
     }
 
     return JDWPTRANSPORT_ERROR_NONE;
