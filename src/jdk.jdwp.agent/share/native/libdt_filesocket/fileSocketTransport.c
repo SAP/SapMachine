@@ -49,7 +49,7 @@ static char last_error[2048];
 static struct jdwpTransportNativeInterface_ nif;
 static jdwpTransportEnv single_env = (jdwpTransportEnv) &nif;
 
-void log_error(char const* format, ...) {
+void fileSocketTransport_logError(char const* format, ...) {
     char* tmp = (*callback->alloc)(sizeof(last_error));
     va_list ap;
 
@@ -107,7 +107,7 @@ static jdwpTransportError JNICALL fileSocketTransport_StartListening(jdwpTranspo
     if (strlen(address) <= MAX_FILE_SOCKET_PATH_LEN) {
         strcpy(path, address);
     } else {
-        log_error("Address too long: %s", address);
+        fileSocketTransport_logError("Address too long: %s", address);
         fake_open = JNI_TRUE;
     }
 
@@ -187,7 +187,7 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
     }
 
     if (packet == NULL) {
-        log_error("Packet is null while reading");
+        fileSocketTransport_logError("Packet is null while reading");
         return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
     }
 
@@ -200,7 +200,7 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
     }
 
     if (n != sizeof(jint)) {
-        log_error("Only read %d instead of %d bytes for length field", (int) n, (int) sizeof(jint));
+        fileSocketTransport_logError("Only read %d instead of %d bytes for length field", (int) n, (int) sizeof(jint));
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
@@ -209,7 +209,7 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
     n = fileSocketTransport_ReadFully((char *)&(packet->type.cmd.id), sizeof(jint));
 
     if (n < (int)sizeof(jint)) {
-        log_error("Only read %d instead of %d bytes for command id", (int) n, (int) sizeof(jint));
+        fileSocketTransport_logError("Only read %d instead of %d bytes for command id", (int) n, (int) sizeof(jint));
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
@@ -217,26 +217,26 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
     n = fileSocketTransport_ReadFully((char *)&(packet->type.cmd.flags), sizeof(jbyte));
 
     if (n < (int) sizeof(jbyte)) {
-        log_error("Only read %d bytes for flags", (int) n);
+        fileSocketTransport_logError("Only read %d bytes for flags", (int) n);
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
     if (packet->type.cmd.flags & JDWPTRANSPORT_FLAGS_REPLY) {
         n = fileSocketTransport_ReadFully((char *)&(packet->type.reply.errorCode), sizeof(jbyte));
         if (n < (int)sizeof(jshort)) {
-            log_error("Only read %d bytes for error code", (int) n);
+            fileSocketTransport_logError("Only read %d bytes for error code", (int) n);
             return JDWPTRANSPORT_ERROR_IO_ERROR;
         }
     } else {
         n = fileSocketTransport_ReadFully((char *)&(packet->type.cmd.cmdSet), sizeof(jbyte));
         if (n < (int)sizeof(jbyte)) {
-            log_error("Only read %d bytes for command set", (int) n);
+            fileSocketTransport_logError("Only read %d bytes for command set", (int) n);
             return JDWPTRANSPORT_ERROR_IO_ERROR;
         }
 
         n = fileSocketTransport_ReadFully((char *)&(packet->type.cmd.cmd), sizeof(jbyte));
         if (n < (int)sizeof(jbyte)) {
-            log_error("Only read %d bytes for command", (int) n);
+            fileSocketTransport_logError("Only read %d bytes for command", (int) n);
             return JDWPTRANSPORT_ERROR_IO_ERROR;
         }
     }
@@ -244,7 +244,7 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
     data_len = length - ((sizeof(jint) * 2) + (sizeof(jbyte) * 3));
 
     if (data_len < 0) {
-        log_error("Inavlid data length %d of read packet", (int) data_len);
+        fileSocketTransport_logError("Inavlid data length %d of read packet", (int) data_len);
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     } else if (data_len == 0) {
         packet->type.cmd.data = NULL;
@@ -258,7 +258,7 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
         n = fileSocketTransport_ReadFully((char *) packet->type.cmd.data, data_len);
 
         if (n < data_len) {
-            log_error("Only read %d bytes for JDWP payload but expected %d", (int) n, (int) data_len);
+            fileSocketTransport_logError("Only read %d bytes for JDWP payload but expected %d", (int) n, (int) data_len);
             return JDWPTRANSPORT_ERROR_IO_ERROR;
         }
     }
@@ -280,7 +280,7 @@ static jdwpTransportError JNICALL fileSocketTransport_WritePacket(jdwpTransportE
 
     /* Taken mostly from sockectTransport.c */
     if (packet == NULL) {
-        log_error("Packet is null when writing");
+        fileSocketTransport_logError("Packet is null when writing");
         return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
     }
 
@@ -288,7 +288,7 @@ static jdwpTransportError JNICALL fileSocketTransport_WritePacket(jdwpTransportE
     data_len = len - JDWP_HEADER_SIZE;
 
     if (data_len < 0) {
-        log_error("Packet to write has illegal data length %d", (int) data_len);
+        fileSocketTransport_logError("Packet to write has illegal data length %d", (int) data_len);
         return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
     }
 
@@ -315,20 +315,20 @@ static jdwpTransportError JNICALL fileSocketTransport_WritePacket(jdwpTransportE
         memcpy(header + JDWP_HEADER_SIZE, data, data_len);
         if ((n = fileSocketTransport_WriteFully((char *) &header, JDWP_HEADER_SIZE + data_len)) !=
             JDWP_HEADER_SIZE + data_len) {
-            log_error("Could only write %d bytes instead of %d of the packet", (int) n, (int) (JDWP_HEADER_SIZE + data_len));
+            fileSocketTransport_logError("Could only write %d bytes instead of %d of the packet", (int) n, (int) (JDWP_HEADER_SIZE + data_len));
             return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
         }
     } else {
         memcpy(header + JDWP_HEADER_SIZE, data, MAX_DATA_SIZE);
         if ((n = fileSocketTransport_WriteFully((char *) &header, JDWP_HEADER_SIZE + MAX_DATA_SIZE)) !=
             JDWP_HEADER_SIZE + MAX_DATA_SIZE) {
-            log_error("Could only write %d bytes instead of %d of the packet", (int) n, (int) (JDWP_HEADER_SIZE + MAX_DATA_SIZE));
+            fileSocketTransport_logError("Could only write %d bytes instead of %d of the packet", (int) n, (int) (JDWP_HEADER_SIZE + MAX_DATA_SIZE));
             return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
         }
         /* Send the remaining data bytes right out of the data area. */
         if ((n = fileSocketTransport_WriteFully((char *) data + MAX_DATA_SIZE,
             data_len - MAX_DATA_SIZE)) != data_len - MAX_DATA_SIZE) {
-            log_error("Could only write %d bytes instead of %d of the packet", (int) n, (int) (data_len - MAX_DATA_SIZE));
+            fileSocketTransport_logError("Could only write %d bytes instead of %d of the packet", (int) n, (int) (data_len - MAX_DATA_SIZE));
             return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
         }
     }

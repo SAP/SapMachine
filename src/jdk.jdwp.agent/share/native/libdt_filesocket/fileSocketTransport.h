@@ -28,9 +28,7 @@
 #ifndef FILE_SOCKET_TRANSPORT_H
 #define FILE_SOCKET_TRANSPORT_H
 
-#define log_error fileSocketTransport_logError
-
-void log_error(char const* format, ...);
+void fileSocketTransport_logError(char const* format, ...);
 jboolean fileSocketTransport_HasValidHandle();
 void fileSocketTransport_CloseImpl();
 void fileSocketTransport_AcceptImpl(char const* name);

@@ -119,27 +119,27 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         }
 
         if ((access(name, F_OK )) != -1 && (unlink(name) != 0)) {
-            log_error("Could not remove %s to create new file socket", name);
+            fileSocketTransport_logError("Could not remove %s to create new file socket", name);
             closeServerHandle();
             return;
         }
 
         if (bind(server_handle, (struct sockaddr*) &addr, addr_size) == -1) {
-            log_error("Could not bind file socket %s: %s", name, strerror(errno));
+            fileSocketTransport_logError("Could not bind file socket %s: %s", name, strerror(errno));
             closeServerHandle();
             return;
         }
 
 
         if (listen(server_handle, 1) == -1) {
-            log_error("Could not listen on file socket %s: %s", name, strerror(errno));
+            fileSocketTransport_logError("Could not listen on file socket %s: %s", name, strerror(errno));
             unlink(name);
             closeServerHandle();
             return;
         }
 
         if (chmod(name, (S_IREAD|S_IWRITE) &  ~(S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1) {
-            log_error("Chmod on %s failed: %s", strerror(errno));
+            fileSocketTransport_logError("Chmod on %s failed: %s", strerror(errno));
             unlink(name);
             closeServerHandle();
             return;
@@ -153,7 +153,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
   } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
 
   if (handle == INVALID_HANDLE_VALUE) {
-    log_error("Could not accept on file socket %s: %s", strerror(errno));
+      fileSocketTransport_logError("Could not accept on file socket %s: %s", strerror(errno));
   }
 }
 
@@ -161,7 +161,7 @@ int fileSocketTransport_ReadImpl(char* buffer, int size) {
     int result = read(handle, buffer, size);
 
     if (result <= 0) {
-        log_error("Read failed with result %d: %s", result, strerror(errno));
+        fileSocketTransport_logError("Read failed with result %d: %s", result, strerror(errno));
     }
 
     return result;
@@ -171,7 +171,7 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
     int result = write(handle, buffer, size);
 
     if (result <= 0) {
-        log_error("Read failed with result %d: %s", result, strerror(errno));
+        fileSocketTransport_logError("Read failed with result %d: %s", result, strerror(errno));
     }
 
     return result;

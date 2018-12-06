@@ -126,7 +126,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     static jboolean event_initialized = JNI_FALSE;
 
     if (!event_initialized && !initEvents(events, sizeof(events) / sizeof(events[0]))) {
-        log_error("Could not initialize events.");
+        fileSocketTransport_logError("Could not initialize events.");
         return;
     }
 
@@ -136,10 +136,10 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         PTOKEN_USER sid = GetUserSid();
         LPTSTR result;
         if (!sid) {
-            log_error("Could not get the user sid");
+            fileSocketTransport_logError("Could not get the user sid");
             return;
         } else if (!ConvertSidToStringSid(sid->User.Sid, &result)) {
-            log_error("Could not convert the user sid to a string");
+            fileSocketTransport_logError("Could not convert the user sid to a string");
             return;
         } else {
             user_id = (char const*) result;
@@ -155,7 +155,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     sec->bInheritHandle = FALSE;
 
     if (!ConvertStringSecurityDescriptorToSecurityDescriptor(sec_spec, SDDL_REVISION_1, &(sec->lpSecurityDescriptor), NULL)) {
-        log_error("Could not convert security descriptor %s", sec_spec);
+        fileSocketTransport_logError("Could not convert security descriptor %s", sec_spec);
         free(sec);
         return;
     }
@@ -165,7 +165,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     free(sec);
 
     if (handle == INVALID_HANDLE_VALUE) {
-        log_error("Could not create pipe, error code %lld", (long long) GetLastError());
+        fileSocketTransport_logError("Could not create pipe, error code %lld", (long long) GetLastError());
         return;
     }
 
@@ -197,13 +197,13 @@ void fileSocketTransport_AcceptImpl(char const* name) {
                         CancelIo(handle);
                     }
                 } else {
-                    log_error("Accept error (wait): %d", waitResult);
+                    fileSocketTransport_logError("Accept error (wait): %d", waitResult);
                     fileSocketTransport_CloseImpl();
                     return;
                 }
             } else {
                 // we definitely cannot get a new client connection (for example pipe was closed)
-                log_error("Accept error (connect) : %d.", (int) lastError);
+                fileSocketTransport_logError("Accept error (connect) : %d.", (int) lastError);
                 fileSocketTransport_CloseImpl();
                 return;
             }
@@ -223,16 +223,16 @@ int fileSocketTransport_ReadImpl(char* buffer, int size) {
 
             if (waitResult == WAIT_OBJECT_0) {
                 if (!GetOverlappedResult(handle, &read_event, &nread, FALSE)) {
-                    log_error("Read failed (overlap): %d", (int) GetLastError());
+                    fileSocketTransport_logError("Read failed (overlap): %d", (int) GetLastError());
                     return 0;
                 }
             } else {
                 CancelIo(handle);
-                log_error("Read failed (wait): %d", (int) waitResult);
+                fileSocketTransport_logError("Read failed (wait): %d", (int) waitResult);
                 return 0;
             }
         } else {
-            log_error("Read failed: %d", (int) GetLastError());
+            fileSocketTransport_logError("Read failed: %d", (int) GetLastError());
             return 0;
         }
     }
@@ -252,16 +252,16 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
 
             if (waitResult == WAIT_OBJECT_0) {
                 if (!GetOverlappedResult(handle, &write_event, &nwrite, FALSE)) {
-                    log_error("Write failed (overlap): %d", (int) GetLastError());
+                    fileSocketTransport_logError("Write failed (overlap): %d", (int) GetLastError());
                     return 0;
                 }
             } else {
                 CancelIo(handle);
-                log_error("Write_failed (wait): %d", (int) waitResult);
+                fileSocketTransport_logError("Write_failed (wait): %d", (int) waitResult);
                 return 0;
             }
         } else {
-            log_error("Write failed: %d", (int) GetLastError());
+            fileSocketTransport_logError("Write failed: %d", (int) GetLastError());
             return 0;
         }
     }
