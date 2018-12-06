@@ -144,17 +144,17 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             closeServerHandle();
             return;
         }
-  }
+    }
 
-  memset((void *) &addr, 0, len);
+    memset((void *) &addr, 0, len);
 
-  do {
-    handle = accept(server_handle, (struct sockaddr *) &addr, &len);
-  } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
+    do {
+        handle = accept(server_handle, (struct sockaddr *) &addr, &len);
+    } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
 
-  if (handle == INVALID_HANDLE_VALUE) {
-      fileSocketTransport_logError("Could not accept on file socket %s: %s", strerror(errno));
-  }
+    if (handle == INVALID_HANDLE_VALUE) {
+        fileSocketTransport_logError("Could not accept on file socket %s: %s", strerror(errno));
+    }
 }
 
 int fileSocketTransport_ReadImpl(char* buffer, int size) {
@@ -171,7 +171,7 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
     int result = write(handle, buffer, size);
 
     if (result <= 0) {
-        fileSocketTransport_logError("Read failed with result %d: %s", result, strerror(errno));
+        fileSocketTransport_logError("Write failed with result %d: %s", result, strerror(errno));
     }
 
     return result;
