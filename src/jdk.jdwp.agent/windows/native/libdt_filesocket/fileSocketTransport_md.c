@@ -110,7 +110,6 @@ void fileSocketTransport_CloseImpl() {
     SetEvent(cancel_event.hEvent);
 
     if (tmp != INVALID_HANDLE_VALUE) {
-        CancelIo(tmp);
         DisconnectNamedPipe(tmp);
         CloseHandle(tmp);
         handle = INVALID_HANDLE_VALUE;
