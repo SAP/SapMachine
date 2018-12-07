@@ -145,7 +145,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     }
 
     do {
-        handle = accept(server_handle, NULL, len);
+        handle = accept(server_handle, NULL, 0);
     } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
 
     if (handle == INVALID_HANDLE_VALUE) {
