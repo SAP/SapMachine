@@ -97,10 +97,8 @@ void fileSocketTransport_CloseImpl() {
 }
 
 void fileSocketTransport_AcceptImpl(char const* name) {
-    struct sockaddr_un addr;
-    socklen_t len = sizeof(struct sockaddr_un);
-
     if (server_handle == INVALID_HANDLE_VALUE) {
+        socklen_t len = sizeof(struct sockaddr_un);
         struct sockaddr_un addr;
 #ifdef _AIX
         // on some as400 releases we need this
@@ -146,10 +144,8 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         }
     }
 
-    memset((void *) &addr, 0, len);
-
     do {
-        handle = accept(server_handle, (struct sockaddr *) &addr, &len);
+        handle = accept(server_handle, NULL, len);
     } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
 
     if (handle == INVALID_HANDLE_VALUE) {
