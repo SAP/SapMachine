@@ -1,0 +1,210 @@
+###########################################################################
+#
+# GL: this is the SAP jtreg exclude list for SapMachine 12 jdk tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+
+#############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+#
+
+# SAPJVM GL This was in this file before 2018-10-05
+# This test opens as many sockets as possible and fails after a timeout.
+# When running in concurrency mode, all tests that need a socket and run in
+# parallel to this test will fail.
+java/nio/channels/AsyncCloseAndInterrupt.java                                        generic-all
+
+# SAPJVM GL This was in this file before 2018-10-05
+# sun/security
+sun/security/pkcs11/Secmod/AddTrustedCert.java                                       generic-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                                         generic-all
+
+# SAPJVM GL This was in this file before 2018-10-05
+# Flaky tests / other failing
+com/sun/jdi/JdbExprTest.sh                                                           generic-all
+sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
+javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
+
+#############################################################################
+# Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
+# Don't delete from this list, only add #-comments if the test is fixed
+# later on. We will (might) use this as reference for SAP JVM.
+#
+# If one of these tests is fixed, downport the fix to 11u!!
+
+# SAPJVM GL 2017-08-09
+# Needs Visual Studio Compiler installed.
+java/awt/JAWT/JAWT.sh                                                                generic-all
+
+# SAPJVM GL 2018-06-25
+# This requires a file from within the build that is not packed into our jtreg tests currently.
+java/util/Locale/LSRDataTest.java                                                    generic-all
+
+# SAPJVM GL 2018-07-04
+# Testbug: users mixed up by our infrastructure
+java/lang/ProcessHandle/InfoTest.java                                                windows-all
+
+# SAPJVM GL 2018-08-22
+# Tends to time out, seen a lot on solaris, and very sporadic on other platforms.
+# Timeout is already increased to 18 min. See also below.
+javax/xml/crypto/dsig/GenerationTests.java                                           aix-ppc64,solaris-sparcv9
+
+# SAPJVM GL 2018-07-13
+# Fails on our platforms. Fixed in jdk12 by:
+# 8207941: [TESTBUG] javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java
+#                    fails on machines without Arial font.
+# Downport!!
+#javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    generic-all
+
+# SAPJVM GL 2018-06-28
+# We didn't fix these issues for jdk11:
+java/net/ServerSocket/AcceptInheritHandle.java                                       aix-ppc64
+javax/xml/crypto/dsig/GenerationTests.java                                           aix-ppc64,solaris-sparcv9
+sun/nio/cs/OLD/TestIBMDB.java                                                        aix-ppc64
+
+# SAPJVM GL 2018-08-22
+# Failures on sparc on 2018-07-31. We see the same failures in jdk10.
+# Some just fail sporadic.
+com/sun/nio/sctp/SctpChannel/Bind.java                                               solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/CommUp.java                                             solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/Connect.java                                            solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/Receive.java                                            solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/ReceiveIntoDirect.java                                  solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/Shutdown.java                                           solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/Send.java                                               solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  solaris-sparcv9
+com/sun/nio/sctp/SctpServerChannel/Accept.java                                       solaris-sparcv9
+com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java                            solaris-sparcv9
+security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     solaris-sparcv9,macosx-all
+# These two even crashed!!
+sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
+sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
+
+# SAPJVM GL 2018-08-22
+# Failures on mac on 2018-07-31. We see the same failures in jdk10.
+security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     solaris-sparcv9,macosx-all
+
+# SAPJVM GL 2018-08-22
+# Crashes!! in jdk11 and jdk12
+javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                              solaris-sparcv9
+
+# SAPJVM GL 2018-08-22
+# RuntimeException: Could not find class leak. Fails in jdk11 and jdk12 on solaris only.
+jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
+
+# SAPJVM GL 2018-08-22
+# We see sporadic timeouts on all platforms, but mainly on ppc. Also in jdk10.
+# Should we investigate?
+java/nio/file/WatchService/DeleteInterference.java                                   generic-all
+
+# SAPJVM GL 2018-08-22
+# Test6981576.java: "Failed. Unexpected exit from test [exit code: 1]". Sporadic.
+# Only on s390x since 6/18 in jdk10 and jdk11.
+javax/swing/border/Test6981576.java                                                  linux-s390x
+
+# SAPJVM GL 2018-08-22
+# "reported cputime less than expected" We see this a lot on aix. jdk10 - jdk12
+# Testbug?  See exclude above.
+java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-ppc64
+
+# SAPJVM GL 2018-08-22
+# StressLoopback.java: timeout after 12 min. We see this a lot on aix jdk10 - jdk12.
+# Investigate?
+java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                      aix-ppc64
+
+# SAPJVM GL 2018-08-22
+# java.util.InputMismatchException. Fails a lot on mac in jdk9 - jdk12
+# Testproblem with locale?
+java/util/Scanner/ScanTest.java                                                      macosx-all
+
+# SAPJVM GL 2018-08-22
+# We see timeouts after 12 min in all jdk9 - jdk12
+java/net/httpclient/SmokeTest.java                                                   windows-all
+
+# SAPJVM GL 2018-08-22
+# RuntimeException: AtomicMoveNotSupportedException expected, seen on windows jdk7 - jdk12
+java/nio/file/Files/CopyAndMove.java                                                 windows-all
+
+# SAPJVM GL 2018-06-28
+# Needs to be fixed, backlog item exists. Didn't make it to jdk11.
+java/lang/ProcessBuilder/PipelineTest.java                                           aix-ppc64
+
+# SAPJVM GL 2018-03-16
+# Backlog item exists.
+# Oracle is working on this: 8207059: Update test certificates in QuoVadisCA.java test
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java    generic-all
+
+# SAPJVM GL 2018-08-22
+# Fixed in jdk12 by 8209996: [PPC64] Fix JFR profiling
+#jdk/jfr/api/consumer/TestRecordedFullStackTrace.java                                 linux-ppc64,linux-ppc64le
+#jdk/jfr/event/profiling/TestFullStackTrace.java                                      linux-ppc64,linux-ppc64le
+
+# SAPJVM GL 2018-08-22
+# Fails reproducible.
+javax/swing/reliability/HangDuringStaticInitialization.java                          macosx-all
+
+# SAPJVM GL 2018-08-22
+# Fails reproducible. ClassNotFoundException: jdk.test.lib.Asserts. Testbug?
+com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java                               generic-all
+
+# SAPJVM GL 2018-08-22
+# These tests don't compile any more since 2018-08-09.
+# SAPJVM GL 2018-09-14 I can not reproduce this locally, let's see.
+# 2018-09-18 Still fails... But why does it work locally?
+java/net/httpclient/examples/JavadocExamples.java                                    generic-all
+java/net/httpclient/offline/OfflineTesting.java                                      generic-all
+java/net/httpclient/whitebox/ConnectionPoolTestDriver.java                           generic-all
+java/net/httpclient/ConnectTimeoutHandshakeAsync.java                                generic-all
+java/net/httpclient/ConnectTimeoutHandshakeSync.java                                 generic-all
+java/net/httpclient/ConnectTimeoutNoProxyAsync.java                                  generic-all
+java/net/httpclient/ConnectTimeoutNoProxySync.java                                   generic-all
+java/net/httpclient/ConnectTimeoutWithProxyAsync.java                                generic-all
+java/net/httpclient/ConnectTimeoutWithProxySync.java                                 generic-all
+java/net/httpclient/HttpClientBuilderTest.java                                       generic-all
+
+# SAPJVM GL 2018-06-22 2018-08-22
+# Fails only on linuxx86_64.
+java/awt/font/Rotate/RotatedTextTest.java                                            linux-x64
+
+##############################################################################
+# Tests currently failing on linuxx86_64. Exclude and wait for Oracle to
+# fix them.
+
+# SAPJVM GL 2018-08-22
+# Failing on x86 as of today.
+java/lang/invoke/condy/CondyNestedResolutionTest.java                                generic-all
+java/lang/invoke/condy/CondyNestedTest.java                                          generic-all
+
+# These failed on linuxx86_64 today. 25.6. and 23.8.18
+jdk/internal/platform/cgroup/TestCgroupMetrics.java                                  generic-all
+
+###############################################################################
+# Functionality supported by IBM (at least on linux-ppc64le).
+
+# SAPJVM GL 2018-06-13
+# Asked Gustavo to have a look at the problems with sa.
+sun/tools/jhsdb/BasicLauncherTest.java                                               generic-ppc64,generic-ppc64le
+
+###############################################################################
+# New tests, unsupported new features
+
