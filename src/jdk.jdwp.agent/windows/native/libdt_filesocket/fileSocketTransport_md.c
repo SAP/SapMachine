@@ -224,16 +224,16 @@ int fileSocketTransport_ReadImpl(char* buffer, int size) {
             if (waitResult == WAIT_OBJECT_0) {
                 if (!GetOverlappedResult(handle, &read_event, &nread, FALSE)) {
                     fileSocketTransport_logError("Read failed (overlap): %d", (int) GetLastError());
-                    return 0;
+                    return -1;
                 }
             } else {
                 CancelIo(handle);
                 fileSocketTransport_logError("Read failed (wait): %d", (int) waitResult);
-                return 0;
+                return -1;
             }
         } else {
             fileSocketTransport_logError("Read failed: %d", (int) GetLastError());
-            return 0;
+            return -1;
         }
     }
 
@@ -253,16 +253,16 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
             if (waitResult == WAIT_OBJECT_0) {
                 if (!GetOverlappedResult(handle, &write_event, &nwrite, FALSE)) {
                     fileSocketTransport_logError("Write failed (overlap): %d", (int) GetLastError());
-                    return 0;
+                    return -1;
                 }
             } else {
                 CancelIo(handle);
                 fileSocketTransport_logError("Write_failed (wait): %d", (int) waitResult);
-                return 0;
+                return -1;
             }
         } else {
             fileSocketTransport_logError("Write failed: %d", (int) GetLastError());
-            return 0;
+            return -1;
         }
     }
 

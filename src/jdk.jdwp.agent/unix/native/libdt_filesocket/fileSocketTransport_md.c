@@ -158,9 +158,13 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 }
 
 int fileSocketTransport_ReadImpl(char* buffer, int size) {
-    int result = read(handle, buffer, size);
+    int result;
 
-    if (result <= 0) {
+    do {
+        result = read(handle, buffer, size);
+    } while (result == -1 && errno == EINTR);
+
+    if (result < 0) {
         fileSocketTransport_logError("Read failed with result %d: %s", result, strerror(errno));
     }
 
@@ -168,9 +172,13 @@ int fileSocketTransport_ReadImpl(char* buffer, int size) {
 }
 
 int fileSocketTransport_WriteImpl(char* buffer, int size) {
-    int result = write(handle, buffer, size);
+    int result;
 
-    if (result <= 0) {
+    do {
+        result = write(handle, buffer, size);
+    } while (result == -1 && errno == EINTR);
+
+    if (result < 0) {
         fileSocketTransport_logError("Write failed with result %d: %s", result, strerror(errno));
     }
 

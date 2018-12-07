@@ -128,8 +128,8 @@ static int fileSocketTransport_ReadFully(char* buf, int len) {
     while (len > 0) {
         int n = fileSocketTransport_ReadImpl(buf, len);
 
-        if (n <= 0) {
-            return 0;
+        if (n < 0) {
+            return -1;
         }
 
         buf += n;
@@ -146,8 +146,8 @@ static int fileSocketTransport_WriteFully(char* buf, int len) {
     while (len > 0) {
         int n = fileSocketTransport_WriteImpl(buf, len);
 
-        if (n <= 0) {
-            return 0;
+        if (n < 0) {
+            return -1;
         }
 
         buf += n;
