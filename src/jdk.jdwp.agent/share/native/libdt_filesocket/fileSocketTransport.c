@@ -40,6 +40,11 @@
 #define MAX_DATA_SIZE 1000
 #define HANDSHAKE "JDWP-Handshake"
 
+/* Since the jdwp agent sometimes kills the VM outright when
+ * the connection fails, we always fake a successful 
+ * connection and instead fail in the read/write packet methods,
+ * which does not cause the VM to exit.
+ */
 static jboolean fake_open = JNI_FALSE;
 static jboolean initialized = JNI_FALSE;
 static JavaVM *jvm;
