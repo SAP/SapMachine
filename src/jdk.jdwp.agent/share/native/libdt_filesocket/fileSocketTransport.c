@@ -101,7 +101,8 @@ static jdwpTransportError JNICALL fileSocketTransport_Close(jdwpTransportEnv* en
 
 static jdwpTransportError JNICALL fileSocketTransport_Attach(jdwpTransportEnv* env, const char* address, jlong attach_timeout, jlong handshake_timeout) {
     /* We don't support attach. */
-    return JDWPTRANSPORT_ERROR_NONE;
+    fileSocketTransport_logError("Only server=y mode is supported by dt_filesocket");
+    return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
 }
 
 static jdwpTransportError JNICALL fileSocketTransport_StartListening(jdwpTransportEnv* env, const char* address, char** actual_address) {
