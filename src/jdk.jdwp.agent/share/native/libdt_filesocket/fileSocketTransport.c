@@ -107,6 +107,16 @@ static jdwpTransportError JNICALL fileSocketTransport_Attach(jdwpTransportEnv* e
 static jdwpTransportError JNICALL fileSocketTransport_StartListening(jdwpTransportEnv* env, const char* address, char** actual_address) {
     /* Only make sure we have no open connection. */
     fileSocketTransport_Close(env);
+
+    if (address == NULL) {
+        address = fileSocketTransport_GetDefaultAddress();
+    }
+
+    if (address == NULL) {
+        fileSocketTransport_logError("Could not determine a default address");
+        return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
+    }
+
     *actual_address = (char*) address;
 
     if (strlen(address) <= MAX_FILE_SOCKET_PATH_LEN) {
@@ -134,7 +144,9 @@ static int fileSocketTransport_ReadFully(char* buf, int len) {
         int n = fileSocketTransport_ReadImpl(buf, len);
 
         if (n < 0) {
-            return -1;
+            return n;
+        } else if (n == 0) {
+            break;
         }
 
         buf += n;
@@ -152,7 +164,9 @@ static int fileSocketTransport_WriteFully(char* buf, int len) {
         int n = fileSocketTransport_WriteImpl(buf, len);
 
         if (n < 0) {
-            return -1;
+            return n;
+        } else if (n == 0) {
+            break;
         }
 
         buf += n;
@@ -209,7 +223,7 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
-    length = (jint) htonl(length);
+    length = (jint) ntohl(length);
     packet->type.cmd.len = length;
     n = fileSocketTransport_ReadFully((char *)&(packet->type.cmd.id), sizeof(jint));
 
@@ -218,7 +232,7 @@ static jdwpTransportError JNICALL fileSocketTransport_ReadPacket(jdwpTransportEn
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
-    packet->type.cmd.id = (jint) htonl(packet->type.cmd.id);
+    packet->type.cmd.id = (jint) ntohl(packet->type.cmd.id);
     n = fileSocketTransport_ReadFully((char *)&(packet->type.cmd.flags), sizeof(jbyte));
 
     if (n < (int) sizeof(jbyte)) {

@@ -267,3 +267,23 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
 
     return (int) nwrite;
 }
+
+static char default_name[160] = { 0, };
+
+char* fileSocketTransport_GetDefaultAddress() {
+    if (default_name[0] == '\0') {
+        PTOKEN_USER user = GetUserSid();
+        char* user_name = NULL;
+        if (ConvertSidToStringSidA(user->User.Sid, &user_name)) {
+            snprintf(default_name, sizeof(default_name), "\\\\.\\Pipe\\dt_filesocket_%lld_%s", (long long) _getpid(),
+                user_name ? user_name : "unknown_user");
+            LocalFree(user_name);
+            default_name[sizeof(default_name) - 1] = '\0';
+        } else {
+            fileSocketTransport_logError("Could not convert sid: %d", GetLastError());
+            return NULL;
+        }
+    }
+
+    return default_name;
+}

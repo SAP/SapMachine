@@ -180,3 +180,14 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
 
     return result;
 }
+
+static char default_name[160] = { 0, };
+
+char* fileSocketTransport_GetDefaultAddress() {
+    if (default_name[0] == '\0') {
+        snprintf(default_name, sizeof(default_name), "/tmp/dt_filesocket_%lld_%lld", (long long) getpid(), (long long) geteuid());
+        default_name[sizeof(default_name) - 1] = '\0';
+    }
+
+    return default_name;
+}
