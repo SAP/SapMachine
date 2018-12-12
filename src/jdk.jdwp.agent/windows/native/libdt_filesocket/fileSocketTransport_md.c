@@ -129,7 +129,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         return;
     }
 
-    event_initialized = TRUE;
+    event_initialized = JNI_TRUE;
 
     if (user_id == NULL) {
         PTOKEN_USER sid = GetUserSid();
