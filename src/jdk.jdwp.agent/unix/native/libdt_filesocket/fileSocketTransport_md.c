@@ -48,6 +48,7 @@
 
 #ifdef __sun
 #include <sys/filio.h>
+#include <ucred.h>
 #endif
 
 // MacOS X does not declare the macros SIGRTMIN and SIGRTMAX
@@ -64,17 +65,21 @@
 static int server_handle = INVALID_HANDLE_VALUE;
 static int handle = INVALID_HANDLE_VALUE;
 
-static void closeServerHandle() {
-    if (server_handle != INVALID_HANDLE_VALUE) {
+static void closeHandle(int* handle) {
+    if (*handle != INVALID_HANDLE_VALUE) {
         int rv = -1;
 
         do {
-           rv = close(server_handle);
+           rv = close(*handle);
         } while (rv == -1 && errno == EINTR);
 
 
-        server_handle = INVALID_HANDLE_VALUE;
+        *handle = INVALID_HANDLE_VALUE;
     }
+}
+
+static void closeServerHandle() {
+    closeHandle(&server_handle);
 }
 
 jboolean fileSocketTransport_HasValidHandle() {
@@ -82,18 +87,18 @@ jboolean fileSocketTransport_HasValidHandle() {
 }
 
 void fileSocketTransport_CloseImpl() {
-    if (handle != INVALID_HANDLE_VALUE) {
-        int rv = -1;
+    closeHandle(&handle);
+}
 
-        shutdown(handle, SHUT_RDWR);
+void cleanupFailedAccept(char const* name) {
+    unlink(name);
+    closeServerHandle();
+    fileSocketTransport_CloseImpl();
+}
 
-        do {
-           rv = close(handle);
-        } while (rv == -1 && errno == EINTR);
-
-
-        handle = INVALID_HANDLE_VALUE;
-    }
+void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
+    fileSocketTransport_logError("%s: socket %s: %s", error_msg, name, strerror(errno));
+    cleanupFailedAccept(name);
 }
 
 void fileSocketTransport_AcceptImpl(char const* name) {
@@ -117,29 +122,27 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         }
 
         if ((access(name, F_OK )) != -1 && (unlink(name) != 0)) {
-            fileSocketTransport_logError("Could not remove %s to create new file socket", name);
-            closeServerHandle();
+            logAndCleanupFailedAccept("Could not remove file to create new file socket", name);
             return;
         }
 
         if (bind(server_handle, (struct sockaddr*) &addr, addr_size) == -1) {
-            fileSocketTransport_logError("Could not bind file socket %s: %s", name, strerror(errno));
-            closeServerHandle();
-            return;
-        }
-
-
-        if (listen(server_handle, 1) == -1) {
-            fileSocketTransport_logError("Could not listen on file socket %s: %s", name, strerror(errno));
-            unlink(name);
-            closeServerHandle();
+            logAndCleanupFailedAccept("Could not bind file socket", name);
             return;
         }
 
         if (chmod(name, (S_IREAD|S_IWRITE) &  ~(S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1) {
-            fileSocketTransport_logError("Chmod on %s failed: %s", strerror(errno));
-            unlink(name);
-            closeServerHandle();
+            logAndCleanupFailedAccept("Chmod on file socket failed", name);
+            return;
+        }
+
+        if (chown(name, geteuid(), getegid()) == -1) {
+            logAndCleanupFailedAccept("Chown on file socket failed", name);
+            return;
+        }
+
+        if (listen(server_handle, 1) == -1) {
+            logAndCleanupFailedAccept("Could not listen on file socket", name);
             return;
         }
     }
@@ -149,7 +152,64 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
 
     if (handle == INVALID_HANDLE_VALUE) {
-        fileSocketTransport_logError("Could not accept on file socket %s: %s", strerror(errno));
+        logAndCleanupFailedAccept("Could not accept on file socket", name);
+    } else {
+        uid_t other_user;
+        gid_t other_group;
+
+#ifdef __linux__
+        struct ucred cred_info;
+        socklen_t optlen = sizeof(cred_info);
+
+        if (getsockopt(handle, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
+            logAndCleanupFailedAccept("Failed to get socket option SO_PEERCRED of file socket", name);
+            return;
+        }
+
+        other_user = cred_info.uid;
+        other_group = cred_info.gid;
+#elif __APPLE__
+        if (getpeereid(handle, &other_user, &other_group) != 0) {
+            logAndCleanupFailedAccept("Failed to get peer id of file socket", name);
+            return;
+        }
+#elif _AIX
+        struct peercred_struct cred_info;
+        socklen_t optlen = sizeof(cred_info);
+
+        if (getsockopt(handle, SOL_SOCKET, SO_PEERID, (void*) &cred_info, &optlen) == -1) {
+            logAndCleanupFailedAccept("Failed to get socket option SO_PEERID of file socket", name);
+            return;
+        }
+
+        other_user = cred_info.euid;
+        other_group = cred_info.egid;
+#elif __sun
+        ucred_t * cred_info = NULL;
+
+        if (getpeerucred(handle, &cred_info) == -1) {
+            logAndCleanupFailedAccept("Failed to peer credientials of file socket", name);
+            return;
+        }
+
+        other_user = ucred_geteuid(cred_info);
+        other_group = ucred_getegid(cred_info);
+#else
+#error "Unknown platform"
+#endif
+
+        if (other_user == 0) {
+            /* Allow root */
+        } else if (other_user != geteuid()) {
+            fileSocketTransport_logError("Cannot allow user %d to connect to file socket %d of user %d",
+                                         (int) other_user, name, (int) geteuid());
+            cleanupFailedAccept(name);
+        } else if (other_group != getegid()) {
+            fileSocketTransport_logError("Cannot allow user %d (groupd %d) to connect to file socket "
+                                         "%d of user %d (group %d)", (int) other_user, (int) other_group,
+                                         name, (int) geteuid(), (int) getegid());
+            cleanupFailedAccept(name);
+        }
     }
 }
 
