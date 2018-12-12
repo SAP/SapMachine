@@ -30,32 +30,12 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/un.h>
-#include <sys/time.h>
-#include <sys/times.h>
-#include <ctype.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <signal.h>
 #include <stdio.h>
-#include <strings.h>
-#include <string.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <poll.h>
-#include <pthread.h>
-#include <pwd.h>
 
 #ifdef __sun
-#include <sys/filio.h>
 #include <ucred.h>
-#endif
-
-// MacOS X does not declare the macros SIGRTMIN and SIGRTMAX
-#ifdef __APPLE__
-  #ifndef SIGRTMAX
-    #define SIGRTMAX SIGUSR2
-  #endif
 #endif
 
 #include "jni.h"
