@@ -58,27 +58,18 @@ static void closeHandle(int* handle) {
     }
 }
 
-static void closeServerHandle() {
-    closeHandle(&server_handle);
-}
-
 jboolean fileSocketTransport_HasValidHandle() {
     return handle == INVALID_HANDLE_VALUE ? JNI_FALSE : JNI_TRUE;
 }
 
 void fileSocketTransport_CloseImpl() {
+    closeHandle(&server_handle);
     closeHandle(&handle);
-}
-
-void cleanupFailedAccept(char const* name) {
-    unlink(name);
-    closeServerHandle();
-    fileSocketTransport_CloseImpl();
 }
 
 void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
     fileSocketTransport_logError("%s: socket %s: %s", error_msg, name, strerror(errno));
-    cleanupFailedAccept(name);
+    fileSocketTransport_CloseImpl();
 }
 
 void fileSocketTransport_AcceptImpl(char const* name) {
@@ -98,6 +89,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         server_handle = socket(PF_UNIX, SOCK_STREAM, 0);
 
         if (server_handle == INVALID_HANDLE_VALUE) {
+            logAndCleanupFailedAccept("Could not create doamin socket", name);
             return;
         }
 
@@ -130,6 +122,8 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     do {
         handle = accept(server_handle, NULL, NULL);
     } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
+
+    unlink(name);
 
     if (handle == INVALID_HANDLE_VALUE) {
         logAndCleanupFailedAccept("Could not accept on file socket", name);
@@ -183,12 +177,12 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         } else if (other_user != geteuid()) {
             fileSocketTransport_logError("Cannot allow user %d to connect to file socket %d of user %d",
                                          (int) other_user, name, (int) geteuid());
-            cleanupFailedAccept(name);
+            fileSocketTransport_CloseImpl();
         } else if (other_group != getegid()) {
             fileSocketTransport_logError("Cannot allow user %d (groupd %d) to connect to file socket "
                                          "%d of user %d (group %d)", (int) other_user, (int) other_group,
                                          name, (int) geteuid(), (int) getegid());
-            cleanupFailedAccept(name);
+            fileSocketTransport_CloseImpl();
         }
     }
 }
