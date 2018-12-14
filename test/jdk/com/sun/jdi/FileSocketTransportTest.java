@@ -29,7 +29,7 @@
  *
  * @author Ralf Schmelter
  *
- * @library /test/lib libs/com.sap.jvm.jdkext-8-patch-20181207.065434-1.jar
+ * @library /test/lib libs/com.sap.jvm.jdkext-8-patch-20181214.065356-2.jar
  * @run compile FileSocketTransportTest.java
  * @run main/othervm FileSocketTransportTest
  */
