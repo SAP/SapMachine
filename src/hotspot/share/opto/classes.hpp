@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,7 @@ macro(Loop)
 macro(LoopLimit)
 macro(Mach)
 macro(MachProj)
+macro(MulAddS2I)
 macro(MaxI)
 macro(MemBarAcquire)
 macro(LoadFence)
@@ -264,6 +265,21 @@ macro(RoundDouble)
 macro(RoundFloat)
 macro(SafePoint)
 macro(SafePointScalarObject)
+#if INCLUDE_SHENANDOAHGC
+#define shmacro(x) macro(x)
+#else
+#define shmacro(x) optionalmacro(x)
+#endif
+shmacro(ShenandoahCompareAndExchangeP)
+shmacro(ShenandoahCompareAndExchangeN)
+shmacro(ShenandoahCompareAndSwapN)
+shmacro(ShenandoahCompareAndSwapP)
+shmacro(ShenandoahWeakCompareAndSwapN)
+shmacro(ShenandoahWeakCompareAndSwapP)
+shmacro(ShenandoahEnqueueBarrier)
+shmacro(ShenandoahReadBarrier)
+shmacro(ShenandoahWriteBarrier)
+shmacro(ShenandoahWBMemProj)
 macro(SCMemProj)
 macro(SqrtD)
 macro(SqrtF)
@@ -326,6 +342,7 @@ macro(MulVF)
 macro(MulReductionVF)
 macro(MulVD)
 macro(MulReductionVD)
+macro(MulAddVS2VI)
 macro(FmaVD)
 macro(FmaVF)
 macro(DivVF)
@@ -379,3 +396,7 @@ macro(ExtractI)
 macro(ExtractL)
 macro(ExtractF)
 macro(ExtractD)
+macro(Digit)
+macro(LowerCase)
+macro(UpperCase)
+macro(Whitespace)
