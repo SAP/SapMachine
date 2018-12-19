@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.PatternSyntaxException;
 
 // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
 import java.nio.file.attribute.PosixFilePermission;
@@ -42,10 +42,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
  * @author Xueming Shen
  */
-
 class ZipUtils {
 
     // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
@@ -286,7 +284,6 @@ class ZipUtils {
             ldt.getMinute() << 5 |
             ldt.getSecond() >> 1) & 0xffffffffL;
     }
-
 
     // used to adjust values between Windows and java epoch
     private static final long WINDOWS_EPOCH_IN_MICROSECONDS = -11644473600000000L;

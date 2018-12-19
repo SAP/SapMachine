@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,25 @@
 
 package jdk.nio.zipfs;
 
-import java.nio.file.attribute.*;
 import java.io.IOException;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
 import java.util.Set;
 
-/*
- * @author  Xueming Shen, Rajendra Gutupalli, Jaya Hangal
+/**
+ * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
 // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-class ZipFileAttributeView implements PosixFileAttributeView
-{
+class ZipFileAttributeView implements PosixFileAttributeView {
     private static enum AttrID {
         size,
         creationTime,
@@ -114,8 +119,7 @@ class ZipFileAttributeView implements PosixFileAttributeView
         }
     }
 
-    public ZipFileAttributes readAttributes() throws IOException
-    {
+    public ZipFileAttributes readAttributes() throws IOException {
         return path.getAttributes();
     }
 
@@ -156,11 +160,11 @@ class ZipFileAttributeView implements PosixFileAttributeView
     {
         try {
             if (AttrID.valueOf(attribute) == AttrID.lastModifiedTime)
-                setTimes ((FileTime)value, null, null);
+                setTimes((FileTime)value, null, null);
             if (AttrID.valueOf(attribute) == AttrID.lastAccessTime)
-                setTimes (null, (FileTime)value, null);
+                setTimes(null, (FileTime)value, null);
             if (AttrID.valueOf(attribute) == AttrID.creationTime)
-                setTimes (null, null, (FileTime)value);
+                setTimes(null, null, (FileTime)value);
             // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
             if (AttrID.valueOf(attribute) == AttrID.permissions)
                 setPermissions((Set<PosixFilePermission>)value);
