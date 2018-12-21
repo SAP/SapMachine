@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +21,37 @@
  * questions.
  */
 
-package MyPackage;
-
-/**
+/*
  * @test
- * @build Frame HeapMonitor ThreadInformation
- * @summary Ensures the JVMTI Heap Monitor is not thread enable (test to change when it becomes so)
- * @compile HeapMonitorEventsForTwoThreadsTest.java
- * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorEventsForTwoThreadsTest
+ * @bug 8211698
+ * @summary Crash in C2 compiled code during execution of double array heavy processing code
+ *
+ * @run main/othervm -XX:CompileOnly=Test8211698.test Test8211698
+ *
  */
 
-import java.util.List;
+public class Test8211698 {
 
-public class HeapMonitorEventsForTwoThreadsTest {
-  public native static boolean checkSamples();
-
-  public static void main(String[] args) {
-    final int numThreads = 24;
-    List<ThreadInformation> threadList = ThreadInformation.createThreadList(numThreads);
-
-    Thread firstThread = threadList.get(0).getThread();
-    Thread secondThread = threadList.get(1).getThread();
-    if (HeapMonitor.enableSamplingEventsForTwoThreads(firstThread, secondThread)) {
-      throw new RuntimeException("Sampling event is thread enabled, that is unexpected.");
+    public static void main(String[] args) {
+        Test8211698 issue = new Test8211698();
+        for (int i = 0; i < 10000; i++) {
+            issue.test();
+        }
     }
-  }
+
+    public void test() {
+        int[] iarr1 = new int[888];
+        for (int i = 5; i > 0; i--) {
+            for (int j = 0; j <= i - 1; j++) {
+                int istep = 2 * j - i;
+                int iadj = 0;
+                if (istep < 0) {
+                    iadj = iarr1[-istep];
+                } else {
+                    iadj = iarr1[istep];
+                }
+            }
+        }
+    }
 }
+
