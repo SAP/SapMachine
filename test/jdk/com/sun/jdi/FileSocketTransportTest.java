@@ -56,13 +56,17 @@ public class FileSocketTransportTest {
             System.exit(1);
         }
 
+	String testSrc = System.getProperty("test.src");
+        System.setProperty("com.sap.jdk.ext.natives.platformRoot",
+                testSrc + "/libs/jdkext_natives");
+	System.setProperty("com.sap.jdk.ext.natives.traceLoading", "true");
         String socketName;
         long pid = ProcessTools.getProcessId();
 
         if (Platform.isWindows()) {
             socketName = "\\\\.\\Pipe\\FileSocketTransportTest" + pid;
         } else {
-            socketName = "testSocket" + pid;
+            socketName = "/tmp/testSocket" + pid;
         }
 
         List<String> opts = new ArrayList<>();
