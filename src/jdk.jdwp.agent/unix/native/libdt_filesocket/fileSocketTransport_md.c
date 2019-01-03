@@ -132,6 +132,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         uid_t other_user;
         gid_t other_group;
 
+        /* Check if the connected user is the same as the user running the VM. */
 #ifdef __linux__
         struct ucred cred_info;
         socklen_t optlen = sizeof(cred_info);
@@ -174,9 +175,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 #error "Unknown platform"
 #endif
 
-        if (other_user == 0) {
-            /* Allow root */
-        } else if (other_user != geteuid()) {
+        if (other_user != geteuid()) {
             fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
                                          (int) other_user, name, (int) geteuid());
             fileSocketTransport_CloseImpl();
