@@ -176,12 +176,12 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         if (other_user == 0) {
             /* Allow root */
         } else if (other_user != geteuid()) {
-            fileSocketTransport_logError("Cannot allow user %d to connect to file socket %d of user %d",
+            fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
                                          (int) other_user, name, (int) geteuid());
             fileSocketTransport_CloseImpl();
         } else if (other_group != getegid()) {
             fileSocketTransport_logError("Cannot allow user %d (groupd %d) to connect to file socket "
-                                         "%d of user %d (group %d)", (int) other_user, (int) other_group,
+                                         "%s of user %d (group %d)", (int) other_user, (int) other_group,
                                          name, (int) geteuid(), (int) getegid());
             fileSocketTransport_CloseImpl();
         }
