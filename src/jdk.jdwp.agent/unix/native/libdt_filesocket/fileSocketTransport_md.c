@@ -121,8 +121,9 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
     do {
         handle = accept(server_handle, NULL, NULL);
-    } while (server_handle == INVALID_HANDLE_VALUE && errno == EINTR);
+    } while (handle == -1 && errno == EINTR);
 
+    /* We can remove the file since we are connected (or it failed). */
     unlink(name);
 
     if (handle == INVALID_HANDLE_VALUE) {
