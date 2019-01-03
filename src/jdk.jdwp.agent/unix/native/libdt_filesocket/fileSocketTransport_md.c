@@ -160,7 +160,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         other_user = cred_info.euid;
         other_group = cred_info.egid;
 #elif __sun
-        ucred_t * cred_info = NULL;
+        ucred_t* cred_info = NULL;
 
         if (getpeerucred(handle, &cred_info) == -1) {
             logAndCleanupFailedAccept("Failed to peer credientials of file socket", name);
@@ -169,6 +169,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
         other_user = ucred_geteuid(cred_info);
         other_group = ucred_getegid(cred_info);
+        ucred_free(cred_info);
 #else
 #error "Unknown platform"
 #endif
