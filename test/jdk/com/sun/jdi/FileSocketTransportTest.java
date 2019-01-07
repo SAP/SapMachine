@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8214892
+ * @requires os.arch != "aarch64"
  * @summary Test that the onjcmd option of the jdwp agent works.
  *
  * @author Ralf Schmelter
