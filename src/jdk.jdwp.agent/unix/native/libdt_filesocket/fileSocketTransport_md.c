@@ -76,8 +76,8 @@ void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
 void fileSocketTransport_AcceptImpl(char const* name) {
     if (server_handle == INVALID_HANDLE_VALUE) {
         socklen_t len = sizeof(struct sockaddr_un);
-        int addr_size = sizeof(addr);
         struct sockaddr_un addr;
+        int addr_size = sizeof(addr);
 
         memset((void *) &addr, 0, len);
         addr.sun_family = AF_UNIX;
