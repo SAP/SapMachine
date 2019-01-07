@@ -76,16 +76,17 @@ void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
 void fileSocketTransport_AcceptImpl(char const* name) {
     if (server_handle == INVALID_HANDLE_VALUE) {
         socklen_t len = sizeof(struct sockaddr_un);
+        int addr_size = sizeof(addr);
         struct sockaddr_un addr;
-#ifdef _AIX
-        // on some as400 releases we need this
-        const int addr_size = SUN_LEN(&addr);
-#else
-        const int addr_size = sizeof(addr);
-#endif
+
         memset((void *) &addr, 0, len);
         addr.sun_family = AF_UNIX;
         strncpy(addr.sun_path, name, sizeof(addr.sun_path) - 1);
+
+#ifdef _AIX
+        addr.sun_len = strlen(addr.sun_path);
+        addr_size = SUN_LEN(&addr);
+#endif
 
         server_handle = socket(PF_UNIX, SOCK_STREAM, 0);
 
