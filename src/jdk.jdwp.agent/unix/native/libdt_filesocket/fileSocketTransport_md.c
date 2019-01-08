@@ -80,14 +80,14 @@ static long long get_guid() {
     if (guid == 0) {
         struct timeval tv;
 
-        if (0 && gettimeofday(&tv, NULL) == 0) {
+        if (gettimeofday(&tv, NULL) == 0) {
             guid = (long long) tv.tv_usec + 1000000 * (long long) (tv.tv_sec);
         } else {
             guid = (long long) time(NULL); /* Not great, but not fatal either and usually should not happen. */
         }
     }
 
-    return guid;
+    return guid == 0 ? 1 : guid;
 }
 
 static void cleanupStaleDefaultSockets() {
@@ -111,13 +111,12 @@ static void cleanupStaleDefaultSockets() {
             while ((ent = readdir(dir)) != NULL) {
                 // If the prefix matches, check if a process with the same pid runs.
                 if (strncmp(prefix, ent->d_name, (size_t) prefix_len) == 0) {
-                    char* pid_start = ent->d_name + prefix_len;
                     char* pid_end;
-                    char* guid_end;
-                    long long pid = strtoll(pid_start, &pid_end, 10);
+                    long long pid = strtoll(ent->d_name + prefix_len, &pid_end, 10);
 
                     if ((*pid_end == '_') && (pid != 0)) {
-                        strtoll(pid_end + 1, &guid_end, 10);
+                        char* guid_end;
+                        long long guid = strtoll(pid_end + 1, &guid_end, 10);
 
                         if ((pid_end[1] != '\0') && (*guid_end == '\0')) {
                             errno = 0;
@@ -125,9 +124,11 @@ static void cleanupStaleDefaultSockets() {
                             if ((pid == (long long) getpid()) || ((kill((pid_t) pid, 0) == -1) && (errno = ESRCH))) {
                                 size_t len = strlen(tmpdir) + 1 + strlen(ent->d_name) + 1;
                                 char* filename = (char*) malloc(len);
+
                                 if (filename && snprintf(filename, len, "%s/%s", tmpdir, ent->d_name) == (int) len - 1) {
                                     unlink(filename);
                                 }
+
                                 free(filename);
                             }
                         }
