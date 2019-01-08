@@ -131,8 +131,8 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     if (handle == INVALID_HANDLE_VALUE) {
         logAndCleanupFailedAccept("Could not accept on file socket", name);
     } else {
-        uid_t other_user;
-        gid_t other_group;
+        uid_t other_user = (uid_t) -1;
+        gid_t other_group = (gid_t) -1;
 
         /* Check if the connected user is the same as the user running the VM. */
 #ifdef __linux__
@@ -222,7 +222,7 @@ static char default_name[160] = { 0, };
 
 char* fileSocketTransport_GetDefaultAddress() {
     if (default_name[0] == '\0') {
-        snprintf(default_name, sizeof(default_name), "/tmp/dt_filesocket_%lld_%lld", (long long) getpid(), (long long) geteuid());
+        snprintf(default_name, sizeof(default_name), "/tmp/sapjvm_dt_filesocket_%lld_%lld", (long long) geteuid(), (long long) getpid());
         default_name[sizeof(default_name) - 1] = '\0';
     }
 
