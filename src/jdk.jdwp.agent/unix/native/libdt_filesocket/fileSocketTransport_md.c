@@ -29,11 +29,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <sys/time.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <dirent.h>
+#include <signal.h>
+#include <time.h>
 
 #ifdef __sun
 #include <ucred.h>
@@ -59,6 +63,87 @@ static void closeHandle(int* handle) {
     }
 }
 
+static char const* getTempdir() {
+    return "/tmp";
+}
+
+/* Return a 'guid' used to protect against the following scenario:
+ * Process A sees a stale socket and checks the pid to see if the process still lives.
+ * It doesn't, so the next step would be to delete the file. In the meantime process
+ * B starts and gets the pid checked by process A. It then could create the socket file
+ * which would later be deleted by process A. Having a more or less unique number beside
+ * the pid in the filename makes this (already very unlikely process) even more unlikely.
+ */
+static long long get_guid() {
+    static long long guid = 0;
+
+    if (guid == 0) {
+        struct timeval tv;
+
+        if (0 && gettimeofday(&tv, NULL) == 0) {
+            guid = (long long) tv.tv_usec + 1000000 * (long long) (tv.tv_sec);
+        } else {
+            guid = (long long) time(NULL); /* Not great, but not fatal either and usually should not happen. */
+        }
+    }
+
+    return guid;
+}
+
+static void cleanupStaleDefaultSockets() {
+    static int already_called = 0;
+    static char prefix[256];
+    char const* tmpdir = getTempdir();
+    DIR* dir;
+
+    if (already_called) {
+        return;
+    }
+
+    already_called = 1;
+    dir = opendir(tmpdir);
+
+    if (dir != NULL) {
+        struct dirent* ent;
+        int prefix_len = snprintf(prefix, sizeof(prefix), "sapmachine_dt_filesocket_%lld_", (long long) geteuid());
+
+        if (prefix_len > 0) {
+            while ((ent = readdir(dir)) != NULL) {
+                // If the prefix matches, check if a process with the same pid runs.
+                if (strncmp(prefix, ent->d_name, (size_t) prefix_len) == 0) {
+                    char* pid_start = ent->d_name + prefix_len;
+                    char* pid_end;
+                    char* guid_end;
+                    long long pid = strtoll(pid_start, &pid_end, 10);
+
+                    if ((*pid_end == '_') && (pid != 0)) {
+                        strtoll(pid_end + 1, &guid_end, 10);
+
+                        if ((pid_end[1] != '\0') && (*guid_end == '\0')) {
+                            errno = 0;
+
+                            if ((pid == (long long) getpid()) || ((kill((pid_t) pid, 0) == -1) && (errno = ESRCH))) {
+                                size_t len = strlen(tmpdir) + 1 + strlen(ent->d_name) + 1;
+                                char* filename = (char*) malloc(len);
+                                if (filename && snprintf(filename, len, "%s/%s", tmpdir, ent->d_name) == (int) len - 1) {
+                                    unlink(filename);
+                                }
+                                free(filename);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            fileSocketTransport_logError("Could not create prefix.");
+        }
+
+        closedir(dir);
+    } else {
+        fileSocketTransport_logError("Could not iterate temp directory %s.", tmpdir);
+    }
+}
+
 jboolean fileSocketTransport_HasValidHandle() {
     return handle == INVALID_HANDLE_VALUE ? JNI_FALSE : JNI_TRUE;
 }
@@ -74,6 +159,8 @@ void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
 }
 
 void fileSocketTransport_AcceptImpl(char const* name) {
+    cleanupStaleDefaultSockets();
+
     if (server_handle == INVALID_HANDLE_VALUE) {
         socklen_t len = sizeof(struct sockaddr_un);
         struct sockaddr_un addr;
@@ -222,7 +309,8 @@ static char default_name[160] = { 0, };
 
 char* fileSocketTransport_GetDefaultAddress() {
     if (default_name[0] == '\0') {
-        snprintf(default_name, sizeof(default_name), "/tmp/sapjvm_dt_filesocket_%lld_%lld", (long long) geteuid(), (long long) getpid());
+        snprintf(default_name, sizeof(default_name), "%s/sapmachine_dt_filesocket_%lld_%lld_%lld",
+                 getTempdir(), (long long) geteuid(), (long long) getpid(), get_guid());
         default_name[sizeof(default_name) - 1] = '\0';
     }
 
