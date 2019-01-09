@@ -38,9 +38,11 @@
 #include <dirent.h>
 #include <signal.h>
 #include <time.h>
+#include <assert.h>
 
 #ifdef __sun
 #include <ucred.h>
+#include "mbarrier.h"
 #endif
 
 #include "jni.h"
@@ -74,10 +76,11 @@ static char const* getTempdir() {
  * which would later be deleted by process A. Having a more or less unique number beside
  * the pid in the filename makes this (already very unlikely process) even more unlikely.
  */
-static long long get_guid() {
+static long long getGuid() {
     static long long guid = 0;
+    static int already_called = 0;
 
-    if (guid == 0) {
+    if (already_called == 0) {
         struct timeval tv;
 
         if (gettimeofday(&tv, NULL) == 0) {
@@ -85,23 +88,68 @@ static long long get_guid() {
         } else {
             guid = (long long) time(NULL); /* Not great, but not fatal either and usually should not happen. */
         }
+
+        already_called = 1;
     }
 
-    return guid == 0 ? 1 : guid;
+    return guid;
+}
+
+static char file_to_delete[sizeof(struct sockaddr_un)] = {'\0', };
+static int file_to_delete_index; /* Updated when we change the filename (must be even for the filename to be valid). */
+
+static void memoryBarrier() {
+#if defined(__linux__) || defined(__APPLE__)
+    __sync_synchronize();
+#elif _AIX
+    __sync();
+#elif __sun
+    __machine_rw_barrier();
+#else
+#error "Unknown platform"
+#endif
+}
+
+static void registerFileToDelete(char const* name) {
+    /* Change index and make odd to indicate we are in the update. */
+    assert((file_to_delete_index & 1) == 0);
+    file_to_delete_index += 1;
+    memoryBarrier();
+    file_to_delete[0] = '\0';
+
+    if ((name != NULL) && (strlen(name) + 1 <= sizeof(file_to_delete))) {
+        strcpy(file_to_delete, name);
+    }
+
+    memoryBarrier();
+    /* Make even again, since we are out of the update. */
+    file_to_delete_index += 1;
+    assert((file_to_delete_index & 1) == 0);
+    memoryBarrier();
+}
+
+static void cleanupSocketOnExit() {
+    char filename[sizeof(struct sockaddr_un)];
+    int first_index;
+    int last_index;
+
+    // Only try copying once. If we cross an update, just don't delete the file.
+    memoryBarrier();
+    first_index = file_to_delete_index;
+    memoryBarrier();
+    memcpy(filename, file_to_delete, sizeof(struct sockaddr_un));
+    memoryBarrier();
+    last_index = file_to_delete_index;
+
+    if ((first_index == last_index) && ((first_index & 1) == 0) && (strlen(filename) > 0)) {
+        unlink(filename);
+    }
 }
 
 static void cleanupStaleDefaultSockets() {
-    static int already_called = 0;
     static char prefix[256];
     char const* tmpdir = getTempdir();
-    DIR* dir;
-
-    if (already_called) {
-        return;
-    }
-
-    already_called = 1;
-    dir = opendir(tmpdir);
+    DIR* dir = opendir(tmpdir);
 
     if (dir != NULL) {
         struct dirent* ent;
@@ -116,7 +164,7 @@ static void cleanupStaleDefaultSockets() {
 
                     if ((*pid_end == '_') && (pid != 0)) {
                         char* guid_end;
-                        long long guid = strtoll(pid_end + 1, &guid_end, 10);
+                        strtoll(pid_end + 1, &guid_end, 10);
 
                         if ((pid_end[1] != '\0') && (*guid_end == '\0')) {
                             errno = 0;
@@ -157,10 +205,17 @@ void fileSocketTransport_CloseImpl() {
 void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
     fileSocketTransport_logError("%s: socket %s: %s", error_msg, name, strerror(errno));
     fileSocketTransport_CloseImpl();
+    registerFileToDelete(NULL);
 }
 
 void fileSocketTransport_AcceptImpl(char const* name) {
-    cleanupStaleDefaultSockets();
+    static int already_called = 0;
+
+    if (!already_called) {
+        cleanupStaleDefaultSockets();
+        atexit(cleanupSocketOnExit);
+        already_called = 1;
+    }
 
     if (server_handle == INVALID_HANDLE_VALUE) {
         socklen_t len = sizeof(struct sockaddr_un);
@@ -187,6 +242,8 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             logAndCleanupFailedAccept("Could not remove file to create new file socket", name);
             return;
         }
+
+        registerFileToDelete(name);
 
         if (bind(server_handle, (struct sockaddr*) &addr, addr_size) == -1) {
             logAndCleanupFailedAccept("Could not bind file socket", name);
@@ -215,6 +272,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
     /* We can remove the file since we are connected (or it failed). */
     unlink(name);
+    registerFileToDelete(NULL);
 
     if (handle == INVALID_HANDLE_VALUE) {
         logAndCleanupFailedAccept("Could not accept on file socket", name);
@@ -223,7 +281,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         gid_t other_group = (gid_t) -1;
 
         /* Check if the connected user is the same as the user running the VM. */
-#ifdef __linux__
+#if defined(__linux__)
         struct ucred cred_info;
         socklen_t optlen = sizeof(cred_info);
 
@@ -234,12 +292,12 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
         other_user = cred_info.uid;
         other_group = cred_info.gid;
-#elif __APPLE__
+#elif defined(__APPLE__)
         if (getpeereid(handle, &other_user, &other_group) != 0) {
             logAndCleanupFailedAccept("Failed to get peer id of file socket", name);
             return;
         }
-#elif _AIX
+#elif defined(_AIX)
         struct peercred_struct cred_info;
         socklen_t optlen = sizeof(cred_info);
 
@@ -250,7 +308,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
         other_user = cred_info.euid;
         other_group = cred_info.egid;
-#elif __sun
+#elif defined(__sun)
         ucred_t* cred_info = NULL;
 
         if (getpeerucred(handle, &cred_info) == -1) {
@@ -311,7 +369,7 @@ static char default_name[160] = { 0, };
 char* fileSocketTransport_GetDefaultAddress() {
     if (default_name[0] == '\0') {
         snprintf(default_name, sizeof(default_name), "%s/sapmachine_dt_filesocket_%lld_%lld_%lld",
-                 getTempdir(), (long long) geteuid(), (long long) getpid(), get_guid());
+                 getTempdir(), (long long) geteuid(), (long long) getpid(), getGuid());
         default_name[sizeof(default_name) - 1] = '\0';
     }
 
