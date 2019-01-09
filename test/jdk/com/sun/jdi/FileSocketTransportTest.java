@@ -36,7 +36,10 @@
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertFalse;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,14 +56,14 @@ public class FileSocketTransportTest {
 
     public static void main(String[] args) throws Throwable {
         if (args.length == 1 && "--sleep".equals(args[0])) {
-            Thread.sleep(20000);
+            Thread.sleep(30000);
             System.exit(1);
         }
 
-	String testSrc = System.getProperty("test.src");
+        String testSrc = System.getProperty("test.src");
         System.setProperty("com.sap.jdk.ext.natives.platformRoot",
                 testSrc + "/libs/jdkext_natives");
-	System.setProperty("com.sap.jdk.ext.natives.traceLoading", "true");
+        System.setProperty("com.sap.jdk.ext.natives.traceLoading", "true");
         String socketName;
         long pid = ProcessTools.getProcessId();
 
@@ -97,19 +100,37 @@ public class FileSocketTransportTest {
                 Thread.sleep(3000);
                 FileSocketAddress addr = new FileSocketAddress(socketName);
                 System.out.println(i + " " + addr.getSocketIdentifier());
+                checkSocketPresent(socketName);
                 // Just do the handshake and disconnect.
                 FileSocket fs = new FileSocket(addr, 2000);
                 byte[] handshake = "JDWP-Handshake".getBytes("UTF-8");
                 byte[] received = new byte[handshake.length];
                 fs.getOutputStream().write(handshake);
                 int read = fs.getInputStream().read(received);
+                checkSocketDeleted(socketName);
                 assertEquals(new String(handshake, "UTF-8"), 
                              new String(received, "UTF-8"));
                 assertEquals(read, received.length);
                 fs.close();
             }
         } finally {
+            Thread.sleep(2000);
+            checkSocketPresent(socketName);
             proc.destroy();
+            Thread.sleep(2000);
+            checkSocketDeleted(socketName);
+        }
+    }
+
+    private static void checkSocketPresent(String name) {
+        if (!Platform.isWindows()) {
+            assertTrue(new File(name).exists(), "Socket " + name + " missing");
+        }
+    }
+
+    private static void checkSocketDeleted(String name) {
+        if (!Platform.isWindows()) {
+            assertFalse(new File(name).exists(), "Socket " + name + " exists");
         }
     }
 }
