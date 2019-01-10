@@ -49,6 +49,8 @@
 #include "fileSocketTransport.h"
 
 #define INVALID_HANDLE_VALUE -1
+#define UNIX_PATH_MAX sizeof(((struct sockaddr_un *)0)->sun_path)
+
 static int server_handle = INVALID_HANDLE_VALUE;
 static int handle = INVALID_HANDLE_VALUE;
 
@@ -95,7 +97,7 @@ static long long getGuid() {
     return guid;
 }
 
-static char file_to_delete[sizeof(struct sockaddr_un)] = {'\0', };
+static char file_to_delete[UNIX_PATH_MAX] = {'\0', };
 static int file_to_delete_index; /* Updated when we change the filename (must be even for the filename to be valid). */
 
 static void memoryBarrier() {
@@ -129,7 +131,7 @@ static void registerFileToDelete(char const* name) {
 }
 
 static void cleanupSocketOnExit() {
-    char filename[sizeof(struct sockaddr_un)];
+    char filename[UNIX_PATH_MAX];
     int first_index;
     int last_index;
 
@@ -137,7 +139,7 @@ static void cleanupSocketOnExit() {
     memoryBarrier();
     first_index = file_to_delete_index;
     memoryBarrier();
-    memcpy(filename, file_to_delete, sizeof(struct sockaddr_un));
+    memcpy(filename, file_to_delete, UNIX_PATH_MAX);
     memoryBarrier();
     last_index = file_to_delete_index;
 
@@ -147,7 +149,7 @@ static void cleanupSocketOnExit() {
 }
 
 static void cleanupStaleDefaultSockets() {
-    static char prefix[256];
+    static char prefix[UNIX_PATH_MAX];
     char const* tmpdir = getTempdir();
     DIR* dir = opendir(tmpdir);
 
@@ -155,7 +157,7 @@ static void cleanupStaleDefaultSockets() {
         struct dirent* ent;
         int prefix_len = snprintf(prefix, sizeof(prefix), "sapmachine_dt_filesocket_%lld_", (long long) geteuid());
 
-        if (prefix_len > 0) {
+        if ((prefix_len > 0) && (prefix_len < (int) sizeof(prefix))) {
             while ((ent = readdir(dir)) != NULL) {
                 // If the prefix matches, check if a process with the same pid runs.
                 if (strncmp(prefix, ent->d_name, (size_t) prefix_len) == 0) {
@@ -364,12 +366,18 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
     return result;
 }
 
-static char default_name[160] = { 0, };
+static char default_name[UNIX_PATH_MAX] = { 0, };
 
 char* fileSocketTransport_GetDefaultAddress() {
     if (default_name[0] == '\0') {
-        snprintf(default_name, sizeof(default_name), "%s/sapmachine_dt_filesocket_%lld_%lld_%lld",
-                 getTempdir(), (long long) geteuid(), (long long) getpid(), getGuid());
+        int len = snprintf(default_name, sizeof(default_name), "%s/sapmachine_dt_filesocket_%lld_%lld_%lld",
+                           getTempdir(), (long long) geteuid(), (long long) getpid(), getGuid());
+
+        if ((len <= 0) || (len >= (int) sizeof(default_name))) {
+            // The default name is too long.
+            return NULL;
+        }
+
         default_name[sizeof(default_name) - 1] = '\0';
     }
 
