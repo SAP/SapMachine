@@ -17,9 +17,9 @@ Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for informatio
 * [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
 
 ## Have an issue? 
-If it's SapMachine-specific please let us know by filing a [new issue](https://github.com/SAP/SapMachine/issues/new).
+If it's SapMachine specific please let us know by filing a [new issue](https://github.com/SAP/SapMachine/issues/new).
 
-Please notice that the SapMachine [issue tracker](https://github.com/SAP/SapMachine/issues) is mainly used internally by the SapMachine team to organize its work (i.e. sync with upstream, downporting fixes, add SapMachine-specific features, etc.). 
+Please notice that the SapMachine [issue tracker](https://github.com/SAP/SapMachine/issues) is mainly used internally by the SapMachine team to organize its work (i.e. sync with upstream, downporting fixes, add SapMachine specific features, etc.). 
 
 General VM/JDK bugs are maintained directly in the [OpenJDK Bug System](https://bugs.openjdk.java.net/). You can open a SapMachine issue with a reference to an open or resolved OpenJDK bug if you want us to resolve the issue or downport the fix to a specific SapMachine version. If you find a general VM/JDK bug in SapMachine and don't have write access to the OpenJDK Bug System you can open an issue here and we'll take care to open a corresponding OpenJDK bug for it.
 
