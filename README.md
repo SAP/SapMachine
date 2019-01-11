@@ -17,7 +17,15 @@ Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for informatio
 * [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
 
 ## Have an issue? 
-Please, file a [new issue](https://github.com/SAP/SapMachine/issues/new) and let us know about.
+If it's SapMachine specific please let us know by filing a [new issue](https://github.com/SAP/SapMachine/issues/new).
+
+Please notice that the SapMachine [issue tracker](https://github.com/SAP/SapMachine/issues) is mainly used internally by the SapMachine team to organize its work (i.e. sync with upstream, downporting fixes, add SapMachine specific features, etc.). 
+
+General VM/JDK bugs are maintained directly in the [OpenJDK Bug System](https://bugs.openjdk.java.net/). You can open a SapMachine issue with a reference to an open or resolved OpenJDK bug if you want us to resolve the issue or downport the fix to a specific SapMachine version. If you find a general VM/JDK bug in SapMachine and don't have write access to the OpenJDK Bug System you can open an issue here and we'll take care to open a corresponding OpenJDK bug for it.
+
+Every SapMachine release contains at least all the fixes of the corresponding OpenJDK release it is based on. You can easily find the OpenJDK base version by looking at the [SapMachine version string](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK#version-numbers).
+
+You can find the [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK) and the [Features Contributed by SAP](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP) in the [SapMachine Wiki](https://github.com/SAP/SapMachine/wiki).
 
 ## Contributing
 We currently do not accept external contributions for this project. If you want to improve the code or fix a bug please consider contributing directly to the upstream [OpenJDK](http://openjdk.java.net/contribute/) project. Our repositories will be regularly synced with the upstream project so any improvements in the upstream OpenJDK project will directly become visible in our project as well.
