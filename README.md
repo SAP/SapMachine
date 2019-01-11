@@ -25,6 +25,8 @@ General VM/JDK bugs are maintained directly in the [OpenJDK Bug System](https://
 
 Every SapMachine release contains at least all the fixes of the corresponding OpenJDK release it is based on. You can easily find the OpenJDK base version by looking at the [SapMachine version string](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK#version-numbers).
 
+You can find the [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK) and the [Features Contributed by SAP](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP) in the [SapMachine Wiki](https://github.com/SAP/SapMachine/wiki).
+
 ## Contributing
 We currently do not accept external contributions for this project. If you want to improve the code or fix a bug please consider contributing directly to the upstream [OpenJDK](http://openjdk.java.net/contribute/) project. Our repositories will be regularly synced with the upstream project so any improvements in the upstream OpenJDK project will directly become visible in our project as well.
 
