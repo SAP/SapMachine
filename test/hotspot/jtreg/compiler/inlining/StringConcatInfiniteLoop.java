@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,34 @@
  * questions.
  */
 
-// Not run on AIX as it does not support ulimit -v.
-
 /*
- * @test
+ * @test 8214862
+ * @summary Multiple passes of PhaseRemoveUseless causes infinite loop to be optimized out
  *
- * @summary converted from VM Testbase nsk/jvmti/Allocate/alloc001.
- * VM Testbase keywords: [jpda, jvmti, noras, nonconcurrent]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test exercise JVMTI function Allocate(size, memPtr).
- *     The test checks the following:
- *       - if JVMTI_ERROR_NULL_POINTER is returned when memPtr is null
- *       - if allocated memory is available to access
- *       - if JVMTI_ERROR_OUT_OF_MEMORY is returned when there is
- *         insufficient memory available
- * COMMENTS
- *     Ported from JVMDI.
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileOnly=StringConcatInfiniteLoop::test -XX:CompileCommand=dontinline,*StringBuilder::* StringConcatInfiniteLoop
  *
- * @library /vmTestbase
- *          /test/lib
- * @requires os.family != "aix"
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jvmti.Allocate.alloc001
- * @run shell alloc001.sh
  */
 
+public class StringConcatInfiniteLoop {
+    public static void main(String[] args) {
+        StringBuilder sb = new StringBuilder();
+        test(sb, "foo", "bar", true);
+    }
+
+    private static void test(Object v, String s1, String s2, boolean flag) {
+        if (flag) {
+            return;
+        }
+        int i = 0;
+        for (; i < 10; i++);
+        if (i == 10) {
+            v = null;
+        }
+        StringBuilder sb = new StringBuilder(s1);
+        sb.append(s2);
+        while (v == null);
+    }
+
+    private static class A {
+    }
+}
