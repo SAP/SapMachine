@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         return;
     }
 
-    event_initialized = TRUE;
+    event_initialized = JNI_TRUE;
 
     if (user_id == NULL) {
         PTOKEN_USER sid = GetUserSid();
@@ -210,6 +210,16 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     }
 }
 
+int fileSocketTransport_logIOError(char const* type, DWORD errorCode) {
+    if (errorCode == ERROR_BROKEN_PIPE) {
+        fileSocketTransport_logError("%s: Connection closed", type);
+        return 0;
+    }
+
+    fileSocketTransport_logError("%s: %d", type, (int) errorCode);
+    return -1;
+}
+
 int fileSocketTransport_ReadImpl(char* buffer, int size) {
     DWORD nread = 0;
 
@@ -222,8 +232,7 @@ int fileSocketTransport_ReadImpl(char* buffer, int size) {
 
             if (waitResult == WAIT_OBJECT_0) {
                 if (!GetOverlappedResult(handle, &read_event, &nread, FALSE)) {
-                    fileSocketTransport_logError("Read failed (overlap): %d", (int) GetLastError());
-                    return -1;
+                    return fileSocketTransport_logIOError("Read failed (overlap)", GetLastError());
                 }
             } else {
                 CancelIo(handle);
@@ -231,8 +240,7 @@ int fileSocketTransport_ReadImpl(char* buffer, int size) {
                 return -1;
             }
         } else {
-            fileSocketTransport_logError("Read failed: %d", (int) GetLastError());
-            return -1;
+            return fileSocketTransport_logIOError("Read failed", GetLastError());
         }
     }
 
@@ -251,17 +259,15 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
 
             if (waitResult == WAIT_OBJECT_0) {
                 if (!GetOverlappedResult(handle, &write_event, &nwrite, FALSE)) {
-                    fileSocketTransport_logError("Write failed (overlap): %d", (int) GetLastError());
-                    return -1;
+                    return fileSocketTransport_logIOError("Write failed (overlap)", GetLastError());
                 }
             } else {
                 CancelIo(handle);
-                fileSocketTransport_logError("Write_failed (wait): %d", (int) waitResult);
+                fileSocketTransport_logError("Write failed (wait): %d", (int) waitResult);
                 return -1;
             }
         } else {
-            fileSocketTransport_logError("Write failed: %d", (int) GetLastError());
-            return -1;
+            return fileSocketTransport_logIOError("Write failed", GetLastError());
         }
     }
 
