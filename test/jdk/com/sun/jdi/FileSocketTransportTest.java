@@ -25,7 +25,7 @@
 /**
  * @test
  * @requires os.arch != "aarch64"
- * @summary Test basic functionality of the file soacket debug transport.
+ * @summary Test basic functionality of the file socket debug transport.
  *
  * @author Ralf Schmelter
  *
