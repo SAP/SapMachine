@@ -97,8 +97,9 @@ static long long getGuid() {
     return guid;
 }
 
-static char file_to_delete[UNIX_PATH_MAX] = {'\0', };
-static int file_to_delete_index; /* Updated when we change the filename (must be even for the filename to be valid). */
+static char file_to_delete[UNIX_PATH_MAX];
+static volatile int file_to_delete_index; /* Updated when we change the filename (must be even for the filename to be valid). */
+static volatile int atexit_runs;
 
 static void memoryBarrier() {
 #if defined(__linux__) || defined(__APPLE__)
@@ -112,7 +113,7 @@ static void memoryBarrier() {
 #endif
 }
 
-static void registerFileToDelete(char const* name) {
+static int registerFileToDelete(char const* name) {
     /* Change index and make odd to indicate we are in the update. */
     assert((file_to_delete_index & 1) == 0);
     file_to_delete_index += 1;
@@ -128,6 +129,8 @@ static void registerFileToDelete(char const* name) {
     file_to_delete_index += 1;
     assert((file_to_delete_index & 1) == 0);
     memoryBarrier();
+
+    return atexit_runs;
 }
 
 static void cleanupSocketOnExit() {
@@ -135,6 +138,7 @@ static void cleanupSocketOnExit() {
     int first_index;
     int last_index;
 
+    atexit_runs = 1;
     // Only try copying once. If we cross an update, just don't delete the file.
     memoryBarrier();
     first_index = file_to_delete_index;
@@ -171,7 +175,7 @@ static void cleanupStaleDefaultSockets() {
                         if ((pid_end[1] != '\0') && (*guid_end == '\0')) {
                             errno = 0;
 
-                            if ((pid == (long long) getpid()) || ((kill((pid_t) pid, 0) == -1) && (errno = ESRCH))) {
+                            if ((pid == (long long) getpid()) || ((kill((pid_t) pid, 0) == -1) && (errno == ESRCH))) {
                                 size_t len = strlen(tmpdir) + 1 + strlen(ent->d_name) + 1;
                                 char* filename = (char*) malloc(len);
 
@@ -245,7 +249,10 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             return;
         }
 
-        registerFileToDelete(name);
+        if (registerFileToDelete(name) != 0) {
+            logAndCleanupFailedAccept("VM is shutting down", name);
+            return;
+        }
 
         if (bind(server_handle, (struct sockaddr*) &addr, addr_size) == -1) {
             logAndCleanupFailedAccept("Could not bind file socket", name);

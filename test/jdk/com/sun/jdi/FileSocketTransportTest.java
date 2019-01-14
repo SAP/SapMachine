@@ -24,9 +24,8 @@
 
 /**
  * @test
- * @bug 8214892
  * @requires os.arch != "aarch64"
- * @summary Test that the onjcmd option of the jdwp agent works.
+ * @summary Test basic functionality of the file soacket debug transport.
  *
  * @author Ralf Schmelter
  *
