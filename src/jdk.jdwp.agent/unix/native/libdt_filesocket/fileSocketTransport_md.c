@@ -50,6 +50,7 @@
 
 #define INVALID_HANDLE_VALUE -1
 #define UNIX_PATH_MAX sizeof(((struct sockaddr_un *)0)->sun_path)
+#define PREFIX_NAME "sapmachine_dt_filesocket"
 
 static int server_handle = INVALID_HANDLE_VALUE;
 static int handle = INVALID_HANDLE_VALUE;
@@ -159,7 +160,7 @@ static void cleanupStaleDefaultSockets() {
 
     if (dir != NULL) {
         struct dirent* ent;
-        int prefix_len = snprintf(prefix, sizeof(prefix), "sapmachine_dt_filesocket_%lld_", (long long) geteuid());
+        int prefix_len = snprintf(prefix, sizeof(prefix), PREFIX_NAME "_%lld_", (long long) geteuid());
 
         if ((prefix_len > 0) && (prefix_len < (int) sizeof(prefix))) {
             while ((ent = readdir(dir)) != NULL) {
@@ -321,7 +322,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         ucred_t* cred_info = NULL;
 
         if (getpeerucred(handle, &cred_info) == -1) {
-            logAndCleanupFailedAccept("Failed to peer credientials of file socket", name);
+            logAndCleanupFailedAccept("Failed to retrieve peer credentials of file socket", name);
             return;
         }
 
@@ -377,7 +378,7 @@ static char default_name[UNIX_PATH_MAX] = { 0, };
 
 char* fileSocketTransport_GetDefaultAddress() {
     if (default_name[0] == '\0') {
-        int len = snprintf(default_name, sizeof(default_name), "%s/sapmachine_dt_filesocket_%lld_%lld_%lld",
+        int len = snprintf(default_name, sizeof(default_name), "%s/" PREFIX_NAME "_%lld_%lld_%lld",
                            getTempdir(), (long long) geteuid(), (long long) getpid(), getGuid());
 
         if ((len <= 0) || (len >= (int) sizeof(default_name))) {
