@@ -27,7 +27,7 @@ All rights reserved. Confidential and proprietary.
     }
 
     function tagComparator(a, b) {
-        var re = /(sapmachine)-(((([0-9]+)((\.([0-9]+))*)?)\+([0-9]+))(-([0-9]+))?)(\-((\S)+))?/
+        var re = /(sapmachine)-(((([0-9]+)((\.([0-9]+))*)?)(\+([0-9]+))?)(-([0-9]+))?)(\-((\S)+))?/
 
         var aMatch = a.tag.match(re)
         var bMatch = b.tag.match(re)
@@ -81,15 +81,11 @@ All rights reserved. Confidential and proprietary.
     }
 
     function imageTypeComparator(a, b) {
-        var aIsPreRelease = a.key.includes('-ea')
-        var bIsPreRelease = b.key.includes('-ea')
-        var re = /([0-9]+).*/;
+        var aMajor = a.id
+        var bMajor = b.id
 
-        var aMajor = a.key.match(re)[1]
-        var bMajor = b.key.match(re)[1]
-
-        if ((aIsPreRelease && bIsPreRelease) ||
-            (!aIsPreRelease && !bIsPreRelease)) {
+        if ((a.lts && b.lts) ||
+            (!a.lts && !b.lts)) {
             if (aMajor < bMajor) {
                 return 1
             }
@@ -101,12 +97,12 @@ All rights reserved. Confidential and proprietary.
             return 0
         }
 
-        if (!aIsPreRelease && bIsPreRelease) {
-            return -1
+        if (!a.lts && b.lts) {
+            return 1
         }
 
-        if (aIsPreRelease && !bIsPreRelease) {
-            return 1
+        if (a.lts && !b.lts) {
+            return -1
         }
 
         return 0
@@ -176,10 +172,18 @@ All rights reserved. Confidential and proprietary.
 
         $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
             for (var i in data.imageTypes.sort(imageTypeComparator)) {
+                var labelElement = $('<div>' + data.imageTypes[i].label + '</div>')
                 var optionElement = $('<option></option>')
-                optionElement.text(data.imageTypes[i].value)
-                optionElement.attr({'value': data.imageTypes[i].key })
+                optionElement.attr({'value': data.imageTypes[i].id })
                 optionElement.addClass('download_select_option')
+                optionElement.append(labelElement)
+
+                if (data.imageTypes[i].lts)
+                    optionElement.append($('<div> (Long Term Support)</div>'))
+
+                    if (data.imageTypes[i].ea)
+                    optionElement.append($('<div> (Pre-Release)</div>'))
+
                 this._imageTypeSelector.append(optionElement)
             }
 
