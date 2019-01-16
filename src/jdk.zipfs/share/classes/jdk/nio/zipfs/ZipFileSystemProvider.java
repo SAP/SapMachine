@@ -289,7 +289,10 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         readAttributes(Path path, Class<A> type, LinkOption... options)
         throws IOException
     {
-        if (type == BasicFileAttributes.class || type == ZipFileAttributes.class)
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        if (type == BasicFileAttributes.class ||
+            type == PosixFileAttributes.class ||
+            type == ZipFileAttributes.class)
             return (A)toZipPath(path).getAttributes();
         return null;
     }
