@@ -33,22 +33,40 @@ All rights reserved. Confidential and proprietary.
         var bMatch = b.tag.match(re)
 
         var aVersionParts   = aMatch[4].split('.')
-        var aBuildNumber    = parseInt(aMatch[9])
-        var aSapBuildNumber = parseInt(aMatch[11])
+        var aBuildNumber = 0
+        var aSapBuildNumber = 0
+
+        if (aMatch.length >= 10 && aMatch[9]) {
+            aBuildNumber = parseInt(aMatch[9])
+        }
+
+        if (aMatch.length >= 13 && aMatch[12]) {
+            aSapBuildNumber = parseInt(aMatch[12])
+        }
 
         var bVersionParts   = bMatch[4].split('.')
-        var bBuildNumber    = parseInt(bMatch[9])
-        var bSapBuildNumber = parseInt(bMatch[11])
+        var bBuildNumber = 0
+        var bSapBuildNumber = 0
 
-        if (aVersionParts.length > bVersionParts.length) {
-            return -1
+        if (bMatch.length >= 10 && bMatch[9]) {
+            bBuildNumber = parseInt(bMatch[9])
         }
 
-        if (bVersionParts.length > aVersionParts.length) {
-            return 1
+        if (bMatch.length >= 13 && bMatch[12]) {
+            bSapBuildNumber = parseInt(bMatch[12])
         }
 
-        for (var i in aVersionParts) {
+        if (aVersionParts.length < 3) {
+            aVersionParts[1] = '0';
+            aVersionParts[2] = '0';
+        }
+
+        if (bVersionParts.length < 3) {
+            bVersionParts[1] = '0';
+            bVersionParts[2] = '0';
+        }
+
+        for (var i = 0; i < aVersionParts.length && i < bVersionParts.length; ++i) {
             var aVersionPart = parseInt(aVersionParts[i])
             var bVersionPart = parseInt(bVersionParts[i])
 
@@ -181,7 +199,7 @@ All rights reserved. Confidential and proprietary.
                 if (data.imageTypes[i].lts)
                     optionElement.append($('<div> (Long Term Support)</div>'))
 
-                    if (data.imageTypes[i].ea)
+                if (data.imageTypes[i].ea)
                     optionElement.append($('<div> (Pre-Release)</div>'))
 
                 this._imageTypeSelector.append(optionElement)
