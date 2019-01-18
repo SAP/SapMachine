@@ -67,6 +67,9 @@ compiler/ciReplay/TestVMNoCompLevel.java                                        
 # fails on our platforms, but also linuxx86_64. Sporadically?
 runtime/containers/cgroup/PlainRead.java                                           generic-all
 
+# SapMachine 2018-01-18 Exclude runtime/Thread/TestThreadDumpClassInitMonitor.java until JDK-8217337 is fixed
+runtime/Thread/TestThreadDumpClassInitMonitor.java                                 8217337    generic-all
+
 # SAPJVM GL 2018-06-08
 # Fails on AIX for a long time in os::map_memory_to_file. Repro case: start VM with -XX:AllocateHeapAt=. -Xmx32m -version.
 # GL 2018-07-15 Let's see whether they are fixed. ... No.
@@ -94,9 +97,29 @@ runtime/appcds/javaldr/GCDuringDump.java                                        
 runtime/appcds/javaldr/GCSharedStringsDuringDump.java                              macosx-all
 runtime/RedefineTests/RedefineRunningMethods.java                                  macosx-all
 
-# SAPJVM GL 2018-06-28 Failing as of today: http://sapjvm:1080/servlet/testoverview?group=openjdk11
-# GL 2018-07-16 still failing today
-serviceability/sa/ClhsdbCDSCore.java                                               generic-all
+# SapMachine 2018-01-18 Failing tests after fix for 8215544. Need to check.
+serviceability/sa/ClhsdbAttach.java                                                8215544 generic-all
+serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     8215544 generic-all
+serviceability/sa/ClhsdbField.java                                                 8215544 generic-all
+serviceability/sa/ClhsdbFindPC.java                                                8215544 generic-all
+serviceability/sa/ClhsdbFlags.java                                                 8215544 generic-all
+serviceability/sa/ClhsdbInspect.java                                               8215544 generic-all
+serviceability/sa/ClhsdbJdis.java                                                  8215544 generic-all
+serviceability/sa/ClhsdbJhisto.java                                                8215544 generic-all
+serviceability/sa/ClhsdbJstack.java                                                8215544 generic-all
+serviceability/sa/ClhsdbLongConstant.java                                          8215544 generic-all
+serviceability/sa/ClhsdbPmap.java                                                  8215544 generic-all
+serviceability/sa/ClhsdbPrintAll.java                                              8215544 generic-all
+serviceability/sa/ClhsdbPrintAs.java                                               8215544 generic-all
+serviceability/sa/ClhsdbPrintStatics.java                                          8215544 generic-all
+serviceability/sa/ClhsdbPstack.java                                                8215544 generic-all
+serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java                            8215544 generic-all
+serviceability/sa/ClhsdbSource.java                                                8215544 generic-all
+serviceability/sa/ClhsdbThread.java                                                8215544 generic-all
+serviceability/sa/ClhsdbVmStructsDump.java                                         8215544 generic-all
+serviceability/sa/ClhsdbWhere.java                                                 8215544 generic-all
+
+# SapMachine 2018-01-18 Further sa tests which might fail. Need to check.
 serviceability/sa/TestJmapCore.java                                                generic-all
 serviceability/sa/DeadlockDetectionTest.java                                       generic-all
 
@@ -131,19 +154,19 @@ runtime/SharedArchiveFile/serviceability/ReplaceCriticalClasses.java            
 
 # SAPJVM GL 2018-06-05
 # These fail for a long time. Asked Gustavo to have a look.
-serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbFindPC.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbInspect.java                                               linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbJdis.java                                                  linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbJhisto.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbJstack.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbPmap.java                                                  linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbPrintAs.java                                               linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbPstack.java                                                linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbFindPC.java                                                linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbInspect.java                                               linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbJdis.java                                                  linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbJhisto.java                                                linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbJstack.java                                                linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbPmap.java                                                  linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbPrintAs.java                                               linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbPstack.java                                                linux-ppc64le,linux-ppc64
 serviceability/sa/ClhsdbScanOops.java                                              linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbSource.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbThread.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbWhere.java                                                 linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbSource.java                                                linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbThread.java                                                linux-ppc64le,linux-ppc64
+# serviceability/sa/ClhsdbWhere.java                                                 linux-ppc64le,linux-ppc64
 serviceability/sa/JhsdbThreadInfoTest.java                                         linux-ppc64le,linux-ppc64
 serviceability/sa/TestClhsdbJstackLock.java                                        linux-ppc64le,linux-ppc64
 serviceability/sa/TestHeapDumpForInvokeDynamic.java                                linux-ppc64le,linux-ppc64
@@ -153,14 +176,6 @@ serviceability/sa/TestUniverse.java                                             
 # don't overwrite general excludes above
 #serviceability/sa/DeadlockDetectionTest.java                                      linux-ppc64le,linux-ppc64
 #serviceability/sa/TestJmapCore.java                                               linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbJhisto.java                                                linux-ppc64le,linux-ppc64
-# SAPJVM GL 2018-07-11
-serviceability/sa/ClhsdbPstack.java                                                linux-ppc64
-serviceability/sa/ClhsdbScanOops.java                                              linux-ppc64le
-serviceability/sa/TestUniverse.java                                                linux-ppc64le
-serviceability/sa/ClhsdbPmap.java                                                  linux-ppc64
-serviceability/sa/TestHeapDumpForInvokeDynamic.java                                linux-ppc64
-serviceability/sa/TestIntConstant.java                                             linux-ppc64
 
 ###############################################################################
 # New tests, unsupported new features
