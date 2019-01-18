@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# GL: this is the SAP jtreg exclude list for SapMachine 11 hotspot tests.
+# This is the SAP jtreg exclude list for SapMachine 11 hotspot tests.
 #
 # List of tests that should not be run by test/Makefile, for various reasons:
 #   1. Does not run with jtreg -samevm mode
@@ -28,110 +28,67 @@
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 #
 
-# SAPJVM GL This was in this file before 2018-10-05
+# SapMachine 2018-10-05 This was in this file before 2018-10-05
 # This test fails, because we do not have debug symbols available in all tests.
 runtime/NMT/CheckForProperDetailStackTrace.java                                    generic-all
 
 #############################################################################
-# GL The remainder of this file is supposed to be identical to (some version)
+# The remainder of this file is supposed to be identical to (some version)
 # of the internal OpenJDK ProblemList from /usr/work/openjdk/aux_repo/jtreg.
 
 #############################################################################
 # Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
 # If one of these is fixed in 12, downport the fix to 11u!!
 
-# SAPJVM VS 2016-01-12
+# SapMachine 2016-01-12
 # Arno requested to exclude these because it seems that they crash dewdfms0023
 # by consuming too much memory.
 compiler/compilercontrol/jcmd/StressAddMultiThreadedTest.java                      generic-all
 
-# SAPJVM GL 2015-12-08
+# SapMachine 2015-12-08
 # -XX:-UseSIGTRAP -XX:-TransmitErrorReport -XX:-CreateCoredumpOnCrash -XX:ErrorHandlerTest=13
 # does not go through the signal handler.
 # Leave to Gustavo Romero.
-# SAPJVM GL 2017-07-21 Still fails.
+# SapMachine 2017-07-21 Still fails.
 runtime/ErrorHandling/ErrorHandler.java                                            linux-ppc64le
 
-# SAPJVM GL 2016-06-07
+# SapMachine 2016-06-07
 # This is a linux error: https://lists.ozlabs.org/pipermail/linuxppc-dev/2016-January/138296.html
 # Gustavo Romero is fixing this.
-runtime/StackGuardPages/testme.sh                                                  linux-ppc64le
+runtime/StackGuardPages/testme.sh 
 
-# SAPJVM GL 2017-12-05
-# We didn't port dtrace support yet.
-compiler/runtime/Test8168712.java                                                  generic-ppc64,linux-ppc64le,linux-s390x
-
-# SAPJVM GL 2018-04-27
+# SapMachine 2018-04-27
 # These fail on windows for quite a while.
 compiler/ciReplay/TestServerVM.java                                                windows-all
 compiler/ciReplay/TestVMNoCompLevel.java                                           windows-all
 
-# SAPJVM GL 2018-06-07
+# SapMachine 2018-06-07
 # fails on our platforms, but also linuxx86_64. Sporadically?
 runtime/containers/cgroup/PlainRead.java                                           generic-all
 
-# SAPJVM GL 2018-06-08
-# Fails on AIX for a long time in os::map_memory_to_file. Repro case: start VM with -XX:AllocateHeapAt=. -Xmx32m -version.
-# Fixed in jdk12 by: 8211208: make AllocateHeapAt an unsupported option on AIX
-gc/TestAllocateHeapAt.java                                                         aix-ppc64
-gc/TestAllocateHeapAtMultiple.java                                                 aix-ppc64
-
-# SAPJVM GL 2018-06-22
-# Fix 8207153 was pushed to jdk12. Downport! We see timeouts on all, but mostly ppc and sparc.
-compiler/intrinsics/base64/TestBase64.java                                         generic-all
-
-# SAPJVM GL 2018-06-22
-# Needs to be fixed, backlog item exists. Fix for linux exists, not yet contributed to jdk12.
+# SapMachine 2018-06-22
+# Needs to be fixed, backlog item exists.
+# linux fixed in jdk/jdk by 8211931: [ppc][testbug] runtime/jni/terminatedThread/TestTerminatedThread.java fails as ...
+# Needs to be downported
 runtime/jni/terminatedThread/TestTerminatedThread.java                             aix-ppc64,linux-ppc64,linux-ppc64le
 
-# SAPJVM GL 2018-08-23
+# SapMachine 2018-08-23
 # These crash!!!
 runtime/appcds/javaldr/GCDuringDump.java                                           macosx-all
 runtime/appcds/javaldr/GCSharedStringsDuringDump.java                              macosx-all
 runtime/RedefineTests/RedefineRunningMethods.java                                  macosx-all
 
-# SAPJVM GL 2018-06-28 Failing as of today: http://sapjvm:1080/servlet/testoverview?group=openjdk11
-# GL 2018-07-16 still failing today
-serviceability/sa/ClhsdbCDSCore.java                                               generic-all
-serviceability/sa/TestJmapCore.java                                                generic-all
+# SapMachine 2018-06-28 Failing as of today: http://sapjvm:1080/servlet/testoverview?group=openjdk11
+# 2018-07-16 still failing today
 serviceability/sa/DeadlockDetectionTest.java                                       generic-all
 
-# SAPJVM GL 2018-08-23 Testbug. "Option -XX:+UseZGC not supported"
-# Downported 8210259: [testbug] IncompatibleOptions.java fails if VM configured without ZGC
-# runtime/appcds/sharedStrings/IncompatibleOptions.java                              generic-all
-
-# SAPJVM GL 2018-08-28
+# SapMachine 2018-08-28
 # This crashes on sparc with "The system is out of physical RAM or swap space".
 # Only jdk11, why that? Ev. add -Xmx200M.
 runtime/appcds/sharedStrings/InvalidFileFormat.java                                solaris-sparcv9
 
 ###############################################################################
 # Functionality supported by IBM (at least on linux-ppc64le).
-
-# SAPJVM GL 2018-06-05
-# These fail for a long time. Asked Gustavo to have a look.
-serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbFindPC.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbInspect.java                                               linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbJdis.java                                                  linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbJhisto.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbJstack.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbPmap.java                                                  linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbPrintAs.java                                               linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbPstack.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbScanOops.java                                              linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbSource.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbThread.java                                                linux-ppc64le,linux-ppc64
-serviceability/sa/ClhsdbWhere.java                                                 linux-ppc64le,linux-ppc64
-serviceability/sa/JhsdbThreadInfoTest.java                                         linux-ppc64le,linux-ppc64
-serviceability/sa/TestClhsdbJstackLock.java                                        linux-ppc64le,linux-ppc64
-serviceability/sa/TestHeapDumpForInvokeDynamic.java                                linux-ppc64le,linux-ppc64
-serviceability/sa/TestIntConstant.java                                             linux-ppc64le,linux-ppc64
-serviceability/sa/TestJhsdbJstackLock.java                                         linux-ppc64le,linux-ppc64
-serviceability/sa/TestUniverse.java                                                linux-ppc64le,linux-ppc64
-# don't overwrite general excludes above
-#serviceability/sa/DeadlockDetectionTest.java                                      linux-ppc64le,linux-ppc64
-#serviceability/sa/TestJmapCore.java                                               linux-ppc64le,linux-ppc64
 
 ###############################################################################
 # New failures after changes pushed after GA of jdk11.
