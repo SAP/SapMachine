@@ -131,9 +131,13 @@ All rights reserved. Confidential and proprietary.
         this._osSelector = $('#sapmachine_os_select')
         this._versionSelector = $('#sapmachine_version_select')
         this._downloadButton = $('#sapmachine_download_button')
+        this._ltsCheckbox = $('#sapmachine_lts_checkbox')
+        this._nonLtsCheckbox = $('#sapmachine_nonlts_checkbox')
+        this._eaCheckbox = $('#sapmachine_ea_checkbox')
         this._assets = null
+        this._data = null
 
-        this._updateImageTypeAndOS = function updateImageTypeAndOS() {
+        this._onUpdateImageTypeAndOS = function onUpdateImageTypeAndOS() {
             var selectedImageType;
             var selectedOS;
 
@@ -159,7 +163,6 @@ All rights reserved. Confidential and proprietary.
 
             var versionSelectorEmpty = (this._versionSelector.has('option').length <= 0)
 
-
             if (versionSelectorEmpty) {
                 this._downloadButton.addClass('download_button_disabled')
                 this._versionSelector.addClass('download_select_disabled')
@@ -167,29 +170,25 @@ All rights reserved. Confidential and proprietary.
                 this._downloadButton.removeClass('download_button_disabled')
                 this._versionSelector.removeClass('download_select_disabled')
             }
-
-            this._downloadButton.prop('disabled', versionSelectorEmpty)
-            this._versionSelector.prop('disabled', versionSelectorEmpty)
         }.bind(this)
 
-        this._imageTypeSelector.change(function imageTypeSelectorOnChange() {
-            this._updateImageTypeAndOS()
-        }.bind(this))
+        this._onUpdateData = function onUpdateData() {
+            var data = this._data
 
-        this._osSelector.change(function osSelectorOnChange() {
-            this._updateImageTypeAndOS()
-        }.bind(this))
+            this._imageTypeSelector.empty()
+            this._osSelector.empty()
+            this._versionSelector.empty()
 
-        this._versionSelector.change(function versionSelectorOnChange() {
-        }.bind(this))
-
-        this._downloadButton.click(function downloadButtonOnClick() {
-            if (this._versionSelector.index() !== -1)
-                sendDownloadEvent(this._versionSelector.val())
-        }.bind(this))
-
-        $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
             for (var i in data.imageTypes.sort(imageTypeComparator)) {
+                if (data.imageTypes[i].lts && !this._ltsCheckbox.is(':checked'))
+                    continue
+
+                if (data.imageTypes[i].ea && !this._eaCheckbox.is(':checked'))
+                    continue
+
+                if ((!data.imageTypes[i].lts && !data.imageTypes[i].ea) && !this._nonLtsCheckbox.is(':checked'))
+                    continue
+
                 var labelElement = $('<div>' + data.imageTypes[i].label + '</div>')
                 var optionElement = $('<option></option>')
                 optionElement.attr({'value': data.imageTypes[i].id })
@@ -205,16 +204,63 @@ All rights reserved. Confidential and proprietary.
                 this._imageTypeSelector.append(optionElement)
             }
 
-            for (var i in data.os.sort(osComparator)) {
-                var optionElement = $('<option></option>')
-                optionElement.text(data.os[i].value)
-                optionElement.attr({'value': data.os[i].key })
-                optionElement.addClass('download_select_option')
-                this._osSelector.append(optionElement)
-            }
+            var imageTypeSelectorEmpty = (this._imageTypeSelector.has('option').length <= 0)
 
-            this._assets = data.assets
-            this._updateImageTypeAndOS()
+            if (imageTypeSelectorEmpty) {
+                this._downloadButton.addClass('download_button_disabled')
+                this._versionSelector.addClass('download_select_disabled')
+                this._osSelector.addClass('download_select_disabled')
+                this._imageTypeSelector.addClass('download_select_disabled')
+            } else {
+                this._downloadButton.removeClass('download_button_disabled')
+                this._versionSelector.removeClass('download_select_disabled')
+                this._osSelector.removeClass('download_select_disabled')
+                this._imageTypeSelector.removeClass('download_select_disabled')
+
+                for (var i in data.os.sort(osComparator)) {
+                    var optionElement = $('<option></option>')
+                    optionElement.text(data.os[i].value)
+                    optionElement.attr({'value': data.os[i].key })
+                    optionElement.addClass('download_select_option')
+                    this._osSelector.append(optionElement)
+                }
+
+                this._assets = data.assets
+                this._onUpdateImageTypeAndOS()
+            }
+        }.bind(this)
+
+        this._imageTypeSelector.change(function imageTypeSelectorOnChange() {
+            this._onUpdateImageTypeAndOS()
+        }.bind(this))
+
+        this._osSelector.change(function osSelectorOnChange() {
+            this._onUpdateImageTypeAndOS()
+        }.bind(this))
+
+        this._versionSelector.change(function versionSelectorOnChange() {
+        }.bind(this))
+
+        this._downloadButton.click(function downloadButtonOnClick() {
+            if (this._versionSelector.index() !== -1)
+                sendDownloadEvent(this._versionSelector.val())
+        }.bind(this))
+
+        this._ltsCheckbox.click(function ltsCheckboxOnClick() {
+            this._onUpdateData()
+        }.bind(this))
+
+        this._nonLtsCheckbox.click(function nonltsCheckboxOnClick() {
+            this._onUpdateData()
+        }.bind(this))
+
+        this._eaCheckbox.click(function eaCheckboxOnClick() {
+            this._onUpdateData()
+        }.bind(this))
+
+        $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {
+            this._data = data
+            this._onUpdateData()
         }.bind(this))
     }
 
