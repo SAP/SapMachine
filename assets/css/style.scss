@@ -61,3 +61,42 @@
     color: rgb(177, 177, 177);
     font-size: 12px;
 }
+
+.download_label_section {
+    width: 100%;
+}
+
+.download_label {
+    display: inline-block;
+    width: 70%;
+    height: 30px;
+    font-size: 15px;
+    background:rgb(233, 233, 233);
+    border: 1px solid #bbb;
+    padding:.75em 1em .5em 1em;
+    //padding-top: 0.5em;
+    //padding-bottom: 0.0em;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: scroll;
+    white-space:nowrap;
+}
+
+.copy_button {
+    float: right;
+    width: 23%;
+    height: 50px;
+    font-size: 15px;
+    color:rgb(255, 255, 255);
+    background:rgb(0, 144, 255);
+    border: 1px solid #bbb;
+    padding:.75em 1em .5em 1em;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.copy_button:hover {
+    background:rgba(0, 145, 255, 0.808);
+}
+
+.download_filter {
+    padding-top: 0.75em;
+}

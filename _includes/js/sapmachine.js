@@ -22,6 +22,14 @@ All rights reserved. Confidential and proprietary.
         };
     }
 
+    function copyToClipboard(text) {
+        var tempInput = $("<input>");
+        $("body").append(tempInput);
+        tempInput.val(text).select();
+        document.execCommand("copy");
+        tempInput.remove();
+    }
+
     function osComparator(a, b) {
         return a['ordinal'] - b['ordinal']
     }
@@ -134,8 +142,16 @@ All rights reserved. Confidential and proprietary.
         this._ltsCheckbox = $('#sapmachine_lts_checkbox')
         this._nonLtsCheckbox = $('#sapmachine_nonlts_checkbox')
         this._eaCheckbox = $('#sapmachine_ea_checkbox')
+        this._downloadLabel = $('#download_label')
+        this._copyButton = $('#copy_button')
         this._assets = null
         this._data = null
+
+        this._updateDownloadLabel = function updateDownloadLabel() {
+            if (this._versionSelector.index() !== -1) {
+                this._downloadLabel .text(this._versionSelector.val());
+            }
+        }.bind(this)
 
         this._onUpdateImageTypeAndOS = function onUpdateImageTypeAndOS() {
             var selectedImageType;
@@ -170,6 +186,8 @@ All rights reserved. Confidential and proprietary.
                 this._downloadButton.removeClass('download_button_disabled')
                 this._versionSelector.removeClass('download_select_disabled')
             }
+
+            this._updateDownloadLabel()
         }.bind(this)
 
         this._onUpdateData = function onUpdateData() {
@@ -239,6 +257,7 @@ All rights reserved. Confidential and proprietary.
         }.bind(this))
 
         this._versionSelector.change(function versionSelectorOnChange() {
+            this._updateDownloadLabel()
         }.bind(this))
 
         this._downloadButton.click(function downloadButtonOnClick() {
@@ -256,6 +275,10 @@ All rights reserved. Confidential and proprietary.
 
         this._eaCheckbox.click(function eaCheckboxOnClick() {
             this._onUpdateData()
+        }.bind(this))
+
+        this._copyButton.click(function onCopyButtonClick() {
+            copyToClipboard(this._downloadLabel.text())
         }.bind(this))
 
         $.getJSON('assets/data/sapmachine_releases.json', function onJSONDataReceived(data) {

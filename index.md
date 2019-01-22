@@ -27,7 +27,12 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 <button id="sapmachine_download_button" type="button" class="download_button">Download</button>
 
-<div>
+<div class="download_label_section">
+  <div id="download_label" class="download_label"></div>
+  <button id="copy_button" type="button" class="copy_button">Copy</button>
+</div>
+
+<div class="download_filter">
   <input type="checkbox" id="sapmachine_lts_checkbox" name="lts"
          checked>
   <label for="lts">Long Term Support Releases (LTS)</label>
