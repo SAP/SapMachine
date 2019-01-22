@@ -339,7 +339,6 @@ final class ProcessImpl extends Process {
                 final boolean redirectErrorStream)
             throws IOException {
 
-
         pid = forkAndExec(launchMechanism.ordinal() + 1,
                           helperpath,
                           prog,
