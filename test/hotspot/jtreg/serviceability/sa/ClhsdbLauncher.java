@@ -33,6 +33,7 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.SA.SATestUtils;
+import jtreg.SkippedException;
 
 
 /**
@@ -180,19 +181,15 @@ public class ClhsdbLauncher {
         throws IOException, InterruptedException {
 
         if (!Platform.shouldSAAttach()) {
-            if (Platform.isOSX()) {
-                if (!SATestUtils.canAddPrivileges()) {
-                   // Skip the test if we don't have enough permissions to attach
-                   // and cannot add privileges.
-                   System.out.println("SA attach not expected to work - test skipped.");
-                   return null;
-               } else {
-                   needPrivileges = true;
-               }
-            } else {
-                System.out.println("SA attach not expected to work. Insufficient privileges.");
-                throw new Error("Cannot attach.");
+            if (Platform.isOSX() && SATestUtils.canAddPrivileges()) {
+                needPrivileges = true;
             }
+            else {
+               // Skip the test if we don't have enough permissions to attach
+               // and cannot add privileges.
+               throw new SkippedException(
+                   "SA attach not expected to work. Insufficient privileges.");
+           }
         }
 
         attach(lingeredAppPid);

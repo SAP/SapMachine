@@ -98,26 +98,26 @@ runtime/appcds/javaldr/GCSharedStringsDuringDump.java                           
 runtime/RedefineTests/RedefineRunningMethods.java                                  macosx-all
 
 # SapMachine 2018-01-18 Failing tests after fix for 8215544. Need to check.
-serviceability/sa/ClhsdbAttach.java                                                8215544 generic-all
-serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     8215544 generic-all
-serviceability/sa/ClhsdbField.java                                                 8215544 generic-all
-serviceability/sa/ClhsdbFindPC.java                                                8215544 generic-all
-serviceability/sa/ClhsdbFlags.java                                                 8215544 generic-all
-serviceability/sa/ClhsdbInspect.java                                               8215544 generic-all
-serviceability/sa/ClhsdbJdis.java                                                  8215544 generic-all
-serviceability/sa/ClhsdbJhisto.java                                                8215544 generic-all
-serviceability/sa/ClhsdbJstack.java                                                8215544 generic-all
-serviceability/sa/ClhsdbLongConstant.java                                          8215544 generic-all
-serviceability/sa/ClhsdbPmap.java                                                  8215544 generic-all
-serviceability/sa/ClhsdbPrintAll.java                                              8215544 generic-all
-serviceability/sa/ClhsdbPrintAs.java                                               8215544 generic-all
-serviceability/sa/ClhsdbPrintStatics.java                                          8215544 generic-all
-serviceability/sa/ClhsdbPstack.java                                                8215544 generic-all
-serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java                            8215544 generic-all
-serviceability/sa/ClhsdbSource.java                                                8215544 generic-all
-serviceability/sa/ClhsdbThread.java                                                8215544 generic-all
-serviceability/sa/ClhsdbVmStructsDump.java                                         8215544 generic-all
-serviceability/sa/ClhsdbWhere.java                                                 8215544 generic-all
+#serviceability/sa/ClhsdbAttach.java                                                8215544 generic-all
+#serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     8215544 generic-all
+#serviceability/sa/ClhsdbField.java                                                 8215544 generic-all
+#serviceability/sa/ClhsdbFindPC.java                                                8215544 generic-all
+#serviceability/sa/ClhsdbFlags.java                                                 8215544 generic-all
+#serviceability/sa/ClhsdbInspect.java                                               8215544 generic-all
+#serviceability/sa/ClhsdbJdis.java                                                  8215544 generic-all
+#serviceability/sa/ClhsdbJhisto.java                                                8215544 generic-all
+#serviceability/sa/ClhsdbJstack.java                                                8215544 generic-all
+#serviceability/sa/ClhsdbLongConstant.java                                          8215544 generic-all
+#serviceability/sa/ClhsdbPmap.java                                                  8215544 generic-all
+#serviceability/sa/ClhsdbPrintAll.java                                              8215544 generic-all
+#serviceability/sa/ClhsdbPrintAs.java                                               8215544 generic-all
+#serviceability/sa/ClhsdbPrintStatics.java                                          8215544 generic-all
+#serviceability/sa/ClhsdbPstack.java                                                8215544 generic-all
+#serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java                            8215544 generic-all
+#serviceability/sa/ClhsdbSource.java                                                8215544 generic-all
+#serviceability/sa/ClhsdbThread.java                                                8215544 generic-all
+#serviceability/sa/ClhsdbVmStructsDump.java                                         8215544 generic-all
+#serviceability/sa/ClhsdbWhere.java                                                 8215544 generic-all
 
 # SapMachine 2018-01-18 Further sa tests which might fail. Need to check.
 serviceability/sa/TestJmapCore.java                                                generic-all
