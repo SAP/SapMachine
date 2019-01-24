@@ -21,9 +21,9 @@
  * questions.
  */
 
-
-// SapMachine 2018-11-23: SapMachine has set jdk.includeInExceptions to hostInfo,jar
+// SapMachine 2018-11-23: SapMachine sets "hostInfo" in jdk.includeInExceptions
 //                        by default. Therefore expect according output!
+
 /*
  * @test
  * @library /test/lib
@@ -68,6 +68,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import jdk.test.lib.Utils;
 
@@ -96,10 +97,11 @@ public class ExceptionText {
 
     static void testSecProp() {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
-        // SapMachine 2018-11-23: SapMachine has jdk.includeInExceptions set to hostInfo,jar 
-        if (!"hostInfo,jar".equals(incInExc)) {
+        // SapMachine 2018-11-23: SapMachine sets "hostInfo" in jdk.includeInExceptions
+        if (incInExc == null || !Arrays.asList(incInExc.split(",")).contains("hostInfo")) {
             throw new RuntimeException("Test failed: default value of " +
-                "jdk.includeInExceptions security property is not hostInfo,jar");
+                "jdk.includeInExceptions security property is: " +
+                incInExc);
         }
     }
 
