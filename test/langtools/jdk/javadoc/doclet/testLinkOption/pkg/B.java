@@ -59,8 +59,8 @@ public class B {
     * href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
     * Resource Identifiers (URI): Generic Syntax</i></a>, <br><a
     * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
-    * Literal IPv6 Addresses in URLs</i></a>, <br><a
-    * href="URISyntaxException.html">URISyntaxException</a>
+    * Literal IPv6 Addresses in URLs</i></a>, <br>
+    * @see java.net.URISyntaxException
     */
    public void externalLink() {}
 }

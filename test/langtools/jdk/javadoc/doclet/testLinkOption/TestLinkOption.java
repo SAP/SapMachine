@@ -104,8 +104,8 @@ public class TestLinkOption extends JavadocTester {
                 "<i>RFC&nbsp;2396: Uniform\n" +
                 " Resource Identifiers (URI): Generic Syntax</i></a>, " +
                 "<br><a href=\"http://www.ietf.org/rfc/rfc2732.txt\"><i>RFC&nbsp;2732: Format for\n" +
-                " Literal IPv6 Addresses in URLs</i></a>, <br><a href=\"URISyntaxException.html\">" +
-                "URISyntaxException</a></dd>\n" +
+                " Literal IPv6 Addresses in URLs</i></a>, <br>, \n" +
+                "<a href=\"" + url + "java/net/URISyntaxException.html?is-external=true\" title=\"class or interface in java.net\" class=\"externalLink\"><code>URISyntaxException</code></a></dd>\n" +
                 "</dl>");
 
         checkOutput("mylib/lang/StringBuilderChild.html", true,
