@@ -2466,15 +2466,12 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public Set<PosixFilePermission> permissions() {
-            if (posixPerms == -1) {
-                // in case there are no Posix permissions associated with the
-                // entry, we should not return an empty set of permissions
-                // because that would be an explicit set of permissions meaning
-                // no permissions for anyone
-                throw new UnsupportedOperationException(
-                    "No posix permissions associated with zip entry.");
-            }
-            return ZipUtils.permsFromFlags(posixPerms);
+            // In case there are no Posix permissions associated with the
+            // entry, we return an empty set of permissions.
+            // That way we can't distinguish between no permission information
+            // available and an explicit set of empty permissions. However
+            // we must not throw an Exception or return null at this place.
+            return posixPerms == -1 ? new HashSet<>() : ZipUtils.permsFromFlags(posixPerms);
         }
 
         ///////// zip entry attributes ///////////
