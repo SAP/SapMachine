@@ -145,7 +145,7 @@ public class TestPosixPerms {
         }
         try {
             Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file);
-            assertNotEquals(permissions, null, "Retruned permissions of entry are null. " +
+            assertNotEquals(permissions, null, "Returned permissions of entry are null. " +
                 "This should not happen but we should rather see an UnsupportedOperationException.");
             assertNotEquals(expected, null, "Got a set of " + permissions.size() +
                 " permissions but expected null/UnsupportedOperationException.");
@@ -246,7 +246,7 @@ public class TestPosixPerms {
                     // If such a file gets extracted into a "normal" file system it will
                     // get the system default permissions (i.e. "umask")
                     if ("jar".equals(path.getFileSystem().provider().getScheme())) {
-                        checkPermissionsOfEntry(file, false, null);
+                        checkPermissionsOfEntry(file, false, Collections.<PosixFilePermission>emptySet());
                     }
                 } else if (name.equals("permsaddedlater")) {
                     checkPermissionsOfEntry(file, false, Set.of(OWNER_READ));
