@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# GL: this is the SAP jtreg exclude list for SapMachine 12 jdk tests.
+# This is the additional jtreg exclude list for SapMachine jdk tests.
 #
 # List of tests that should not be run by test/Makefile, for various reasons:
 #   1. Does not run with jtreg -samevm mode
@@ -28,20 +28,14 @@
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 #
 
-# SAPJVM GL This was in this file before 2018-10-05
+# SapMachine 2018-10-05
 # This test opens as many sockets as possible and fails after a timeout.
 # When running in concurrency mode, all tests that need a socket and run in
 # parallel to this test will fail.
 java/nio/channels/AsyncCloseAndInterrupt.java                                        generic-all
 
-# SAPJVM GL This was in this file before 2018-10-05
-# sun/security
-sun/security/pkcs11/Secmod/AddTrustedCert.java                                       generic-all
-sun/security/pkcs11/tls/TestKeyMaterial.java                                         generic-all
-
-# SAPJVM GL This was in this file before 2018-10-05
-# Flaky tests / other failing
-com/sun/jdi/JdbExprTest.sh                                                           generic-all
+# SapMachine 2018-10-05
+# Flaky tests / other failing - should be checked whether issue still exists
 sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
 javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
 

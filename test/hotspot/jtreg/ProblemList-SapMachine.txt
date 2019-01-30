@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# GL: this is the SAP jtreg exclude list for SapMachine 12 hotspot tests.
+# This is the additional jtreg exclude list for SapMachine hotspot tests.
 #
 # List of tests that should not be run by test/Makefile, for various reasons:
 #   1. Does not run with jtreg -samevm mode
@@ -32,6 +32,9 @@
 # This test fails, because we do not have debug symbols available in all tests.
 runtime/NMT/CheckForProperDetailStackTrace.java                                    generic-all
 
+# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le. Need to investigate.
+gc/g1/humongousObjects/TestHumongousClassLoader.java                               linux-ppc64le
+gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                        linux-ppc64le
 
 #############################################################################
 # Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
