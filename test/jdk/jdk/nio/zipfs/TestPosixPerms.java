@@ -309,7 +309,6 @@ public class TestPosixPerms {
     @Test(priority=3)
     public void testPosixPermsAfterZip() throws Exception {
         Path in = Paths.get(System.getProperty("test.dir", "."), UNZIP_DIR);
-        Path out = Paths.get(System.getProperty("test.dir", "."), ZIP_FILE_NEW);
         boolean posixFS;
         try {
             Files.getPosixFilePermissions(in);
@@ -318,75 +317,83 @@ public class TestPosixPerms {
             posixFS = false;
         }
 
-        try (FileSystem zipOut = zipFS.newFileSystem(out, CREATE_TRUE)) {
-            out = zipOut.getPath("/");
+        try (FileSystem zipOut = zipFS.newFileSystem(Paths
+                 .get(System.getProperty("test.dir", "."), ZIP_FILE_NEW), CREATE_TRUE))
+        {
+            Path out = zipOut.getPath("/");
 
             // Have to hack this manually otherwise we won't be able to read these files at all
-            Set<PosixFilePermission> emptyperms_p = null, gexec_p = null, gwrite_p = null, gread_p = null,
-                oread_p = null, oexec_p = null, owrite_p = null, uexec_p = null, uwrite_p = null;
+            Set<PosixFilePermission> uwrite_p = null, uexec_p = null, gread_p = null,
+                gwrite_p = null, gexec_p = null, oread_p = null, owrite_p = null,
+                oexec_p = null, emptyperms_p = null, noperms_p = null;
             if (posixFS) {
-                Path emptyperms = in.resolve("emptyperms");
-                emptyperms_p = Files.getPosixFilePermissions(emptyperms);
-                emptyperms_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(emptyperms, emptyperms_p);
-                Path gexec = in.resolve("gexec");
-                gexec_p = Files.getPosixFilePermissions(gexec);
-                gexec_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(gexec, gexec_p);
-                Path gwrite = in.resolve("gwrite");
-                gwrite_p = Files.getPosixFilePermissions(gwrite);
-                gwrite_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(gwrite, gwrite_p);
-                Path gread = in.resolve("gread");
-                gread_p = Files.getPosixFilePermissions(gread);
-                gread_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(gread, gread_p);
-                Path oread = in.resolve("oread");
-                oread_p = Files.getPosixFilePermissions(oread);
-                oread_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(oread, oread_p);
-                Path oexec = in.resolve("oexec");
-                oexec_p = Files.getPosixFilePermissions(oexec);
-                oexec_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(oexec, oexec_p);
-                Path owrite = in.resolve("owrite");
-                owrite_p = Files.getPosixFilePermissions(owrite);
-                owrite_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(owrite, owrite_p);
-                Path uexec = in.resolve("uexec");
-                uexec_p = Files.getPosixFilePermissions(uexec);
-                uexec_p.add(OWNER_READ);
-                Files.setPosixFilePermissions(uexec, uexec_p);
+                // Make some files owner readable to be able to copy them into the zipfs
                 Path uwrite = in.resolve("uwrite");
                 uwrite_p = Files.getPosixFilePermissions(uwrite);
                 uwrite_p.add(OWNER_READ);
                 Files.setPosixFilePermissions(uwrite, uwrite_p);
+                Path uexec = in.resolve("uexec");
+                uexec_p = Files.getPosixFilePermissions(uexec);
+                uexec_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(uexec, uexec_p);
+                Path gread = in.resolve("gread");
+                gread_p = Files.getPosixFilePermissions(gread);
+                gread_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(gread, gread_p);
+                Path gwrite = in.resolve("gwrite");
+                gwrite_p = Files.getPosixFilePermissions(gwrite);
+                gwrite_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(gwrite, gwrite_p);
+                Path gexec = in.resolve("gexec");
+                gexec_p = Files.getPosixFilePermissions(gexec);
+                gexec_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(gexec, gexec_p);
+                Path oread = in.resolve("oread");
+                oread_p = Files.getPosixFilePermissions(oread);
+                oread_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(oread, oread_p);
+                Path owrite = in.resolve("owrite");
+                owrite_p = Files.getPosixFilePermissions(owrite);
+                owrite_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(owrite, owrite_p);
+                Path oexec = in.resolve("oexec");
+                oexec_p = Files.getPosixFilePermissions(oexec);
+                oexec_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(oexec, oexec_p);
+                Path emptyperms = in.resolve("emptyperms");
+                emptyperms_p = Files.getPosixFilePermissions(emptyperms);
+                emptyperms_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(emptyperms, emptyperms_p);
+                Path noperms = in.resolve("noperms");
+                noperms_p = Files.getPosixFilePermissions(noperms);
+                noperms_p.add(OWNER_READ);
+                Files.setPosixFilePermissions(noperms, noperms_p);
             }
 
             Files.walkFileTree(in, new CopyVisitor(in, out, true, StandardCopyOption.COPY_ATTRIBUTES));
 
             if (posixFS) {
                 // Fix back all the files in the target zip file which have been made readable before
-                emptyperms_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("emptyperms"), emptyperms_p);
-                gexec_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("gexec"), gexec_p);
-                gwrite_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("gwrite"), gwrite_p);
-                gread_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("gread"), gread_p);
-                oread_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("oread"), oread_p);
-                oexec_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("oexec"), oexec_p);
-                owrite_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("owrite"), owrite_p);
-                uexec_p.remove(OWNER_READ);
-                Files.setPosixFilePermissions(zipOut.getPath("uexec"), uexec_p);
                 uwrite_p.remove(OWNER_READ);
                 Files.setPosixFilePermissions(zipOut.getPath("uwrite"), uwrite_p);
-                // Fix "noperms" which has the default permissions after unzipping in 'testPosixPermsAfterUnzip()'
-                Files.setPosixFilePermissions(zipOut.getPath("noperms"), null);
+                uexec_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("uexec"), uexec_p);
+                gread_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("gread"), gread_p);
+                gwrite_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("gwrite"), gwrite_p);
+                gexec_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("gexec"), gexec_p);
+                oread_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("oread"), oread_p);
+                owrite_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("owrite"), owrite_p);
+                oexec_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("oexec"), oexec_p);
+                emptyperms_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("emptyperms"), emptyperms_p);
+                noperms_p.remove(OWNER_READ);
+                Files.setPosixFilePermissions(zipOut.getPath("noperms"), noperms_p);
             }
 
             System.out.println("Test reading " + out + "...");
