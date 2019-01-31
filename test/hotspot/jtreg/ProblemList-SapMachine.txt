@@ -1,0 +1,317 @@
+###########################################################################
+#
+# This is the additional jtreg exclude list for SapMachine hotspot tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+
+#############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+#
+
+# SapMachine 2018-10-05 This was in this file before 2018-10-05
+# This test fails, because we do not have debug symbols available in all tests.
+runtime/NMT/CheckForProperDetailStackTrace.java                                    generic-all
+
+# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le. Need to investigate.
+gc/g1/humongousObjects/TestHumongousClassLoader.java                               linux-ppc64le
+gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                        linux-ppc64le
+
+#############################################################################
+# Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
+# If one of these is fixed in 12, downport the fix to 11u!!
+
+# SAPJVM VS 2016-01-12
+# Arno requested to exclude these because it seems that they crash dewdfms0023
+# by consuming too much memory.
+compiler/compilercontrol/jcmd/StressAddMultiThreadedTest.java                      generic-all
+
+# SAPJVM GL 2015-12-08
+# -XX:-UseSIGTRAP -XX:-TransmitErrorReport -XX:-CreateCoredumpOnCrash -XX:ErrorHandlerTest=13
+# does not go through the signal handler.
+# Leave to Gustavo Romero.
+# SAPJVM GL 2017-07-21 Still fails.
+runtime/ErrorHandling/ErrorHandler.java                                            linux-ppc64le
+
+# SAPJVM GL 2016-06-07
+# This is a linux error: https://lists.ozlabs.org/pipermail/linuxppc-dev/2016-January/138296.html
+# Gustavo Romero is fixing this.
+runtime/StackGuardPages/testme.sh                                                  linux-ppc64le
+
+# SAPJVM GL 2017-12-05
+# We didn't port dtrace support yet.
+compiler/runtime/Test8168712.java                                                  generic-ppc64,linux-ppc64le,linux-s390x
+
+# SAPJVM GL 2018-04-27
+# These fail on windows for quite a while.
+compiler/ciReplay/TestServerVM.java                                                windows-all
+compiler/ciReplay/TestVMNoCompLevel.java                                           windows-all
+
+# SAPJVM GL 2018-06-07
+# fails on our platforms, but also linuxx86_64. Sporadically?
+runtime/containers/cgroup/PlainRead.java                                           generic-all
+
+# SAPJVM GL 2018-06-08
+# Fails on AIX for a long time in os::map_memory_to_file. Repro case: start VM with -XX:AllocateHeapAt=. -Xmx32m -version.
+# GL 2018-07-15 Let's see whether they are fixed. ... No.
+# Backlog item exists.
+gc/TestAllocateHeapAt.java                                                         aix-ppc64
+gc/TestAllocateHeapAtMultiple.java                                                 aix-ppc64
+
+# SAPJVM GL 2018-06-22
+# Needs to be fixed, backlog item exists
+# SAPJVM MBS 2018-07-19 : exclude TestBase64 until 8207153 fixes the long-runner
+# the test was done with
+# x86 in mind where we support AVX512, see JDK-8205528 : Base64 encoding algorithm using AVX512 instructions
+# fix was pushed to jdk12.
+# compiler/intrinsics/base64/TestBase64.java                                         linux-ppc64,linux-ppc64le
+
+# SAPJVM GL 2018-06-22
+# Needs to be fixed, backlog item exists.
+#runtime/jni/terminatedThread/TestTerminatedThread.java                             aix-ppc64,linux-ppc64,linux-ppc64le
+# Fix for linux exists, not yet contributed to jdk12, but in queue. Different error on aix.
+runtime/jni/terminatedThread/TestTerminatedThread.java                             aix-ppc64
+
+# SAPJVM GL 2018-08-23
+# These crash!!!
+runtime/appcds/javaldr/GCDuringDump.java                                           macosx-all
+runtime/appcds/javaldr/GCSharedStringsDuringDump.java                              macosx-all
+runtime/RedefineTests/RedefineRunningMethods.java                                  macosx-all
+
+# SAPJVM GL 2018-06-28 Failing as of today: http://sapjvm:1080/servlet/testoverview?group=openjdk11
+# GL 2018-07-16 still failing today
+serviceability/sa/ClhsdbCDSCore.java                                               generic-all
+serviceability/sa/TestJmapCore.java                                                generic-all
+serviceability/sa/DeadlockDetectionTest.java                                       generic-all
+
+# SAPJVM GL 2018-08-23 Lets see whether it is fixed. Testbug. "Option -XX:+UseZGC not supported"
+# Fixed in 12 by "8210259: [testbug] IncompatibleOptions.java fails if VM configured without ZGC"
+#runtime/appcds/sharedStrings/IncompatibleOptions.java                              generic-all
+# GL 2018-08-29
+# New tests with the same error.
+#runtime/appcds/sharedStrings/IncompatibleOptions_noCompactStrings.java             generic-all
+#runtime/appcds/sharedStrings/IncompatibleOptions_stringDedup.java                  generic-all
+
+##############################################################################
+# Tests currently failing on linuxx86_64. Exclude and wait for Oracle to
+# fix them.
+
+# SAPJVM GL 2018-08-23
+# Failing as of today.
+runtime/appcds/condy/CondyHelloTest.java                                           generic-all
+runtime/appcds/sharedStrings/IncompatibleOptions.java                              generic-all
+runtime/appcds/MultiReleaseJars.java                                               generic-all
+runtime/condy/BadBSMUseTest.java                                                   generic-all
+runtime/condy/CondyBadBSMArrayTest.java                                            generic-all
+runtime/condy/CondyBadNameTypeTest.java                                            generic-all
+runtime/condy/CondyCFVCheckTest.java                                               generic-all
+runtime/condy/CondyLDCTest.java                                                    generic-all
+runtime/condy/CondyNewInvokeSpecialTest.java                                       generic-all
+# Failing since JDK 12+18
+runtime/SharedArchiveFile/serviceability/ReplaceCriticalClasses.java               generic-all
+
+###############################################################################
+# Functionality supported by IBM (at least on linux-ppc64le).
+
+# SAPJVM GL 2018-06-05
+# These fail for a long time. Asked Gustavo to have a look.
+serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbFindPC.java                                                linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbInspect.java                                               linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbJdis.java                                                  linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbJhisto.java                                                linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbJstack.java                                                linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbPmap.java                                                  linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbPrintAs.java                                               linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbPstack.java                                                linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbScanOops.java                                              linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbSource.java                                                linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbThread.java                                                linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbWhere.java                                                 linux-ppc64le,linux-ppc64
+serviceability/sa/JhsdbThreadInfoTest.java                                         linux-ppc64le,linux-ppc64
+serviceability/sa/TestClhsdbJstackLock.java                                        linux-ppc64le,linux-ppc64
+serviceability/sa/TestHeapDumpForInvokeDynamic.java                                linux-ppc64le,linux-ppc64
+serviceability/sa/TestIntConstant.java                                             linux-ppc64le,linux-ppc64
+serviceability/sa/TestJhsdbJstackLock.java                                         linux-ppc64le,linux-ppc64
+serviceability/sa/TestUniverse.java                                                linux-ppc64le,linux-ppc64
+# don't overwrite general excludes above
+#serviceability/sa/DeadlockDetectionTest.java                                      linux-ppc64le,linux-ppc64
+#serviceability/sa/TestJmapCore.java                                               linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbJhisto.java                                                linux-ppc64le,linux-ppc64
+# SAPJVM GL 2018-07-11
+serviceability/sa/ClhsdbPstack.java                                                linux-ppc64
+serviceability/sa/ClhsdbScanOops.java                                              linux-ppc64le
+serviceability/sa/TestUniverse.java                                                linux-ppc64le
+serviceability/sa/ClhsdbPmap.java                                                  linux-ppc64
+serviceability/sa/TestHeapDumpForInvokeDynamic.java                                linux-ppc64
+serviceability/sa/TestIntConstant.java                                             linux-ppc64
+
+###############################################################################
+# New tests, unsupported new features
+
+# SAPJVM GL 2018-05-18, 2018-08-22
+# These fail on linux x86_64 and everywhere else.
+vmTestbase/nsk/jdi/ClassLoaderReference/definedClasses/definedclasses003/TestDescription.java    generic-all
+vmTestbase/nsk/jdi/ClassLoaderReference/definedClasses/definedclasses005/TestDescription.java    generic-all
+vmTestbase/nsk/jdi/ClassObjectReference/reflectedType/reflectype002/TestDescription.java         generic-all
+vmTestbase/nsk/jdi/ClassUnloadRequest/addClassExclusionFilter/exclfilter001/TestDescription.java generic-all
+vmTestbase/nsk/jdi/ClassUnloadRequest/addClassFilter/filter001/TestDescription.java              generic-all
+vmTestbase/nsk/jdi/ReferenceType/allFields/allfields002/TestDescription.java                     generic-all
+vmTestbase/nsk/jdi/ReferenceType/allFields/allfields003/TestDescription.java                     generic-all
+vmTestbase/nsk/jdi/ReferenceType/allMethods/allmethods002/TestDescription.java                   generic-all
+vmTestbase/nsk/jdi/ReferenceType/allMethods/allmethods003/TestDescription.java                   generic-all
+vmTestbase/nsk/jdi/ReferenceType/classLoader/classloader001/TestDescription.java                 generic-all
+vmTestbase/nsk/jdi/ReferenceType/classObject/classobj002/TestDescription.java                    generic-all
+vmTestbase/nsk/jdi/ReferenceType/equals/equals002/TestDescription.java                           generic-all
+vmTestbase/nsk/jdi/ReferenceType/failedToInitialize/failedtoinit002/TestDescription.java         generic-all
+vmTestbase/nsk/jdi/ReferenceType/fieldByName/fieldbyname002/TestDescription.java                 generic-all
+vmTestbase/nsk/jdi/ReferenceType/fieldByName/fieldbyname003/TestDescription.java                 generic-all
+vmTestbase/nsk/jdi/ReferenceType/fields/fields002/TestDescription.java                           generic-all
+vmTestbase/nsk/jdi/ReferenceType/fields/fields003/TestDescription.java                           generic-all
+vmTestbase/nsk/jdi/ReferenceType/hashCode/hashcode002/TestDescription.java                       generic-all
+vmTestbase/nsk/jdi/ReferenceType/isAbstract/isabstract002/TestDescription.java                   generic-all
+vmTestbase/nsk/jdi/ReferenceType/isInitialized/isinit002/TestDescription.java                    generic-all
+vmTestbase/nsk/jdi/ReferenceType/isPrepared/isprepared002/TestDescription.java                   generic-all
+vmTestbase/nsk/jdi/ReferenceType/isVerified/isverified002/TestDescription.java                   generic-all
+vmTestbase/nsk/jdi/ReferenceType/isVerified/isverified003/TestDescription.java                   generic-all
+vmTestbase/nsk/jdi/ReferenceType/methods/methods002/TestDescription.java                         generic-all
+vmTestbase/nsk/jdi/ReferenceType/methods/methods003/TestDescription.java                         generic-all
+vmTestbase/nsk/jdi/ReferenceType/methodsByName_s/methbyname_s002/TestDescription.java            generic-all
+vmTestbase/nsk/jdi/ReferenceType/methodsByName_s/methbyname_s003/TestDescription.java            generic-all
+vmTestbase/nsk/jdi/ReferenceType/methodsByName_ss/methbyname_ss002/TestDescription.java          generic-all
+vmTestbase/nsk/jdi/ReferenceType/methodsByName_ss/methbyname_ss003/TestDescription.java          generic-all
+vmTestbase/nsk/jdi/ReferenceType/name/name002/TestDescription.java                               generic-all
+vmTestbase/nsk/jdi/ReferenceType/sourceName/sourcename002/TestDescription.java                   generic-all
+vmTestbase/nsk/jdi/ReferenceType/visibleFields/visibfield002/TestDescription.java                generic-all
+vmTestbase/nsk/jdi/ReferenceType/visibleFields/visibfield003/TestDescription.java                generic-all
+vmTestbase/nsk/jdi/ReferenceType/visibleMethods/visibmethod002/TestDescription.java              generic-all
+vmTestbase/nsk/jdi/ReferenceType/visibleMethods/visibmethod003/TestDescription.java              generic-all
+
+## SAPJVM GL 2018-08-22
+## Let's see whether they are fixed.
+#
+## These fail on linux s390x in jdk-test, but exclude them anyways. Don't want to
+## deal with new test suite now.
+#vmTestbase/nsk/jdb/options/connect/connect003/connect003.java                                    generic-all # see below
+#vmTestbase/nsk/jdb/options/connect/connect005/connect005.java                                    generic-all # see below
+#vmTestbase/nsk/jdb/options/listconnectors/listconnectors001/listconnectors001.java               generic-all # see below
+#vmTestbase/nsk/jdi/AttachingConnector/attach/attach002/TestDescription.java                      generic-all # see below
+#vmTestbase/nsk/jdi/AttachingConnector/attach/attach005/TestDescription.java                      generic-all # see below
+#vmTestbase/nsk/jdi/AttachingConnector/attachnosuspend/attachnosuspend003/TestDescription.java    generic-all # see below
+#vmTestbase/nsk/jdi/LaunchingConnector/launch/launch002/TestDescription.java                      generic-all # see below
+#vmTestbase/nsk/jdi/LaunchingConnector/launch/launch004/TestDescription.java                      generic-all # see below
+#vmTestbase/nsk/jdi/ListeningConnector/accept/accept002/TestDescription.java                      generic-all # see below
+#vmTestbase/nsk/jdi/ListeningConnector/startListening/startlis002/TestDescription.java            generic-all # see below
+#vmTestbase/nsk/jdi/ListeningConnector/stopListening/stoplis002/TestDescription.java              generic-all # see below
+#vmTestbase/nsk/jvmti/Allocate/alloc001/TestDescription.java                                      generic-all
+#vmTestbase/nsk/jvmti/GarbageCollectionStart/gcstart001/TestDescription.java                      generic-all
+
+# SAPJVM GL 2018-08-24
+# Failing as of today, and ever before.
+vmTestbase/nsk/jdi/AttachingConnector/attach/attach002/TestDescription.java                      aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdi/AttachingConnector/attach/attach005/TestDescription.java                      aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdi/AttachingConnector/attachnosuspend/attachnosuspend003/TestDescription.java    aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdi/LaunchingConnector/launch/launch002/TestDescription.java                      aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdi/LaunchingConnector/launch/launch004/TestDescription.java                      aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdi/ListeningConnector/accept/accept002/TestDescription.java                      aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdi/ListeningConnector/startListening/startlis002/TestDescription.java            aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdi/ListeningConnector/stopListening/stoplis002/TestDescription.java              aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+
+# SAPJVM GL 2018-08-23
+# Failing as of today, and ever before.
+vmTestbase/nsk/jdb/options/connect/connect003/connect003.java                                    aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+vmTestbase/nsk/jdb/options/connect/connect005/connect005.java                                    aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x,windows-all
+vmTestbase/nsk/jdb/options/listconnectors/listconnectors001/listconnectors001.java               aix-ppc64,linux-ppc64,linux-ppc64le,linux-s390x
+
+# SAPJVM GL 2018-08-22
+# Failing as of today, and ever before.
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java       windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java       windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java       windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java       windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java       windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java       windows-all
+vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
+
+# SAPJVM GL 2018-08-22
+# Failing as of today, and ever before.
+vmTestbase/nsk/jvmti/Allocate/alloc001/TestDescription.java                                      aix-ppc64
+vmTestbase/nsk/jvmti/RetransformClasses/retransform003/TestDriver.java                           aix-ppc64
+vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java               aix-ppc64
+vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java               aix-ppc64
+vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java                      aix-ppc64
+vmTestbase/nsk/jvmti/SetNativeMethodPrefix/SetNativeMethodPrefix002/TestDriver.java              aix-ppc64
+
+# SAPJVM GL 2018-08-22
+# Failing as of today, and ever before.
+vmTestbase/vm/jit/LongTransitions/nativeFnc1/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc2/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc3/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc4/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc5/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc6/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc7/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc8/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc9/TestDescription.java                                macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc10/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc11/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc12/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc13/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc14/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc15/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc16/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc17/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc18/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc19/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc20/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc21/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc22/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc23/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc24/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc25/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc26/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc27/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc28/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc29/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc30/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc31/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc32/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc33/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc34/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc35/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc36/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc37/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc38/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc39/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc40/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc41/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc42/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc43/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc44/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc45/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc46/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc47/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc48/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc49/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc50/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc51/TestDescription.java                               macosx-all
+vmTestbase/vm/jit/LongTransitions/nativeFnc52/TestDescription.java                               macosx-all
