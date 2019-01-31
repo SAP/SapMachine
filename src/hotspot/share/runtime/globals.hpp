@@ -666,7 +666,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
-  product(bool, PrintExtendedThreadInfo, false,                             \
+  product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \
   diagnostic(bool, TraceNMethodInstalls, false,                             \
@@ -1272,8 +1272,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
+  /* SapMachine 2018-12-18 Enable this per default. */                      \
   product(bool, ExtensiveErrorReports,                                      \
-          PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
+          PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
           "Error reports are more extensive.")                              \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \
