@@ -1,1 +1,50 @@
-# SapMachine Problem List for Langtools tests
+###########################################################################
+#
+# This is the additional jtreg exclude list for SapMachine langtools tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+
+#############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+
+# SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
+# Need to check how this can be fixed.
+jdk/javadoc/doclet/testLinkOption/TestRedirectLinks.java             macosx-all
+jdk/jshell/ExceptionMessageTest.java                                 macosx-all
+jdk/jshell/FailOverDirectExecutionControlTest.java                   macosx-all
+jdk/jshell/FailOverExecutionControlDyingLaunchTest.java              macosx-all
+jdk/jshell/FailOverExecutionControlHangingLaunchTest.java            macosx-all
+jdk/jshell/FailOverExecutionControlTest.java                         macosx-all
+jdk/jshell/JdiFailingLaunchExecutionControlTest.java                 macosx-all
+jdk/jshell/JdiFailingListenExecutionControlTest.java                 macosx-all
+jdk/jshell/JdiHangingLaunchExecutionControlTest.java                 macosx-all
+jdk/jshell/JdiHangingListenExecutionControlTest.java                 macosx-all
+jdk/jshell/JdiLaunchingExecutionControlTest.java                     macosx-all
+jdk/jshell/JdiListeningExecutionControlTest.java                     macosx-all
+jdk/jshell/ToolBasicTest.java                                        macosx-all
+jdk/jshell/ToolSimpleTest.java                                       macosx-all
+# need to correctly override test from common ProblemList.txt
+jdk/jshell/UserJdiUserRemoteTest.java                                8173079    linux-all,macosx-all
+tools/javac/lambda/lambdaExecution/LambdaTranslationTest1.java       macosx-all
+tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java       macosx-all
+tools/jdeps/modules/GenOpenModule.java                               windows-all

@@ -26,31 +26,87 @@
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
-#
 
-# SapMachine 2018-10-05 This was in this file before 2018-10-05
+# SapMachine 2018-10-05
 # This test fails, because we do not have debug symbols available in all tests.
 runtime/NMT/CheckForProperDetailStackTrace.java                                    generic-all
 
-# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le. Need to investigate.
-gc/g1/humongousObjects/TestHumongousClassLoader.java                               linux-ppc64le
-gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                        linux-ppc64le
+# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
+gc/g1/humongousObjects/TestHumongousClassLoader.java                               linux-ppc64le,linux-ppc64
+gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                        linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-01-31 These fail on Windows in the SapMachine CI infrastructure.
+# Need to check how this can be fixed.
+compiler/aot/DeoptimizationTest.java                                        windows-all
+compiler/aot/RecompilationTest.java                                         windows-all
+compiler/aot/SharedUsageTest.java                                           windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2AotTest.java                    windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2CompiledTest.java               windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2InterpretedTest.java            windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2NativeTest.java                 windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2AotTest.java                  windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2CompiledTest.java             windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2InterpretedTest.java          windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2NativeTest.java               windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2AotTest.java                    windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2CompiledTest.java               windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2InterpretedTest.java            windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2NativeTest.java                 windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2AotTest.java                     windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2CompiledTest.java                windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2InterpretedTest.java             windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2NativeTest.java                  windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2AotTest.java                    windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2CompiledTest.java               windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2InterpretedTest.java            windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2NativeTest.java                 windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeDynamic2AotTest.java          windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeInterface2AotTest.java        windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeSpecial2AotTest.java          windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeStatic2AotTest.java           windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeVirtual2AotTest.java          windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeDynamic2AotTest.java    windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeInterface2AotTest.java  windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeSpecial2AotTest.java    windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeStatic2AotTest.java     windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeVirtual2AotTest.java    windows-all
+compiler/aot/calls/fromNative/NativeInvokeSpecial2AotTest.java              windows-all
+compiler/aot/calls/fromNative/NativeInvokeStatic2AotTest.java               windows-all
+compiler/aot/calls/fromNative/NativeInvokeVirtual2AotTest.java              windows-all
+compiler/aot/cli/DisabledAOTWithLibraryTest.java                            windows-all
+compiler/aot/cli/MultipleAOTLibraryTest.java                                windows-all
+compiler/aot/cli/SingleAOTLibraryTest.java                                  windows-all
+compiler/aot/cli/SingleAOTOptionTest.java                                   windows-all
+compiler/aot/cli/jaotc/AtFileTest.java                                      windows-all
+compiler/aot/cli/jaotc/CompileClassTest.java                                windows-all
+compiler/aot/cli/jaotc/CompileClassWithDebugTest.java                       windows-all
+compiler/aot/cli/jaotc/CompileDirectoryTest.java                            windows-all
+compiler/aot/cli/jaotc/CompileJarTest.java                                  windows-all
+compiler/aot/cli/jaotc/CompileModuleTest.java                               windows-all
+compiler/aot/cli/jaotc/IgnoreErrorsTest.java                                windows-all
+compiler/aot/cli/jaotc/ListOptionTest.java                                  windows-all
+compiler/aot/cli/jaotc/ListOptionWrongFileTest.java                         windows-all
+compiler/aot/fingerprint/SelfChanged.java                                   windows-all
+compiler/aot/fingerprint/SelfChangedCDS.java                                windows-all
+compiler/aot/fingerprint/SuperChanged.java                                  windows-all
+compiler/aot/verification/ClassAndLibraryNotMatchTest.java                  windows-all
+compiler/aot/verification/vmflags/NotTrackedFlagTest.java                   windows-all
+compiler/aot/verification/vmflags/TrackedFlagTest.java                      windows-all
 
 # SapMachine 2019-01-30
-# This test fails for some reason on linux-ppc64le. Need to investigate.
-compiler/runtime/cr6891750/Test6891750.java                                        linux-ppc64le
+# This test fails for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
+compiler/runtime/cr6891750/Test6891750.java                                        linux-ppc64le,linux-ppc64
 
 #############################################################################
-# The remainder of this file is supposed to be identical to (some version)
-# of the internal OpenJDK ProblemList from /usr/work/openjdk/aux_repo/jtreg.
+# The remainder of this file is supposed to be identical to the internal
+# OpenJDK ProblemList.
 
 #############################################################################
 # Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
-# If one of these is fixed in 12, downport the fix to 11u!!
+# If one of these is fixed later, downport the fix to 11u!!
 
 # SapMachine 2016-01-12
-# Arno requested to exclude these because it seems that they crash dewdfms0023
-# by consuming too much memory.
+# Exclude because it occured the test crashed some server by consuming too much memory.
 compiler/compilercontrol/jcmd/StressAddMultiThreadedTest.java                      generic-all
 
 # SapMachine 2015-12-08
@@ -63,7 +119,7 @@ runtime/ErrorHandling/ErrorHandler.java                                         
 # SapMachine 2016-06-07
 # This is a linux error: https://lists.ozlabs.org/pipermail/linuxppc-dev/2016-January/138296.html
 # Gustavo Romero is fixing this.
-runtime/StackGuardPages/testme.sh 
+runtime/StackGuardPages/testme.sh                                                  linux-ppc64le,linux-ppc64
 
 # SapMachine 2018-04-27
 # These fail on windows for quite a while.
@@ -76,8 +132,8 @@ runtime/containers/cgroup/PlainRead.java                                        
 
 # SapMachine 2018-06-22
 # Needs to be fixed, backlog item exists.
-# linux fixed in jdk/jdk by 8211931: [ppc][testbug] runtime/jni/terminatedThread/TestTerminatedThread.java fails as ...
-# Needs to be downported
+# Was downported for jdk11.0.3: "8211931: [ppc][testbug] runtime/jni/terminatedThread/TestTerminatedThread.java fails as ..."
+# Aix still failing.
 runtime/jni/terminatedThread/TestTerminatedThread.java                             aix-ppc64,linux-ppc64,linux-ppc64le
 
 # SapMachine 2018-08-23
@@ -86,8 +142,7 @@ runtime/appcds/javaldr/GCDuringDump.java                                        
 runtime/appcds/javaldr/GCSharedStringsDuringDump.java                              macosx-all
 runtime/RedefineTests/RedefineRunningMethods.java                                  macosx-all
 
-# SapMachine 2018-06-28 Failing as of today: http://sapjvm:1080/servlet/testoverview?group=openjdk11
-# 2018-07-16 still failing today
+# SapMachine 2018-07-16
 serviceability/sa/DeadlockDetectionTest.java                                       generic-all
 
 # SapMachine 2018-08-28
@@ -95,9 +150,17 @@ serviceability/sa/DeadlockDetectionTest.java                                    
 # Only jdk11, why that? Ev. add -Xmx200M.
 runtime/appcds/sharedStrings/InvalidFileFormat.java                                solaris-sparcv9
 
-###############################################################################
-# Functionality supported by IBM (at least on linux-ppc64le).
+# SapMachine 2018-11-07 
+# Remaining tests failing on ntintel in jdk11.
+# We won't fix them for now, except if we start a SAP JVM 11 project.
+serviceability/attach/ShMemLongName.java                                           windows-i586
+serviceability/jdwp/AllModulesCommandTest.java                                     windows-i586
+serviceability/jvmti/8036666/GetObjectLockCount.java                               windows-i586
+serviceability/sa/ClhsdbLongConstant.java                                          windows-i586
+serviceability/sa/TestPrintMdo.java                                                windows-i586
+compiler/c2/Test6880034.java                                                       windows-i586
+runtime/6294277/SourceDebugExtension.java                                          windows-i586
+runtime/7158988/FieldMonitor.java                                                  windows-i586
 
 ###############################################################################
 # New failures after changes pushed after GA of jdk11.
-
