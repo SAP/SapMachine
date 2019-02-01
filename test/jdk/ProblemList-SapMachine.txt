@@ -26,7 +26,6 @@
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
-#
 
 # SapMachine 2018-10-05
 # This test opens as many sockets as possible and fails after a timeout.
@@ -40,17 +39,50 @@ com/sun/jdi/JdbExprTest.sh                                                      
 sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
 javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
 
+# SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
+# Need to check how this can be fixed.
+com/sun/jdi/AccessSpecifierTest.java          macosx-all
+com/sun/jdi/AfterThreadDeathTest.java         macosx-all
+com/sun/jdi/ArrayRangeTest.java               macosx-all
+com/sun/jdi/ConstantPoolInfo.java             macosx-all
+com/sun/jdi/CountFilterTest.java              macosx-all
+com/sun/jdi/EarlyReturnNegativeTest.java      macosx-all
+com/sun/jdi/EarlyReturnTest.java              macosx-all
+com/sun/jdi/FieldWatchpoints.java             macosx-all
+com/sun/jdi/FramesTest.java                   macosx-all
+com/sun/jdi/InstanceFilter.java               macosx-all
+com/sun/jdi/InterfaceMethodsTest.java         macosx-all
+com/sun/jdi/InvokeTest.java                   macosx-all
+com/sun/jdi/LocalVariableEqual.java           macosx-all
+com/sun/jdi/LocationTest.java                 macosx-all
+com/sun/jdi/ModificationWatchpoints.java      macosx-all
+com/sun/jdi/MonitorEventTest.java             macosx-all
+com/sun/jdi/MonitorFrameInfo.java             macosx-all
+com/sun/jdi/NullThreadGroupNameTest.java      macosx-all
+com/sun/jdi/PopAndStepTest.java               macosx-all
+com/sun/jdi/PopAsynchronousTest.java          macosx-all
+com/sun/jdi/ReferrersTest.java                macosx-all
+com/sun/jdi/RequestReflectionTest.java        macosx-all
+com/sun/jdi/ResumeOneThreadTest.java          macosx-all
+com/sun/jdi/SourceNameFilterTest.java         macosx-all
+com/sun/jdi/VarargsTest.java                  macosx-all
+com/sun/jdi/Vars.java                         macosx-all
+com/sun/jdi/redefineMethod/RedefineTest.java  macosx-all
+com/sun/jdi/sde/MangleTest.java               macosx-all
+com/sun/jdi/sde/TemperatureTableTest.java     macosx-all
+
 # SapMachine 2019-01-30
-# These tests fail on linux-ppc64le. Probably due to resource constraints.
-tools/pack200/Pack200Props.java                                                      linux-ppc64le
-tools/pack200/Pack200Test.java                                                       linux-ppc64le
+# These tests fail on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
+tools/pack200/Pack200Props.java                                                      linux-ppc64le,linux-ppc64
+tools/pack200/Pack200Test.java                                                       linux-ppc64le,linux-ppc64
 
 #############################################################################
-# The remainder of this file is supposed to be identical to (some version)
-# of the internal OpenJDK ProblemList from /usr/work/openjdk/aux_repo/jtreg.
+# The remainder of this file is supposed to be identical to the internal
+# OpenJDK ProblemList.
 
 #############################################################################
 # Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
+# If one of these is fixed later, downport the fix to 11u!!
 # Don't delete from this list, only add #-comments if the test is fixed
 # later on. We will (might) use this as reference for SAP JVM.
 
@@ -59,18 +91,22 @@ tools/pack200/Pack200Test.java                                                  
 java/awt/JAWT/JAWT.sh                                                                generic-all
 
 # SapMachine 2018-07-04
-# Testbug: users mixed up by our infrastructure
-java/lang/ProcessHandle/InfoTest.java                                                windows-all
+# Windows: Testbug: users mixed up by our infrastructure
+# Aix: also in central exclude list, see 8211847.
+java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
 # SapMachine 2018-08-22
 # Tends to time out, seen a lot on solaris, and very sporadic on other platforms.
 # Timeout is already increased to 18 min. See also below.
-javax/xml/crypto/dsig/GenerationTests.java                                           aix-ppc64,solaris-sparcv9
+# Fixed by "8210736: jdk/javax/xml/crypto/dsig/GenerationTests.java slow on linux".
+# Was downported for 11.0.2.
+# javax/xml/crypto/dsig/GenerationTests.java                                           aix-ppc64,solaris-sparcv9
 
 # SapMachine 2018-08-22
 # Failures on sparc on 2018-07-31. We see the same failures in jdk10.
 # Some just fail sporadic.
 com/sun/nio/sctp/SctpChannel/Bind.java                                               solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/CommUp.java                                             solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/Connect.java                                            solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/Receive.java                                            solaris-sparcv9
@@ -80,7 +116,6 @@ com/sun/nio/sctp/SctpChannel/Send.java                                          
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/Accept.java                                       solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java                            solaris-sparcv9
-security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     solaris-sparcv9,macosx-all
 # These two even crashed!!
 sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
 sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
@@ -116,7 +151,7 @@ java/net/httpclient/SmokeTest.java                                              
 java/nio/file/Files/CopyAndMove.java                                                 windows-all
 
 # SapMachine 2018-03-16
-# Backlog item exists.    
+# Backlog item exists.
 # Oracle is working on this: 8207059: Update test certificates in QuoVadisCA.java test
 security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java    generic-all
 
@@ -125,7 +160,7 @@ security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.jav
 javax/swing/reliability/HangDuringStaticInitialization.java                          macosx-all
 
 # SapMachine 2018-08-22
-# Fails reproducible. ClassNotFoundException: jdk.test.lib.Asserts. Too old jasm used.
+# Fails reproducible. ClassNotFoundException: jdk.test.lib.Asserts. Testbug?
 com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java                               generic-all
 
 # SapMachine 2018-06-22 2018-08-22
@@ -133,8 +168,6 @@ com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java                          
 java/awt/font/Rotate/RotatedTextTest.java                                            linux-x64
 
 ###############################################################################
-# Functionality supported by IBM (at least on linux-ppc64le).
-
 ###############################################################################
 # New failures caused by changes pushed after GA of jdk11.
 
