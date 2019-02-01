@@ -78,6 +78,10 @@
         "13": {
             "releases": [
                 {
+                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-13%2B6/sapmachine-jdk-13-ea.6_linux-x64_bin.tar.gz", 
+                    "tag": "sapmachine-13+6"
+                }, 
+                {
                     "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-13%2B5/sapmachine-jdk-13-ea.5_linux-x64_bin.tar.gz", 
                     "tag": "sapmachine-13+5", 
                     "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-13%2B5/sapmachine-jdk-13-ea.5_osx-x64_bin.tar.gz", 
@@ -126,6 +130,7 @@
                 }, 
                 {
                     "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12%2B30/sapmachine-jdk-12-ea.30_linux-ppc64le_bin.tar.gz", 
+                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12%2B30/sapmachine-jdk-12-ea.30_linux-x64_bin.tar.gz", 
                     "tag": "sapmachine-12+30", 
                     "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12%2B30/sapmachine-jdk-12-ea.30_linux-ppc64_bin.tar.gz"
                 }, 
