@@ -36,6 +36,10 @@ runtime/NMT/CheckForProperDetailStackTrace.java                                 
 gc/g1/humongousObjects/TestHumongousClassLoader.java                               linux-ppc64le
 gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                        linux-ppc64le
 
+# SapMachine 2019-02-01 This test fails as of jdk-13+6
+# probably jtreg/asmtools need to be updated
+runtime/condy/escapeAnalysis/TestEscapeCondy.java
+
 #############################################################################
 # Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
 # If one of these is fixed in 12, downport the fix to 11u!!
