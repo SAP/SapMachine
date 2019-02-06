@@ -12,7 +12,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 ## Downloads
 
-Check out the [Download](https://sap.github.io/SapMachine/#download) section on [https://sapmachine.io](https://sapmachine.io)
+Check out the [Download](https://sap.github.io/SapMachine/#download) section on [https://sapmachine.io](https://sapmachine.io).
 
 ## Documentation
 Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
