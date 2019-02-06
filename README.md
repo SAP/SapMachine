@@ -10,7 +10,11 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 * We intend to bring as many features as possible into the upstream project and keep the diff of this project as small as possible.
 
-## [](#Documentation) Documentation
+## Downloads
+
+Check out the [Download](https://sap.github.io/SapMachine/#download) section on [https://sapmachine.io](https://sapmachine.io).
+
+## Documentation
 Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
 * [Installation](https://github.com/SAP/SapMachine/wiki/Installation) and [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
 * [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
