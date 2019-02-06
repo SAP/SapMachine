@@ -1,13 +1,10 @@
 /*
- * Copyright (c) 2018, SAP SE. All rights reserved.
- *
+ * Copyright (c) 2018, 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,13 +21,6 @@
  * questions.
  */
 
-import static java.nio.file.attribute.PosixFilePermission.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-
 import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
@@ -43,7 +33,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.spi.FileSystemProvider;
@@ -54,6 +43,21 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.testng.annotations.Test;
+
+import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * @test
@@ -68,7 +72,7 @@ public class TestPosixPerms {
     private static final String ZIP_FILE_NEW = "testPosixPermsNew.zip";
     private static final String UNZIP_DIR = "unzip/";
     private static final Map<String, Object> CREATE_TRUE = new HashMap<>();
-    private static final FileSystemProvider zipFS;
+    private static final FileSystemProvider zipFSP;
     private static final CopyOption[] NO_OPTIONS = {};
     private static final CopyOption[] COPY_ATTRIBUTES = {StandardCopyOption.COPY_ATTRIBUTES};
 
@@ -83,16 +87,14 @@ public class TestPosixPerms {
         }
 
         private static void copyPermissions(Path source, Path target) throws IOException {
-            PosixFileAttributeView targetAttrs;
-            if ((targetAttrs = Files.getFileAttributeView(target, PosixFileAttributeView.class)) != null) {
-                try {
-                    PosixFileAttributes sourceAttrs = Files.readAttributes(source, PosixFileAttributes.class);
-                    if (sourceAttrs != null) {
-                        targetAttrs.setPermissions(sourceAttrs.permissions());
-                    }
-                } catch (UnsupportedOperationException uoe) {
-                    // Just ignore if source has no Posix file permissions.
+            try {
+                Set<PosixFilePermission> srcPerms = Files.getPosixFilePermissions(source);
+                if (srcPerms != null) {
+                    Files.setPosixFilePermissions(target, srcPerms);
                 }
+            } catch (UnsupportedOperationException e) {
+                // if somebody does not support Posix file permissions, it's ok...
+                return;
             }
         }
 
@@ -122,8 +124,8 @@ public class TestPosixPerms {
     private int entriesCreated;
 
     static {
-        zipFS = getZipFSProvider();
-        assertNotNull(zipFS, "ZIP filesystem provider is not installed");
+        zipFSP = getZipFSProvider();
+        assertNotNull(zipFSP, "ZIP filesystem provider is not installed");
         CREATE_TRUE.put("create", "true");
     }
 
@@ -143,23 +145,21 @@ public class TestPosixPerms {
         } catch (IOException e) {
             fail("Failed to list file attributes (posix) for entry.", e);
         }
+        Set<PosixFilePermission> permissions = null;
         try {
-            Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file);
-            assertNotEquals(permissions, null, "Returned permissions of entry are null. " +
-                "This should not happen but we should rather see an UnsupportedOperationException.");
-            assertNotEquals(expected, null, "Got a set of " + permissions.size() +
-                " permissions but expected null/UnsupportedOperationException.");
+            permissions = Files.getPosixFilePermissions(file);
+        } catch (IOException e) {
+            fail("Caught unexpected exception obtaining posix file permissions.", e);
+        }
+        if (expected == null) {
+            assertNull(permissions, "Returned permissions of entry are not null.");
+        } else {
+            assertNotNull(permissions, "Returned permissions of entry are null.");
             assertEquals(permissions.size(), expected.size(), "Unexpected number of permissions( " +
                 permissions.size() + " received vs " + expected.size() + " expected).");
             for (PosixFilePermission p : expected) {
                 assertTrue(permissions.contains(p), "Posix permission " + p + " missing.");
             }
-        } catch (UnsupportedOperationException e) {
-            if (expected != null) {
-                fail("Unexpected: No posix permissions associated with entry.");
-            }
-        } catch (IOException e) {
-            fail("Caught unexpected exception obtaining posix file permissions.", e);
         }
     }
 
@@ -183,11 +183,11 @@ public class TestPosixPerms {
 
     private FileSystem openOrcreateZipFile(Path zpath) throws Exception {
         if (Files.exists(zpath)) {
-            FileSystem fs = zipFS.newFileSystem(zpath, new HashMap<>());
+            FileSystem fs = zipFSP.newFileSystem(zpath, Collections.<String, Object>emptyMap());
             return fs;
         } else {
             System.out.println("Create " + zpath + "...");
-            FileSystem fs = zipFS.newFileSystem(zpath, CREATE_TRUE);
+            FileSystem fs = zipFSP.newFileSystem(zpath, CREATE_TRUE);
             putDirectory(fs, "dir", Set.of(
                 OWNER_READ, OWNER_WRITE, OWNER_EXECUTE,
                 GROUP_READ, GROUP_WRITE, GROUP_EXECUTE,
@@ -206,6 +206,15 @@ public class TestPosixPerms {
             putFile(fs, "permsaddedlater", null);
             Files.setPosixFilePermissions(fs.getPath("permsaddedlater"), Set.of(OWNER_READ));
             return fs;
+        }
+    }
+
+    private boolean isPosixFs(Path p) throws IOException {
+        try {
+            Files.getPosixFilePermissions(p);
+            return true;
+        } catch (UnsupportedOperationException e) {
+            return false;
         }
     }
 
@@ -275,7 +284,7 @@ public class TestPosixPerms {
         Path out = Paths.get(System.getProperty("test.dir", "."), ZIP_FILE_COPY);
 
         try (FileSystem zipIn = openOrcreateZipFile(in);
-             FileSystem zipOut = zipFS.newFileSystem(out, CREATE_TRUE)) {
+             FileSystem zipOut = zipFSP.newFileSystem(out, CREATE_TRUE)) {
             Path from = zipIn.getPath("/");
             Path to = zipOut.getPath("/");
             Files.walkFileTree(from, new CopyVisitor(from, to, false, StandardCopyOption.COPY_ATTRIBUTES));
@@ -288,19 +297,12 @@ public class TestPosixPerms {
     public void testPosixPermsAfterUnzip() throws Exception {
         Path in = Paths.get(System.getProperty("test.dir", "."), ZIP_FILE);
         Path out = Files.createDirectory(Paths.get(System.getProperty("test.dir", "."), UNZIP_DIR));
-        boolean posixFS;
-        try {
-            Files.getPosixFilePermissions(out);
-            posixFS = true;
-        } catch (UnsupportedOperationException e) {
-            posixFS = false;
-        }
 
         try (FileSystem zipIn = openOrcreateZipFile(in)) {
             Path from = zipIn.getPath("/");
             Files.walkFileTree(from, new CopyVisitor(from, out, true, StandardCopyOption.COPY_ATTRIBUTES));
             System.out.println("Test reading " + out + "...");
-            if (posixFS) {
+            if (isPosixFs(out)) {
                 checkPosixPerms(out);
             }
         }
@@ -309,18 +311,11 @@ public class TestPosixPerms {
     @Test(priority=3)
     public void testPosixPermsAfterZip() throws Exception {
         Path in = Paths.get(System.getProperty("test.dir", "."), UNZIP_DIR);
-        boolean posixFS;
-        try {
-            Files.getPosixFilePermissions(in);
-            posixFS = true;
-        } catch (UnsupportedOperationException e) {
-            posixFS = false;
-        }
+        Path out = Paths.get(System.getProperty("test.dir", "."), ZIP_FILE_NEW);
+        boolean posixFS = isPosixFs(in);
 
-        try (FileSystem zipOut = zipFS.newFileSystem(Paths
-                 .get(System.getProperty("test.dir", "."), ZIP_FILE_NEW), CREATE_TRUE))
-        {
-            Path out = zipOut.getPath("/");
+        try (FileSystem zipOut = zipFSP.newFileSystem(out, CREATE_TRUE)) {
+            out = zipOut.getPath("/");
 
             // Have to hack this manually otherwise we won't be able to read these files at all
             Set<PosixFilePermission> uwrite_p = null, uexec_p = null, gread_p = null,

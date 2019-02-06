@@ -675,6 +675,7 @@ class ZipFileSystem extends FileSystem {
                 if (!options.contains(CREATE) && !options.contains(CREATE_NEW))
                     throw new NoSuchFileException(getString(path));
                 checkParents(path);
+                // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
                 return new EntryOutputChannel(
                     new Entry(path, Entry.NEW, false, defaultMethod, attrs));
 
