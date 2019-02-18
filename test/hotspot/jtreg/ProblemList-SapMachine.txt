@@ -93,29 +93,6 @@ compiler/aot/verification/ClassAndLibraryNotMatchTest.java                  wind
 compiler/aot/verification/vmflags/NotTrackedFlagTest.java                   windows-all
 compiler/aot/verification/vmflags/TrackedFlagTest.java                      windows-all
 
-# SapMachine 2018-01-18 Failing tests after fix for 8215544.
-# Fixed by 8217473: SA: Tests using ClhsdbLauncher fail on SAP docker containers.
-serviceability/sa/ClhsdbAttach.java                                                8217473 generic-all
-serviceability/sa/ClhsdbCDSJstackPrintAll.java                                     8217473 generic-all
-serviceability/sa/ClhsdbField.java                                                 8217473 generic-all
-serviceability/sa/ClhsdbFindPC.java                                                8217473 generic-all
-serviceability/sa/ClhsdbFlags.java                                                 8217473 generic-all
-serviceability/sa/ClhsdbInspect.java                                               8217473 generic-all
-serviceability/sa/ClhsdbJdis.java                                                  8217473 generic-all
-serviceability/sa/ClhsdbJhisto.java                                                8217473 generic-all
-serviceability/sa/ClhsdbJstack.java                                                8217473 generic-all
-serviceability/sa/ClhsdbLongConstant.java                                          8217473 generic-all
-serviceability/sa/ClhsdbPmap.java                                                  8217473 generic-all
-serviceability/sa/ClhsdbPrintAll.java                                              8217473 generic-all
-serviceability/sa/ClhsdbPrintAs.java                                               8217473 generic-all
-serviceability/sa/ClhsdbPrintStatics.java                                          8217473 generic-all
-serviceability/sa/ClhsdbPstack.java                                                8217473 generic-all
-serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java                            8217473 generic-all
-serviceability/sa/ClhsdbSource.java                                                8217473 generic-all
-serviceability/sa/ClhsdbThread.java                                                8217473 generic-all
-serviceability/sa/ClhsdbVmStructsDump.java                                         8217473 generic-all
-serviceability/sa/ClhsdbWhere.java                                                 8217473 generic-all
-
 # SapMachine 2019-02-01 This test fails as of jdk-13+6
 # probably jtreg/asmtools need to be updated
 runtime/condy/escapeAnalysis/TestEscapeCondy.java
@@ -243,10 +220,8 @@ gc/shenandoah/TestStringDedupStress.java                                        
 
 # SapMachine 2018-12-31 Tests failing on aarch64. Won't fix.
 # The sa tests are also in the central problem list, append them as jtreg overwrites the other entries.
-# SapMachine 2019-01-31 Comment out following 2 entries as there is a more generic problem in the SapMachine infrastructure, see above
-# Need to revert the comment when the tests are fixed
-# serviceability/sa/ClhsdbFindPC.java                                                              linux-aarch64,solaris-all,linux-ppc64le,linux-ppc64
-# serviceability/sa/ClhsdbJstack.java                                                              linux-aarch64,solaris-all,linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbFindPC.java                                                              linux-aarch64,solaris-all,linux-ppc64le,linux-ppc64
+serviceability/sa/ClhsdbJstack.java                                                              linux-aarch64,solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestClhsdbJstackLock.java                                                      linux-aarch64,solaris-all,linux-ppc64le,linux-ppc64
 serviceability/sa/TestJhsdbJstackLock.java                                                       linux-aarch64,solaris-all,linux-ppc64le,linux-ppc64
 compiler/c2/cr6340864/TestIntVect.java                                                           linux-aarch64
