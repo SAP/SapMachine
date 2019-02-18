@@ -795,14 +795,13 @@ public final class Class<T> implements java.io.Serializable,
      */
     public String getName() {
         String name = this.name;
-        if (name == null)
-            this.name = name = getName0();
-        return name;
+        return name != null ? name : initClassName();
     }
 
-    // cache the name to reduce the number of calls into the VM
+    // Cache the name to reduce the number of calls into the VM.
+    // This field would be set by VM itself during initClassName call.
     private transient String name;
-    private native String getName0();
+    private native String initClassName();
 
     /**
      * Returns the class loader for the class.  Some implementations may use
