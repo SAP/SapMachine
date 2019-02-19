@@ -29,7 +29,7 @@
 # If one of these is fixed later, downport the fix to 11u!!
 
 # SapMachine 2016-01-12
-# Exclude because it occured the test crashed some server (dewdfms0023) by consuming too much memory.
+# Exclude because it occured the test crashed some server (...) by consuming too much memory.
 compiler/compilercontrol/jcmd/StressAddMultiThreadedTest.java                      generic-all
 
 # SapMachine 2015-12-08
@@ -75,7 +75,7 @@ runtime/jni/terminatedThread/TestTerminatedThread.java                          
 # New failures detected after GA or caused by changes pushed after GA of jdk11.
 
 ##############################################################################
-# Tests known to be failing in OpenJDK 12 when it was released (4/2019)
+# Tests known to be failing in OpenJDK 12 when it reached RC
 
 # SapMachine 2018-11-08
 

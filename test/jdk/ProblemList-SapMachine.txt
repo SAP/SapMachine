@@ -123,7 +123,7 @@ security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java 
 javax/net/ssl/ServerName/SSLEngineExplorerWithSrv.java                               linux-s390x
 
 ##############################################################################
-# Tests known to be failing in OpenJDK 12 when it was released (4/2019)
+# Tests known to be failing in OpenJDK 12 when it reached RC
 
 # SapMachine 2018-06-25 These failed on linuxx86_64 today, 2018-08-18 and 2018-10-28
 # SapMachine 2019-02-07 Check whether fixed.
@@ -163,7 +163,7 @@ java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java               
 java/lang/management/MemoryMXBean/LowMemoryTest2.sh                                  linux-s390x
 
 # SapMachine 2019-02-08
-# Both only failing on dewdfms0050. Do we need to fix the machine?
+# Both only failing on ... Do we need to fix the machine?
 # RuntimeException: Expected message not received, Receive timed out
 java/net/MulticastSocket/Promiscuous.java                                            macosx-all
 # SocketTimeoutException: Receive timed out
