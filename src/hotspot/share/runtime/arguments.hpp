@@ -34,6 +34,8 @@
 #include "runtime/perfData.hpp"
 #include "utilities/debug.hpp"
 
+#define JUST_SOME_FUNNY_STUFF 1
+
 // Arguments parses the command line and recognizes options
 
 // Invocation API hook typedefs (these should really be defined in jni.hpp)
