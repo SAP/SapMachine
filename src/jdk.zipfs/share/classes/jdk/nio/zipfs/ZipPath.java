@@ -755,6 +755,13 @@ final class ZipPath implements Path {
         zfs.setTimes(getResolvedPath(), mtime, atime, ctime);
     }
 
+    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+    void setPermissions(Set<PosixFilePermission> perms)
+        throws IOException
+    {
+        zfs.setPermissions(getResolvedPath(), perms);
+    }
+
     Map<String, Object> readAttributes(String attributes, LinkOption... options)
         throws IOException
 
@@ -922,12 +929,20 @@ final class ZipPath implements Path {
             }
         }
         if (copyAttrs) {
-            BasicFileAttributeView view =
-                ZipFileAttributeView.get(target, BasicFileAttributeView.class);
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            ZipFileAttributeView view =
+                ZipFileAttributeView.get(target, ZipFileAttributeView.class);
             try {
                 view.setTimes(zfas.lastModifiedTime(),
                               zfas.lastAccessTime(),
                               zfas.creationTime());
+                // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+                // copy permissions if available
+                try {
+                    view.setPermissions(zfas.permissions());
+                } catch (UnsupportedOperationException uoe) {
+                    // the current entry may have no permissions.
+                }
             } catch (IOException x) {
                 // rollback?
                 try {
