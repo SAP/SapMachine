@@ -65,7 +65,6 @@ import java.net.Socket;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import jdk.test.lib.Utils;
 
