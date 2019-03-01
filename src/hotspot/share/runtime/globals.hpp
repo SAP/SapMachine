@@ -604,6 +604,16 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
+  /* SapMachine 2019-02-20 : stathist */                                    \
+  product(bool, EnableStatHist, true,                                       \
+          "Enable Statistics history")                                      \
+                                                                            \
+  product(uintx, StatHistSampleInterval, 0,                                 \
+          "Statistics history sample rate interval (0=default)")            \
+                                                                            \
+  experimental(bool, StatHistLockFree, false,                               \
+          "Do not lock when sampling")                                      \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \
