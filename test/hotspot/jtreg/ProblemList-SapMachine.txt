@@ -150,7 +150,7 @@ serviceability/sa/DeadlockDetectionTest.java                                    
 # Only jdk11, why that? Ev. add -Xmx200M.
 runtime/appcds/sharedStrings/InvalidFileFormat.java                                solaris-sparcv9
 
-# SapMachine 2018-11-07 
+# SapMachine 2018-11-07
 # Remaining tests failing on ntintel in jdk11.
 # We won't fix them for now, except if we start a SAP JVM 11 project.
 serviceability/attach/ShMemLongName.java                                           windows-i586

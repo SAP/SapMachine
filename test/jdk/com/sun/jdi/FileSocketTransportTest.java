@@ -107,7 +107,7 @@ public class FileSocketTransportTest {
                 fs.getOutputStream().write(handshake);
                 int read = fs.getInputStream().read(received);
                 checkSocketDeleted(socketName);
-                assertEquals(new String(handshake, "UTF-8"), 
+                assertEquals(new String(handshake, "UTF-8"),
                              new String(received, "UTF-8"));
                 assertEquals(read, received.length);
                 fs.close();
