@@ -78,13 +78,15 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
     # Let those variables be expanded at make time in spec.gmk.
     # The \$ are escaped to the shell, and the $(...) variables
     # are evaluated by make.
+    # SapMachine 2019-03-13: Custom values for binary properties on Windows
+    # We don't want to override $(PRODUCT_NAME) in general
     RC_FLAGS="$RC_FLAGS \
         -D\"JDK_VERSION_STRING=\$(VERSION_STRING)\" \
         -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
-        -D\"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
+        -D\"JDK_COMPONENT=SapMachine binary\" \
         -D\"JDK_VER=\$(VERSION_NUMBER)\" \
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
-        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_FEATURE)\" \
+        -D\"JDK_NAME=SapMachine \$(VERSION_FEATURE)\" \
         -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
 
     JVM_RCFLAGS="$JVM_RCFLAGS \
