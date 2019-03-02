@@ -110,13 +110,13 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 
 /* Third party may overwrite these values. */
 #ifndef VENDOR
-#define VENDOR "SAP SE"
+#define VENDOR "Oracle Corporation"
 #endif
 #ifndef VENDOR_URL
-#define VENDOR_URL "http://sapmachine.org"
+#define VENDOR_URL "http://java.oracle.com/"
 #endif
 #ifndef VENDOR_URL_BUG
-#define VENDOR_URL_BUG "https://github.com/SAP/SapMachine/issues"
+#define VENDOR_URL_BUG "http://bugreport.java.com/bugreport/"
 #endif
 
 #ifdef JAVA_SPECIFICATION_VENDOR /* Third party may NOT overwrite this. */
