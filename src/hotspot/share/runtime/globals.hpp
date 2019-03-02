@@ -659,6 +659,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
+  /* SapMachine 2018-08-29: Enable this per default */                      \
   product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \

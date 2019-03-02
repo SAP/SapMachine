@@ -110,13 +110,13 @@ java/awt/font/Rotate/RotatedTextTest.java                                       
 # SapMachine 2018-12-05
 # This test broke recently, both in jdk11 and jdk12.
 # Matthias discussed this with Sean Mullan, who dispatched it to Sibabrata Sahoo.
-# Maybe this is related to https://bugs.openjdk.java.net/browse/JDK-8202651, but 
+# Maybe this is related to https://bugs.openjdk.java.net/browse/JDK-8202651, but
 # actually that bug is much older than when we saw this appear.
 # SapMachine 2019-02-08 Still failing in jdk12.
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     generic-all
 # ComodoCA: now failing, too.
 security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java      generic-all
-# Certificate has been revoked, reason: UNSPECIFIED, revocation date: Mon Dec 17 
+# Certificate has been revoked, reason: UNSPECIFIED, revocation date: Mon Dec 17
 #security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java     generic-all
 
 # Times out sporadically
