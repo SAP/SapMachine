@@ -263,7 +263,7 @@ bool platform_columns_initialize() {
   {
     ProcFile bf;
     if (bf.read("/proc/self/status")) {
-      have_rss_detail_info = bf.parsed_prefixed_value("RssAnon", 1) != INVALID_VALUE;
+      have_rss_detail_info = bf.parsed_prefixed_value("RssAnon:", 1) != INVALID_VALUE;
     }
   }
   if (have_rss_detail_info) {
