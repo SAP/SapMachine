@@ -70,11 +70,7 @@ public:
   const char* text() const { return _buf; }
 
   const char* get_prefixed_line(const char* prefix) const {
-    const char* p = ::strstr(_buf, prefix);
-    if (p != NULL) {
-      return p;
-    }
-    return NULL;
+    return ::strstr(_buf, prefix);
   }
 
   value_t parsed_prefixed_value(const char* prefix, size_t scale = 1) const {
@@ -83,8 +79,9 @@ public:
     if (s != NULL) {
       errno = 0;
       const char* p = s + ::strlen(prefix);
-      value = (value_t)::strtoll(p, NULL, 10);
-      if (value == 0 && errno != 0) {
+      char* endptr = NULL;
+      value = (value_t)::strtoll(p, &endptr, 10);
+      if (p == endptr || errno != 0) {
         value = INVALID_VALUE;
       } else {
         value *= scale;
@@ -162,13 +159,13 @@ class CPUTimeColumn: public Column {
         const uint64_t delta_ms = value_ms - last_value_ms;
 
         // Calculate the number of wallclock milliseconds for the delta interval...
-        const int age_ms = last_value_age * 1000;
+        const uint64_t age_ms = last_value_age * 1000;
 
         // times number of available cores.
-        const int total_cpu_time_ms = age_ms * _num_cores;
+        const uint64_t total_cpu_time_ms = age_ms * _num_cores;
 
         // Put the spent cpu time in reference to the total available cpu time.
-        const float percentage = (100.0f * delta_ms) / total_cpu_time_ms;
+        const double percentage = (100.0f * delta_ms) / total_cpu_time_ms;
 
         char buf[32];
         l = jio_snprintf(buf, sizeof(buf), "%.0f", percentage);
