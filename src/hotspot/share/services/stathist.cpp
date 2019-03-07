@@ -135,19 +135,6 @@ static void print_timestamp(outputStream* st, time_t t) {
   }
 }
 
-// A little RAII class to temporarily change locale to "C"
-class CLocaleMark {
-  const char* _orig;
-public:
-  CLocaleMark() {
-    _orig = ::setlocale(LC_NUMERIC, NULL);
-    ::setlocale(LC_NUMERIC, "C");
-  }
-  ~CLocaleMark() {
-    ::setlocale(LC_NUMERIC, _orig);
-  }
-};
-
 ////// class ColumnList methods ////
 
 ColumnList* ColumnList::_the_list = NULL;
@@ -689,9 +676,6 @@ public:
 
   void print_table(outputStream* st, const print_info_t* pi, const record_t* values_now = NULL) const {
 
-    // print numbers with C locale to make parsing easier.
-    CLocaleMark clm;
-
     if (is_empty() && values_now == NULL) {
       st->print_cr("(no records)");
       return;
@@ -1174,8 +1158,6 @@ void print_report(outputStream* st, const print_info_t* pi) {
     print_legend(st, pi);
     st->cr();
   }
-
-  CLocaleMark locale_mark; // Print all numbers with locale "C"
 
   record_t* values_now = NULL;
   if (!pi->avoid_sampling) {
