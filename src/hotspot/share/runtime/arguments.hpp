@@ -25,6 +25,8 @@
 #ifndef SHARE_RUNTIME_ARGUMENTS_HPP
 #define SHARE_RUNTIME_ARGUMENTS_HPP
 
+#error "TEST ERROR"
+
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
