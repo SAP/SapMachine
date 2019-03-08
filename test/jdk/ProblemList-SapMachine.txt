@@ -25,64 +25,6 @@
 #
 
 #############################################################################
-# Tests known to be failing in SapMachine due to SapMachine specific setup.
-
-# SapMachine 2018-10-05
-# This test opens as many sockets as possible and fails after a timeout.
-# When running in concurrency mode, all tests that need a socket and run in
-# parallel to this test will fail.
-java/nio/channels/AsyncCloseAndInterrupt.java                                        generic-all
-
-# SapMachine 2018-10-05
-# Flaky tests / other failing - should be checked whether issue still exists
-sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
-javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
-
-# SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
-# Need to check how this can be fixed.
-com/sun/jdi/AccessSpecifierTest.java          macosx-all
-com/sun/jdi/AfterThreadDeathTest.java         macosx-all
-com/sun/jdi/ArrayRangeTest.java               macosx-all
-com/sun/jdi/ConstantPoolInfo.java             macosx-all
-com/sun/jdi/CountFilterTest.java              macosx-all
-com/sun/jdi/EarlyReturnNegativeTest.java      macosx-all
-com/sun/jdi/EarlyReturnTest.java              macosx-all
-com/sun/jdi/FieldWatchpoints.java             macosx-all
-com/sun/jdi/FramesTest.java                   macosx-all
-com/sun/jdi/InstanceFilter.java               macosx-all
-com/sun/jdi/InterfaceMethodsTest.java         macosx-all
-com/sun/jdi/InvokeTest.java                   macosx-all
-com/sun/jdi/LocalVariableEqual.java           macosx-all
-com/sun/jdi/LocationTest.java                 macosx-all
-com/sun/jdi/ModificationWatchpoints.java      macosx-all
-com/sun/jdi/MonitorEventTest.java             macosx-all
-com/sun/jdi/MonitorFrameInfo.java             macosx-all
-com/sun/jdi/NullThreadGroupNameTest.java      macosx-all
-com/sun/jdi/PopAndStepTest.java               macosx-all
-com/sun/jdi/PopAsynchronousTest.java          macosx-all
-com/sun/jdi/ReferrersTest.java                macosx-all
-com/sun/jdi/RequestReflectionTest.java        macosx-all
-com/sun/jdi/ResumeOneThreadTest.java          macosx-all
-com/sun/jdi/SourceNameFilterTest.java         macosx-all
-com/sun/jdi/VarargsTest.java                  macosx-all
-com/sun/jdi/Vars.java                         macosx-all
-com/sun/jdi/redefineMethod/RedefineTest.java  macosx-all
-com/sun/jdi/sde/MangleTest.java               macosx-all
-com/sun/jdi/sde/TemperatureTableTest.java     macosx-all
-
-# SapMachine 2019-01-31
-# This test failed on linux-ppc64. Check if this still happens.
-tools/pack200/typeannos/TestTypeAnnotations.java                                     linux-ppc64
-
-# SapMachine 2019-01-31
-# This test failed on windows. Check if this still happens.
-jdk/modules/scenarios/overlappingpackages/OverlappingPackagesTest.java               windows-all
-
-#############################################################################
-# The remainder of this file is supposed to be identical to the internal
-# OpenJDK ProblemList.
-
-#############################################################################
 # Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
 # If one of these is fixed later, downport the fix to 11u!!
 
@@ -172,3 +114,55 @@ jdk/internal/platform/cgroup/TestCgroupMetrics.java                             
 sun/nio/cs/FindEncoderBugs.java                                                      linux-aarch64
 # Saw DEADLOCK
 java/beans/XMLDecoder/8028054/TestMethodFinder.java                                  linux-aarch64
+
+#############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+
+# SapMachine 2018-10-05
+# This test opens as many sockets as possible and fails after a timeout.
+# When running in concurrency mode, all tests that need a socket and run in
+# parallel to this test will fail.
+java/nio/channels/AsyncCloseAndInterrupt.java                                        generic-all
+
+# SapMachine 2018-10-05
+# Flaky tests / other failing - should be checked whether issue still exists
+sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
+javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
+
+# SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
+# Need to check how this can be fixed.
+com/sun/jdi/AccessSpecifierTest.java                                                 macosx-all
+com/sun/jdi/AfterThreadDeathTest.java                                                macosx-all
+com/sun/jdi/ArrayRangeTest.java                                                      macosx-all
+com/sun/jdi/ConstantPoolInfo.java                                                    macosx-all
+com/sun/jdi/CountFilterTest.java                                                     macosx-all
+com/sun/jdi/EarlyReturnNegativeTest.java                                             macosx-all
+com/sun/jdi/EarlyReturnTest.java                                                     macosx-all
+com/sun/jdi/FieldWatchpoints.java                                                    macosx-all
+com/sun/jdi/FramesTest.java                                                          macosx-all
+com/sun/jdi/InstanceFilter.java                                                      macosx-all
+com/sun/jdi/InterfaceMethodsTest.java                                                macosx-all
+com/sun/jdi/InvokeTest.java                                                          macosx-all
+com/sun/jdi/LocalVariableEqual.java                                                  macosx-all
+com/sun/jdi/LocationTest.java                                                        macosx-all
+com/sun/jdi/ModificationWatchpoints.java                                             macosx-all
+com/sun/jdi/MonitorEventTest.java                                                    macosx-all
+com/sun/jdi/MonitorFrameInfo.java                                                    macosx-all
+com/sun/jdi/NullThreadGroupNameTest.java                                             macosx-all
+com/sun/jdi/PopAndStepTest.java                                                      macosx-all
+com/sun/jdi/PopAsynchronousTest.java                                                 macosx-all
+com/sun/jdi/ReferrersTest.java                                                       macosx-all
+com/sun/jdi/RequestReflectionTest.java                                               macosx-all
+com/sun/jdi/ResumeOneThreadTest.java                                                 macosx-all
+com/sun/jdi/SourceNameFilterTest.java                                                macosx-all
+com/sun/jdi/VarargsTest.java                                                         macosx-all
+com/sun/jdi/Vars.java                                                                macosx-all
+com/sun/jdi/redefineMethod/RedefineTest.java                                         macosx-all
+com/sun/jdi/sde/MangleTest.java                                                      macosx-all
+com/sun/jdi/sde/TemperatureTableTest.java                                            macosx-all
+
+# SapMachine 2019-01-30
+# These tests fail on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
+java/util/Base64/TestEncodingDecodingLength.java                                     linux-ppc64le,linux-ppc64
+tools/pack200/Pack200Props.java                                                      linux-ppc64le,linux-ppc64
+tools/pack200/Pack200Test.java                                                       linux-ppc64le,linux-ppc64
