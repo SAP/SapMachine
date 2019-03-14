@@ -52,7 +52,3 @@ tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java       macosx-all
 tools/javac/lambdaShapes/org/openjdk/tests/javac/FDTest.java         macosx-all
 tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                 macosx-all
 tools/jdeps/modules/GenOpenModule.java                               windows-all
-
-# SapMachine 2019-01-31
-# This test failed on linux-ppc64. Check if this still happens.
-tools/javac/modules/MOptionTest.java                                 linux-ppc64
