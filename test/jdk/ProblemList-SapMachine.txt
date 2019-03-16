@@ -69,11 +69,6 @@ jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                
 java/nio/file/WatchService/DeleteInterference.java                                   generic-all
 
 # SapMachine 2018-08-22
-# java.util.InputMismatchException. Fails a lot on mac in jdk9 - jdk12
-# Testproblem with locale?
-java/util/Scanner/ScanTest.java                                                      macosx-all
-
-# SapMachine 2018-08-22
 # We see timeouts after 12 min in all jdk9 - jdk12
 java/net/httpclient/SmokeTest.java                                                   windows-all
 
@@ -160,6 +155,11 @@ com/sun/jdi/Vars.java                                                           
 com/sun/jdi/redefineMethod/RedefineTest.java                                         macosx-all
 com/sun/jdi/sde/MangleTest.java                                                      macosx-all
 com/sun/jdi/sde/TemperatureTableTest.java                                            macosx-all
+
+# SapMachine 2019-03-16
+# Test fails with local en_DE as set on our mac test server
+# Test can be reenabled when JDK-8172695 is solved (CL will propose a fix)
+java/util/Scanner/ScanTest.java            8172695                                   macosx-all
 
 # SapMachine 2019-01-30
 # These tests fail on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
