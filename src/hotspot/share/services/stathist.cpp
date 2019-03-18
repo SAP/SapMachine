@@ -28,7 +28,7 @@
 
 
 #include "gc/shared/collectedHeap.hpp"
-#include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "code/codeCache.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
@@ -964,12 +964,6 @@ static bool add_jvm_columns() {
   g_col_size_thread_stacks = new MemorySizeColumn("jvm",
       "jthr", "st", "Total reserved size of java thread stacks");
 
-  g_col_number_of_clds = new PlainValueColumn("jvm",
-      "cldg", "num", "Classloader Data");
-
-  g_col_number_of_anon_clds = new PlainValueColumn("jvm",
-      "cldg", "anon", "Anonymous CLD");
-
   g_col_number_of_classes = new PlainValueColumn("jvm",
       "cls", "num", "Classes (instance + array)");
 
@@ -1021,20 +1015,6 @@ static size_t accumulate_thread_stack_size() {
 #endif
 }
 
-// Count CLDs
-class CLDCounterClosure: public CLDClosure {
-public:
-  int _cnt;
-  int _anon_cnt;
-  CLDCounterClosure() : _cnt(0), _anon_cnt(0) {}
-  void do_cld(ClassLoaderData* cld) {
-    _cnt ++;
-    if (cld->is_unsafe_anonymous()) {
-      _anon_cnt ++;
-    }
-  }
-};
-
 void sample_jvm_values(record_t* record, bool avoid_locking) {
 
   // Heap
@@ -1084,17 +1064,6 @@ void sample_jvm_values(record_t* record, bool avoid_locking) {
   // Java thread stack size
   if (!avoid_locking) {
     set_value_in_record(g_col_size_thread_stacks, record, accumulate_thread_stack_size());
-  }
-
-  // CLDG
-  if (!avoid_locking) {
-    CLDCounterClosure cl;
-    {
-      MutexLocker lck(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::cld_do(&cl);
-    }
-    set_value_in_record(g_col_number_of_clds, record, cl._cnt);
-    set_value_in_record(g_col_number_of_anon_clds, record, cl._anon_cnt);
   }
 
   // Classes
