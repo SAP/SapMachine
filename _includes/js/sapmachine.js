@@ -41,7 +41,7 @@ All rights reserved. Confidential and proprietary.
         var bMatch = b.tag.match(re)
 
         var aVersionParts   = aMatch[4].split('.')
-        var aBuildNumber = 0
+        var aBuildNumber = 9999
         var aSapBuildNumber = 0
 
         if (aMatch.length >= 10 && aMatch[9]) {
@@ -64,14 +64,12 @@ All rights reserved. Confidential and proprietary.
             bSapBuildNumber = parseInt(bMatch[12])
         }
 
-        if (aVersionParts.length < 3) {
-            aVersionParts[1] = '0';
-            aVersionParts[2] = '0';
+        if (aVersionParts.length < 5) {
+            aVersionParts.fill('0', aVersionParts.length, 4)
         }
 
-        if (bVersionParts.length < 3) {
-            bVersionParts[1] = '0';
-            bVersionParts[2] = '0';
+        if (bVersionParts.length < 5) {
+            bVersionParts.fill('0', bVersionParts.length, 4)
         }
 
         for (var i = 0; i < aVersionParts.length && i < bVersionParts.length; ++i) {
