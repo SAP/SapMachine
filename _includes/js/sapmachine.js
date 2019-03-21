@@ -41,7 +41,7 @@ All rights reserved. Confidential and proprietary.
         var bMatch = b.tag.match(re)
 
         var aVersionParts   = aMatch[4].split('.')
-        var aBuildNumber = 9999
+        var aBuildNumber = 99999
         var aSapBuildNumber = 0
 
         if (aMatch.length >= 10 && aMatch[9]) {
@@ -53,7 +53,7 @@ All rights reserved. Confidential and proprietary.
         }
 
         var bVersionParts   = bMatch[4].split('.')
-        var bBuildNumber = 0
+        var bBuildNumber = 99999
         var bSapBuildNumber = 0
 
         if (bMatch.length >= 10 && bMatch[9]) {
