@@ -47,7 +47,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 
-template<UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
+template<UpdateRefsMode UPDATE_REFS>
 class ShenandoahInitMarkRootsClosure : public OopClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
@@ -56,7 +56,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context);
+    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context);
   }
 
 public:
@@ -98,13 +98,8 @@ public:
 
     ShenandoahObjToScanQueue* q = queues->queue(worker_id);
 
-    if (ShenandoahStringDedup::is_enabled()) {
-      ShenandoahInitMarkRootsClosure<UPDATE_REFS, ENQUEUE_DEDUP> mark_cl(q);
-      do_work(heap, &mark_cl, worker_id);
-    } else {
-      ShenandoahInitMarkRootsClosure<UPDATE_REFS, NO_DEDUP> mark_cl(q);
-      do_work(heap, &mark_cl, worker_id);
-    }
+    ShenandoahInitMarkRootsClosure<UPDATE_REFS> mark_cl(q);
+    do_work(heap, &mark_cl, worker_id);
   }
 
 private:
