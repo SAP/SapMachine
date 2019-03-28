@@ -89,7 +89,7 @@ final class ProcessImpl extends Process {
 
     private static enum Platform {
 
-        LINUX(LaunchMechanism.VFORK, LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
+        LINUX(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.VFORK, LaunchMechanism.FORK),
 
         BSD(LaunchMechanism.POSIX_SPAWN, LaunchMechanism.FORK),
 
