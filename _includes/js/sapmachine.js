@@ -132,6 +132,21 @@ All rights reserved. Confidential and proprietary.
         return 0
     }
 
+    function getOsSelectValue() {
+        var isMac = navigator.platform.toUpperCase().indexOf('MAC') !== -1
+        var isWindows = navigator.platform.toUpperCase().indexOf('WIN')!== -1
+
+        if (isMac) {
+            return 'osx-x64'
+        }
+
+        if (isWindows) {
+            return 'windows-x64'
+        }
+
+        return 'linux-x64'
+    }
+
     function SapMachine() {
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
         this._osSelector = $('#sapmachine_os_select')
@@ -240,6 +255,8 @@ All rights reserved. Confidential and proprietary.
                     optionElement.addClass('download_select_option')
                     this._osSelector.append(optionElement)
                 }
+
+                this._osSelector.val(getOsSelectValue())
 
                 this._assets = data.assets
                 this._onUpdateImageTypeAndOS()
