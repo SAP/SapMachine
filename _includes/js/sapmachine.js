@@ -133,15 +133,29 @@ All rights reserved. Confidential and proprietary.
     }
 
     function getOsSelectValue() {
-        var isMac = navigator.platform.toUpperCase().indexOf('MAC') !== -1
-        var isWindows = navigator.platform.toUpperCase().indexOf('WIN')!== -1
+        try {
+            var isMac = navigator.platform.toUpperCase().indexOf('MAC') !== -1
+            var isWindows = navigator.platform.toUpperCase().indexOf('WIN') !== -1
+            var isLinux = navigator.platform.toUpperCase().indexOf('LINUX') !== -1
 
-        if (isMac) {
-            return 'osx-x64'
-        }
+            if (isMac) {
+                return 'osx-x64'
+            }
 
-        if (isWindows) {
-            return 'windows-x64'
+            if (isWindows) {
+                return 'windows-x64'
+            }
+
+            if (isLinux) {
+                if (navigator.platform.toUpperCase().indexOf('PPC64LE') !== -1) {
+                    return 'linux-ppc64le'
+                }
+                if (navigator.platform.toUpperCase().indexOf('PPC64') !== -1) {
+                    return 'linux-ppc64'
+                }
+            }
+        } catch (e) {
+            // ignore
         }
 
         return 'linux-x64'
