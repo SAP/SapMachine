@@ -156,11 +156,6 @@ com/sun/jdi/redefineMethod/RedefineTest.java                                    
 com/sun/jdi/sde/MangleTest.java                                                      macosx-all
 com/sun/jdi/sde/TemperatureTableTest.java                                            macosx-all
 
-# SapMachine 2019-03-16
-# Test fails with local en_DE as set on our mac test server
-# Test can be reenabled when JDK-8172695 is solved (CL will propose a fix)
-java/util/Scanner/ScanTest.java            8172695                                   macosx-all
-
 # SapMachine 2019-01-30
 # These tests fail on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
 java/util/Base64/TestEncodingDecodingLength.java                                     linux-ppc64le,linux-ppc64

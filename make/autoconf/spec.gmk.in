@@ -898,7 +898,6 @@ ifeq ($(DEBUG_LEVEL), fastdebug)
 else ifneq ($(DEBUG_LEVEL), release)
   DEBUG_PART := -$(DEBUG_LEVEL)
 endif
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
   JDK_BUNDLE_EXTENSION := zip
 else
