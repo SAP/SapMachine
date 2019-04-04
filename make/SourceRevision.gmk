@@ -114,28 +114,14 @@ else
 
     create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
   else
-    # Are we using GIT ?
-    ifneq ($(wildcard $(TOPDIR)/.git), )
+    # We don't have a stored source revision. Can't do anything, really.
 
-      store-source-revision:
-	$(call LogInfo, Found Git configuration$(COMMA) using "git log --format=format:%H -1 HEAD^")
-
-      $(SOURCE_REVISION_TRACKER):
-	$(call MakeDir, $(@D))
-	git -C $(TOPDIR) log --format=format:%H -1 HEAD^ > $@
-
-      create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
-
-    else
-      # We don't have a stored source revision. Can't do anything, really.
-
-      store-source-revision:
+    store-source-revision:
 	$(call LogWarn, Error: No mercurial configuration present$(COMMA) cannot create .src-rev)
 	exit 2
 
-      create-source-revision-tracker:
+    create-source-revision-tracker:
 	$(call LogWarn, Warning: No mercurial configuration present and no .src-rev)
-    endif
   endif
 
 endif
