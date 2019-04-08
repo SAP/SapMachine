@@ -1566,6 +1566,10 @@ void ShenandoahHeap::op_final_mark() {
       if (ShenandoahPacing) {
         pacer()->setup_for_evac();
       }
+
+      if (ShenandoahVerify) {
+        verifier()->verify_during_evacuation();
+      }
     } else {
       if (ShenandoahVerify) {
         verifier()->verify_after_concmark();
