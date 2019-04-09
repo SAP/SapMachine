@@ -504,7 +504,7 @@ void ShenandoahHeap::reset_mark_bitmap() {
 void ShenandoahHeap::print_on(outputStream* st) const {
   st->print_cr("Shenandoah Heap");
   st->print_cr(" " SIZE_FORMAT "K total, " SIZE_FORMAT "K committed, " SIZE_FORMAT "K used",
-               capacity() / K, committed() / K, used() / K);
+               max_capacity() / K, committed() / K, used() / K);
   st->print_cr(" " SIZE_FORMAT " x " SIZE_FORMAT"K regions",
                num_regions(), ShenandoahHeapRegion::region_size_bytes() / K);
 
@@ -617,7 +617,7 @@ void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
 }
 
 size_t ShenandoahHeap::capacity() const {
-  return num_regions() * ShenandoahHeapRegion::region_size_bytes();
+  return committed();
 }
 
 size_t ShenandoahHeap::max_capacity() const {
@@ -651,8 +651,6 @@ void ShenandoahHeap::op_uncommit(double shrink_before) {
   }
 
   if (count > 0) {
-    log_info(gc)("Uncommitted " SIZE_FORMAT "M. Heap: " SIZE_FORMAT "M reserved, " SIZE_FORMAT "M committed, " SIZE_FORMAT "M used",
-                 count * ShenandoahHeapRegion::region_size_bytes() / M, capacity() / M, committed() / M, used() / M);
     control_thread()->notify_heap_changed();
   }
 }
