@@ -157,7 +157,5 @@ com/sun/jdi/sde/MangleTest.java                                                 
 com/sun/jdi/sde/TemperatureTableTest.java                                            macosx-all
 
 # SapMachine 2019-01-30
-# These tests fail on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
+# This test fails on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
 java/util/Base64/TestEncodingDecodingLength.java                                     linux-ppc64le,linux-ppc64
-tools/pack200/Pack200Props.java                                                      linux-ppc64le,linux-ppc64
-tools/pack200/Pack200Test.java                                                       linux-ppc64le,linux-ppc64
