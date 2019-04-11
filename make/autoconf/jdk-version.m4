@@ -82,7 +82,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     JDK_RC_NAME="$with_jdk_rc_name"
   else
     # Otherwise calculate from "version-numbers" included above.
-    JDK_RC_NAME="$PRODUCT_NAME $JDK_RC_PLATFORM_NAME"
+    # SapMachine 2019-04-11: Until we set the configure option in our build script,
+    # we have this different default.
+    # JDK_RC_NAME="$PRODUCT_NAME $JDK_RC_PLATFORM_NAME"
+    JDK_RC_NAME=SapMachine
   fi
   AC_SUBST(JDK_RC_NAME)
 
