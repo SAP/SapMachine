@@ -92,7 +92,7 @@ void ShenandoahStringDedup::parallel_oops_do(OopClosure* cl, uint worker_id) {
 void ShenandoahStringDedup::oops_do_slow(OopClosure* cl) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_enabled(), "String deduplication not enabled");
-  ShenandoahAlwaysTrueClosure always_true;
+  AlwaysTrueClosure always_true;
   StringDedupUnlinkOrOopsDoClosure sd_cl(&always_true, cl);
   StringDedupQueue::unlink_or_oops_do(&sd_cl);
   StringDedupTable::unlink_or_oops_do(&sd_cl, 0);
