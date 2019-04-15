@@ -136,6 +136,9 @@ public class BadConstantValue {
                 "class Lib { static final int A = %s; static final %s B = %s; }",
                 value, type, (type.equals("boolean") ? "false" : "0")));
         compile("-d", classesdir.getPath(), lib.getPath());
+        // SapMachine 2019-04-15: pre-integrate a solution for JDK-8220625 to see if it solves
+        // our intermittent test failure on ppc64/ppc64le
+        lib.delete();
         File libClass = new File(classesdir, "Lib.class");
         // Rewrite the class to only have field B of type "type" and with "value" (potentially
         // out of range).
@@ -149,6 +152,9 @@ public class BadConstantValue {
                 "class Lib { static final String A = \"hello\"; static final %s CONST = %s; }",
                 type, type.equals("boolean") ? "false" : "0"));
         compile("-d", classesdir.getPath(), lib.getPath());
+        // SapMachine 2019-04-15: pre-integrate a solution for JDK-8220625 to see if it solves
+        // our intermittent test failure on ppc64/ppc64le
+        lib.delete();
         File libClass = new File(classesdir, "Lib.class");
         swapConstantValues(libClass);
 
