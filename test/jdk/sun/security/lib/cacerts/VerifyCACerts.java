@@ -25,7 +25,7 @@
 /**
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
- *      8209452 8209506 8210432 8195793 8216577
+ *      8209452 8209506 8210432 8195793 8222089 8222133 8216577
  * @summary Check root CA entries in cacerts file
  */
 import java.io.File;
@@ -42,7 +42,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 93;
+    private static final int COUNT = 94;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -116,6 +116,8 @@ public class VerifyCACerts {
                     "B4:78:B8:12:25:0D:F8:78:63:5C:2A:A7:EC:7D:15:5E:AA:62:5E:E8:29:16:E2:CD:29:43:61:88:6C:D1:FB:D4");
             put("geotrustuniversalca [jdk]",
                     "A0:45:9B:9F:63:B2:25:59:F5:FA:5D:4C:6D:B3:F9:F7:2F:F1:93:42:03:35:78:F0:73:BF:1D:1B:46:CB:B9:12");
+            put("sapglobalrootca [jdk]",
+                    "56:53:9C:1E:7B:5E:D5:58:2B:79:68:00:61:CB:F2:14:86:A8:50:22:6B:2F:CF:30:B5:B1:52:A7:20:E1:34:DE");
             put("thawteprimaryrootca [jdk]",
                     "8D:72:2F:81:A9:C1:13:C0:79:1D:F1:36:A2:96:6D:B2:6C:95:0A:97:1D:B4:6B:41:99:F4:EA:54:B7:8B:FB:9F");
             put("thawteprimaryrootcag2 [jdk]",
@@ -239,7 +241,22 @@ public class VerifyCACerts {
 
     // Exception list to 90 days expiry policy
     // No error will be reported if certificate in this list expires
-    private static final HashSet<String> EXPIRY_EXC_ENTRIES = new HashSet<>();
+    private static final HashSet<String> EXPIRY_EXC_ENTRIES = new HashSet<>() {
+        {
+            // Valid until: Sat Jul 06 19:59:59 EDT 2019
+            add("certplusclass2primaryca [jdk]");
+            // Valid until: Sat Jul 06 19:59:59 EDT 2019
+            add("certplusclass3pprimaryca [jdk]");
+            // Valid until: Tue Jul 09 14:40:36 EDT 2019
+            add("utnuserfirstobjectca [jdk]");
+            // Valid until: Tue Jul 09 19:59:00 EDT 2019
+            add("deutschetelekomrootca2 [jdk]");
+            // Valid until: Tue Jul 09 13:36:58 EDT 2019
+            add("utnuserfirstclientauthemailca [jdk]");
+            // Valid until: Tue Jul 09 14:19:22 EDT 2019
+            add("utnuserfirsthardwareca [jdk]");
+        }
+    };
 
     // Ninety days in milliseconds
     private static final long NINETY_DAYS = 7776000000L;
