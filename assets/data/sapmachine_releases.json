@@ -33,10 +33,10 @@
     ], 
     "imageTypes": [
         {
-            "lts": false, 
+            "lts": true, 
             "ea": false, 
-            "id": "10", 
-            "label": "SapMachine 10"
+            "id": "11", 
+            "label": "SapMachine 11"
         }, 
         {
             "lts": false, 
@@ -52,13 +52,11 @@
         }
     ], 
     "assets": {
-        "10": {
+        "11": {
             "releases": [
                 {
-                    "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10.0.2%2B13-1/sapmachine-jdk-10.0.2.13_linux-ppc64le_bin.tar.gz", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10.0.2%2B13-1/sapmachine-jdk-10.0.2.13_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-10.0.2+13-1", 
-                    "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-10.0.2%2B13-1/sapmachine-jdk-10.0.2.13_linux-ppc64_bin.tar.gz"
+                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.3/sapmachine-jdk-11.0.3_linux-x64_bin.tar.gz", 
+                    "tag": "sapmachine-11.0.3"
                 }
             ]
         }, 
