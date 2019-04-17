@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -670,6 +670,13 @@ public class AccessibleObject implements AnnotatedElement {
     private boolean slowVerifyAccess(Class<?> caller, Class<?> memberClass,
                                      Class<?> targetClass, int modifiers)
     {
+
+        if (caller == null) {
+            // No caller frame when a native thread attaches to the VM
+            // only allow access to a public accessible member
+            return Reflection.verifyPublicMemberAccess(memberClass, modifiers);
+        }
+
         if (!Reflection.verifyMemberAccess(caller, memberClass, targetClass, modifiers)) {
             // access denied
             return false;
