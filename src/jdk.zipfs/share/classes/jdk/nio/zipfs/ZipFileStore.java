@@ -30,6 +30,8 @@ import java.nio.file.FileStore;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+// SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileStoreAttributeView;
@@ -62,13 +64,16 @@ class ZipFileStore extends FileStore {
 
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
         return (type == BasicFileAttributeView.class ||
+                type == PosixFileAttributeView.class ||
                 type == ZipFileAttributeView.class);
     }
 
     @Override
     public boolean supportsFileAttributeView(String name) {
-        return name.equals("basic") || name.equals("zip");
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        return name.equals("basic") || name.equals("posix") || name.equals("zip");
     }
 
     @Override
