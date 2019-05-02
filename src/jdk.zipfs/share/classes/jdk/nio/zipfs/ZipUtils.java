@@ -87,7 +87,6 @@ class ZipUtils {
      * The bit flag used to specify execute permission by the group.
      */
     static final int POSIX_GROUP_EXECUTE = 010;
-
     /**
      * The bit flag used to specify read permission by others.
      */

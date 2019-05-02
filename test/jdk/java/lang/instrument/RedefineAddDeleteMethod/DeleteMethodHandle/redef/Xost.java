@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,9 @@
  * questions.
  */
 
-/*
- * @test
- * @summary run CTW for all classes from jdk.packager module
- *
- * @library /test/lib / /testlibrary/ctw/src
- * @modules java.base/jdk.internal.jimage
- *          java.base/jdk.internal.misc
- *          java.base/jdk.internal.reflect
- * @modules jdk.packager
- *
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.packager
- */
+public class Xost {
+    // Remove static private methods, in A in redefinition.
+    static class A { }
+    // Removed public method to get this to compile, but we don't
+    // try to redefine Host.
+}

@@ -34,6 +34,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
