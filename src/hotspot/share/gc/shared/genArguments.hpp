@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,35 @@
  *
  */
 
-#ifndef SHARE_GC_PARALLEL_GENERATIONSIZER_HPP
-#define SHARE_GC_PARALLEL_GENERATIONSIZER_HPP
+#ifndef SHARE_GC_SHARED_GENARGUMENTS_HPP
+#define SHARE_GC_SHARED_GENARGUMENTS_HPP
 
-#include "gc/shared/collectorPolicy.hpp"
+#include "gc/shared/gcArguments.hpp"
+#include "utilities/debug.hpp"
 
-// There is a nice batch of tested generation sizing code in
-// GenCollectorPolicy. Lets reuse it!
+extern size_t MinNewSize;
 
-class GenerationSizer : public GenCollectorPolicy {
- private:
-  // The alignment used for boundary between young gen and old gen
-  static size_t default_gen_alignment() { return 64 * K * HeapWordSize; }
+extern size_t MinOldSize;
+extern size_t MaxOldSize;
 
- protected:
+extern size_t GenAlignment;
 
-  void initialize_alignments();
-  void initialize_flags();
-  void initialize_size_info();
+class GenArguments : public GCArguments {
+  friend class TestGenCollectorPolicy; // Testing
+private:
+  virtual void initialize_alignments();
+  virtual void initialize_size_info();
 
- public:
-  virtual size_t heap_reserved_size_bytes() const;
-  virtual bool is_hetero_heap() const;
+  // Return the (conservative) maximum heap alignment
+  virtual size_t conservative_max_heap_alignment();
+
+  DEBUG_ONLY(void assert_flags();)
+  DEBUG_ONLY(void assert_size_info();)
+
+  static size_t scale_by_NewRatio_aligned(size_t base_size, size_t alignment);
+
+protected:
+  virtual void initialize_heap_flags_and_sizes();
 };
-#endif // SHARE_GC_PARALLEL_GENERATIONSIZER_HPP
+
+#endif // SHARE_GC_SHARED_GENARGUMENTS_HPP

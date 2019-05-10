@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1COLLECTORPOLICY_HPP
-#define SHARE_GC_G1_G1COLLECTORPOLICY_HPP
+/*
+ * @test
+ * @bug 8216978
+ * @summary Drop support for pre JDK 1.4 SocketImpl implementations
+ * @library OldSocketImpl.jar
+ * @run main/othervm OldSocketImplTest
+ */
 
-#include "gc/shared/collectorPolicy.hpp"
+import java.net.*;
 
-// G1CollectorPolicy is primarily used during initialization and to expose the
-// functionality of the CollectorPolicy interface to the rest of the VM.
-
-class G1YoungGenSizer;
-
-class G1CollectorPolicy: public CollectorPolicy {
-protected:
-  void initialize_alignments();
-
-public:
-  G1CollectorPolicy();
-  virtual size_t heap_reserved_size_bytes() const;
-  virtual bool is_heterogeneous_heap() const;
-};
-#endif // SHARE_GC_G1_G1COLLECTORPOLICY_HPP
+public class OldSocketImplTest {
+    public static void main(String[] args) throws Exception {
+        Socket.setSocketImplFactory(new SocketImplFactory() {
+                public SocketImpl createSocketImpl() {
+                    return new OldSocketImpl();
+                }
+        });
+        try {
+            Socket socket = new Socket("localhost", 23);
+            throw new RuntimeException("error test failed");
+        } catch (AbstractMethodError error) {
+            error.printStackTrace();
+            System.out.println("Old impl no longer accepted: OK");
+        }
+    }
+}

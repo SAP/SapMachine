@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcArguments.inline.hpp"
+#include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -45,10 +45,13 @@ void ShenandoahArguments::initialize() {
   FLAG_SET_DEFAULT(ShenandoahGCHeuristics,           "passive");
 
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
+  FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
   FLAG_SET_DEFAULT(ShenandoahKeepAliveBarrier,       false);
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
+
+  FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
 #endif
 
 #ifdef _LP64
@@ -106,6 +109,7 @@ void ShenandoahArguments::initialize() {
   // C2 barrier verification is only reliable when all default barriers are enabled
   if (ShenandoahVerifyOptoBarriers &&
           (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)            ||
+           !FLAG_IS_DEFAULT(ShenandoahLoadRefBarrier)         ||
            !FLAG_IS_DEFAULT(ShenandoahKeepAliveBarrier)       ||
            !FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier) ||
            !FLAG_IS_DEFAULT(ShenandoahCASBarrier)             ||
@@ -198,6 +202,19 @@ size_t ShenandoahArguments::conservative_max_heap_alignment() {
   return align;
 }
 
+void ShenandoahArguments::initialize_alignments() {
+  // Need to setup sizes early to get correct alignments.
+  ShenandoahHeapRegion::setup_sizes(InitialHeapSize, MaxHeapSize);
+
+  // This is expected by our algorithm for ShenandoahHeap::heap_region_containing().
+  size_t align = ShenandoahHeapRegion::region_size_bytes();
+  if (UseLargePages) {
+    align = MAX2(align, os::large_page_size());
+  }
+  SpaceAlignment = align;
+  HeapAlignment = align;
+}
+
 CollectedHeap* ShenandoahArguments::create_heap() {
-  return create_heap_with_policy<ShenandoahHeap, ShenandoahCollectorPolicy>();
+  return new ShenandoahHeap(new ShenandoahCollectorPolicy());
 }

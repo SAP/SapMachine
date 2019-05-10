@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_CMS_CMSCOLLECTORPOLICY_HPP
-#define SHARE_GC_CMS_CMSCOLLECTORPOLICY_HPP
+/**
+ * @test
+ * @bug 8223457
+ * @run main NullConstructor
+ * @summary java.net.ServerSocket protected constructor should throw NPE if impl null
+ */
 
-#include "gc/shared/collectorPolicy.hpp"
+import java.net.ServerSocket;
+import java.net.SocketImpl;
 
-class ConcurrentMarkSweepPolicy : public GenCollectorPolicy {
- protected:
-  void initialize_alignments();
+public class NullConstructor {
 
- public:
-  ConcurrentMarkSweepPolicy() {}
-};
-
-#endif // SHARE_GC_CMS_CMSCOLLECTORPOLICY_HPP
+    public static void main(String args[]) throws Exception {
+        try {
+            ServerSocket server = new ServerSocket((SocketImpl)null) {};
+            throw new RuntimeException("Test failed");
+        } catch (NullPointerException ee) {}
+    }
+}

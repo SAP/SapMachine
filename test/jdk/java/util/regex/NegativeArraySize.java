@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,22 @@
  * questions.
  */
 
-import jdk.test.lib.process.ProcessTools;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-/**
+/*
  * @test
- * @bug 6449565
- * @library /test/lib
- * @build jdk.test.lib.Utils
- *        jdk.test.lib.Asserts
- *        jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.JDKToolLauncher
- *        jdk.test.lib.Platform
- *        jdk.test.lib.process.*
- * @run main OldSocketImplTestDriver
- * @summary Test driver for OdlSocketImpl
+ * @bug 8223174
+ * @summary Pattern.compile() can throw confusing NegativeArraySizeException
+ * @requires os.maxMemory >= 5g
+ * @run main/othervm NegativeArraySize -Xms5G -Xmx5G
  */
-public class OldSocketImplTestDriver {
-    public static void main(String[] args) throws Throwable {
-        Path jar = Paths.get(System.getProperty("test.src"),
-                "OldSocketImpl.jar");
-        ProcessTools.executeTestJava("-cp", jar.toString(), "OldSocketImpl")
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldHaveExitValue(0);
+
+import java.util.regex.Pattern;
+
+public class NegativeArraySize {
+    public static void main(String[] args) {
+        try {
+            Pattern.compile("\\Q" + "a".repeat(42 + Integer.MAX_VALUE / 3));
+            throw new AssertionError("expected to throw");
+        } catch (OutOfMemoryError expected) {
+        }
     }
 }

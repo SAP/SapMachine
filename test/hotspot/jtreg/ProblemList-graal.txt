@@ -210,8 +210,6 @@ serviceability/tmtools/jstat/GcTest02.java                                    81
 serviceability/tmtools/jstat/GcCapacityTest.java                              8196611 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java     8196611 generic-all
 
-vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java          8218700 generic-all
-
 vmTestbase/nsk/jdb/unmonitor/unmonitor001/unmonitor001.java                   8218701 generic-all
 
 vmTestbase/nsk/jdb/clear/clear003/clear003.java                               8218701 generic-all
@@ -219,6 +217,7 @@ vmTestbase/nsk/jdb/clear/clear003/clear003.java                               82
 compiler/jsr292/InvokerSignatureMismatch.java           8221577   generic-all
 
 compiler/arguments/TestScavengeRootsInCode.java         8207267   generic-all
+compiler/intrinsics/mathexact/LongMulOverflowTest.java  8207267   generic-all
 compiler/loopopts/TestOverunrolling.java                8207267   generic-all
 
 runtime/exceptionMsgs/AbstractMethodError/AbstractMethodErrorTest.java        8222582 generic-all
