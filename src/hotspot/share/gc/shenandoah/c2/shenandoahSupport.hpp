@@ -46,7 +46,7 @@ private:
     ShenandoahStore,
     ShenandoahValue,
     ShenandoahOopStore,
-    ShenandoahNone,
+    ShenandoahNone
   };
 
   static bool verify_helper(Node* in, Node_Stack& phis, VectorSet& visited, verify_type t, bool trace, Unique_Node_List& barriers_used);
