@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.nio.zipfs;
 
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -44,7 +43,7 @@ import java.util.Set;
  */
 // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
 class ZipFileAttributeView implements PosixFileAttributeView {
-    private static enum AttrID {
+    private enum AttrID {
         size,
         creationTime,
         lastAccessTime,
@@ -59,10 +58,10 @@ class ZipFileAttributeView implements PosixFileAttributeView {
         // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
         method,
         permissions
-    };
+    }
 
     // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-    private static enum ViewType {
+    static enum ViewType {
         zip,
         posix,
         basic
@@ -73,36 +72,9 @@ class ZipFileAttributeView implements PosixFileAttributeView {
     private final ViewType type;
 
     // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-    private ZipFileAttributeView(ZipPath path, ViewType type) {
+    ZipFileAttributeView(ZipPath path, ViewType type) {
         this.path = path;
         this.type = type;
-    }
-
-    @SuppressWarnings("unchecked") // Cast to V
-    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-    static <V extends FileAttributeView> V get(ZipPath path, Class<V> type) {
-        if (type == null)
-            throw new NullPointerException();
-        if (type == BasicFileAttributeView.class)
-            return (V)new ZipFileAttributeView(path, ViewType.basic);
-        if (type == PosixFileAttributeView.class)
-            return (V)new ZipFileAttributeView(path, ViewType.posix);
-        if (type == ZipFileAttributeView.class)
-            return (V)new ZipFileAttributeView(path, ViewType.zip);
-        return null;
-    }
-
-    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-    static ZipFileAttributeView get(ZipPath path, String type) {
-        if (type == null)
-            throw new NullPointerException();
-        if (type.equals("basic"))
-            return new ZipFileAttributeView(path, ViewType.basic);
-        if (type.equals("posix"))
-            return new ZipFileAttributeView(path, ViewType.posix);
-        if (type.equals("zip"))
-            return new ZipFileAttributeView(path, ViewType.zip);
-        return null;
     }
 
     @Override
@@ -119,8 +91,9 @@ class ZipFileAttributeView implements PosixFileAttributeView {
         }
     }
 
+    @Override
     public ZipFileAttributes readAttributes() throws IOException {
-        return path.getAttributes();
+        return path.readAttributes();
     }
 
     @Override
@@ -168,10 +141,10 @@ class ZipFileAttributeView implements PosixFileAttributeView {
             // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
             if (AttrID.valueOf(attribute) == AttrID.permissions)
                 setPermissions((Set<PosixFilePermission>)value);
-            return;
-        } catch (IllegalArgumentException x) {}
-        throw new UnsupportedOperationException("'" + attribute +
-            "' is unknown or read-only attribute");
+        } catch (IllegalArgumentException x) {
+            throw new UnsupportedOperationException("'" + attribute +
+                "' is unknown or read-only attribute");
+        }
     }
 
     Map<String, Object> readAttributes(String attributes)
@@ -196,7 +169,7 @@ class ZipFileAttributeView implements PosixFileAttributeView {
         return map;
     }
 
-    Object attribute(AttrID id, ZipFileAttributes zfas) {
+    private Object attribute(AttrID id, ZipFileAttributes zfas) {
         switch (id) {
         case size:
             return zfas.size();
@@ -240,6 +213,8 @@ class ZipFileAttributeView implements PosixFileAttributeView {
             // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
             if (type == ViewType.zip)
                 return zfas.method();
+            break;
+        default:
             break;
         }
         return null;
