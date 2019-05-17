@@ -36,10 +36,141 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 
+// SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * @author Xueming Shen
  */
 class ZipUtils {
+
+    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+
+    /**
+     * The value indicating unix file attributes in CEN field "version made by".
+     */
+    static final int FILE_ATTRIBUTES_UNIX = 3;
+
+    /**
+     * Constant used to calculate "version made by".
+     */
+    static final int VERSION_BASE_UNIX = FILE_ATTRIBUTES_UNIX << 8;
+
+    /**
+     * The bit flag used to specify read permission by the owner.
+     */
+    static final int POSIX_USER_READ = 0400;
+
+    /**
+     * The bit flag used to specify write permission by the owner.
+     */
+    static final int POSIX_USER_WRITE = 0200;
+
+    /**
+     * The bit flag used to specify execute permission by the owner.
+     */
+    static final int POSIX_USER_EXECUTE = 0100;
+
+    /**
+     * The bit flag used to specify read permission by the group.
+     */
+    static final int POSIX_GROUP_READ = 040;
+
+    /**
+     * The bit flag used to specify write permission by the group.
+     */
+    static final int POSIX_GROUP_WRITE = 020;
+
+    /**
+     * The bit flag used to specify execute permission by the group.
+     */
+    static final int POSIX_GROUP_EXECUTE = 010;
+    /**
+     * The bit flag used to specify read permission by others.
+     */
+    static final int POSIX_OTHER_READ = 04;
+
+    /**
+     * The bit flag used to specify write permission by others.
+     */
+    static final int POSIX_OTHER_WRITE = 02;
+
+    /**
+     * The bit flag used to specify execute permission by others.
+     */
+    static final int POSIX_OTHER_EXECUTE = 01;
+
+    /**
+     * Convert a {@link PosixFilePermission} object into the appropriate bit
+     * flag.
+     *
+     * @param perm The {@link PosixFilePermission} object.
+     * @return The bit flag as int.
+     */
+    private static int permToFlag(PosixFilePermission perm) {
+        switch(perm) {
+        case OWNER_READ:
+            return POSIX_USER_READ;
+        case OWNER_WRITE:
+            return POSIX_USER_WRITE;
+        case OWNER_EXECUTE:
+            return POSIX_USER_EXECUTE;
+        case GROUP_READ:
+            return POSIX_GROUP_READ;
+        case GROUP_WRITE:
+            return POSIX_GROUP_WRITE;
+        case GROUP_EXECUTE:
+            return POSIX_GROUP_EXECUTE;
+        case OTHERS_READ:
+            return POSIX_OTHER_READ;
+        case OTHERS_WRITE:
+            return POSIX_OTHER_WRITE;
+        case OTHERS_EXECUTE:
+            return POSIX_OTHER_EXECUTE;
+        default:
+            return 0;
+        }
+    }
+
+    /**
+     * Converts a set of {@link PosixFilePermission}s into an int value where
+     * the according bits are set.
+     *
+     * @param perms A Set of {@link PosixFilePermission} objects.
+     *
+     * @return A bit mask representing the input Set.
+     */
+    static int permsToFlags(Set<PosixFilePermission> perms) {
+        if (perms == null) {
+            return -1;
+        }
+        int flags = 0;
+        for (PosixFilePermission perm : perms) {
+            flags |= permToFlag(perm);
+        }
+        return flags;
+    }
+
+    /**
+     * Converts a bit mask of Posix file permissions into a mutable
+     * set of {@link PosixFilePermission} objects.
+     *
+     * @param flags The bit mask containing the flags.
+     *
+     * @return A set of {@link PosixFilePermission} objects matching the input
+     *         flags.
+     */
+    static Set<PosixFilePermission> permsFromFlags(int flags) {
+        Set<PosixFilePermission> perms = new HashSet<>(PosixFilePermission.values().length);
+        for (PosixFilePermission perm : PosixFilePermission.values()) {
+            if ((flags & permToFlag(perm)) != 0) {
+                perms.add(perm);
+            }
+        }
+        return perms;
+    }
 
     /*
      * Writes a 16-bit short to the output stream in little-endian byte order.
