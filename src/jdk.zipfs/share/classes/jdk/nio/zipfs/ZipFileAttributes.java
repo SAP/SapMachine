@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,13 @@ import java.nio.file.attribute.PosixFileAttributes;
 /**
  * The attributes of a file stored in a zip file.
  *
- * @author Xueming Shen, Rajendra Gutupalli,Jaya Hangal
+ * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
 // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
 interface ZipFileAttributes extends PosixFileAttributes {
-    public long compressedSize();
-    public long crc();
-    public int method();
-    public byte[] extra();
-    public byte[] comment();
-    public String toString();
+    long compressedSize();
+    long crc();
+    int method();
+    byte[] extra();
+    byte[] comment();
 }
