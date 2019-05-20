@@ -31,6 +31,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
@@ -52,6 +53,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
@@ -2609,7 +2611,7 @@ Symbol* InstanceKlass::package_from_name(const Symbol* name, TRAPS) {
     if (package_name == NULL) {
       return NULL;
     }
-    Symbol* pkg_name = SymbolTable::new_symbol(package_name, THREAD);
+    Symbol* pkg_name = SymbolTable::new_symbol(package_name);
     return pkg_name;
   }
 }

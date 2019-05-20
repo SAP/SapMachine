@@ -36,7 +36,6 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -2960,14 +2959,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, path));
   }
 
-  // Change the default value for flags  which have different default values
-  // when working with older JDKs.
-#ifdef LINUX
- if (JDK_Version::current().compare_major(6) <= 0 &&
-      FLAG_IS_DEFAULT(UseLinuxPosixThreadCPUClocks)) {
-    FLAG_SET_DEFAULT(UseLinuxPosixThreadCPUClocks, false);
-  }
-#endif // LINUX
   fix_appclasspath();
 
   return JNI_OK;
@@ -3799,11 +3790,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   SharedArchivePath = get_shared_archive_path();
   if (SharedArchivePath == NULL) {
     return JNI_ENOMEM;
-  }
-
-  // Set up VerifySharedSpaces
-  if (FLAG_IS_DEFAULT(VerifySharedSpaces) && SharedArchiveFile != NULL) {
-    VerifySharedSpaces = true;
   }
 
   // Delay warning until here so that we've had a chance to process

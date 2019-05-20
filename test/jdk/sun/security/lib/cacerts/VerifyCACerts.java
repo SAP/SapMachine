@@ -25,15 +25,22 @@
 /**
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
- *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137
+ *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  * @summary Check root CA entries in cacerts file
  */
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.MessageDigest;
-import java.security.cert.*;
-import java.util.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class VerifyCACerts {
 
@@ -42,11 +49,11 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 93;
+    private static final int COUNT = 91;
 
     // map of cert alias to SHA-256 fingerprint
-    private static final Map<String, String> FINGERPRINT_MAP
-            = new HashMap<String, String>() {
+    @SuppressWarnings("serial")
+    private static final Map<String, String> FINGERPRINT_MAP = new HashMap<>() {
         {
             put("actalisauthenticationrootca [jdk]",
                     "55:92:60:84:EC:96:3A:64:B9:6E:2A:BE:01:CE:0B:A8:6A:64:FB:FE:BC:C7:AA:B5:AF:C1:55:B3:7F:D7:60:66");
@@ -78,10 +85,6 @@ public class VerifyCACerts {
                     "4F:F4:60:D5:4B:9C:86:DA:BF:BC:FC:57:12:E0:40:0D:2B:ED:3F:BC:4D:4F:BD:AA:86:E0:6A:DC:D2:A9:AD:7A");
             put("utnuserfirstobjectca [jdk]",
                     "6F:FF:78:E4:00:A7:0C:11:01:1C:D8:59:77:C4:59:FB:5A:F9:6A:3D:F0:54:08:20:D0:F4:B8:60:78:75:E5:8F");
-            put("utnuserfirstclientauthemailca [jdk]",
-                    "43:F2:57:41:2D:44:0D:62:74:76:97:4F:87:7D:A8:F1:FC:24:44:56:5A:36:7A:E6:0E:DD:C2:7A:41:25:31:AE");
-            put("utnuserfirsthardwareca [jdk]",
-                    "6E:A5:47:41:D0:04:66:7E:ED:1B:48:16:63:4A:A3:A7:9E:6E:4B:96:95:0F:82:79:DA:FC:8D:9B:D8:81:21:37");
             put("addtrustclass1ca [jdk]",
                     "8C:72:09:27:9A:C0:4E:27:5E:16:D0:7F:D3:B7:75:E8:01:54:B5:96:80:46:E3:1F:52:DD:25:76:63:24:E9:A7");
             put("addtrustexternalca [jdk]",
@@ -239,6 +242,7 @@ public class VerifyCACerts {
 
     // Exception list to 90 days expiry policy
     // No error will be reported if certificate in this list expires
+    @SuppressWarnings("serial")
     private static final HashSet<String> EXPIRY_EXC_ENTRIES = new HashSet<>() {
         {
             // Valid until: Sat Jul 06 19:59:59 EDT 2019
@@ -247,10 +251,6 @@ public class VerifyCACerts {
             add("certplusclass3pprimaryca [jdk]");
             // Valid until: Tue Jul 09 14:40:36 EDT 2019
             add("utnuserfirstobjectca [jdk]");
-            // Valid until: Tue Jul 09 13:36:58 EDT 2019
-            add("utnuserfirstclientauthemailca [jdk]");
-            // Valid until: Tue Jul 09 14:19:22 EDT 2019
-            add("utnuserfirsthardwareca [jdk]");
         }
     };
 

@@ -31,6 +31,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
@@ -56,13 +57,13 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
   }
 }
 
-void* Symbol::operator new(size_t sz, int len, TRAPS) throw() {
+void* Symbol::operator new(size_t sz, int len) throw() {
   int alloc_size = size(len)*wordSize;
   address res = (address) AllocateHeap(alloc_size, mtSymbol);
   return res;
 }
 
-void* Symbol::operator new(size_t sz, int len, Arena* arena, TRAPS) throw() {
+void* Symbol::operator new(size_t sz, int len, Arena* arena) throw() {
   int alloc_size = size(len)*wordSize;
   address res = (address)arena->Amalloc_4(alloc_size);
   return res;
@@ -365,6 +366,8 @@ void Symbol::print_on(outputStream* st) const {
   st->print(" count %d", refcount());
 }
 
+void Symbol::print() const { print_on(tty); }
+
 // The print_value functions are present in all builds, to support the
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
@@ -374,6 +377,8 @@ void Symbol::print_value_on(outputStream* st) const {
   }
   st->print("'");
 }
+
+void Symbol::print_value() const { print_value_on(tty); }
 
 bool Symbol::is_valid(Symbol* s) {
   if (!is_aligned(s, sizeof(MetaWord))) return false;
