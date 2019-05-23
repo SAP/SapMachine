@@ -101,6 +101,8 @@ typedef struct _ChildStuff
     const char **envv;
     const char *pdir;
     int redirectErrorStream;
+    /* SapMachine 2018-11-19 */
+    int createNewProcessGroupOnSpawn;
 } ChildStuff;
 
 /* following used in addition when mode is SPAWN */
