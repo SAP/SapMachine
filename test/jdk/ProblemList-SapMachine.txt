@@ -159,3 +159,7 @@ com/sun/jdi/sde/TemperatureTableTest.java                                       
 # SapMachine 2019-01-30
 # This test fails on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
 java/util/Base64/TestEncodingDecodingLength.java                                     linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-05-20
+# We have problems with this test in our CI env on linux-x64. Excluding for now.
+java/lang/ProcessHandle/OnExitTest.java                                              linux-x64

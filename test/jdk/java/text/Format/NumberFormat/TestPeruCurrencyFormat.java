@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "opto/c2_globals.hpp"
+/**
+ * @test
+ * @bug 8206879
+ * @summary Currency decimal marker incorrect for Peru.
+ * @modules jdk.localedata
+ * @run main/othervm -Djava.locale.providers=JRE TestPeruCurrencyFormat
+ */
 
-C2_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
-         MATERIALIZE_PD_DEVELOPER_FLAG, \
-         MATERIALIZE_PRODUCT_FLAG, \
-         MATERIALIZE_PD_PRODUCT_FLAG, \
-         MATERIALIZE_DIAGNOSTIC_FLAG, \
-         MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
-         MATERIALIZE_EXPERIMENTAL_FLAG, \
-         MATERIALIZE_NOTPRODUCT_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT, \
-         IGNORE_WRITEABLE)
+import java.text.NumberFormat;
+import java.util.Locale;
+
+public class TestPeruCurrencyFormat {
+
+    public static void main(String[] args) {
+        final String expected = "S/.1,234.56";
+        NumberFormat currencyFmt =
+                NumberFormat.getCurrencyInstance(new Locale("es", "PE"));
+        String s = currencyFmt.format(1234.56);
+
+        if (!s.equals(expected)) {
+            throw new RuntimeException("Currency format for Peru failed, expected " + expected + ", got " + s);
+        }
+    }
+}

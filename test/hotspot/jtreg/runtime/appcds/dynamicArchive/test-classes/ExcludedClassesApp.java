@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,21 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_globals.hpp"
+public class ExcludedClassesApp {
+    interface NotLinkedInterface {}
+    static class NotLinkedSuper {
 
-C1_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
-         MATERIALIZE_PD_DEVELOPER_FLAG, \
-         MATERIALIZE_PRODUCT_FLAG, \
-         MATERIALIZE_PD_PRODUCT_FLAG, \
-         MATERIALIZE_DIAGNOSTIC_FLAG, \
-         MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
-         MATERIALIZE_NOTPRODUCT_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT, \
-         IGNORE_WRITEABLE)
+    }
+
+    static class NotLinkedChild extends NotLinkedSuper implements NotLinkedInterface {
+
+    }
+
+    public static NotLinkedSuper notUsedMethod() {
+        return new NotLinkedChild();
+    }
+
+    public static void main(String args[]) {
+
+    }
+}
