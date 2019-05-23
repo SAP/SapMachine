@@ -511,6 +511,16 @@ const size_t minimumSymbolTableSize = 1024;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
+  /* SapMachine 2019-02-20 : stathist */                                    \
+  product(bool, EnableStatHist, true,                                       \
+          "Enable Statistics history")                                      \
+                                                                            \
+  product(uintx, StatHistSampleInterval, 0,                                 \
+          "Statistics history sample rate interval (0=default)")            \
+                                                                            \
+  experimental(bool, StatHistLockFree, false,                               \
+          "Do not lock when sampling")                                      \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \
@@ -570,7 +580,8 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
-  product(bool, PrintExtendedThreadInfo, false,                             \
+  /* SapMachine 2018-08-29: Enable this per default */                      \
+  product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \
   diagnostic(bool, TraceNMethodInstalls, false,                             \
@@ -1164,8 +1175,9 @@ const size_t minimumSymbolTableSize = 1024;
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
+  /* SapMachine 2018-12-18 Enable this per default. */                      \
   product(bool, ExtensiveErrorReports,                                      \
-          PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
+          PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
           "Error reports are more extensive.")                              \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \
