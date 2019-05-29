@@ -542,7 +542,8 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   diagnostic(bool, LogEvents, true,                                         \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  diagnostic(uintx, LogEventsBufferEntries, 10,                             \
+  /* SapMachine 2019-05-28: more events */                                  \
+  diagnostic(uintx, LogEventsBufferEntries, 75,                             \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
