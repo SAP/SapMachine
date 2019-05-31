@@ -444,7 +444,7 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, LogEvents, true,                                         \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  /* SapMachine 2019-05-28 : increase event number */                       \
+  /* SapMachine 2019-05-28: more events */                                  \
   diagnostic(uintx, LogEventsBufferEntries, 75,                             \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
