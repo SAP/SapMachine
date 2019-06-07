@@ -26,11 +26,6 @@
 
 #############################################################################
 # Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
-# If one of these is fixed later, downport the fix to 11u!!
-
-# SapMachine 2017-08-09
-# Needs Visual Studio Compiler installed.
-java/awt/JAWT/JAWT.sh                                                                generic-all
 
 # SapMachine 2018-07-04
 # Windows: Testbug: users mixed up by our infrastructure
@@ -51,13 +46,10 @@ com/sun/nio/sctp/SctpChannel/Send.java                                          
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/Accept.java                                       solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java                            solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             solaris-sparcv9
 # These two even crashed!!
 sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
 sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
-
-# SapMachine 2018-08-22
-# Failures on mac on 2018-07-31. We see the same failures in jdk10.
-security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     solaris-sparcv9,macosx-all
 
 # SapMachine 2018-08-22
 # Crashes!! in jdk11 and jdk12
@@ -68,60 +60,34 @@ javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                         
 jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
 
 # SapMachine 2018-08-22
-# We see sporadic timeouts on all platforms, but mainly on ppc. Also in jdk10.
-# Should we investigate?
-# SapMachine 2019-02-07 Check whether fixed.
-#java/nio/file/WatchService/DeleteInterference.java                                   generic-all
-
-# SapMachine 2018-08-22
 # We see timeouts after 12 min in all jdk9 - jdk12
 # SapMachine 2019-02-07 Still fails in 12.
 java/net/httpclient/SmokeTest.java                                                   windows-all
 
-# SapMachine 2018-08-22
-# RuntimeException: AtomicMoveNotSupportedException expected, seen on windows jdk7 - jdk12
-# SapMachine 2019-02-07 Still fails in 12.
-java/nio/file/Files/CopyAndMove.java                                                 windows-all
-
-# SapMachine 2018-08-22
-# Fails reproducible.
-# SapMachine 2019-02-07 Check whether fixed.
-#javax/swing/reliability/HangDuringStaticInitialization.java                          macosx-all
-
-# SapMachine 2018-08-22
-# Fails reproducible. ClassNotFoundException: jdk.test.lib.Asserts. Testbug?
-# SapMachine 2019-02-07 Still fails in 12.
-com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java                               generic-all
-
 # SapMachine 2018-06-22 2018-08-22
-# Fails only on linuxx86_64. RuntimeException: Test failed for angle 15.0
-# SapMachine 2019-02-07 Still fails in 12.
-java/awt/font/Rotate/RotatedTextTest.java                                            linux-x64
+# Fails only on linuxx86_64. "RuntimeException: Test failed for angle 15.0" on lu0084, SLES 12.2; lv9051 SLES 15.
+# The test passes on  mo-c48a8ce28, SLES 12.0; ld9385, SLES 11.3., lv9007, RHEL 6.1
+# SapMachine GL Still fails in 12.
+# Opened bug for this:
+# 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
+# This happens on recent SuSE systems, they have a different default font that causes the issue.
+# Oracle accepted the bug, but did not take any actions yet.
+java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-x64
 
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of jdk11.
 
 # SapMachine 2018-12-05
-# This test broke recently, both in jdk11 and jdk12.
-# Matthias discussed this with Sean Mullan, who dispatched it to Sibabrata Sahoo.
-# Maybe this is related to https://bugs.openjdk.java.net/browse/JDK-8202651, but
-# actually that bug is much older than when we saw this appear.
-# SapMachine 2019-02-08 Still failing in jdk12.
+# These tests broke recently, both in jdk11 and jdk12.
+# Matthias discussed this with Sean Mullan.
+# Maybe related to https://bugs.openjdk.java.net/browse/JDK-8202651 and
+# https://bugs.openjdk.java.net/browse/JDK-8215546
+# SapMachine 2019-02-08 Still failing in 12.
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     generic-all
-# ComodoCA: now failing, too.
 security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java      generic-all
-# Certificate has been revoked, reason: UNSPECIFIED, revocation date: Mon Dec 17
-#security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java     generic-all
-
-# Times out sporadically
-javax/net/ssl/ServerName/SSLEngineExplorerWithSrv.java                               linux-s390x
 
 ##############################################################################
-# Tests known to be failing in OpenJDK 12 when it reached RC
-
-# SapMachine 2018-06-25 These failed on linuxx86_64 today, 2018-08-18 and 2018-10-28
-# SapMachine 2019-02-07 Check whether fixed.
-#jdk/internal/platform/cgroup/TestCgroupMetrics.java                                  generic-all
+# Tests known to be failing in OpenJDK 12 when it was released (3/2019)
 
 # SapMachine 2019-01-23
 # Fails since 8210669 made in 12. Fixed in 13 by 8217044.
@@ -192,6 +158,7 @@ javax/net/ssl/Stapling/SSLEngineWithStapling.java                               
 java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-02-16
+# SapMachine 2019-05-02 Still fails in 12
 # javax.crypto.AEADBadTagException: Tag mismatch!
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
 
@@ -202,7 +169,10 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                             
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of jdk12.
 
-# None, so far.
+# SapMachine 2019-04-29
+# Crash!!
+# Error: guarantee((!os::is_primordial_thread())) failed
+java/lang/reflect/exeCallerAccessTest/CallerAccessTest.java                          aix-ppc64
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
