@@ -41,10 +41,10 @@ protected:
 public:
   StatHistDCmd(outputStream* output, bool heap);
   static const char* name() {
-    return "VM.stathist";
+    return "VM.vitals";
   }
   static const char* description() {
-    return "Provide statistics history.";
+    return "Print Vitals History.";
   }
   static const char* impact() {
     return "Low.";
