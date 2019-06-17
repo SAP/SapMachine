@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputFilter;
 import java.io.ObjectOutput;
 import java.io.StreamCorruptedException;
 import java.rmi.RemoteException;
@@ -50,6 +51,7 @@ public class StreamRemoteCall implements RemoteCall {
     private ConnectionInputStream in = null;
     private ConnectionOutputStream out = null;
     private Connection conn;
+    private ObjectInputFilter filter = null;
     private boolean resultStarted = false;
     private Exception serverException = null;
 
@@ -123,6 +125,13 @@ public class StreamRemoteCall implements RemoteCall {
         }
     }
 
+    public void setObjectInputFilter(ObjectInputFilter filter) {
+        if (in != null) {
+            throw new IllegalStateException("set filter must occur before calling getInputStream");
+        }
+        this.filter = filter;
+    }
+
     /**
      * Get the InputStream the stub/skeleton should get results/arguments
      * from.
@@ -132,6 +141,9 @@ public class StreamRemoteCall implements RemoteCall {
             Transport.transportLog.log(Log.VERBOSE, "getting input stream");
 
             in = new ConnectionInputStream(conn.getInputStream());
+            if (filter != null) {
+                in.setObjectInputFilter(filter);
+            }
         }
         return in;
     }
