@@ -1132,7 +1132,7 @@ void cleanup() {
 
 void print_report(outputStream* st, const print_info_t* pi) {
 
-  st->print("Vitals History:");
+  st->print("Vitals:");
 
   if (ColumnList::the_list() == NULL) {
     st->print_cr(" (unavailable)");

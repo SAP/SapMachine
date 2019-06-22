@@ -44,7 +44,7 @@ public:
     return "VM.vitals";
   }
   static const char* description() {
-    return "Print Vitals History.";
+    return "Print Vitals.";
   }
   static const char* impact() {
     return "Low.";

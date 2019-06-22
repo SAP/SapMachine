@@ -514,7 +514,8 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   /* SapMachine 2019-02-20 : stathist */                                    \
   product(bool, EnableVitals, true,                                         \
-          "Enable recording of vitals")                                     \
+          "Enable sampling of vitals: memory, cpu utilization and various " \
+          "VM core statistics; display via jcmd \"VM.vitals\".")            \
                                                                             \
   product(uintx, VitalsSampleInterval, 0,                                   \
           "Vitals sample rate interval (0=use default sample rate)")        \
