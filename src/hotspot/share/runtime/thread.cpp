@@ -4076,7 +4076,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
   // SapMachine 2019-02-20 : stathist
-  if (EnableStatHist) {
+  if (EnableVitals) {
     StatisticsHistory::initialize();
   }
 
