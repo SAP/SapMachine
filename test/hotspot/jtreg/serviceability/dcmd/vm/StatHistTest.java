@@ -43,11 +43,11 @@ import jdk.test.lib.dcmd.JMXExecutor;
 public class StatHistTest {
 
     public void run(CommandExecutor executor) {
-        OutputAnalyzer output = executor.execute("VM.stathist");
+        OutputAnalyzer output = executor.execute("VM.vitals");
         output.shouldContain("--jvm--");
         output.shouldContain("--heap--");
         output.shouldContain("--meta--");
-        output = executor.execute("VM.stathist cvs");
+        output = executor.execute("VM.vitals cvs");
         output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
     }
 
