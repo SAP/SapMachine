@@ -611,14 +611,15 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Print additional debugging information from other modes")        \
                                                                             \
   /* SapMachine 2019-02-20 : stathist */                                    \
-  product(bool, EnableStatHist, true,                                       \
-          "Enable Statistics history")                                      \
+  product(bool, EnableVitals, true,                                         \
+          "Enable sampling of vitals: memory, cpu utilization and various " \
+          "VM core statistics; display via jcmd \"VM.vitals\".")            \
                                                                             \
-  product(uintx, StatHistSampleInterval, 0,                                 \
-          "Statistics history sample rate interval (0=default)")            \
+  product(uintx, VitalsSampleInterval, 0,                                   \
+          "Vitals sample rate interval (0=use default sample rate)")        \
                                                                             \
-  experimental(bool, StatHistLockFree, false,                               \
-          "Do not lock when sampling")                                      \
+  experimental(bool, VitalsLockFreeSampling, false,                         \
+          "When sampling vitals, omit any actions which require locking.")  \
                                                                             \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \

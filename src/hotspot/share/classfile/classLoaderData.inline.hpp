@@ -81,7 +81,7 @@ size_t ClassLoaderDataGraph::num_array_classes() {
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
   Atomic::add(count, &_num_instance_classes);
   // SapMachine 2019-02-20 : stathist
-  if (EnableStatHist) {
+  if (EnableVitals) {
     StatisticsHistory::counters::inc_classes_loaded(count);
   }
 }
@@ -90,7 +90,7 @@ void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
   assert(count <= _num_instance_classes, "Sanity");
   Atomic::sub(count, &_num_instance_classes);
   // SapMachine 2019-02-20 : stathist
-  if (EnableStatHist) {
+  if (EnableVitals) {
     StatisticsHistory::counters::inc_classes_unloaded(count);
   }
 }
@@ -98,7 +98,7 @@ void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
   Atomic::add(count, &_num_array_classes);
   // SapMachine 2019-02-20 : stathist
-  if (EnableStatHist) {
+  if (EnableVitals) {
     StatisticsHistory::counters::inc_classes_loaded(count);
   }
 }
@@ -107,7 +107,7 @@ void ClassLoaderDataGraph::dec_array_classes(size_t count) {
   assert(count <= _num_array_classes, "Sanity");
   Atomic::sub(count, &_num_array_classes);
   // SapMachine 2019-02-20 : stathist
-  if (EnableStatHist) {
+  if (EnableVitals) {
     StatisticsHistory::counters::inc_classes_unloaded(count);
   }
 }
