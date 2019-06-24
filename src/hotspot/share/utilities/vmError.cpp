@@ -1005,7 +1005,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      }
 
   // SapMachine 2019-02-20 : stathist
-  STEP("Statistics History")
+  STEP("Vitals")
      if (_verbose) {
        static const StatisticsHistory::print_info_t settings = {
            false, false, false, // omit_legend
@@ -1186,7 +1186,7 @@ void VMError::print_vm_info(outputStream* st) {
   MemTracker::error_report(st);
 
   // SapMachine 2019-02-20 : stathist
-  // STEP("Statistics History")
+  // STEP("Vitals")
   StatisticsHistory::print_report(st, NULL);
 
   // STEP("printing system")

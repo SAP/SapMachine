@@ -768,8 +768,8 @@ public:
       return false;
     }
 
-    const int short_term_interval = StatHistSampleInterval != 0 ?
-        StatHistSampleInterval : short_term_interval_default;
+    const int short_term_interval = VitalsSampleInterval != 0 ?
+        VitalsSampleInterval : short_term_interval_default;
     return _the_tables->initialize(short_term_interval);
 
   }
@@ -829,7 +829,7 @@ class SamplerThread: public NamedThread {
 
     ::time(&record->timestamp);
 
-    sample_values(record, StatHistLockFree);
+    sample_values(record, VitalsLockFreeSampling);
 
     // After sampling, finish record.
     record_table->finish_current_record();
@@ -842,7 +842,7 @@ public:
     : NamedThread()
     , _stop(false)
   {
-    this->set_name("stathist sampler thread");
+    this->set_name("vitals sampler thread");
   }
 
   virtual void run() {
@@ -1132,7 +1132,7 @@ void cleanup() {
 
 void print_report(outputStream* st, const print_info_t* pi) {
 
-  st->print("stathist:");
+  st->print("Vitals:");
 
   if (ColumnList::the_list() == NULL) {
     st->print_cr(" (unavailable)");
