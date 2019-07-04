@@ -522,7 +522,7 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   Node* in_val = barrier->in(LoadBarrierNode::Oop);
   Node* in_adr = barrier->in(LoadBarrierNode::Address);
 
-  Node* out_ctrl = barrier->proj_out_or_null(LoadBarrierNode::Control);
+  Node* out_ctrl = barrier->proj_out(LoadBarrierNode::Control);
   Node* out_res = barrier->proj_out(LoadBarrierNode::Oop);
 
   assert(barrier->in(LoadBarrierNode::Oop) != NULL, "oop to loadbarrier node cannot be null");
@@ -540,8 +540,8 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   Node* then = igvn.transform(new IfTrueNode(iff));
   Node* elsen = igvn.transform(new IfFalseNode(iff));
 
-  Node* new_loadp = igvn.transform(new LoadBarrierSlowRegNode(then, in_mem, in_adr, in_val->adr_type(),
-                                                                    (const TypePtr*) in_val->bottom_type(), MemNode::unordered, barrier->is_weak()));
+  Node* new_loadp = igvn.transform(new LoadBarrierSlowRegNode(then, in_adr, in_val,
+                                                              (const TypePtr*) in_val->bottom_type(), barrier->is_weak()));
 
   // Create the final region/phi pair to converge cntl/data paths to downstream code
   Node* result_region = igvn.transform(new RegionNode(3));
@@ -552,9 +552,8 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   result_phi->set_req(1, new_loadp);
   result_phi->set_req(2, barrier->in(LoadBarrierNode::Oop));
 
-  if (out_ctrl != NULL) {
-    igvn.replace_node(out_ctrl, result_region);
-  }
+
+  igvn.replace_node(out_ctrl, result_region);
   igvn.replace_node(out_res, result_phi);
 
   assert(barrier->outcnt() == 0,"LoadBarrier macro node has non-null outputs after expansion!");
@@ -640,6 +639,22 @@ Node* ZBarrierSetC2::step_over_gc_barrier(Node* c) const {
   return c;
 }
 
+Node* ZBarrierSetC2::step_over_gc_barrier_ctrl(Node* c) const {
+  Node* node = c;
+
+  // 1. This step follows potential ctrl projections of a load barrier before expansion
+  if (node->is_Proj()) {
+    node = node->in(0);
+  }
+
+  // 2. This step checks for unexpanded load barriers
+  if (node->is_LoadBarrier()) {
+    return node->in(LoadBarrierNode::Control);
+  }
+
+  return c;
+}
+
 bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
   return type == T_OBJECT || type == T_ARRAY;
 }
@@ -652,7 +667,6 @@ bool ZBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, uint opcode
     case Op_ZCompareAndExchangeP:
     case Op_ZCompareAndSwapP:
     case Op_ZWeakCompareAndSwapP:
-    case Op_LoadBarrierSlowReg:
 #ifdef ASSERT
       if (VerifyOptoOopOffsets) {
         MemNode *mem = n->as_Mem();
