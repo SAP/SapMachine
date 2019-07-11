@@ -233,10 +233,3 @@ compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                     
 compiler/jsr292/ContinuousCallSiteTargetChange.java                                              linux-aarch64
 gc/shenandoah/mxbeans/TestChurnNotifications.java                                                linux-aarch64
 gc/shenandoah/mxbeans/TestPauseNotifications.java                                                linux-aarch64
-
-# SapMachine 2019-06-18 (Temporarily) Exclude some failing tests for ppc platforms
-gc/arguments/TestCMSHeapSizeFlags.java                                                 8226302   linux-ppc64le,linux-ppc64
-gc/arguments/TestG1HeapSizeFlags.java                                                  8226302   linux-ppc64le,linux-ppc64
-gc/arguments/TestParallelHeapSizeFlags.java                                            8226302   linux-ppc64le,linux-ppc64
-gc/arguments/TestSerialHeapSizeFlags.java                                              8226302   linux-ppc64le,linux-ppc64
-gc/arguments/TestSoftMaxHeapSizeFlag.java                                              8226302   linux-ppc64le,linux-ppc64
