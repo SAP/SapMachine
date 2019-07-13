@@ -1,4 +1,4 @@
-###########################################################################
+###############################################################################
 #
 # This is the additional jtreg exclude list for SapMachine jdk tests.
 #
@@ -23,31 +23,34 @@
 # without spaces!
 # If there are several lines, the last one is used.
 #
+# SAP/SapMachine usage notes:
+#
+# This exclude list should be a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal should be to fix test issues upstream or at least open
+# upstream bugs and get the test excluded via the upstream exclusion lists.
+#
+# We have both internal exclude lists and exclude lists in the SapMachine
+# repository. The internal lists are the master and the public lists in the
+# SapMachine repository will be refreshed regularly, removing comments
+# which reveal internal URLs, names or hostnames.
+#
+# The public SapMachine exclusion lists might contain additional test
+# exclusions, specific to the SapMachine build and test infrastructure. That
+# section needs to be placed at the end of the file.
+#
+###############################################################################
 
-#############################################################################
-# Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
-# If one of these is fixed later, downport the fix to 11u!!
-# Don't delete from this list, only add #-comments if the test is fixed
-# later on. We will (might) use this as reference for SAP JVM.
-
-# SapMachine 2017-08-09
-# Needs Visual Studio Compiler installed.
-java/awt/JAWT/JAWT.sh                                                                generic-all
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
 # SapMachine 2018-07-04
 # Windows: Testbug: users mixed up by our infrastructure
 # Aix: also in central exclude list, see 8211847.
 java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
-# SapMachine 2018-08-22
-# Tends to time out, seen a lot on solaris, and very sporadic on other platforms.
-# Timeout is already increased to 18 min. See also below.
-# Fixed by "8210736: jdk/javax/xml/crypto/dsig/GenerationTests.java slow on linux".
-# Was downported for 11.0.2.
-# javax/xml/crypto/dsig/GenerationTests.java                                           aix-ppc64,solaris-sparcv9
-
-# SapMachine 2018-08-22
-# Failures on sparc on 2018-07-31. We see the same failures in jdk10.
+# SapMachine 2018-08-22 Failures on sparc.
 # Some just fail sporadic.
 com/sun/nio/sctp/SctpChannel/Bind.java                                               solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
@@ -60,68 +63,84 @@ com/sun/nio/sctp/SctpChannel/Send.java                                          
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/Accept.java                                       solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java                            solaris-sparcv9
-# These two even crashed!!
+com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Send.java                                          solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             solaris-sparcv9
+# These even crash!!
 sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
 sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
-
-# SapMachine 2018-08-22
-# Failures on mac on 2018-07-31. We see the same failures in jdk10.
-security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     solaris-sparcv9,macosx-all
-
-# SapMachine 2018-08-22
-# Crashes!! in jdk11 and jdk12
 javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                              solaris-sparcv9
 
 # SapMachine 2018-08-22
-# RuntimeException: Could not find class leak. Fails in jdk11 and jdk12 on solaris only.
+# RuntimeException: Could not find class leak.
+# SapMachine 2019-04-30 Still fails.
 jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
-
-# SapMachine 2018-08-22
-# We see sporadic timeouts on all platforms, but mainly on ppc. Also in jdk10.
-# Should we investigate?
-java/nio/file/WatchService/DeleteInterference.java                                   generic-all
 
 # SapMachine 2018-08-22
 # We see timeouts after 12 min in all jdk9 - jdk12
 java/net/httpclient/SmokeTest.java                                                   windows-all
 
-# SapMachine 2018-08-22
-# RuntimeException: AtomicMoveNotSupportedException expected, seen on windows jdk7 - jdk12
-java/nio/file/Files/CopyAndMove.java                                                 windows-all
+# SapMachine 2018-06-22
+# Fails only on linuxx86_64. "RuntimeException: Test failed for angle 15.0" on SLES 12.2; SLES 15.
+# The test passes on SLES 12.0; SLES 11.3; RHEL 6.1
+# Opened bug for this:
+# 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
+# This happens on recent SuSE systems, they have a different default font that causes the issue.
+# Oracle accepted the bug, but did not take any actions yet.
+java/awt/font/Rotate/RotatedTextTest.java                                            linux-all
+java/awt/font/Rotate/RotatedFontMetricsTest.java                                     linux-all
 
-# SapMachine 2018-03-16
-# Backlog item exists.
-# Oracle is working on this: 8207059: Update test certificates in QuoVadisCA.java test
-security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java    generic-all
-
-# SapMachine 2018-08-22
-# Fails reproducible.
-javax/swing/reliability/HangDuringStaticInitialization.java                          macosx-all
-
-# SapMachine 2018-08-22
-# Fails reproducible. ClassNotFoundException: jdk.test.lib.Asserts. Testbug?
-com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java                               generic-all
-
-# SapMachine 2018-06-22 2018-08-22
-# Fails only on linuxx86_64.
-java/awt/font/Rotate/RotatedTextTest.java                                            linux-x64
+# SapMachine 2019-07-12
+# Excluding this test for now on some platforms.
+# JDK-8223869 was opened asking for an exclusion on more platforms.
+# But it's probably something to with Linux OS version rather than platform.
+java/awt/FontMetrics/MaxAdvanceIsMax.java                                            8223869 linux-ppc64le,linux-s390x
 
 ###############################################################################
+# New failures detected after GA or caused by changes pushed after GA of 11.
+
+# Sporadic on ppc64le. For sparc see above.
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
+
+# SapMachine 2019-02-07 Times out sporadically
+# SSLProtocolException: Input record too big: max = 16709 len = 26871
+# SapMachine 2019-05-08 Still fails in 11.
+sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
+
+# javax.crypto.AEADBadTagException: Tag mismatch!
+# SapMachine 2019-04-30 Still fails in 11.
+javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
+
+# SapMachine 2019-06-17
+# Fixed in 11.0.5:
+java/net/DatagramSocket/ReuseAddressTest.java                                        8194231 generic-all
+
 ###############################################################################
-# New failures caused by changes pushed after GA of jdk11.
+# New failures detected after GA or caused by changes pushed after GA of 11.0.3.
 
-# SapMachine 2018-12-05
-# This test broke recently, both in jdk11 and jdk12.
-# Matthias discussed this with Sean Mullan, who dispatched it to Sibabrata Sahoo.
-# Maybe this is related to https://bugs.openjdk.java.net/browse/JDK-8202651, but
-# actually that bug is much older than when we saw this appear.
-security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     generic-all
-# ComodoCA: now failing, too.
-security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java      generic-all
-# Certificate has been revoked, reason: UNSPECIFIED, revocation date: Mon Dec 17
-security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java     generic-all
+# SapMachine 2019-06-17
+# Failing since recently, 11.6.19
+# java.lang.Exception: Failed for font java.awt.Font[family=Dialog,name=MS Gothic,style=bold,size=30]
+java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
 
-#############################################################################
+# SapMachine 2019-06-28
+# java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
+# Seen in 11, 13, 14.  Should be adressed!!
+javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
+
+# SapMachine 2019-06-28
+# Seen in 11, 13, 14. timeouts.
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                         windows-x64
+
+# SapMachine 2019-06-28
+# timeout on ppc in 11 only.
+jdk/jfr/event/compiler/TestCodeSweeper.java                                          generic-ppc64,linux-ppc64le
+
+# SapMachine 2019-06-28
+# java.lang.RuntimeException: Could not find root object
+jdk/jfr/event/oldobject/TestLargeRootSet.java                                        generic-all 
+
+###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
 # SapMachine 2018-10-05
