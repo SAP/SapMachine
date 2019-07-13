@@ -1,4 +1,4 @@
-###########################################################################
+###############################################################################
 #
 # This is the additional jtreg exclude list for SapMachine jdk tests.
 #
@@ -23,9 +23,27 @@
 # without spaces!
 # If there are several lines, the last one is used.
 #
+# SAP/SapMachine usage notes:
+#
+# This exclude list should be a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal should be to fix test issues upstream or at least open
+# upstream bugs and get the test excluded via the upstream exclusion lists.
+#
+# We have both internal exclude lists and exclude lists in the SapMachine
+# repository. The internal lists are the master and the public lists in the
+# SapMachine repository will be refreshed regularly, removing comments
+# which reveal internal URLs, names or hostnames.
+#
+# The public SapMachine exclusion lists might contain additional test
+# exclusions, specific to the SapMachine build and test infrastructure. That
+# section needs to be placed at the end of the file.
+#
+###############################################################################
 
-#############################################################################
-# Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
 # SapMachine 2018-07-04
 # Windows: Testbug: users mixed up by our infrastructure
@@ -33,7 +51,6 @@
 java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
 # SapMachine 2018-08-22
-# Failures on sparc on 2018-07-31. We see the same failures in jdk10.
 # Some just fail sporadic.
 com/sun/nio/sctp/SctpChannel/Bind.java                                               solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
@@ -46,48 +63,51 @@ com/sun/nio/sctp/SctpChannel/Send.java                                          
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/Accept.java                                       solaris-sparcv9
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java                            solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Send.java                                          solaris-sparcv9
 com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             solaris-sparcv9
-# These two even crashed!!
+# These even crash!!
 sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
 sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
-
-# SapMachine 2018-08-22
-# Crashes!! in jdk11 and jdk12
 javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                              solaris-sparcv9
 
 # SapMachine 2018-08-22
-# RuntimeException: Could not find class leak. Fails in jdk11 and jdk12 on solaris only.
+# RuntimeException: Could not find class leak.
+# SapMachine 2019-04-30 Still fails.
 jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
 
 # SapMachine 2018-08-22
 # We see timeouts after 12 min in all jdk9 - jdk12
-# SapMachine 2019-02-07 Still fails in 12.
 java/net/httpclient/SmokeTest.java                                                   windows-all
 
 # SapMachine 2018-06-22 2018-08-22
-# Fails only on linuxx86_64. "RuntimeException: Test failed for angle 15.0" on lu0084, SLES 12.2; lv9051 SLES 15.
-# The test passes on  mo-c48a8ce28, SLES 12.0; ld9385, SLES 11.3., lv9007, RHEL 6.1
-# SapMachine GL Still fails in 12.
+# Fails only on linuxx86_64. "RuntimeException: Test failed for angle 15.0" on SLES 12.2; SLES 15.
+# The test passes on SLES 12.0; SLES 11.3; RHEL 6.1
 # Opened bug for this:
 # 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
 # This happens on recent SuSE systems, they have a different default font that causes the issue.
 # Oracle accepted the bug, but did not take any actions yet.
-java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-x64
+java/awt/font/Rotate/RotatedTextTest.java                                            linux-x64
+java/awt/font/Rotate/RotatedFontMetricsTest.java                                     linux-all
+
+# SapMachine 2019-07-12
+# Excluding this test for now on some platforms.
+# JDK-8223869 was opened asking for an exclusion on more platforms.
+# But it's probably something to with Linux OS version rather than platform.
+java/awt/FontMetrics/MaxAdvanceIsMax.java                                            8223869 linux-ppc64le,linux-s390x
 
 ###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of jdk11.
+# Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
+
+# Sporadic on ppc64le, new in 12. For sparc see above.
+com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
 
 # SapMachine 2018-12-05
 # These tests broke recently, both in jdk11 and jdk12.
-# Matthias discussed this with Sean Mullan.
-# Maybe related to https://bugs.openjdk.java.net/browse/JDK-8202651 and
-# https://bugs.openjdk.java.net/browse/JDK-8215546
-# SapMachine 2019-02-08 Still failing in 12.
-security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     generic-all
-security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java      generic-all
-
-##############################################################################
-# Tests known to be failing in OpenJDK 12 when it was released (3/2019)
+# no fixes available in JDK12
+security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     8224768 generic-all
+security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java      8202651 generic-all
 
 # SapMachine 2019-01-23
 # Fails since 8210669 made in 12. Fixed in 13 by 8217044.
@@ -96,9 +116,6 @@ tools/launcher/Test7029048.java                                                 
 # SapMachine 2019-02-08
 # Fixed in 13 by 8219095: [testbug] Add @key headful to com/sun/java/swing/plaf/windows/AltFocusIssueTest.java
 com/sun/java/swing/plaf/windows/AltFocusIssueTest.java                               windows-all
-
-# Sporadic on ppc64le, new in 12. For sparc see above.
-com/sun/nio/sctp/SctpChannel/Send.java                                               solaris-sparcv9,linux-ppc64le
 
 # SapMachine 2019-02-08
 # Sporadic failure: IllegalStateException: Test FAILED: Unexpected Maximum Pool Size Overflow!
@@ -111,11 +128,15 @@ sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                       
 # SapMachine 2019-02-08
 # times out.
 com/sun/jndi/ldap/LdapDnsProviderTest.java                                           macosx-all
+
+# SapMachine 2019-02-08
 # Can't delete .../javax/security/auth/Subject/DoAs/NestedActions.d
+# SapMachine 2019-07-12 Still failing
 javax/security/auth/Subject/DoAs.java                                                macosx-all
 
 # SapMachine 2019-02-08
 # RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
+# SapMachine 2019-07-12 Still failing
 java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
 
 # SapMachine 2019-02-08
@@ -162,16 +183,11 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 # javax.crypto.AEADBadTagException: Tag mismatch!
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
 
-# SapMachine 2019-02-18
-# sporadic: java.net.SocketException: Invalid argument
-com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le
-
 ###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of jdk12.
+# New failures detected after GA or caused by changes pushed after GA of 12.
 
 # SapMachine 2019-04-29
-# Crash!!
-# Error: guarantee((!os::is_primordial_thread())) failed
+# Fixed in JDK13/14 with JDK-8227252
 java/lang/reflect/exeCallerAccessTest/CallerAccessTest.java                          aix-ppc64
 
 #############################################################################

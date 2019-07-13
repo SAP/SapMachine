@@ -1,4 +1,4 @@
-###########################################################################
+###############################################################################
 #
 # This is the additional jtreg exclude list for SapMachine hotspot tests.
 #
@@ -23,9 +23,27 @@
 # without spaces!
 # If there are several lines, the last one is used.
 #
+# SAP/SapMachine usage notes:
+#
+# This exclude list should be a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal should be to fix test issues upstream or at least open
+# upstream bugs and get the test excluded via the upstream exclusion lists.
+#
+# We have both internal exclude lists and exclude lists in the SapMachine
+# repository. The internal lists are the master and the public lists in the
+# SapMachine repository will be refreshed regularly, removing comments
+# which reveal internal URLs, names or hostnames.
+#
+# The public SapMachine exclusion lists might contain additional test
+# exclusions, specific to the SapMachine build and test infrastructure. That
+# section needs to be placed at the end of the file.
+#
+###############################################################################
 
-#############################################################################
-# Tests known to be failing in OpenJDK when jdk 11 was delivered (9/2018)
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
 # SapMachine 2016-01-12
 # Exclude because it occured the test crashed some server (...) by consuming too much memory.
@@ -62,10 +80,6 @@ compiler/ciReplay/TestVMNoCompLevel.java                                        
 # 8219652: [aix] Tests failing with attach problems.
 runtime/jni/terminatedThread/TestTerminatedThread.java                             aix-ppc64
 
-# SapMachine 2018-08-22, 2019-03-07
-# Failing as of today, and ever before.
-vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
-
 # SapMachine 2018-08-22, 2019-01-xx
 # Failing as of today, and ever before.
 # TEST FAILURE: AttachCurrentThread() returns: -1
@@ -75,21 +89,44 @@ vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.ja
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java aix-ppc64
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java        aix-ppc64
 
+# SapMachine 2018-08-28
+# This crashes on sparc with "The system is out of physical RAM or swap space".
+# Only jdk11, why that? Ev. add -Xmx200M.
+# SapMachine 2019-02-21, 2019-05-08 Still failing in 11.
+runtime/appcds/sharedStrings/InvalidFileFormat.java                                solaris-sparcv9
+
+# SapMachine 2018-11-07
+# Remaining tests failing on ntintel in jdk11.
+# ClhsdbLongConstant.java:84: Reading markOopDesc::hash_mask_in_place. Expected 4294967168. Obtained -128 instead.
+# SapMachine 2019-05-08 Still fails in 11.
+serviceability/sa/ClhsdbLongConstant.java                                          windows-i586
+
+# SapMachine 2018-08-22, 2019-03-07
+# Failing as of today, and ever before.
+# SapMachine 2019-04-30 Still fails in 11.
+vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
+
 ###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of jdk11.
+# Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
 # SapMachine 2019-03-11
 # Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
 # We also see this in jdk13.
+# Check whether fixed in 11.0.4:
+# Still seen in 11.0.4, 13, 14
+# but rarely on others than windows.
 serviceability/dcmd/framework/HelpTest.java                                        generic-all
 
 # SapMachine 2019-04-29
 # Times out since 28.2.19, which is probably the date we started to run these again.
+# SapMachine 2019-04-30 Still failing in 11.
 vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                      generic-all
 vmTestbase/nsk/jvmti/GarbageCollectionStart/gcstart001/TestDescription.java        windows-x64
 
 # SapMachine 2019-04-29
 # java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
+# Check whether fixed in 11.0.4:
+# SapMachine 2019-04-30 Still fails in 11.
 gc/metaspace/TestCapacityUntilGCWrapAround.java                                    windows-i586
 
 # SapMachine 2019-04-29
@@ -103,7 +140,7 @@ runtime/appcds/CDSandJFR.java                                                   
 vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java generic-all
 
 # SapMachine 2019-04-29
-# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again. 
+# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
 vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                               generic-all
 
 # SapMachine 2019-04-29
@@ -111,11 +148,7 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
 serviceability/sa/TestJhsdbJstackMixed.java                                         linux-ppc64le,linux-ppc64
 
-##############################################################################
-# Tests known to be failing in OpenJDK 12 when it was released (3/2019)
-
 # SapMachine 2018-11-08
-
 # Failing as of today: RuntimeException: The size computed by SA for java.lang.Object does not match.
 # SapMachine 2019-02-07 still failing on ntamd64, linuxx86_64, linuxxppc64 ... but not all.
 serviceability/sa/TestInstanceKlassSize.java                                8193639 generic-all
@@ -154,20 +187,19 @@ gc/shenandoah/TestVerifyJCStress.java                                           
 gc/shenandoah/TestRegionSampling.java                                               windows-all
 
 ###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of jdk12.
+# New failures detected after GA or caused by changes pushed after GA of 12.
 
 # SapMachine 2019-04-29
-#
-gtest/GTestWrapper.java                                                                          linux-s390x
+gtest/GTestWrapper.java                                                              linux-s390x
 
 # SapMachine 2019-04-29
 # Crash!!
 # java.util.Arrays.copyOf: SIGILL (0x4) at pc=0x000000010ff87445, pid=853, tid=25603
-gc/shenandoah/TestWithLogLevel.java                                                              macosx-all
+gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
 
 # SapMachine 2019-04-29
 # sporadic timeouts in 12 and 13.
-runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java                             generic-ppc64
+runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java                 generic-ppc64
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
