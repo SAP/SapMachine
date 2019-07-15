@@ -49,17 +49,17 @@
 # Filed the following bug:
 # 8220348: [ntintel] asserts about copying unalinged array
 # SapMachine 2019-05-08 Still failing in 11.
-jdk/jshell/ToolProviderTest.java                                   windows-i586
+jdk/jshell/ToolProviderTest.java                                    windows-i586
 
 # SapMachine 2019-03-10
 # timeouts: Failed remote launch: java.util.concurrent.TimeoutException
 # SapMachine 2019-04-30 Still fails in 11.
-jdk/jshell/JdiHangingLaunchExecutionControlTest.java               generic-all
+jdk/jshell/JdiHangingLaunchExecutionControlTest.java                generic-all
 
 # SapMachine 2019-05-07
 # java.lang.AssertionError: ... lists don't have the same size expected [91] but found [92]
 # Seen in 11.0.3 and 11.0.4 very sporadic
-jdk/jshell/CommandCompletionTest.java                              macosx-all
+jdk/jshell/CommandCompletionTest.java                               macosx-all
 
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of 11.0.3.
@@ -67,28 +67,27 @@ jdk/jshell/CommandCompletionTest.java                              macosx-all
 # SapMachine 2019-06-28
 # java.lang.AssertionError: Error too big
 # Seen on 11.0.3/4 and 13 quite sporadic.
-tools/sjavac/IdleShutdown.java                                     windows-x64
+tools/sjavac/IdleShutdown.java                                      windows-x64
 
-#############################################################################
+###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
-# SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
+# SapMachine 2019-01-31 These fail in the SapMachine CI infrastructure.
 # Need to check how this can be fixed.
-jdk/javadoc/doclet/testLinkOption/TestRedirectLinks.java             macosx-all
-jdk/jshell/ExceptionMessageTest.java                                 macosx-all
-jdk/jshell/FailOverDirectExecutionControlTest.java                   macosx-all
-jdk/jshell/FailOverExecutionControlDyingLaunchTest.java              macosx-all
-jdk/jshell/FailOverExecutionControlHangingLaunchTest.java            macosx-all
-jdk/jshell/FailOverExecutionControlTest.java                         macosx-all
-jdk/jshell/JdiFailingLaunchExecutionControlTest.java                 macosx-all
-jdk/jshell/JdiFailingListenExecutionControlTest.java                 macosx-all
-jdk/jshell/JdiHangingListenExecutionControlTest.java                 macosx-all
-jdk/jshell/JdiLaunchingExecutionControlTest.java                     macosx-all
-jdk/jshell/JdiListeningExecutionControlTest.java                     macosx-all
-jdk/jshell/ToolBasicTest.java                                        macosx-all
-jdk/jshell/ToolSimpleTest.java                                       macosx-all
-# need to correctly override test from common ProblemList.txt
-jdk/jshell/UserJdiUserRemoteTest.java                                8173079    linux-all,macosx-all
-tools/javac/lambda/lambdaExecution/LambdaTranslationTest1.java       macosx-all
-tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java       macosx-all
-tools/jdeps/modules/GenOpenModule.java                               windows-all
+jdk/javadoc/doclet/testLinkOption/TestRedirectLinks.java            macosx-all
+jdk/jshell/ExceptionMessageTest.java                                macosx-all
+jdk/jshell/FailOverDirectExecutionControlTest.java                  macosx-all
+jdk/jshell/FailOverExecutionControlDyingLaunchTest.java             macosx-all
+jdk/jshell/FailOverExecutionControlHangingLaunchTest.java           macosx-all
+jdk/jshell/FailOverExecutionControlTest.java                        macosx-all
+jdk/jshell/JdiFailingLaunchExecutionControlTest.java                macosx-all
+jdk/jshell/JdiFailingListenExecutionControlTest.java                macosx-all
+jdk/jshell/JdiHangingListenExecutionControlTest.java                macosx-all
+jdk/jshell/JdiLaunchingExecutionControlTest.java                    macosx-all
+jdk/jshell/JdiListeningExecutionControlTest.java                    macosx-all
+jdk/jshell/ToolBasicTest.java                                       macosx-all
+jdk/jshell/ToolSimpleTest.java                                      macosx-all
+jdk/jshell/UserJdiUserRemoteTest.java                       8173079 linux-all,macosx-all
+tools/javac/lambda/lambdaExecution/LambdaTranslationTest1.java      macosx-all
+tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java      macosx-all
+tools/jdeps/modules/GenOpenModule.java                              windows-all
