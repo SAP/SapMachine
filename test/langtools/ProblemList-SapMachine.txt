@@ -48,27 +48,26 @@
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
-# SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
+# SapMachine 2019-01-31 These fail in the SapMachine CI infrastructure.
 # Need to check how this can be fixed.
-jdk/javadoc/doclet/testLinkOption/TestRedirectLinks.java             macosx-all
-jdk/jshell/ExceptionMessageTest.java                                 macosx-all
-jdk/jshell/FailOverDirectExecutionControlTest.java                   macosx-all
-jdk/jshell/FailOverExecutionControlDyingLaunchTest.java              macosx-all
-jdk/jshell/FailOverExecutionControlHangingLaunchTest.java            macosx-all
-jdk/jshell/FailOverExecutionControlTest.java                         macosx-all
-jdk/jshell/JdiFailingLaunchExecutionControlTest.java                 macosx-all
-jdk/jshell/JdiFailingListenExecutionControlTest.java                 macosx-all
-jdk/jshell/JdiHangingLaunchExecutionControlTest.java                 macosx-all
-jdk/jshell/JdiHangingListenExecutionControlTest.java                 macosx-all
-jdk/jshell/JdiLaunchingExecutionControlTest.java                     macosx-all
-jdk/jshell/JdiListeningExecutionControlTest.java                     macosx-all
-jdk/jshell/ToolBasicTest.java                                        macosx-all
-jdk/jshell/ToolSimpleTest.java                                       macosx-all
-jdk/jshell/ToolTabCommandTest.java                                   macosx-all
-# need to correctly override test from common ProblemList.txt
-jdk/jshell/UserJdiUserRemoteTest.java                                8173079    linux-all,macosx-all
-tools/javac/lambda/lambdaExecution/LambdaTranslationTest1.java       macosx-all
-tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java       macosx-all
-tools/javac/lambdaShapes/org/openjdk/tests/javac/FDTest.java         macosx-all
-tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                 macosx-all,windows-all
-tools/jdeps/modules/GenOpenModule.java                               windows-all
+jdk/javadoc/doclet/testLinkOption/TestRedirectLinks.java            macosx-all
+jdk/jshell/ExceptionMessageTest.java                                macosx-all
+jdk/jshell/FailOverDirectExecutionControlTest.java                  macosx-all
+jdk/jshell/FailOverExecutionControlDyingLaunchTest.java             macosx-all
+jdk/jshell/FailOverExecutionControlHangingLaunchTest.java           macosx-all
+jdk/jshell/FailOverExecutionControlTest.java                        macosx-all
+jdk/jshell/JdiFailingLaunchExecutionControlTest.java                macosx-all
+jdk/jshell/JdiFailingListenExecutionControlTest.java                macosx-all
+jdk/jshell/JdiHangingLaunchExecutionControlTest.java                macosx-all
+jdk/jshell/JdiHangingListenExecutionControlTest.java                macosx-all
+jdk/jshell/JdiLaunchingExecutionControlTest.java                    macosx-all
+jdk/jshell/JdiListeningExecutionControlTest.java                    macosx-all
+jdk/jshell/ToolBasicTest.java                                       macosx-all
+jdk/jshell/ToolSimpleTest.java                                      macosx-all
+jdk/jshell/ToolTabCommandTest.java                                  macosx-all
+jdk/jshell/UserJdiUserRemoteTest.java                       8173079 linux-all,macosx-all
+tools/javac/lambda/lambdaExecution/LambdaTranslationTest1.java      macosx-all
+tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java      macosx-all
+tools/javac/lambdaShapes/org/openjdk/tests/javac/FDTest.java        macosx-all
+tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                windows-all,macosx-all
+tools/jdeps/modules/GenOpenModule.java                              windows-all

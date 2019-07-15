@@ -45,12 +45,13 @@
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
-# SapMachine 2018-07-04
+# SapMachine 2018-07-04, 2019-04-30
 # Windows: Testbug: users mixed up by our infrastructure
 # Aix: also in central exclude list, see 8211847.
+# SapMachine 2019-07-16 Still fails
 java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
-# SapMachine 2018-08-22
+# SapMachine 2018-08-22 Failures on sparc.
 # Some just fail sporadic.
 com/sun/nio/sctp/SctpChannel/Bind.java                                               solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
@@ -67,20 +68,21 @@ com/sun/nio/sctp/SctpMultiChannel/Branch.java                                   
 com/sun/nio/sctp/SctpMultiChannel/Send.java                                          solaris-sparcv9
 com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             solaris-sparcv9
 # These even crash!!
+# SapMachine 2019-04-30 Still fails in 11.
 sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
 sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
 javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                              solaris-sparcv9
 
 # SapMachine 2018-08-22
 # RuntimeException: Could not find class leak.
-# SapMachine 2019-04-30 Still fails.
+# SapMachine 2019-04-30 Still fails in 11.
 jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
 
 # SapMachine 2018-08-22
 # We see timeouts after 12 min in all jdk9 - jdk12
 java/net/httpclient/SmokeTest.java                                                   windows-all
 
-# SapMachine 2018-06-22 2018-08-22
+# SapMachine 2018-06-22, 2019-04-30
 # Fails only on linuxx86_64. "RuntimeException: Test failed for angle 15.0" on SLES 12.2; SLES 15.
 # The test passes on SLES 12.0; SLES 11.3; RHEL 6.1
 # Opened bug for this:
@@ -90,18 +92,15 @@ java/net/httpclient/SmokeTest.java                                              
 java/awt/font/Rotate/RotatedTextTest.java                                            linux-x64
 java/awt/font/Rotate/RotatedFontMetricsTest.java                                     linux-all
 
-# SapMachine 2019-07-12
-# Excluding this test for now on some platforms.
-# JDK-8223869 was opened asking for an exclusion on more platforms.
-# But it's probably something to with Linux OS version rather than platform.
-java/awt/FontMetrics/MaxAdvanceIsMax.java                                            8223869 linux-ppc64le,linux-s390x
-
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
-# Sporadic on ppc64le, new in 12. For sparc see above.
+# SapMachine 2019-07-01
+# Sporadic on ppc64le. For sparc see above.
 com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le,solaris-sparcv9
 
 # SapMachine 2018-12-05
 # These tests broke recently, both in jdk11 and jdk12.
@@ -178,10 +177,22 @@ javax/net/ssl/Stapling/SSLEngineWithStapling.java                               
 # timeout, on be a lot, on le once.
 java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
 
+# SapMachine 2019-02-07 Times out sporadically
+# SSLProtocolException: Input record too big: max = 16709 len = 26871
+# SapMachine 2019-07-16 Occured in 12.
+sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
+
 # SapMachine 2019-02-16
-# SapMachine 2019-05-02 Still fails in 12
 # javax.crypto.AEADBadTagException: Tag mismatch!
+# SapMachine 2019-05-02 Still fails in 11 and 12
 javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
+
+# SapMachine 2019-07-12
+# Issue with certain font configurations. Excluding this test for now.
+# There is already an exclusion of this test for solaris and mac in the generic
+# exclusion list.
+# JDK-8223869 was opened asking for exclusion on more platforms.
+java/awt/FontMetrics/MaxAdvanceIsMax.java                                    8223869 generic-all
 
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of 12.
@@ -190,7 +201,32 @@ javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                       
 # Fixed in JDK13/14 with JDK-8227252
 java/lang/reflect/exeCallerAccessTest/CallerAccessTest.java                          aix-ppc64
 
-#############################################################################
+# SapMachine 2019-06-28
+# timeout on ppc in 11 only.
+jdk/jfr/event/compiler/TestCodeSweeper.java                                          generic-ppc64,linux-ppc64le
+
+# SapMachine 2019-06-28
+# java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
+# Seen in 11, 13, 14.
+javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
+
+# SapMachine 2019-06-17
+# java.lang.Exception: Failed for font java.awt.Font[family=Dialog,name=MS Gothic,style=bold,size=30]
+java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
+
+# SapMachine 2019-06-28
+# Seen in 11, 13, 14. timeouts.
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                         windows-x64
+
+# SapMachine 2019-06-28
+# java.lang.RuntimeException: Could not find root object
+jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
+
+# SapMachine 2019-07-16
+# Exception in thread "main" java.lang.RuntimeException: Test failed for - cpu:getCpuSystemUsage, expected [2], got [2]
+jdk/internal/platform/docker/TestSystemMetrics.java                                  linux-ppc64le,linux-s390x
+
+###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
 # SapMachine 2018-10-05
@@ -201,8 +237,8 @@ java/nio/channels/AsyncCloseAndInterrupt.java                                   
 
 # SapMachine 2018-10-05
 # Flaky tests / other failing - should be checked whether issue still exists
-sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
-javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
+#sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
+#javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
 
 # SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
 # Need to check how this can be fixed.
@@ -238,3 +274,8 @@ com/sun/jdi/sde/TemperatureTableTest.java                                       
 
 # SapMachine 2019-04-16 We see issues on linuxx86_64 in new infrastructure with this test, temporarily exclude
 java/lang/ProcessHandle/OnExitTest.java                                              linux-x64
+
+# SapMachine 2019-07-16 We see issues on NTAMD64 in our internal SapMachine infrastructure
+# Probably a configuration issue or such. Excluding test here.
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                            linux-x64,windows-all
+sun/management/jmxremote/bootstrap/RmiSslNoKeyStoreTest.sh                           windows-all
