@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,33 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @summary run CTW for all classes from jdk.packager module
+ * @bug 8220374
+ * @summary C2: LoopStripMining doesn't strip as expected
+ * @requires vm.compiler2.enabled
  *
- * @library /test/lib / /testlibrary/ctw/src
- * @modules java.base/jdk.internal.access
- *          java.base/jdk.internal.jimage
- *          java.base/jdk.internal.misc
- *          java.base/jdk.internal.reflect
- * @modules jdk.packager
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+SafepointTimeout -XX:+SafepointALot
+ *                   -XX:+AbortVMOnSafepointTimeout -XX:SafepointTimeoutDelay=500 -XX:GuaranteedSafepointInterval=500
+ *                   -XX:-TieredCompilation -XX:+UseCountedLoopSafepoints -XX:LoopStripMiningIter=1000
+ *                   -XX:LoopUnrollLimit=0 -XX:CompileCommand=compileonly,CheckLoopStripMining::test_loop -Xcomp CheckLoopStripMining
  *
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.packager
  */
+
+public class CheckLoopStripMining {
+
+  public static int test_loop(int x) {
+      int sum = 0;
+      if (x != 0) {
+          for (int y = 1; y < Integer.MAX_VALUE; ++y) {
+              if (y % x == 0) ++sum;
+          }
+      }
+      return sum;
+  }
+
+  public static void main(String args[]) {
+    int sum = test_loop(3);
+    System.out.println("sum: " + sum);
+  }
+}

@@ -27,7 +27,7 @@ import java.io.IOException;
  * @test TestGCBasherWithShenandoah
  * @key gc
  * @key stress
- * @requires vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
  * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
  * @summary Stress the Shenandoah GC by trying to make old objects more likely to be garbage than young objects.
  *

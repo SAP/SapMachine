@@ -42,7 +42,7 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
 
   Copy::zero_to_bytes(_degen_points, sizeof(size_t) * ShenandoahHeap::_DEGENERATED_LIMIT);
 
-  ShenandoahHeapRegion::setup_sizes(initial_heap_byte_size(), max_heap_byte_size());
+  ShenandoahHeapRegion::setup_sizes(max_heap_byte_size());
 
   initialize_all();
 

@@ -30,6 +30,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -554,7 +555,10 @@ bool ShenandoahTraversalGC::check_and_handle_cancelled_gc(ShenandoahTaskTerminat
 }
 
 void ShenandoahTraversalGC::concurrent_traversal_collection() {
-  ClassLoaderDataGraph::clear_claimed_marks();
+  {
+    MutexLocker ml(ClassLoaderDataGraph_lock);
+    ClassLoaderDataGraph::clear_claimed_marks();
+  }
 
   ShenandoahGCPhase phase_work(ShenandoahPhaseTimings::conc_traversal);
   if (!_heap->cancelled_gc()) {

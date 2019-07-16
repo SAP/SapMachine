@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,22 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
-import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.*;
-import java.nio.file.attribute.*;
-import java.nio.file.spi.*;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.UserPrincipalLookupService;
+import java.nio.file.spi.FileSystemProvider;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -49,25 +54,30 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
-import java.util.zip.Inflater;
 import java.util.zip.Deflater;
-import java.util.zip.InflaterInputStream;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
-import static java.lang.Boolean.*;
+
+import static java.lang.Boolean.TRUE;
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 import static jdk.nio.zipfs.ZipConstants.*;
 import static jdk.nio.zipfs.ZipUtils.*;
-import static java.nio.file.StandardOpenOption.*;
-import static java.nio.file.StandardCopyOption.*;
 
 /**
  * A FileSystem built on a zip file
  *
  * @author Xueming Shen
  */
-
 class ZipFileSystem extends FileSystem {
-
     private final ZipFileSystemProvider provider;
     private final Path zfpath;
     final ZipCoder zc;
@@ -79,15 +89,15 @@ class ZipFileSystem extends FileSystem {
     private final boolean useTempFile;   // use a temp file for newOS, default
                                          // is to use BAOS for better performance
     private static final boolean isWindows = AccessController.doPrivileged(
-            (PrivilegedAction<Boolean>) () -> System.getProperty("os.name")
-                                                    .startsWith("Windows"));
+            (PrivilegedAction<Boolean>)() -> System.getProperty("os.name")
+                                                   .startsWith("Windows"));
     private final boolean forceEnd64;
     private final int defaultMethod;     // METHOD_STORED if "noCompression=true"
                                          // METHOD_DEFLATED otherwise
 
     ZipFileSystem(ZipFileSystemProvider provider,
                   Path zfpath,
-                  Map<String, ?> env)  throws IOException
+                  Map<String, ?> env) throws IOException
     {
         // default encoding for name/comment
         String nameEncoding = env.containsKey("encoding") ?
@@ -269,12 +279,12 @@ class ZipFileSystem extends FileSystem {
         }
         if (!streams.isEmpty()) {    // unlock and close all remaining streams
             Set<InputStream> copy = new HashSet<>(streams);
-            for (InputStream is: copy)
+            for (InputStream is : copy)
                 is.close();
         }
         beginWrite();                // lock and sync
         try {
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+            AccessController.doPrivileged((PrivilegedExceptionAction<Void>)() -> {
                 sync(); return null;
             });
             ch.close();              // close the ch just in case no update
@@ -296,7 +306,7 @@ class ZipFileSystem extends FileSystem {
 
         IOException ioe = null;
         synchronized (tmppaths) {
-            for (Path p: tmppaths) {
+            for (Path p : tmppaths) {
                 try {
                     AccessController.doPrivileged(
                         (PrivilegedExceptionAction<Boolean>)() -> Files.deleteIfExists(p));
@@ -521,7 +531,7 @@ class ZipFileSystem extends FileSystem {
         boolean hasCreate = false;
         boolean hasAppend = false;
         boolean hasTruncate = false;
-        for (OpenOption opt: options) {
+        for (OpenOption opt : options) {
             if (opt == READ)
                 throw new IllegalArgumentException("READ not allowed");
             if (opt == CREATE_NEW)
@@ -590,11 +600,11 @@ class ZipFileSystem extends FileSystem {
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
     }
 
-
     // Returns an output SeekableByteChannel for either
     // (1) writing the contents of a new entry, if the entry doesn't exit, or
     // (2) updating/replacing the contents of an existing entry.
-    // Note: The content is not compressed.
+    // Note: The content of the channel is not compressed until the
+    // channel is closed
     private class EntryOutputChannel extends ByteArrayChannel {
         Entry e;
 
@@ -613,19 +623,19 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public void close() throws IOException {
-            e.bytes = toByteArray();
-            e.size = e.bytes.length;
-            e.crc = -1;
+            // will update the entry
+            try (OutputStream os = getOutputStream(e)) {
+                os.write(toByteArray());
+            }
             super.close();
-            update(e);
         }
     }
 
-    private int getCompressMethod(FileAttribute<?>... attrs) {
+    private int getCompressMethod() {
          return defaultMethod;
     }
 
-    // Returns a Writable/ReadByteChannel for now. Might consdier to use
+    // Returns a Writable/ReadByteChannel for now. Might consider to use
     // newFileChannel() instead, which dump the entry data into a regular
     // file on the default file system and create a FileChannel on top of
     // it.
@@ -638,10 +648,9 @@ class ZipFileSystem extends FileSystem {
         if (options.contains(StandardOpenOption.WRITE) ||
             options.contains(StandardOpenOption.APPEND)) {
             checkWritable();
-            beginRead();    // only need a readlock, the "update()" will obtain
-                            // thewritelock when the channel is closed
+            beginRead();    // only need a read lock, the "update()" will obtain
+                            // the write lock when the channel is closed
             try {
-                ensureOpen();
                 Entry e = getEntry(path);
                 if (e != null) {
                     if (e.isDir() || options.contains(CREATE_NEW))
@@ -666,8 +675,7 @@ class ZipFileSystem extends FileSystem {
                     throw new NoSuchFileException(getString(path));
                 checkParents(path);
                 return new EntryOutputChannel(
-                    new Entry(path, Entry.NEW, false, getCompressMethod(attrs)));
-
+                    new Entry(path, Entry.NEW, false, getCompressMethod()));
             } finally {
                 endRead();
             }
@@ -734,7 +742,7 @@ class ZipFileSystem extends FileSystem {
             final Entry u = isFCH ? e : new Entry(path, tmpfile, Entry.FILECH);
             if (forWrite) {
                 u.flag = FLAG_DATADESCR;
-                u.method = getCompressMethod(attrs);
+                u.method = getCompressMethod();
             }
             // is there a better way to hook into the FileChannel's close method?
             return new FileChannel() {
@@ -835,7 +843,11 @@ class ZipFileSystem extends FileSystem {
 
     // the outstanding input streams that need to be closed
     private Set<InputStream> streams =
-        Collections.synchronizedSet(new HashSet<InputStream>());
+        Collections.synchronizedSet(new HashSet<>());
+
+    // the ex-channel and ex-path that need to close when their outstanding
+    // input streams are all closed by the obtainers.
+    private Set<ExistingChannelCloser> exChClosers = new HashSet<>();
 
     private Set<Path> tmppaths = Collections.synchronizedSet(new HashSet<Path>());
     private Path getTempPathForEntry(byte[] path) throws IOException {
@@ -1193,25 +1205,20 @@ class ZipFileSystem extends FileSystem {
         return written;
     }
 
-    private long writeEntry(Entry e, OutputStream os, byte[] buf)
+    private long writeEntry(Entry e, OutputStream os)
         throws IOException {
 
         if (e.bytes == null && e.file == null)    // dir, 0-length data
             return 0;
 
         long written = 0;
-        try (OutputStream os2 = e.method == METHOD_STORED ?
-            new EntryOutputStreamCRC32(e, os) : new EntryOutputStreamDef(e, os)) {
-            if (e.bytes != null) {                 // in-memory
-                os2.write(e.bytes, 0, e.bytes.length);
-            } else if (e.file != null) {           // tmp file
-                if (e.type == Entry.NEW || e.type == Entry.FILECH) {
-                    try (InputStream is = Files.newInputStream(e.file)) {
-                        is.transferTo(os2);
-                    }
-                }
-                Files.delete(e.file);
-                tmppaths.remove(e.file);
+        if (e.csize > 0 && (e.crc != 0 || e.size == 0)) {
+            // pre-compressed entry, write directly to output stream
+            writeTo(e, os);
+        } else {
+            try (OutputStream os2 = (e.method == METHOD_STORED) ?
+                    new EntryOutputStreamCRC32(e, os) : new EntryOutputStreamDef(e, os)) {
+                writeTo(e, os2);
             }
         }
         written += e.csize;
@@ -1221,18 +1228,38 @@ class ZipFileSystem extends FileSystem {
         return written;
     }
 
+    private void writeTo(Entry e, OutputStream os) throws IOException {
+        if (e.bytes != null) {
+            os.write(e.bytes, 0, e.bytes.length);
+        } else if (e.file != null) {
+            if (e.type == Entry.NEW || e.type == Entry.FILECH) {
+                try (InputStream is = Files.newInputStream(e.file)) {
+                    is.transferTo(os);
+                }
+            }
+            Files.delete(e.file);
+            tmppaths.remove(e.file);
+        }
+    }
+
     // sync the zip file system, if there is any udpate
     private void sync() throws IOException {
-
+        // check ex-closer
+        if (!exChClosers.isEmpty()) {
+            for (ExistingChannelCloser ecc : exChClosers) {
+                if (ecc.closeAndDeleteIfDone()) {
+                    exChClosers.remove(ecc);
+                }
+            }
+        }
         if (!hasUpdate)
             return;
         Path tmpFile = createTempFileInSameDirectoryAs(zfpath);
-        try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(tmpFile, WRITE)))
-        {
+        try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(tmpFile, WRITE))) {
             ArrayList<Entry> elist = new ArrayList<>(inodes.size());
             long written = 0;
-            byte[] buf = new byte[8192];
-            Entry e = null;
+            byte[] buf = null;
+            Entry e;
 
             // write loc
             for (IndexNode inode : inodes.values()) {
@@ -1245,11 +1272,13 @@ class ZipFileSystem extends FileSystem {
                             // LOC in new file and simply copy the rest (data and
                             // ext) without enflating/deflating from the old zip
                             // file LOC entry.
+                            if (buf == null)
+                                buf = new byte[8192];
                             written += copyLOCEntry(e, true, os, written, buf);
                         } else {                          // NEW, FILECH or CEN
                             e.locoff = written;
                             written += e.writeLOC(os);    // write loc header
-                            written += writeEntry(e, os, buf);
+                            written += writeEntry(e, os);
                         }
                         elist.add(e);
                     } catch (IOException x) {
@@ -1265,6 +1294,8 @@ class ZipFileSystem extends FileSystem {
                     }
                     e = Entry.readCEN(this, inode);
                     try {
+                        if (buf == null)
+                            buf = new byte[8192];
                         written += copyLOCEntry(e, false, os, written, buf);
                         elist.add(e);
                     } catch (IOException x) {
@@ -1282,9 +1313,23 @@ class ZipFileSystem extends FileSystem {
             end.cenlen = written - end.cenoff;
             end.write(os, written, forceEnd64);
         }
+        if (!streams.isEmpty()) {
+            //
+            // There are outstanding input streams open on existing "ch",
+            // so, don't close the "cha" and delete the "file for now, let
+            // the "ex-channel-closer" to handle them
+            Path path = createTempFileInSameDirectoryAs(zfpath);
+            ExistingChannelCloser ecc = new ExistingChannelCloser(path,
+                                                                  ch,
+                                                                  streams);
+            Files.move(zfpath, path, REPLACE_EXISTING);
+            exChClosers.add(ecc);
+            streams = Collections.synchronizedSet(new HashSet<>());
+        } else {
+            ch.close();
+            Files.delete(zfpath);
+        }
 
-        ch.close();
-        Files.delete(zfpath);
         Files.move(tmpFile, zfpath, REPLACE_EXISTING);
         hasUpdate = false;    // clear
     }
@@ -1342,11 +1387,15 @@ class ZipFileSystem extends FileSystem {
         } else {
             os = new ByteArrayOutputStream((e.size > 0)? (int)e.size : 8192);
         }
-        return new EntryOutputStream(e, os);
+        if (e.method == METHOD_DEFLATED) {
+            return new DeflatingEntryOutputStream(e, os);
+        } else {
+            return new EntryOutputStream(e, os);
+        }
     }
 
     private class EntryOutputStream extends FilterOutputStream {
-        private Entry e;
+        private final Entry e;
         private long written;
         private boolean isClosed;
 
@@ -1383,13 +1432,56 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
+    // Output stream returned when writing "deflated" entries into memory,
+    // to enable eager (possibly parallel) deflation and reduce memory required.
+    private class DeflatingEntryOutputStream extends DeflaterOutputStream {
+        private final CRC32 crc;
+        private final Entry e;
+        private boolean isClosed;
+
+        DeflatingEntryOutputStream(Entry e, OutputStream os) throws IOException {
+            super(os, getDeflater());
+            this.e = Objects.requireNonNull(e, "Zip entry is null");
+            this.crc = new CRC32();
+        }
+
+        @Override
+        public synchronized void write(int b) throws IOException {
+            super.write(b);
+            crc.update(b);
+        }
+
+        @Override
+        public synchronized void write(byte b[], int off, int len)
+                throws IOException {
+            super.write(b, off, len);
+            crc.update(b, off, len);
+        }
+
+        @Override
+        public synchronized void close() throws IOException {
+            if (isClosed)
+                return;
+            isClosed = true;
+            finish();
+            e.size  = def.getBytesRead();
+            e.csize = def.getBytesWritten();
+            e.crc = crc.getValue();
+            if (out instanceof ByteArrayOutputStream)
+                e.bytes = ((ByteArrayOutputStream)out).toByteArray();
+            super.close();
+            update(e);
+            releaseDeflater(def);
+        }
+    }
+
     // Wrapper output stream class to write out a "stored" entry.
     // (1) this class does not close the underlying out stream when
     //     being closed.
     // (2) no need to be "synchronized", only used by sync()
     private class EntryOutputStreamCRC32 extends FilterOutputStream {
-        private Entry e;
-        private CRC32 crc;
+        private final CRC32 crc;
+        private final Entry e;
         private long written;
         private boolean isClosed;
 
@@ -1429,8 +1521,8 @@ class ZipFileSystem extends FileSystem {
     //     being closed.
     // (2) no need to be "synchronized", only used by sync()
     private class EntryOutputStreamDef extends DeflaterOutputStream {
-        private CRC32 crc;
-        private Entry e;
+        private final CRC32 crc;
+        private final Entry e;
         private boolean isClosed;
 
         EntryOutputStreamDef(Entry e, OutputStream os) throws IOException {
@@ -1455,20 +1547,19 @@ class ZipFileSystem extends FileSystem {
             e.size  = def.getBytesRead();
             e.csize = def.getBytesWritten();
             e.crc = crc.getValue();
+            releaseDeflater(def);
         }
     }
 
     private InputStream getInputStream(Entry e)
         throws IOException
     {
-        InputStream eis = null;
-
+        InputStream eis;
         if (e.type == Entry.NEW) {
-            // now bytes & file is uncompressed.
             if (e.bytes != null)
-                return new ByteArrayInputStream(e.bytes);
+                eis = new ByteArrayInputStream(e.bytes);
             else if (e.file != null)
-                return Files.newInputStream(e.file);
+                eis = Files.newInputStream(e.file);
             else
                 throw new ZipException("update entry data is missing");
         } else if (e.type == Entry.FILECH) {
@@ -1477,7 +1568,7 @@ class ZipFileSystem extends FileSystem {
             // TBD: wrap to hook close()
             // streams.add(eis);
             return eis;
-        } else {  // untouced  CEN or COPY
+        } else {  // untouched CEN or COPY
             eis = new EntryInputStream(e, ch);
         }
         if (e.method == METHOD_DEFLATED) {
@@ -1539,14 +1630,12 @@ class ZipFileSystem extends FileSystem {
                                           // point to a new channel after sync()
         private   long pos;               // current position within entry data
         protected long rem;               // number of remaining bytes within entry
-        protected final long size;        // uncompressed size of this entry
 
         EntryInputStream(Entry e, SeekableByteChannel zfch)
             throws IOException
         {
             this.zfch = zfch;
             rem = e.csize;
-            size = e.size;
             pos = e.locoff;
             if (pos == -1) {
                 Entry e2 = getEntry(e.name);
@@ -1571,7 +1660,7 @@ class ZipFileSystem extends FileSystem {
                 len = (int) rem;
             }
             // readFullyAt()
-            long n = 0;
+            long n;
             ByteBuffer bb = ByteBuffer.wrap(b);
             bb.position(off);
             bb.limit(off + len);
@@ -1611,10 +1700,6 @@ class ZipFileSystem extends FileSystem {
 
         public int available() {
             return rem > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rem;
-        }
-
-        public long size() {
-            return size;
         }
 
         public void close() {
@@ -1672,7 +1757,7 @@ class ZipFileSystem extends FileSystem {
     // List of available Deflater objects for compression
     private final List<Deflater> deflaters = new ArrayList<>();
 
-    // Gets an deflater from the list of available deflaters or allocates
+    // Gets a deflater from the list of available deflaters or allocates
     // a new one.
     private Deflater getDeflater() {
         synchronized (deflaters) {
@@ -1901,7 +1986,7 @@ class ZipFileSystem extends FileSystem {
             this.type = type;
         }
 
-        Entry (Entry e, int type) {
+        Entry(Entry e, int type) {
             name(e.name);
             this.isdir     = e.isdir;
             this.version   = e.version;
@@ -1924,7 +2009,7 @@ class ZipFileSystem extends FileSystem {
             this.type      = type;
         }
 
-        Entry (byte[] name, Path file, int type) {
+        Entry(byte[] name, Path file, int type) {
             this(name, type, false, METHOD_STORED);
             this.file = file;
         }
@@ -1985,9 +2070,7 @@ class ZipFileSystem extends FileSystem {
             return this;
         }
 
-        int writeCEN(OutputStream os) throws IOException
-        {
-            int written  = CENHDR;
+        int writeCEN(OutputStream os) throws IOException {
             int version0 = version();
             long csize0  = csize;
             long size0   = size;
@@ -2101,9 +2184,7 @@ class ZipFileSystem extends FileSystem {
         ///////////////////// LOC //////////////////////
 
         int writeLOC(OutputStream os) throws IOException {
-            writeInt(os, LOCSIG);               // LOC header signature
-            int version = version();
-
+            int version0 = version();
             byte[] zname = isdir ? toDirectoryPath(name) : name;
             int nlen = (zname != null) ? zname.length - 1 : 0; // [0] is slash
             int elen = (extra != null) ? extra.length : 0;
@@ -2112,8 +2193,9 @@ class ZipFileSystem extends FileSystem {
             int elen64 = 0;
             int elenEXTT = 0;
             int elenNTFS = 0;
+            writeInt(os, LOCSIG);               // LOC header signature
             if ((flag & FLAG_DATADESCR) != 0) {
-                writeShort(os, version());      // version needed to extract
+                writeShort(os, version0);       // version needed to extract
                 writeShort(os, flag);           // general purpose bit flag
                 writeShort(os, method);         // compression method
                 // last modification time
@@ -2128,7 +2210,7 @@ class ZipFileSystem extends FileSystem {
                     elen64 = 20;    //headid(2) + size(2) + size(8) + csize(8)
                     writeShort(os, 45);         // ver 4.5 for zip64
                 } else {
-                    writeShort(os, version());  // version needed to extract
+                    writeShort(os, version0);   // version needed to extract
                 }
                 writeShort(os, flag);           // general purpose bit flag
                 writeShort(os, method);         // compression method
@@ -2423,6 +2505,36 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
+    private static class ExistingChannelCloser {
+        private final Path path;
+        private final SeekableByteChannel ch;
+        private final Set<InputStream> streams;
+        ExistingChannelCloser(Path path,
+                              SeekableByteChannel ch,
+                              Set<InputStream> streams) {
+            this.path = path;
+            this.ch = ch;
+            this.streams = streams;
+        }
+
+        /**
+         * If there are no more outstanding streams, close the channel and
+         * delete the backing file
+         *
+         * @return true if we're done and closed the backing file,
+         *         otherwise false
+         * @throws IOException
+         */
+        public boolean closeAndDeleteIfDone() throws IOException {
+            if (streams.isEmpty()) {
+                ch.close();
+                Files.delete(path);
+                return true;
+            }
+            return false;
+        }
+    }
+
     // ZIP directory has two issues:
     // (1) ZIP spec does not require the ZIP file to include
     //     directory entry
@@ -2430,7 +2542,6 @@ class ZipFileSystem extends FileSystem {
     //     structure.
     // A possible solution is to build the node tree ourself as
     // implemented below.
-    private IndexNode root;
 
     // default time stamp for pseudo entries
     private long zfsDefaultTimeStamp = System.currentTimeMillis();
