@@ -194,6 +194,12 @@ javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                       
 # JDK-8223869 was opened asking for exclusion on more platforms.
 java/awt/FontMetrics/MaxAdvanceIsMax.java                                    8223869 generic-all
 
+# SapMachine 2019-07-16
+# Probably removed this accidentally from our exclusions for 12, thinking
+# the fix was backported to 12.0.2. Unfortunately it only went into 11.0.3.
+# Need to exclude it in 12 only.
+com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java                       8219714 generic-all
+
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of 12.
 

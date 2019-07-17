@@ -174,10 +174,11 @@ serviceability/sa/TestJmapCoreMetaspace.java                                    
 # SapMachine 2019-02-08
 runtime/CompressedOops/UseCompressedOops.java                                        windows-all
 
-# SapMachine GL 2018-12-11
+# SapMachine 2018-12-11
 # java.lang.OutOfMemoryError: Java heap space
-# SapMachine GL 2019-06-28 Check whether fixed in 13:
-#gc/shenandoah/TestStringDedupStress.java                                             linux-aarch64,macosx-all,linux-x64
+# SapMachine 2019-07-16 Occured in 12 (but this time rather timeouted)
+# Maybe fixed/improved with JDK-8223447, but the patch should be part of the codebase that failed in 12 on 2019-07-16
+gc/shenandoah/TestStringDedupStress.java                                             linux-aarch64,macosx-all,linux-x64
 
 # SapMachine 2019-01-08
 # More Shenandoah failures.
@@ -212,16 +213,14 @@ gtest/GTestWrapper.java                                                         
 # SapMachine 2019-06-28
 # Error message: AttemptOOM allocation successful
 # Seen on quite some hosts
-runtime/containers/docker/TestMemoryAwareness.java                                   linux-ppc64le,linux-s390x
+containers/docker/TestMemoryAwareness.java                                           linux-ppc64le,linux-s390x
 
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of 12.
 
 # SapMachine 2019-04-29
-# SapMachine 2019-07-15 Excluding the test for linux-s390x shadowed the aix issue
-# from above. Since there are no details about this 390 issue, I'm comenting the
-# eclusion in order to see if it still fails. If so, need to add details.
-#gtest/GTestWrapper.java                                                              linux-s390x
+# SapMachine 2019-07-16 390 issue still occurs, aix issue: see above
+gtest/GTestWrapper.java                                                              aix-all,linux-s390x
 
 # SapMachine 2019-04-29
 # Crash!!
@@ -236,6 +235,11 @@ runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java            
 # RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr
 # or just timeout. Seen also in 13.
 serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
+
+# SapMachine 2019-07-16
+# We see this intermittently, mainly in SapMachine environment
+# Need to backport 8215901.
+runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 linux-all
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

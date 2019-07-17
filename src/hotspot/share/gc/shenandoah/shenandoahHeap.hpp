@@ -91,19 +91,6 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-class ShenandoahUpdateRefsClosure: public OopClosure {
-private:
-  ShenandoahHeap* _heap;
-
-  template <class T>
-  inline void do_oop_work(T* p);
-
-public:
-  ShenandoahUpdateRefsClosure();
-  inline void do_oop(oop* p);
-  inline void do_oop(narrowOop* p);
-};
-
 #ifdef ASSERT
 class ShenandoahAssertToSpaceClosure : public OopClosure {
 private:
@@ -115,34 +102,6 @@ public:
 };
 #endif
 
-class ShenandoahAlwaysTrueClosure : public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-
-class ShenandoahForwardedIsAliveClosure: public BoolObjectClosure {
-private:
-  ShenandoahMarkingContext* const _mark_context;
-public:
-  ShenandoahForwardedIsAliveClosure();
-  bool do_object_b(oop obj);
-};
-
-class ShenandoahIsAliveClosure: public BoolObjectClosure {
-private:
-  ShenandoahMarkingContext* const _mark_context;
-public:
-  ShenandoahIsAliveClosure();
-  bool do_object_b(oop obj);
-};
-
-class ShenandoahIsAliveSelector : public StackObj {
-private:
-  ShenandoahIsAliveClosure _alive_cl;
-  ShenandoahForwardedIsAliveClosure _fwd_alive_cl;
-public:
-  BoolObjectClosure* is_alive_closure();
-};
 
 // Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
@@ -163,9 +122,9 @@ public:
     return &_lock;
   }
 
-  void assert_heaplock_owned_by_current_thread()     PRODUCT_RETURN;
-  void assert_heaplock_not_owned_by_current_thread() PRODUCT_RETURN;
-  void assert_heaplock_or_safepoint()                PRODUCT_RETURN;
+  void assert_heaplock_owned_by_current_thread()     NOT_DEBUG_RETURN;
+  void assert_heaplock_not_owned_by_current_thread() NOT_DEBUG_RETURN;
+  void assert_heaplock_or_safepoint()                NOT_DEBUG_RETURN;
 
 // ---------- Initialization, termination, identification, printing routines
 //
@@ -198,6 +157,7 @@ public:
 //
 private:
            size_t _initial_size;
+           size_t _minimum_size;
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
   volatile size_t _used;
   volatile size_t _committed;
@@ -216,6 +176,7 @@ public:
   size_t bytes_allocated_since_gc_start();
   void reset_bytes_allocated_since_gc_start();
 
+  size_t min_capacity()     const;
   size_t max_capacity()     const;
   size_t initial_capacity() const;
   size_t capacity()         const;
@@ -231,7 +192,7 @@ private:
 
 public:
   uint max_workers();
-  void assert_gc_workers(uint nworker) PRODUCT_RETURN;
+  void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkGang* workers() const;
   WorkGang* get_safepoint_workers();
@@ -242,12 +203,14 @@ public:
 //
 private:
   MemRegion _heap_region;
+  bool      _heap_region_special;
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
   ShenandoahRegionIterator _update_refs_iterator;
 
 public:
   inline size_t num_regions() const { return _num_regions; }
+  inline bool is_heap_region_special() { return _heap_region_special; }
 
   inline ShenandoahHeapRegion* const heap_region_containing(const void* addr) const;
   inline size_t heap_region_index_containing(const void* addr) const;
@@ -281,7 +244,7 @@ public:
     UPDATEREFS_BITPOS = 3,
 
     // Heap is under traversal collection
-    TRAVERSAL_BITPOS  = 4,
+    TRAVERSAL_BITPOS  = 4
   };
 
   enum GCState {
@@ -290,7 +253,7 @@ public:
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
     UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
-    TRAVERSAL     = 1 << TRAVERSAL_BITPOS,
+    TRAVERSAL     = 1 << TRAVERSAL_BITPOS
   };
 
 private:
@@ -340,7 +303,7 @@ public:
     _degenerated_mark,
     _degenerated_evac,
     _degenerated_updaterefs,
-    _DEGENERATED_LIMIT,
+    _DEGENERATED_LIMIT
   };
 
   static const char* degen_point_to_string(ShenandoahDegenPoint point) {
@@ -486,7 +449,7 @@ public:
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
   ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
   ShenandoahTraversalGC*     traversal_gc()            { return _traversal_gc;      }
-  ShenandoahPacer*           pacer() const             { return _pacer;             }
+  ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
   ShenandoahAllocTracker*    alloc_tracker()     const { return _alloc_tracker;     }
@@ -511,6 +474,7 @@ public:
 
   GrowableArray<GCMemoryManager*> memory_managers();
   GrowableArray<MemoryPool*> memory_pools();
+  MemoryUsage memory_usage();
   GCTracer* tracer();
   GCTimer* gc_timer() const;
   CollectorPolicy* collector_policy() const;
@@ -648,6 +612,9 @@ private:
   size_t _bitmap_regions_per_slice;
   size_t _bitmap_bytes_per_slice;
 
+  bool _bitmap_region_special;
+  bool _aux_bitmap_region_special;
+
   // Used for buffering per-region liveness data.
   // Needed since ShenandoahHeapRegion uses atomics to update liveness.
   //
@@ -676,6 +643,7 @@ public:
   void reset_mark_bitmap();
 
   // SATB barriers hooks
+  template<bool RESOLVE>
   inline bool requires_marking(const void* entry) const;
   void force_satb_flush_all_threads();
 

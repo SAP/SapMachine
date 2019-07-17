@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -335,7 +334,7 @@ void ShenandoahBarrierSet::enqueue(oop obj) {
   // Filter marked objects before hitting the SATB queues. The same predicate would
   // be used by SATBMQ::filter to eliminate already marked objects downstream, but
   // filtering here helps to avoid wasteful SATB queueing work to begin with.
-  if (!_heap->requires_marking(obj)) return;
+  if (!_heap->requires_marking<false>(obj)) return;
 
   Thread* thr = Thread::current();
   if (thr->is_Java_thread()) {

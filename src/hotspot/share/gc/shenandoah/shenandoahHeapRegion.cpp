@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -25,7 +25,6 @@
 #include "memory/allocation.hpp"
 #include "gc/shenandoah/shenandoahBrooksPointer.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -57,7 +56,6 @@ ShenandoahHeapRegion::PaddedAllocSeqNum ShenandoahHeapRegion::_alloc_seq_num;
 ShenandoahHeapRegion::ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start,
                                            size_t size_words, size_t index, bool committed) :
   _heap(heap),
-  _pacer(ShenandoahPacing ? heap->pacer() : NULL),
   _reserved(MemRegion(start, size_words)),
   _region_number(index),
   _new_top(NULL),
@@ -518,7 +516,7 @@ HeapWord* ShenandoahHeapRegion::block_start_const(const void* p) const {
   }
 }
 
-void ShenandoahHeapRegion::setup_sizes(size_t initial_heap_size, size_t max_heap_size) {
+void ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // Absolute minimums we should not ever break.
   static const size_t MIN_REGION_SIZE = 256*K;
 
@@ -528,10 +526,10 @@ void ShenandoahHeapRegion::setup_sizes(size_t initial_heap_size, size_t max_heap
 
   size_t region_size;
   if (FLAG_IS_DEFAULT(ShenandoahHeapRegionSize)) {
-    if (ShenandoahMinRegionSize > initial_heap_size / MIN_NUM_REGIONS) {
-      err_msg message("Initial heap size (" SIZE_FORMAT "K) is too low to afford the minimum number "
+    if (ShenandoahMinRegionSize > max_heap_size / MIN_NUM_REGIONS) {
+      err_msg message("Max heap size (" SIZE_FORMAT "K) is too low to afford the minimum number "
                       "of regions (" SIZE_FORMAT ") of minimum region size (" SIZE_FORMAT "K).",
-                      initial_heap_size/K, MIN_NUM_REGIONS, ShenandoahMinRegionSize/K);
+                      max_heap_size/K, MIN_NUM_REGIONS, ShenandoahMinRegionSize/K);
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
     }
     if (ShenandoahMinRegionSize < MIN_REGION_SIZE) {
@@ -564,10 +562,10 @@ void ShenandoahHeapRegion::setup_sizes(size_t initial_heap_size, size_t max_heap
     region_size = MIN2(ShenandoahMaxRegionSize, region_size);
 
   } else {
-    if (ShenandoahHeapRegionSize > initial_heap_size / MIN_NUM_REGIONS) {
-      err_msg message("Initial heap size (" SIZE_FORMAT "K) is too low to afford the minimum number "
+    if (ShenandoahHeapRegionSize > max_heap_size / MIN_NUM_REGIONS) {
+      err_msg message("Max heap size (" SIZE_FORMAT "K) is too low to afford the minimum number "
                               "of regions (" SIZE_FORMAT ") of requested size (" SIZE_FORMAT "K).",
-                      initial_heap_size/K, MIN_NUM_REGIONS, ShenandoahHeapRegionSize/K);
+                      max_heap_size/K, MIN_NUM_REGIONS, ShenandoahHeapRegionSize/K);
       vm_exit_during_initialization("Invalid -XX:ShenandoahHeapRegionSize option", message);
     }
     if (ShenandoahHeapRegionSize < ShenandoahMinRegionSize) {
@@ -621,6 +619,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t initial_heap_size, size_t max_heap
 
   guarantee(HumongousThresholdWords == 0, "we should only set it once");
   HumongousThresholdWords = RegionSizeWords * ShenandoahHumongousThreshold / 100;
+  HumongousThresholdWords = align_down(HumongousThresholdWords, MinObjAlignment);
   assert (HumongousThresholdWords <= RegionSizeWords, "sanity");
 
   guarantee(HumongousThresholdBytes == 0, "we should only set it once");
@@ -645,12 +644,13 @@ void ShenandoahHeapRegion::setup_sizes(size_t initial_heap_size, size_t max_heap
   //
   // The whole thing is mitigated if Elastic TLABs are enabled.
   //
-  guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
-  MaxTLABSizeBytes = MIN2(ShenandoahElasticTLAB ? RegionSizeBytes : (RegionSizeBytes / 8), HumongousThresholdBytes);
-  assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
-
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = MaxTLABSizeBytes / HeapWordSize;
+  MaxTLABSizeWords = MIN2(ShenandoahElasticTLAB ? RegionSizeWords : (RegionSizeWords / 8), HumongousThresholdWords);
+  MaxTLABSizeWords = align_down(MaxTLABSizeWords, MinObjAlignment);
+
+  guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
+  MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
+  assert (MaxTLABSizeBytes > MinTLABSize, "should be larger");
 
   log_info(gc, init)("Regions: " SIZE_FORMAT " x " SIZE_FORMAT "%s",
                      RegionCount, byte_size_in_proper_unit(RegionSizeBytes), proper_unit_for_byte_size(RegionSizeBytes));
@@ -661,7 +661,7 @@ void ShenandoahHeapRegion::setup_sizes(size_t initial_heap_size, size_t max_heap
 }
 
 void ShenandoahHeapRegion::do_commit() {
-  if (!os::commit_memory((char *) _reserved.start(), _reserved.byte_size(), false)) {
+  if (!_heap->is_heap_region_special() && !os::commit_memory((char *) _reserved.start(), _reserved.byte_size(), false)) {
     report_java_out_of_memory("Unable to commit region");
   }
   if (!_heap->commit_bitmap_slice(this)) {
@@ -671,7 +671,7 @@ void ShenandoahHeapRegion::do_commit() {
 }
 
 void ShenandoahHeapRegion::do_uncommit() {
-  if (!os::uncommit_memory((char *) _reserved.start(), _reserved.byte_size())) {
+  if (!_heap->is_heap_region_special() && !os::uncommit_memory((char *) _reserved.start(), _reserved.byte_size())) {
     report_java_out_of_memory("Unable to uncommit region");
   }
   if (!_heap->uncommit_bitmap_slice(this)) {

@@ -92,9 +92,9 @@ public class MOptionTest extends ModuleTestBase {
             throw new AssertionError("Classfile update!");
         }
 
-        // date back the source file by one second, compared to the current time.
-        // Cases have been observed, where the resulting class file had an earlier
-        // timestamp than the java source, otherwise.
+        // Date back the source file by one second compared to the current time.
+        // Cases have been observed where the resulting class file had an earlier
+        // timestamp than the java source.
         Files.setLastModifiedTime(testTest, FileTime.fromMillis(System.currentTimeMillis() - 1000));
 
         new JavacTask(tb)
@@ -235,9 +235,9 @@ public class MOptionTest extends ModuleTestBase {
             throw new AssertionError("Classfile update!");
         }
 
-        // date back the source file by one second, compared to the current time.
-        // Cases have been observed, where the resulting class file had an earlier
-        // timestamp than the java source, otherwise.
+        // Date back the source file by one second compared to the current time.
+        // Cases have been observed where the resulting class file had an earlier
+        // timestamp than the java source.
         Files.setLastModifiedTime(C1Source, FileTime.fromMillis(System.currentTimeMillis() - 1000));
         Files.setLastModifiedTime(C2Source, FileTime.fromMillis(System.currentTimeMillis() - 1000));
 
