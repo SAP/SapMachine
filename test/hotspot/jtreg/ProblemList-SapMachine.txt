@@ -1,0 +1,315 @@
+###############################################################################
+#
+# This is the additional jtreg exclude list for SapMachine hotspot tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+# SAP/SapMachine usage notes:
+#
+# This exclude list should be a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal should be to fix test issues upstream or at least open
+# upstream bugs and get the test excluded via the upstream exclusion lists.
+#
+# We have both internal exclude lists and exclude lists in the SapMachine
+# repository. The internal lists are the master and the public lists in the
+# SapMachine repository will be refreshed regularly, removing comments
+# which reveal internal URLs, names or hostnames.
+#
+# The public SapMachine exclusion lists might contain additional test
+# exclusions, specific to the SapMachine build and test infrastructure. That
+# section needs to be placed at the end of the file.
+#
+###############################################################################
+
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
+
+# SapMachine 2016-01-12
+# Exclude because it occured the test crashed some server (...) by consuming too much memory.
+compiler/compilercontrol/jcmd/StressAddMultiThreadedTest.java                        generic-all
+
+# SapMachine 2015-12-08
+# -XX:-UseSIGTRAP -XX:-TransmitErrorReport -XX:-CreateCoredumpOnCrash -XX:ErrorHandlerTest=13
+# does not go through the signal handler.
+# SapMachine 2017-07-21 Still fails.
+# Opened bug for this:
+# 8219916: [ppc64le] runtime/ErrorHandling/ErrorHandler.java fails on linux ppc64le
+# Fixed by Gustavo in 13 and 11.0.4.
+runtime/ErrorHandling/ErrorHandler.java                                              linux-ppc64le
+
+# SapMachine 2016-06-07
+# This is a linux error: https://lists.ozlabs.org/pipermail/linuxppc-dev/2016-January/138296.html
+# Gustavo Romero is fixing this.
+runtime/StackGuardPages/testme.sh                                                    linux-ppc64le,linux-ppc64
+
+# SapMachine 2018-04-27
+# These fail on windows for quite a while.
+# RuntimeException: Unexpected exit code for positive case: []: expected 127 to equal 0
+# SapMachine 2019-02-07 Still failing in 12.
+# Fixed in 11.0.3 and 13 by:
+# 8219651: compiler/ciReplay/TestServerVM.java is failing on windows
+compiler/ciReplay/TestServerVM.java                                                  windows-all
+compiler/ciReplay/TestVMNoCompLevel.java                                             windows-all
+
+# SapMachine 2018-06-22
+# Needs to be fixed, backlog item exists.
+# Was downported for jdk11.0.3: "8211931: [ppc][testbug] runtime/jni/terminatedThread/TestTerminatedThread.java fails as ..."
+# Aix still failing.
+# Opened bug for this:
+# 8219652: [aix] Tests failing with attach problems.
+runtime/jni/terminatedThread/TestTerminatedThread.java                               aix-ppc64
+
+# SapMachine 2018-08-22, 2019-01-xx
+# Failing as of today, and ever before.
+# TEST FAILURE: AttachCurrentThread() returns: -1
+# Opened bug for this:
+# 8219652: [aix] Tests failing with attach problems.
+vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java   aix-ppc64
+vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java   aix-ppc64
+vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java          aix-ppc64
+
+# SapMachine 2018-08-28
+# This crashes on sparc with "The system is out of physical RAM or swap space".
+# Only jdk11, why that? Ev. add -Xmx200M.
+# SapMachine 2019-02-21, 2019-05-08 Still failing in 11.
+runtime/appcds/sharedStrings/InvalidFileFormat.java                                  solaris-sparcv9
+
+# SapMachine 2018-11-07
+# Remaining tests failing on ntintel in jdk11.
+# ClhsdbLongConstant.java:84: Reading markOopDesc::hash_mask_in_place. Expected 4294967168. Obtained -128 instead.
+# SapMachine 2019-05-08 Still fails in 11.
+serviceability/sa/ClhsdbLongConstant.java                                            windows-i586
+
+# SapMachine 2018-08-22, 2019-03-07
+# Failing as of today, and ever before.
+# SapMachine 2019-04-30 Still fails in 11.
+vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
+
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
+
+# SapMachine 2019-03-11
+# Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
+# For the timeout we should look into backporting 8205654 to 11
+# SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
+serviceability/dcmd/framework/HelpTest.java                                          windows-all
+
+# SapMachine 2019-04-29
+# Times out since 2019-02-08, which is probably the date we started to run these again.
+# SapMachine 2019-07-15 Exclusion removed everywhere now, just keep it for 12
+vmTestbase/nsk/jvmti/GarbageCollectionStart/gcstart001/TestDescription.java          windows-x64
+
+# SapMachine 2019-06-07
+# Timeouts. Also in 11.0.3.
+vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
+
+# SapMachine 2019-04-29
+# java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
+# SapMachine 2019-04-30 Still fails in 11.0.4
+gc/metaspace/TestCapacityUntilGCWrapAround.java                                      windows-i586
+
+# SapMachine 2019-04-29
+# Fails regularly since 7.3.2019.
+# java.io.EOFException: Trying to read at 25069488304625, but file is only 75896 bytes.
+runtime/appcds/CDSandJFR.java                                                        windows-i586
+
+# SapMachine 2019-02-13, 2019-04-29, 2019-07-16 Sporadic timeouts everywhere
+# Timeout: Seen sporadic on various platforms and Java versions.
+# Seems this one is fixed with 8206074 in OpenJDK 13 and 14. We shall take
+# care of a backport.
+vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java generic-all
+
+# SapMachine 2019-04-29
+# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
+vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
+
+# SapMachine 2019-04-29
+# Very sporadic on linux/ppc.
+# Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
+# Disable this in 11.0.4 only to assure the tests of the release are green
+# Enable it in 11.0.5 to find one of the sporadic occurances and paste the link here.
+serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-05-08
+# These fail because a path breaks a windows limit in jdk11u-dev.
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
+
+# SapMachine 2018-11-08
+# RuntimeException: The size computed by SA for java.lang.Object does not match.
+# SapMachine 2019-07-16 still failing on linuxxppc64, linux-ppc64le
+# keeping generic exclude to not destabilize final release tests
+serviceability/sa/TestInstanceKlassSize.java                                 8193639 generic-all
+
+# SapMachine 2018-11-08
+# Sporadic timeouts only on linuxppc64.
+serviceability/sa/TestJmapCoreMetaspace.java                                         linux-ppc64
+
+# SapMachine 2019-02-08
+runtime/CompressedOops/UseCompressedOops.java                                        windows-all
+
+# SapMachine 2018-12-11
+# java.lang.OutOfMemoryError: Java heap space
+# SapMachine 2019-07-16 Occured in 12 (but this time rather timeouted)
+# Maybe fixed/improved with JDK-8223447, but the patch should be part of the codebase that failed in 12 on 2019-07-16
+gc/shenandoah/TestStringDedupStress.java                                             linux-aarch64,macosx-all,linux-x64
+
+# SapMachine 2019-01-08
+# More Shenandoah failures.
+gc/arguments/TestUseCompressedOopsErgo.java                                          windows-all
+gc/arguments/TestUseCompressedOopsErgo.java#id2                                      windows-all
+gc/metaspace/TestMetaspacePerfCounters.java                                          windows-all
+gc/metaspace/TestMetaspacePerfCounters.java#id1                                      windows-all
+gc/shenandoah/compiler/TestReferenceCAS.java                                         windows-all
+gc/shenandoah/oom/TestClassLoaderLeak.java                                           windows-all
+# Fails sporadically:
+# RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
+compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
+# Could not reserve enough space for 131072KB object heap
+gc/shenandoah/jvmti/TestHeapDump.java                                                windows-all
+# fatal error: Safepoint sync time longer than 10000ms detected when executing Cleanup.
+gc/shenandoah/TestVerifyJCStress.java                                                windows-all
+# fatal error: Safepoint sync time longer than 10000ms detected when executing ShenandoahInitMark.
+gc/shenandoah/TestRegionSampling.java                                                windows-all
+
+# SapMachine 2019-06-28
+# Sporadic on some x64 systems: mo-28856f25a, eude01w
+# Needs backporting to 11 and 13
+runtime/memory/RunUnitTestsConcurrently.java                                 8227041 linux-x64,windows-x64
+
+# SapMachine 2019-02-08
+# assert(!bucket->have_redirect() && !bucket->is_locked()). Seems to be a C++
+# compiler issue, Martin tried to track this down, but we gave up on this.
+# The test does not fail with xlC 16, so we need not exclude it in jdk 13+ which
+# we build with the new compiler.
+gtest/GTestWrapper.java                                                              aix-all
+
+# SapMachine 2019-06-28
+# Error message: AttemptOOM allocation successful
+# Seen on quite some hosts
+containers/docker/TestMemoryAwareness.java                                           linux-ppc64le,linux-s390x
+
+###############################################################################
+# New failures detected after GA or caused by changes pushed after GA of 12.
+
+# SapMachine 2019-04-29
+# SapMachine 2019-07-16 390 issue still occurs, aix issue: see above
+gtest/GTestWrapper.java                                                              aix-all,linux-s390x
+
+# SapMachine 2019-04-29
+# Crash!!
+# java.util.Arrays.copyOf: SIGILL (0x4) at pc=0x000000010ff87445, pid=853, tid=25603
+gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
+
+# SapMachine 2019-04-29
+# sporadic timeouts in 12 and 13.
+runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java                 generic-ppc64
+
+# SapMachine 2019-06-28
+# RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr
+# or just timeout. Seen also in 13.
+serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
+
+# SapMachine 2019-07-16
+# We see this intermittently, mainly in SapMachine environment
+# Need to backport 8215901.
+runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 linux-all
+
+#############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+
+# SapMachine 2018-10-05
+# This test fails, because we do not have debug symbols available in all tests.
+runtime/NMT/CheckForProperDetailStackTrace.java                                      generic-all
+
+# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
+gc/g1/humongousObjects/TestHumongousClassLoader.java                                 linux-ppc64le,linux-ppc64
+gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                          linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-01-31 These fail on Windows in the SapMachine CI infrastructure.
+# Need to check how this can be fixed.
+compiler/aot/DeoptimizationTest.java                                                 windows-all
+compiler/aot/RecompilationTest.java                                                  windows-all
+compiler/aot/SharedUsageTest.java                                                    windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2AotTest.java                             windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2CompiledTest.java                        windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2InterpretedTest.java                     windows-all
+compiler/aot/calls/fromAot/AotInvokeDynamic2NativeTest.java                          windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2AotTest.java                           windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2CompiledTest.java                      windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2InterpretedTest.java                   windows-all
+compiler/aot/calls/fromAot/AotInvokeInterface2NativeTest.java                        windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2AotTest.java                             windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2CompiledTest.java                        windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2InterpretedTest.java                     windows-all
+compiler/aot/calls/fromAot/AotInvokeSpecial2NativeTest.java                          windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2AotTest.java                              windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2CompiledTest.java                         windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2InterpretedTest.java                      windows-all
+compiler/aot/calls/fromAot/AotInvokeStatic2NativeTest.java                           windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2AotTest.java                             windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2CompiledTest.java                        windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2InterpretedTest.java                     windows-all
+compiler/aot/calls/fromAot/AotInvokeVirtual2NativeTest.java                          windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeDynamic2AotTest.java                   windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeInterface2AotTest.java                 windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeSpecial2AotTest.java                   windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeStatic2AotTest.java                    windows-all
+compiler/aot/calls/fromCompiled/CompiledInvokeVirtual2AotTest.java                   windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeDynamic2AotTest.java             windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeInterface2AotTest.java           windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeSpecial2AotTest.java             windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeStatic2AotTest.java              windows-all
+compiler/aot/calls/fromInterpreted/InterpretedInvokeVirtual2AotTest.java             windows-all
+compiler/aot/calls/fromNative/NativeInvokeSpecial2AotTest.java                       windows-all
+compiler/aot/calls/fromNative/NativeInvokeStatic2AotTest.java                        windows-all
+compiler/aot/calls/fromNative/NativeInvokeVirtual2AotTest.java                       windows-all
+compiler/aot/cli/DisabledAOTWithLibraryTest.java                                     windows-all
+compiler/aot/cli/MultipleAOTLibraryTest.java                                         windows-all
+compiler/aot/cli/SingleAOTLibraryTest.java                                           windows-all
+compiler/aot/cli/SingleAOTOptionTest.java                                            windows-all
+compiler/aot/cli/jaotc/AtFileTest.java                                               windows-all
+compiler/aot/cli/jaotc/CompileClassTest.java                                         windows-all
+compiler/aot/cli/jaotc/CompileClassWithDebugTest.java                                windows-all
+compiler/aot/cli/jaotc/CompileDirectoryTest.java                                     windows-all
+compiler/aot/cli/jaotc/CompileJarTest.java                                           windows-all
+compiler/aot/cli/jaotc/CompileModuleTest.java                                        windows-all
+compiler/aot/cli/jaotc/IgnoreErrorsTest.java                                         windows-all
+compiler/aot/cli/jaotc/ListOptionTest.java                                           windows-all
+compiler/aot/cli/jaotc/ListOptionWrongFileTest.java                                  windows-all
+compiler/aot/fingerprint/SelfChanged.java                                            windows-all
+compiler/aot/fingerprint/SelfChangedCDS.java                                         windows-all
+compiler/aot/fingerprint/SuperChanged.java                                           windows-all
+compiler/aot/verification/ClassAndLibraryNotMatchTest.java                           windows-all
+compiler/aot/verification/vmflags/NotTrackedFlagTest.java                            windows-all
+compiler/aot/verification/vmflags/TrackedFlagTest.java                               windows-all
+
+# SapMachine 2019-01-31
+# This test failed on linux-ppc64. Check if this still happens. Maybe intermittent?
+runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                              linux-ppc64
