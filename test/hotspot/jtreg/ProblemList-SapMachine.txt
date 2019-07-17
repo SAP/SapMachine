@@ -141,6 +141,11 @@ compiler/codegen/aes/TestCipherBlockChainingEncrypt.java                     821
 # or just timeout. Seen also in 13.
 serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
 
+# SapMachine 2019-07-16
+# We see this intermittently, mainly in SapMachine environment
+# Need to backport 8215901.
+runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 linux-all
+
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
