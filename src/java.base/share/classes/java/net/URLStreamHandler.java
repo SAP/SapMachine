@@ -81,7 +81,7 @@ public abstract class URLStreamHandler {
      *
      * @implSpec
      * The default implementation of this method first checks that the given
-     * {code URL} and {code Proxy} are not null, then throws {@code
+     * {@code URL} and {@code Proxy} are not null, then throws {@code
      * UnsupportedOperationException}. Subclasses should override this method
      * with an appropriate implementation.
      *
