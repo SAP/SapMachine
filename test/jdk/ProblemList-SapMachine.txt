@@ -169,7 +169,7 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 
 # SapMachine 2019-02-07 Times out sporadically
 # SSLProtocolException: Input record too big: max = 16709 len = 26871
-# SapMachine 2019-05-08 Still fails in 11.
+# SapMachine 2019-07-16 Check if still failing
 #sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
 
 # SapMachine 2019-02-16
@@ -226,6 +226,20 @@ jdk/jfr/event/oldobject/TestLargeRootSet.java                                820
 # Exception in thread "main" java.lang.RuntimeException: Test failed for - cpu:getCpuSystemUsage, expected [2], got [2]
 jdk/internal/platform/docker/TestSystemMetrics.java                                  linux-ppc64le,linux-s390x
 
+# SapMachine 2019-07-17
+# Unexpected value in Event. Occurs since about 2019-05.
+jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWith32BitOops.sh          linux-ppc64,linux-ppc64le
+
+# SapMachine 2019-07-17
+# java.lang.NumberFormatException: For input string: "18446744073709551615"
+jdk/internal/platform/cgroup/TestCgroupMetrics.java                                  linux-x64
+
+# SapMachine 2019-07-17
+# Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
+# There's already an OpenJDK bug open for this: https://bugs.openjdk.java.net/browse/JDK-8223935
+# Exluding for now.
+java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
+
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
@@ -234,11 +248,6 @@ jdk/internal/platform/docker/TestSystemMetrics.java                             
 # When running in concurrency mode, all tests that need a socket and run in
 # parallel to this test will fail.
 java/nio/channels/AsyncCloseAndInterrupt.java                                        generic-all
-
-# SapMachine 2018-10-05
-# Flaky tests / other failing - should be checked whether issue still exists
-#sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
-#javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
 
 # SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
 # Need to check how this can be fixed.
