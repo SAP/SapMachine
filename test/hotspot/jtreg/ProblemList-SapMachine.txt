@@ -45,6 +45,11 @@
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
+# SapMachine 2018-08-22
+# Failing as of today, and ever before.
+# SapMachine 2019-03-07, 2019-04-30 Still fails in 11.
+#vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
+
 # SapMachine 2018-08-28
 # This crashes on sparc with "The system is out of physical RAM or swap space".
 # Only jdk11, why that? Ev. add -Xmx200M.
@@ -57,56 +62,8 @@
 # SapMachine 2019-05-08 Still fails in 11.
 #serviceability/sa/ClhsdbLongConstant.java                                            windows-i586
 
-# SapMachine 2018-08-22, 2019-03-07
-# Failing as of today, and ever before.
-# SapMachine 2019-04-30 Still fails in 11.
-#vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
-
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
-
-# SapMachine 2019-03-11
-# Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
-# For the timeout we should look into backporting 8205654 to 11
-# SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
-serviceability/dcmd/framework/HelpTest.java                                          windows-all
-
-# SapMachine 2019-06-07
-# Timeouts, observed only in 11.
-# SapMachine 2019-07-17 Still occuring in 11
-#vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
-
-# SapMachine 2019-04-29
-# java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
-# SapMachine 2019-04-30 Still fails in 11.0.4
-gc/metaspace/TestCapacityUntilGCWrapAround.java                                      windows-i586
-
-# SapMachine 2019-02-13, 2019-04-29, 2019-07-16 Sporadic timeouts everywhere
-# Timeout: Seen sporadic on various platforms and Java versions.
-# Seems this one is fixed with 8206074 in OpenJDK 13 and 14. We shall take
-# care of a backport.
-#vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java generic-all
-
-# SapMachine 2019-04-29
-# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
-vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
-
-# SapMachine 2019-04-29
-# Very sporadic on linux/ppc.
-# Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
-# Disable this in 11.0.4 only to assure the tests of the release are green
-# Enable it in 11.0.5 to find one of the sporadic occurances and paste the link here.
-#serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
-
-# SapMachine 2019-05-08
-# These fail because a path breaks a windows limit in jdk11u-dev.
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
 
 # SapMachine 2018-11-08
 # RuntimeException: The size computed by SA for java.lang.Object does not match.
@@ -118,10 +75,6 @@ serviceability/sa/TestInstanceKlassSize.java                                 819
 # Sporadic timeouts only on linuxppc64.
 # SapMachine 2019-06-28 Check whether fixed
 #serviceability/sa/TestJmapCoreMetaspace.java                                         linux-ppc64
-
-# SapMachine 2019-02-08
-# SapMachine 2019-06-28 Check whether fixed
-#runtime/CompressedOops/UseCompressedOops.java                                        windows-all
 
 # SapMachine 2018-12-11
 # java.lang.OutOfMemoryError: Java heap space
@@ -153,10 +106,9 @@ serviceability/sa/TestInstanceKlassSize.java                                 819
 # SapMachine 2019-06-28 Check whether fixed
 #gc/shenandoah/TestRegionSampling.java                                                windows-all
 
-# SapMachine 2019-06-28
-# Sporadic on some x64 systems
-# Needs backporting to 11 and 13
-#runtime/memory/RunUnitTestsConcurrently.java                                 8227041 linux-x64,windows-x64
+# SapMachine 2019-02-08
+# SapMachine 2019-06-28 Check whether fixed
+#runtime/CompressedOops/UseCompressedOops.java                                        windows-all
 
 # SapMachine 2019-02-08
 # assert(!bucket->have_redirect() && !bucket->is_locked()). Seems to be a C++
@@ -165,27 +117,70 @@ serviceability/sa/TestInstanceKlassSize.java                                 819
 # we build with the new compiler.
 #gtest/GTestWrapper.java                                                              aix-all
 
+# SapMachine 2019-02-13
+# Timeouts seen sporadic on various platforms and Java versions.
+# Still failing 2019-04-29, 2019-07-16
+# Seems this one is fixed with 8206074 in OpenJDK 13 and 14. We shall take care of a backport.
+#vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java generic-all
+
+# SapMachine 2019-03-11
+# Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
+# For the timeout we should look into backporting 8205654 to 11
+# SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
+serviceability/dcmd/framework/HelpTest.java                                          windows-all
+
+# SapMachine 2019-04-29
+# java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
+# SapMachine 2019-04-30 Still fails in 11.0.4
+gc/metaspace/TestCapacityUntilGCWrapAround.java                                      windows-i586
+
+# SapMachine 2019-04-29
+# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
+vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
+
+# SapMachine 2019-04-29
+# Very sporadic on linux/ppc.
+# Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
+# Disable this in 11.0.4 only to assure the tests of the release are green
+# Enable it in 11.0.5 to find one of the sporadic occurances and paste the link here.
+#serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-05-08
+# These fail because a path breaks a windows limit in jdk11u-dev.
+# To be fixed by 8191521: handle long relative path specified in -Xbootclasspath/a on windows.
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
+vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
+
+# SapMachine 2019-06-07
+# Timeouts, observed only in 11.
+# SapMachine 2019-07-17 Still occuring in 11
+#vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
+
 # SapMachine 2019-06-28
-# Error message: AttemptOOM allocation successful
-# Seen on quite some hosts
+# Sporadic on some x64 systems
+# Fixed by https://bugs.openjdk.java.net/browse/JDK-8227041
+# Needs backporting to 11 and 13
+#runtime/memory/RunUnitTestsConcurrently.java                                 8227041 linux-x64,windows-x64
+
+# SapMachine 2019-06-28
+# Error message: AttemptOOM allocation successful, seen on quite some hosts
+# Attention, the test has moved from the runtime subdirectory to the test root directory in 13
+# https://sapjira.wdf.sap.corp/browse/TGSAPJVM-3859
+# SapMachine 2019-07-19 Still failing.
 runtime/containers/docker/TestMemoryAwareness.java                                   linux-ppc64le,linux-s390x
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
 
-# Failing as of today.
-# SapMachine 2019-01-28 still failing on ntamd64, linuxx86_64, linuxxppc64 ... but not all.
-# SapMachine 2019-06-28 Check whether fixed
-#runtime/SharedArchiveFile/serviceability/ReplaceCriticalClasses.java                 generic-all
-
-# SapMachine 2018-12-11 Some brand new shenandoah tests are failing.
+# SapMachine 2018-12-11
+# Some brand new shenandoah tests are failing.
 # SapMachine 2019-06-28 Check whether fixed
 #gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
-
-# SapMachine 2019-04-29
-# sporadic timeouts in 12 and 13.
-# SapMachine 2019-07-15 Check whether still fails
-#runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java                 generic-ppc64
 
 # SapMachine 2018-12-31 Tests failing on aarch64. Won't fix.
 # The sa tests are also in the central problem list, append them as jtreg overwrites the other entries.
@@ -199,22 +194,32 @@ runtime/containers/docker/TestMemoryAwareness.java                              
 #compiler/c2/cr6340864/TestShortVect.java                                             linux-aarch64
 #compiler/codegen/TestCharVect2.java                                                  linux-aarch64
 #compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
-#compiler/jsr292/ContinuousCallSiteTargetChange.java                                  linux-aarch64
 #gc/shenandoah/mxbeans/TestChurnNotifications.java                                    linux-aarch64
 #gc/shenandoah/mxbeans/TestPauseNotifications.java                                    linux-aarch64
 
-# SapMachine 2019-07-15
-# This times out since about 19-05-18 in OpenJDK 13 and 14 tests on power platforms. Excluding.
-compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
+# SapMachine 2019-01-28
+# Failing on ntamd64, linuxx86_64, linuxxppc64 ... but not all.
+# SapMachine 2019-06-28 Check whether fixed
+#runtime/SharedArchiveFile/serviceability/ReplaceCriticalClasses.java                 generic-all
 
-# SapMachine 2019-07-15
-# Occurs since May 2019 - Need to check/fix.
-runtime/SharedArchiveFile/CheckDefaultArchiveFile.java                               aix-all
+# SapMachine 2019-04-29
+# sporadic timeouts in 12 and 13.
+# SapMachine 2019-07-15 Check whether still fails
+#runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryErrorInMetaspace.java                 generic-ppc64
 
 # SapMachine 2019-06-28
 # RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr
 # or just timeout. Seen also in 13.
 serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
+
+# SapMachine 2019-07-15
+# This times out since about 19-05-18 in OpenJDK 13 and 14 tests on power platforms. Excluding.
+# SapMachine 2019-09-19 CodeHeap::invalidate is too slow in dbg build
+compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
+
+# SapMachine 2019-07-15
+# Occurs since May 2019 - Need to check/fix.
+runtime/SharedArchiveFile/CheckDefaultArchiveFile.java                               aix-all
 
 # SapMachine 2019-07-17
 # Excluding for now and opening a bug.
@@ -236,6 +241,15 @@ runtime/NMT/VirtualAllocTestType.java                                           
 vmTestbase/nsk/jvmti/RedefineClasses/StressRedefine/TestDescription.java                          linux-s390x
 vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java linux-s390x
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      linux-s390x
+
+# SapMachine 2019-07-19
+# java.lang.RuntimeException: Total safepoint time illegal value: 0 ms (MIN = 1; MAX = 9223372036854775807)
+# Occurs in JDK13 since 2019-02.
+sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                        linux-s390x
+
+# SapMachine 2019-07-22
+# Timeout. We see this regularly.
+compiler/jsr292/ContinuousCallSiteTargetChange.java                                  linux-ppc64
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

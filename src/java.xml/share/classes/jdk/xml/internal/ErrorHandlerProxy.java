@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,29 @@
  * questions.
  */
 
-package jdk.internal.access;
+package jdk.xml.internal;
 
-import java.net.URLClassLoader;
-import java.security.AccessControlContext;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
-public interface JavaNetURLClassLoaderAccess {
-    AccessControlContext getAccessControlContext(URLClassLoader u);;
+/**
+ * Implements an ErrorHandler that simply passes on the Exception.
+ */
+public class ErrorHandlerProxy implements ErrorHandler {
+
+    @Override
+    public void warning(SAXParseException exception) throws SAXException {
+        throw exception;
+    }
+
+    @Override
+    public void error(SAXParseException exception) throws SAXException {
+        throw exception;
+    }
+
+    @Override
+    public void fatalError(SAXParseException exception) throws SAXException {
+        throw exception;
+    }
 }
