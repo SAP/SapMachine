@@ -95,12 +95,11 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
-# SapMachine 2019-07-01
-# Sporadic on ppc64le. For sparc see above.
-com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
-com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le,solaris-sparcv9
+# SapMachine 2019-02-07 Times out sporadically
+# SSLProtocolException: Input record too big: max = 16709 len = 26871
+# SapMachine 2019-05-08 Still fails in 11.
+# SapMachine 2019-07-16 Check if still failing
+#sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
 
 # SapMachine 2019-02-08
 # Sporadic failure: IllegalStateException: Test FAILED: Unexpected Maximum Pool Size Overflow!
@@ -164,18 +163,22 @@ java/nio/file/Files/SBC.java                                                    
 javax/net/ssl/Stapling/SSLEngineWithStapling.java                                    aix-ppc64
 
 # SapMachine 2019-02-16
-# timeout, on be a lot, on le once.
-java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
-
-# SapMachine 2019-02-07 Times out sporadically
-# SSLProtocolException: Input record too big: max = 16709 len = 26871
-# SapMachine 2019-07-16 Check if still failing
-#sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
-
-# SapMachine 2019-02-16
 # javax.crypto.AEADBadTagException: Tag mismatch!
 # SapMachine 2019-05-02 Still fails in 11 and 12
 #javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
+
+# SapMachine 2019-02-16
+# timeout, on be a lot, on le once.
+java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
+
+# SapMachine 2019-07-01
+# Sporadic on ppc64le. For sparc see above.
+# SapMachine 2019-07-19 Added com/sun/nio/sctp/SctpMultiChannel/Send.java, probably related to certain test host, link added.
+com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le,solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le,solaris-sparcv9
 
 # SapMachine 2019-07-12
 # Issue with certain font configurations. Excluding this test for now.
@@ -212,7 +215,8 @@ javax/swing/JFileChooser/4847375/bug4847375.java                                
 
 # SapMachine 2019-06-28
 # Seen in 11, 13, 14. timeouts.
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                         windows-x64
+# Probably fixed in 14 by https://bugs.openjdk.java.net/browse/JDK-8227435. Downport to 11, 13!
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                 8227435 windows-x64
 
 # SapMachine 2019-06-28
 # timeout on ppc in 11 only.
@@ -239,6 +243,15 @@ jdk/internal/platform/cgroup/TestCgroupMetrics.java                             
 # There's already an OpenJDK bug open for this: https://bugs.openjdk.java.net/browse/JDK-8223935
 # Exluding for now.
 java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
+
+# SapMachine 2019-07-18
+# javax.net.ssl.SSLException: The status_request_v2 extension is inconsistent with the expected result: expected = true, actual = false
+# we see this sporadically on rs6000_64 - why? Adding this entry but commented out, for reference.
+#javax/net/ssl/Stapling/StapleEnableProps.java                                        aix-all
+
+# SapMachine 2019-07-19
+# java.io.IOException: No route to host
+java/net/MulticastSocket/NoLoopbackPackets.java                                      aix-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
