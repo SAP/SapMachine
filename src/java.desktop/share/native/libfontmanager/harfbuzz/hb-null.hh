@@ -83,7 +83,9 @@ struct hb_static_size
 
 template <typename T, typename V, typename B>
 struct _hb_assign
-{ static inline void value (T &o, const V v) { o = v; } };
+// add cast to please AIX xlc12.1
+//{ static inline void value (T &o, const V v) { o = v; } };
+{ static inline void value (T &o, const V v) { o = (T&) v; } };
 template <typename T, typename V>
 struct _hb_assign<T, V, _hb_bool_type<(bool) (1 + (unsigned int) T::min_size)> >
 { static inline void value (T &o, const V v) { o.set (v); } };
