@@ -548,7 +548,7 @@ public:
       if (biased_locker != NULL) {
         _biased_locker_id = JFR_THREAD_ID(biased_locker);
       }
-      _safepoint_id = SafepointSynchronize::safepoint_counter();
+      _safepoint_id = SafepointSynchronize::safepoint_id();
       clean_up_cached_monitor_info();
       return;
     } else {
@@ -589,7 +589,7 @@ public:
 
   virtual void doit() {
     _status_code = bulk_revoke_or_rebias_at_safepoint((*_obj)(), _bulk_rebias, _attempt_rebias_of_object, _requesting_thread);
-    _safepoint_id = SafepointSynchronize::safepoint_counter();
+    _safepoint_id = SafepointSynchronize::safepoint_id();
     clean_up_cached_monitor_info();
   }
 
@@ -626,29 +626,6 @@ static void post_class_revocation_event(EventBiasedLockClassRevocation* event, K
   event->set_disableBiasing(!op->is_bulk_rebias());
   event->set_safepointId(op->safepoint_id());
   event->commit();
-}
-
-BiasedLocking::Condition BiasedLocking::revoke_own_locks_in_handshake(Handle obj, TRAPS) {
-  markOop mark = obj->mark();
-
-  if (!mark->has_bias_pattern()) {
-    return NOT_BIASED;
-  }
-
-  Klass *k = obj->klass();
-  markOop prototype_header = k->prototype_header();
-  assert(mark->biased_locker() == THREAD &&
-         prototype_header->bias_epoch() == mark->bias_epoch(), "Revoke failed, unhandled biased lock state");
-  ResourceMark rm;
-  log_info(biasedlocking)("Revoking bias by walking my own stack:");
-  EventBiasedLockSelfRevocation event;
-  BiasedLocking::Condition cond = revoke_bias(obj(), false, false, (JavaThread*) THREAD, NULL);
-  ((JavaThread*) THREAD)->set_cached_monitor_info(NULL);
-  assert(cond == BIAS_REVOKED, "why not?");
-  if (event.should_commit()) {
-    post_self_revocation_event(&event, k);
-  }
-  return cond;
 }
 
 BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attempt_rebias, TRAPS) {
