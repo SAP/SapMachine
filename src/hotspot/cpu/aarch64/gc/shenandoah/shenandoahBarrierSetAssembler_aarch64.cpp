@@ -306,7 +306,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ push_call_clobbered_registers();
   __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
   __ mov(r0, rscratch2);
-  __ blrt(lr, 1, 0, MacroAssembler::ret_type_integral);
+  __ blr(lr);
   __ mov(rscratch2, r0);
   __ pop_call_clobbered_registers();
   __ mov(dst, rscratch2);
@@ -414,6 +414,26 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   }
 
 }
+
+void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
+                                                                  Register obj, Register tmp, Label& slowpath) {
+  Label done;
+  // Resolve jobject
+  BarrierSetAssembler::try_resolve_jobject_in_native(masm, jni_env, obj, tmp, slowpath);
+
+  // Check for null.
+  __ cbz(obj, done);
+
+  assert(obj != rscratch2, "need rscratch2");
+  Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ ldrb(rscratch2, gc_state);
+
+  // Check for heap in evacuation phase
+  __ tbnz(rscratch2, ShenandoahHeap::EVACUATION_BITPOS, slowpath);
+
+  __ bind(done);
+}
+
 
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
                                                 bool acquire, bool release, bool weak, bool is_cae,
@@ -615,7 +635,7 @@ address ShenandoahBarrierSetAssembler::generate_shenandoah_lrb(StubCodeGenerator
   __ push_call_clobbered_registers();
 
   __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
-  __ blrt(lr, 1, 0, MacroAssembler::ret_type_integral);
+  __ blr(lr);
   __ mov(rscratch1, r0);
   __ pop_call_clobbered_registers();
   __ mov(r0, rscratch1);

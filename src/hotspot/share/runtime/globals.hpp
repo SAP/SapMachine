@@ -398,10 +398,6 @@ const size_t minimumSymbolTableSize = 1024;
           "Set when executing debug methods in debug.cpp "                  \
           "(to prevent triggering assertions)")                             \
                                                                             \
-  notproduct(bool, StrictSafepointChecks, trueInDebug,                      \
-          "Enable strict checks that safepoints cannot happen for threads " \
-          "that use NoSafepointVerifier")                                   \
-                                                                            \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
                                                                             \
@@ -773,9 +769,6 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, UseSignalChaining, true,                                    \
           "Use signal-chaining to invoke signal handlers installed "        \
           "by the application (Solaris & Linux only)")                      \
-                                                                            \
-  product(bool, AllowJNIEnvProxy, false,                                    \
-          "(Deprecated) Allow JNIEnv proxies for jdbx")                     \
                                                                             \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
@@ -2356,11 +2349,11 @@ const size_t minimumSymbolTableSize = 1024;
   product(uintx, StringTableSize, defaultStringTableSize,                   \
           "Number of buckets in the interned String table "                 \
           "(will be rounded to nearest higher power of 2)")                 \
-          range(minimumStringTableSize, 16777216ul)                         \
+          range(minimumStringTableSize, 16777216ul /* 2^24 */)              \
                                                                             \
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \
-          range(minimumSymbolTableSize, 111*defaultSymbolTableSize)         \
+          range(minimumSymbolTableSize, 16777216ul /* 2^24 */)              \
                                                                             \
   product(bool, UseStringDeduplication, false,                              \
           "Use string deduplication")                                       \
@@ -2381,6 +2374,7 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   experimental(intx, SurvivorAlignmentInBytes, 0,                           \
            "Default survivor space alignment in bytes")                     \
+           range(8, 256)                                                    \
            constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \

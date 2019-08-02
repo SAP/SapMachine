@@ -103,9 +103,3 @@ tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java      macosx-all
 tools/javac/lambdaShapes/org/openjdk/tests/javac/FDTest.java        macosx-all
 tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                macosx-all
 tools/jdeps/modules/GenOpenModule.java                              windows-all
-
-# SapMachine 2019-07-25
-# This currently occurs after the change of JDK-8227512 - discussion about resolution is in progress
-# https://bugs.openjdk.java.net/browse/JDK-8228571
-tools/javac/file/LimitedImage.java                          8228571 linux-ppc64,linux-ppc64le
-tools/javac/modules/InheritRuntimeEnvironmentTest.java      8228571 linux-ppc64,linux-ppc64le
