@@ -3103,6 +3103,7 @@ bool ShenandoahLoadReferenceBarrierNode::needs_barrier_impl(PhaseGVN* phase, Nod
       return needs_barrier_impl(phase, n->in(1), visited);
     case Op_LoadN:
       return true;
+    case Op_CMoveN:
     case Op_CMoveP:
       return needs_barrier_impl(phase, n->in(2), visited) ||
              needs_barrier_impl(phase, n->in(3), visited);
@@ -3254,6 +3255,7 @@ ShenandoahLoadReferenceBarrierNode::Strength ShenandoahLoadReferenceBarrierNode:
       case Op_StrComp:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
+      case Op_HasNegatives:
         if (!ShenandoahOptimizeStableFinals) {
            strength = WEAK;
         }
