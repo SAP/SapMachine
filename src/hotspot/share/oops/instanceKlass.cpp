@@ -689,15 +689,6 @@ bool InstanceKlass::verify_code(bool throw_verifyerror, TRAPS) {
   return Verifier::verify(this, mode, should_verify_class(), THREAD);
 }
 
-
-// Used exclusively by the shared spaces dump mechanism to prevent
-// classes mapped into the shared regions in new VMs from appearing linked.
-
-void InstanceKlass::unlink_class() {
-  assert(is_linked(), "must be linked");
-  _init_state = loaded;
-}
-
 void InstanceKlass::link_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
@@ -2302,10 +2293,12 @@ void InstanceKlass::remove_unshareable_info() {
     return;
   }
 
-  // Unlink the class
-  if (is_linked()) {
-    unlink_class();
-  }
+  // Reset to the 'allocated' state to prevent any premature accessing to
+  // a shared class at runtime while the class is still being loaded and
+  // restored. A class' init_state is set to 'loaded' at runtime when it's
+  // being added to class hierarchy (see SystemDictionary:::add_to_hierarchy()).
+  _init_state = allocated;
+
   {
     MutexLocker ml(Compile_lock);
     init_implementor();
@@ -2352,6 +2345,10 @@ void InstanceKlass::remove_java_mirror() {
 }
 
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  // SystemDictionary::add_to_hierarchy() sets the init_state to loaded
+  // before the InstanceKlass is added to the SystemDictionary. Make
+  // sure the current state is <loaded.
+  assert(!is_loaded(), "invalid init state");
   set_package(loader_data, CHECK);
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
 
@@ -2955,6 +2952,13 @@ void InstanceKlass::adjust_default_methods(InstanceKlass* holder, bool* trace_na
 
 // On-stack replacement stuff
 void InstanceKlass::add_osr_nmethod(nmethod* n) {
+#ifndef PRODUCT
+  if (TieredCompilation) {
+      nmethod * prev = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), n->comp_level(), true);
+      assert(prev == NULL || !prev->is_in_use(),
+      "redundunt OSR recompilation detected. memory leak in CodeCache!");
+  }
+#endif
   // only one compilation can be active
   {
     // This is a short non-blocking critical region, so the no safepoint check is ok.
@@ -3073,7 +3077,9 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
     }
     osr = osr->osr_link();
   }
-  if (best != NULL && best->comp_level() >= comp_level && match_level == false) {
+
+  assert(match_level == false || best == NULL, "shouldn't pick up anything if match_level is set");
+  if (best != NULL && best->comp_level() >= comp_level) {
     return best;
   }
   return NULL;

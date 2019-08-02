@@ -197,7 +197,7 @@ class CompilationLog : public StringEventLog {
 
   void log_compile(JavaThread* thread, CompileTask* task) {
     StringLogMessage lm;
-    stringStream sstr = lm.stream();
+    stringStream sstr(lm.buffer(), lm.size());
     // msg.time_stamp().update_to(tty->time_stamp().ticks());
     task->print(&sstr, NULL, true, false);
     log(thread, "%s", (const char*)lm);
@@ -452,8 +452,8 @@ CompileTask* CompileQueue::get() {
     save_hot_method = methodHandle(task->hot_method());
 
     remove(task);
-    purge_stale_tasks(); // may temporarily release MCQ lock
   }
+  purge_stale_tasks(); // may temporarily release MCQ lock
 
   return task;
 }

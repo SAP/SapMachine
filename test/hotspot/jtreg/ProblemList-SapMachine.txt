@@ -45,6 +45,11 @@
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
+# SapMachine 2018-08-22, 2019-03-07
+# Failing as of today, and ever before.
+# SapMachine 2019-04-30 Still fails in 11.
+vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
+
 # SapMachine 2018-08-28
 # This crashes on sparc with "The system is out of physical RAM or swap space".
 # Only jdk11, why that? Ev. add -Xmx200M.
@@ -57,13 +62,14 @@ runtime/appcds/sharedStrings/InvalidFileFormat.java                             
 # SapMachine 2019-05-08 Still fails in 11.
 serviceability/sa/ClhsdbLongConstant.java                                            windows-i586
 
-# SapMachine 2018-08-22, 2019-03-07
-# Failing as of today, and ever before.
-# SapMachine 2019-04-30 Still fails in 11.
-vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
-
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of jdk11.
+
+# SapMachine 2019-02-13
+# Timeouts seen sporadic on various platforms and Java versions.
+# Still failing 2019-04-29, 2019-07-16
+# Seems this one is fixed with 8206074 in OpenJDK 13 and 14. We shall take care of a backport.
+vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java 8206074 generic-all
 
 # SapMachine 2019-03-11
 # Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
@@ -71,20 +77,10 @@ vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/Te
 # SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
 serviceability/dcmd/framework/HelpTest.java                                          windows-all
 
-# SapMachine 2019-06-07
-# Timeouts. Also in 11.0.3.
-vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
-
 # SapMachine 2019-04-29
 # java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
 # SapMachine 2019-04-30 Still fails in 11.0.4.
 gc/metaspace/TestCapacityUntilGCWrapAround.java                                      windows-i586
-
-# SapMachine 2019-02-13, 2019-04-29, 2019-07-16 Sporadic timeouts everywhere
-# Timeout: Seen sporadic on various platforms and Java versions.
-# Seems this one is fixed with 8206074 in OpenJDK 13 and 14. We shall take
-# care of a backport.
-vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java generic-all
 
 # SapMachine 2019-04-29
 # Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
@@ -97,9 +93,6 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # Enable it in 11.0.5 to find one of the sporadic occurances and paste the link here.
 serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
 
-###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of 11.0.3.
-
 # SapMachine 2019-05-08
 # These fail because a path breaks a windows limit in jdk11u-dev.
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
@@ -110,41 +103,63 @@ vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescri
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
 vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
 
+# SapMachine 2019-06-07
+# Timeouts, observed only in 11.
+# SapMachine 2019-07-17 Still occuring in 11
+vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
+
 # SapMachine 2019-06-28
 # Sporadic on some x64 systems
 # Needs backporting to 11 and 13
 runtime/memory/RunUnitTestsConcurrently.java                                 8227041 linux-x64,windows-x64
 
 # SapMachine 2019-06-28
-# Error message: AttemptOOM allocation successful
-# Seen on quite some hosts
+# Error message: AttemptOOM allocation successful, seen on quite some hosts
+# Attention, the test has moved from the runtime subdirectory to the test root directory in 13
+# SapMachine 2019-07-19 Still failing.
 runtime/containers/docker/TestMemoryAwareness.java                                   linux-ppc64le,linux-s390x
+
+###############################################################################
+# New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
 
 # SapMachine 2019-06-17
 # Fixed in 11.0.5
-compiler/codecache/cli/codeheapsize/TestCodeHeapSizeOptions.java             8177899 solaris-sparc
-compiler/codecache/cli/printcodecache/TestPrintCodeCacheOption.java          8177899 solaris-sparc
+#compiler/codecache/cli/codeheapsize/TestCodeHeapSizeOptions.java             8177899 solaris-sparc
+#compiler/codecache/cli/printcodecache/TestPrintCodeCacheOption.java          8177899 solaris-sparc
 
 # SapMachine 2019-06-28
 # Frequent timeouts on all ppc platforms, 11 only. Above other similar excludes.
+# Still seen on 2019-07-16
 vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          generic-ppc64,linux-ppc64le
 vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        generic-ppc64,linux-ppc64le
 vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     generic-ppc64,linux-ppc64le
-
-# SapMachine 2019-07-15
-# Occurred lately on our Solaris box. We should look into downporting 8219513
-# and see if that will fix it.
-compiler/codegen/aes/TestCipherBlockChainingEncrypt.java                     8219513 solaris-sparcv9
 
 # SapMachine 2019-06-28
 # RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr
 # or just timeout. Seen also in 13.
 serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
 
+# SapMachine 2019-07-15
+# Occurred lately on our Solaris box.
+compiler/codegen/aes/TestCipherBlockChainingEncrypt.java                     8219513 solaris-sparcv9
+
 # SapMachine 2019-07-16
 # We see this intermittently, mainly in SapMachine environment
 # Need to backport 8215901.
 runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 linux-all
+
+# SapMachine 2019-07-16
+# 11-only crash at:
+# Klass::method_at_vtable
+# linkResolver::runtime_resolve_virtual_method
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390,windows-all
+
+###############################################################################
+# New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
+
+# SapMachine 2019-07-22
+# Timeout. We see this regularly.
+compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-ppc64
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
@@ -158,7 +173,8 @@ gc/g1/humongousObjects/TestHumongousClassLoader.java                            
 gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                          linux-ppc64le,linux-ppc64
 
 # SapMachine 2019-01-31 These fail on Windows in the SapMachine CI infrastructure.
-# Need to check how this can be fixed.
+# SapMachine 2019-08-01 For some reason the tests work in jdk/jdk13 after the infrastructure was updated.
+# But they still don't work in 11.
 compiler/aot/DeoptimizationTest.java                                                 windows-all
 compiler/aot/RecompilationTest.java                                                  windows-all
 compiler/aot/SharedUsageTest.java                                                    windows-all

@@ -2816,7 +2816,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   Deoptimization::DeoptReason reason = Deoptimization::reason_class_check(spec_klass != NULL);
 
   // Make sure we haven't already deoptimized from this tactic.
-  if (too_many_traps(reason) || too_many_recompiles(reason))
+  if (too_many_traps_or_recompiles(reason))
     return NULL;
 
   // (No, this isn't a call, but it's enough like a virtual call
@@ -2871,9 +2871,8 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
     Deoptimization::DeoptReason null_reason = Deoptimization::Reason_speculate_null_check;
 
-    if (!too_many_traps(null_reason) && !too_many_recompiles(null_reason) &&
-        !too_many_traps(class_reason) &&
-        !too_many_recompiles(class_reason)) {
+    if (!too_many_traps_or_recompiles(null_reason) &&
+        !too_many_traps_or_recompiles(class_reason)) {
       Node* not_null_obj = NULL;
       // not_null is true if we know the object is not null and
       // there's no need for a null check
@@ -2898,8 +2897,7 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
       obj = exact_obj;
     }
   } else {
-    if (!too_many_traps(Deoptimization::Reason_null_assert) &&
-        !too_many_recompiles(Deoptimization::Reason_null_assert)) {
+    if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
       Node* exact_obj = null_assert(obj);
       replace_in_map(obj, exact_obj);
       obj = exact_obj;
@@ -3390,6 +3388,10 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     record_for_igvn(minit_in); // fold it up later, if possible
     Node* minit_out = memory(rawidx);
     assert(minit_out->is_Proj() && minit_out->in(0) == init, "");
+    // Add an edge in the MergeMem for the header fields so an access
+    // to one of those has correct memory state
+    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes())));
+    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes())));
     if (oop_type->isa_aryptr()) {
       const TypePtr* telemref = oop_type->add_offset(Type::OffsetBot);
       int            elemidx  = C->get_alias_index(telemref);
