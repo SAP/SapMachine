@@ -25,6 +25,7 @@
 
 package sun.security.krb5;
 
+import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KeyTab;
 
@@ -48,4 +49,12 @@ public interface JavaxSecurityAuthKerberosAccess {
      * Sets the proxy for a KerberosTicket.
      */
     public void kerberosTicketSetProxy(KerberosTicket t, KerberosTicket p);
+
+    public KerberosPrincipal kerberosTicketGetClientAlias(KerberosTicket t);
+
+    public void kerberosTicketSetClientAlias(KerberosTicket t, KerberosPrincipal a);
+
+    public KerberosPrincipal kerberosTicketGetServerAlias(KerberosTicket t);
+
+    public void kerberosTicketSetServerAlias(KerberosTicket t, KerberosPrincipal a);
 }
