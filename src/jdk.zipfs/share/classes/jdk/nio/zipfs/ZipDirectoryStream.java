@@ -97,5 +97,4 @@ class ZipDirectoryStream implements DirectoryStream<Path> {
     public synchronized void close() throws IOException {
         isClosed = true;
     }
-
 }
