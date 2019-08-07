@@ -50,6 +50,7 @@ tier1_part3 = \
 # SapMachine 2019-01-24: Add tests where SAPMachine has different behavior to tier1
 tier1_sapmachine = \
     java/net/Socket/ExceptionText.java \
+    jdk/nio/zipfs/TestPosix.java \
     java/util/jar/Manifest/IncludeInExceptionsTest.java \
     jdk/security/JavaDotSecurity/TestJDKIncludeInExceptions.java \
     sun/security/lib/cacerts/VerifyCACerts.java
