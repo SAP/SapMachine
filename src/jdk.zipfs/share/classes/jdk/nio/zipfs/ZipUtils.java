@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,36 +27,21 @@ package jdk.nio.zipfs;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
-
-// SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Xueming Shen
  */
 class ZipUtils {
-
-    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-
-    /**
-     * The value indicating unix file attributes in CEN field "version made by".
-     */
-    static final int FILE_ATTRIBUTES_UNIX = 3;
-
-    /**
-     * Constant used to calculate "version made by".
-     */
-    static final int VERSION_BASE_UNIX = FILE_ATTRIBUTES_UNIX << 8;
 
     /**
      * The bit flag used to specify read permission by the owner.
@@ -87,6 +72,7 @@ class ZipUtils {
      * The bit flag used to specify execute permission by the group.
      */
     static final int POSIX_GROUP_EXECUTE = 010;
+
     /**
      * The bit flag used to specify read permission by others.
      */
@@ -109,7 +95,7 @@ class ZipUtils {
      * @param perm The {@link PosixFilePermission} object.
      * @return The bit flag as int.
      */
-    private static int permToFlag(PosixFilePermission perm) {
+    static int permToFlag(PosixFilePermission perm) {
         switch(perm) {
         case OWNER_READ:
             return POSIX_USER_READ;
@@ -151,25 +137,6 @@ class ZipUtils {
             flags |= permToFlag(perm);
         }
         return flags;
-    }
-
-    /**
-     * Converts a bit mask of Posix file permissions into a mutable
-     * set of {@link PosixFilePermission} objects.
-     *
-     * @param flags The bit mask containing the flags.
-     *
-     * @return A set of {@link PosixFilePermission} objects matching the input
-     *         flags.
-     */
-    static Set<PosixFilePermission> permsFromFlags(int flags) {
-        Set<PosixFilePermission> perms = new HashSet<>(PosixFilePermission.values().length);
-        for (PosixFilePermission perm : PosixFilePermission.values()) {
-            if ((flags & permToFlag(perm)) != 0) {
-                perms.add(perm);
-            }
-        }
-        return perms;
     }
 
     /*

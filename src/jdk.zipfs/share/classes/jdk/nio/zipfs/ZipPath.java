@@ -34,14 +34,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -56,8 +49,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
-
-import jdk.nio.zipfs.ZipFileAttributeView.ViewType;
 
 /**
  * @author Xueming Shen, Rajendra Gutupalli,Jaya Hangal
@@ -709,29 +700,35 @@ final class ZipPath implements Path {
     /////////////////////////////////////////////////////////////////////
 
     @SuppressWarnings("unchecked") // Cast to V
-    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
     <V extends FileAttributeView> V getFileAttributeView(Class<V> type) {
         if (type == null)
             throw new NullPointerException();
         if (type == BasicFileAttributeView.class)
-            return (V)new ZipFileAttributeView(this, ViewType.basic);
-        if (type == PosixFileAttributeView.class)
-            return (V)new ZipFileAttributeView(this, ViewType.posix);
+            return (V)new ZipFileAttributeView(this, false);
         if (type == ZipFileAttributeView.class)
-            return (V)new ZipFileAttributeView(this, ViewType.zip);
+            return (V)new ZipFileAttributeView(this, true);
+        if (zfs.supportPosix) {
+            if (type == PosixFileAttributeView.class)
+                return (V)new ZipPosixFileAttributeView(this, false);
+            if (type == FileOwnerAttributeView.class)
+                return (V)new ZipPosixFileAttributeView(this,true);
+        }
         throw new UnsupportedOperationException("view <" + type + "> is not supported");
     }
 
-    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
     private ZipFileAttributeView getFileAttributeView(String type) {
         if (type == null)
             throw new NullPointerException();
         if ("basic".equals(type))
-            return new ZipFileAttributeView(this, ViewType.basic);
-        if ("posix".equals(type))
-            return new ZipFileAttributeView(this, ViewType.posix);
+            return new ZipFileAttributeView(this, false);
         if ("zip".equals(type))
-            return new ZipFileAttributeView(this, ViewType.zip);
+            return new ZipFileAttributeView(this, true);
+        if (zfs.supportPosix) {
+            if ("posix".equals(type))
+                return new ZipPosixFileAttributeView(this, false);
+            if ("owner".equals(type))
+                return new ZipPosixFileAttributeView(this, true);
+        }
         throw new UnsupportedOperationException("view <" + type + "> is not supported");
     }
 
@@ -775,8 +772,13 @@ final class ZipPath implements Path {
 
     @SuppressWarnings("unchecked") // Cast to A
     <A extends BasicFileAttributes> A readAttributes(Class<A> type) throws IOException {
-        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-        if (type == BasicFileAttributes.class || type == PosixFileAttributes.class || type == ZipFileAttributes.class) {
+        // unconditionally support BasicFileAttributes and ZipFileAttributes
+        if (type == BasicFileAttributes.class || type == ZipFileAttributes.class) {
+            return (A)readAttributes();
+        }
+
+        // support PosixFileAttributes when activated
+        if (type == PosixFileAttributes.class && zfs.supportPosix) {
             return (A)readAttributes();
         }
 
@@ -806,16 +808,22 @@ final class ZipPath implements Path {
         zfs.setTimes(getResolvedPath(), mtime, atime, ctime);
     }
 
-    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+    void setOwner(UserPrincipal owner) throws IOException {
+        zfs.setOwner(getResolvedPath(), owner);
+    }
+
     void setPermissions(Set<PosixFilePermission> perms)
         throws IOException
     {
         zfs.setPermissions(getResolvedPath(), perms);
     }
 
+    void setGroup(GroupPrincipal group) throws IOException {
+        zfs.setGroup(getResolvedPath(), group);
+    }
+
     Map<String, Object> readAttributes(String attributes, LinkOption... options)
         throws IOException
-
     {
         String view;
         String attrs;
@@ -967,20 +975,14 @@ final class ZipPath implements Path {
             }
         }
         if (copyAttrs) {
-            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
             ZipFileAttributeView view =
                 target.getFileAttributeView(ZipFileAttributeView.class);
             try {
                 view.setTimes(zfas.lastModifiedTime(),
                               zfas.lastAccessTime(),
                               zfas.creationTime());
-                // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-                // copy permissions if available
-                try {
-                    view.setPermissions(zfas.permissions());
-                } catch (UnsupportedOperationException uoe) {
-                    // the current entry may have no permissions.
-                }
+                // copy permissions
+                view.setPermissions(zfas.storedPermissions().orElse(null));
             } catch (IOException x) {
                 // rollback?
                 try {

@@ -25,19 +25,21 @@
 
 package jdk.nio.zipfs;
 
-// SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * The attributes of a file stored in a zip file.
  *
  * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
-// SapMachine 2018-12-20 Support of PosixPermissions in zipfs
-interface ZipFileAttributes extends PosixFileAttributes {
+interface ZipFileAttributes extends BasicFileAttributes {
     long compressedSize();
     long crc();
     int method();
     byte[] extra();
     byte[] comment();
+    Optional<Set<PosixFilePermission>> storedPermissions();
 }
