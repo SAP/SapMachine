@@ -43,6 +43,9 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
 import java.security.AccessController;
@@ -384,6 +387,28 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
+    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+    void setPermissions(byte[] path, Set<PosixFilePermission> perms)
+        throws IOException
+    {
+        checkWritable();
+        beginWrite();
+        try {
+            ensureOpen();
+            Entry e = getEntry(path);    // ensureOpen checked
+            if (e == null) {
+                throw new NoSuchFileException(getString(path));
+            }
+            if (e.type == Entry.CEN) {
+                e.type = Entry.COPY;     // copy e
+            }
+            e.posixPerms = perms == null ? -1 : ZipUtils.permsToFlags(perms);
+            update(e);
+        } finally {
+            endWrite();
+        }
+    }
+
     boolean exists(byte[] path)
         throws IOException
     {
@@ -445,7 +470,8 @@ class ZipFileSystem extends FileSystem {
             if (dir.length == 0 || exists(dir))  // root dir, or exiting dir
                 throw new FileAlreadyExistsException(getString(dir));
             checkParents(dir);
-            Entry e = new Entry(dir, Entry.NEW, true, METHOD_STORED);
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            Entry e = new Entry(dir, Entry.NEW, true, METHOD_STORED, attrs);
             update(e);
         } finally {
             endWrite();
@@ -665,8 +691,9 @@ class ZipFileSystem extends FileSystem {
                 if (!options.contains(CREATE) && !options.contains(CREATE_NEW))
                     throw new NoSuchFileException(getString(path));
                 checkParents(path);
+                // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
                 return new EntryOutputChannel(
-                    new Entry(path, Entry.NEW, false, getCompressMethod()));
+                    new Entry(path, Entry.NEW, false, getCompressMethod(), attrs));
             } finally {
                 endRead();
             }
@@ -730,7 +757,8 @@ class ZipFileSystem extends FileSystem {
             final FileChannel fch = tmpfile.getFileSystem()
                                            .provider()
                                            .newFileChannel(tmpfile, options, attrs);
-            final Entry u = isFCH ? e : new Entry(path, tmpfile, Entry.FILECH);
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            final Entry u = isFCH ? e : new Entry(path, tmpfile, Entry.FILECH, attrs);
             if (forWrite) {
                 u.flag = FLAG_DATADESCR;
                 u.method = getCompressMethod();
@@ -1940,6 +1968,8 @@ class ZipFileSystem extends FileSystem {
         // entry attributes
         int    version;
         int    flag;
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        int    posixPerms = -1; // posix permissions
         int    method = -1;    // compression method
         long   mtime  = -1;    // last modification time (in DOS time)
         long   atime  = -1;    // last access time
@@ -1971,9 +2001,18 @@ class ZipFileSystem extends FileSystem {
             this.method = method;
         }
 
-        Entry(byte[] name, int type, boolean isdir, int method) {
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        @SuppressWarnings("unchecked")
+        Entry(byte[] name, int type, boolean isdir, int method, FileAttribute<?>... attrs) {
             this(name, isdir, method);
             this.type = type;
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            for (FileAttribute<?> attr : attrs) {
+                String attrName = attr.name();
+                if (attrName.equals("posix:permissions") || attrName.equals("unix:permissions")) {
+                    posixPerms = ZipUtils.permsToFlags((Set<PosixFilePermission>)attr.value());
+                }
+            }
         }
 
         Entry(Entry e, int type) {
@@ -1996,20 +2035,45 @@ class ZipFileSystem extends FileSystem {
             */
             this.locoff    = e.locoff;
             this.comment   = e.comment;
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            this.posixPerms = e.posixPerms;
             this.type      = type;
         }
 
-        Entry(byte[] name, Path file, int type) {
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        @SuppressWarnings("unchecked")
+        Entry(byte[] name, Path file, int type, FileAttribute<?>... attrs) {
             this(name, type, false, METHOD_STORED);
             this.file = file;
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            for (FileAttribute<?> attr : attrs) {
+                String attrName = attr.name();
+                if (attrName.equals("posix:permissions") || attrName.equals("unix:permissions")) {
+                    posixPerms = ZipUtils.permsToFlags((Set<PosixFilePermission>)attr.value());
+                }
+            }
         }
 
-        int version() throws ZipException {
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        int version(boolean zip64) throws ZipException {
+            if (zip64) {
+                return 45;
+            }
             if (method == METHOD_DEFLATED)
                 return 20;
             else if (method == METHOD_STORED)
                 return 10;
             throw new ZipException("unsupported compression method");
+        }
+
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        /**
+         * Adds information about compatibility of file attribute information
+         * to a version value.
+         */
+        int versionMadeBy(int version) {
+            return (posixPerms < 0) ? version :
+                VERSION_BASE_UNIX | (version & 0xff);
         }
 
         ///////////////////// CEN //////////////////////
@@ -2042,6 +2106,10 @@ class ZipFileSystem extends FileSystem {
             attrs       = CENATT(cen, pos);
             attrsEx     = CENATX(cen, pos);
             */
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
+                posixPerms = CENATX_PERMS(cen, pos) & 0xFFF; // 12 bits for setuid, setgid, sticky + perms
+            }
             locoff      = CENOFF(cen, pos);
             pos += CENHDR;
             this.name = inode.name;
@@ -2061,7 +2129,7 @@ class ZipFileSystem extends FileSystem {
         }
 
         int writeCEN(OutputStream os) throws IOException {
-            int version0 = version();
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
             long csize0  = csize;
             long size0   = size;
             long locoff0 = locoff;
@@ -2092,6 +2160,9 @@ class ZipFileSystem extends FileSystem {
             if (elen64 != 0) {
                 elen64 += 4;                 // header and data sz 4 bytes
             }
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            boolean zip64 = (elen64 != 0);
+            int version0 = version(zip64);
             while (eoff + 4 < elen) {
                 int tag = SH(extra, eoff);
                 int sz = SH(extra, eoff + 2);
@@ -2108,13 +2179,9 @@ class ZipFileSystem extends FileSystem {
                 }
             }
             writeInt(os, CENSIG);            // CEN header signature
-            if (elen64 != 0) {
-                writeShort(os, 45);          // ver 4.5 for zip64
-                writeShort(os, 45);
-            } else {
-                writeShort(os, version0);    // version made by
-                writeShort(os, version0);    // version needed to extract
-            }
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            writeShort(os, versionMadeBy(version0)); // version made by
+            writeShort(os, version0);        // version needed to extract
             writeShort(os, flag);            // general purpose bit flag
             writeShort(os, method);          // compression method
                                              // last modification time
@@ -2132,10 +2199,14 @@ class ZipFileSystem extends FileSystem {
             }
             writeShort(os, 0);              // starting disk number
             writeShort(os, 0);              // internal file attributes (unused)
-            writeInt(os, 0);                // external file attributes (unused)
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            writeInt(os, posixPerms > 0 ? posixPerms << 16 : 0); // external file
+                                            // attributes, used for storing posix
+                                            // permissions
             writeInt(os, locoff0);          // relative offset of local header
             writeBytes(os, zname, 1, nlen);
-            if (elen64 != 0) {
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            if (zip64) {
                 writeShort(os, EXTID_ZIP64);// Zip64 extra
                 writeShort(os, elen64 - 4); // size of "this" extra block
                 if (size0 == ZIP64_MINVAL)
@@ -2174,18 +2245,21 @@ class ZipFileSystem extends FileSystem {
         ///////////////////// LOC //////////////////////
 
         int writeLOC(OutputStream os) throws IOException {
-            int version0 = version();
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
             byte[] zname = isdir ? toDirectoryPath(name) : name;
             int nlen = (zname != null) ? zname.length - 1 : 0; // [0] is slash
             int elen = (extra != null) ? extra.length : 0;
             boolean foundExtraTime = false;     // if extra timestamp present
             int eoff = 0;
             int elen64 = 0;
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            boolean zip64 = false;
             int elenEXTT = 0;
             int elenNTFS = 0;
             writeInt(os, LOCSIG);               // LOC header signature
             if ((flag & FLAG_DATADESCR) != 0) {
-                writeShort(os, version0);       // version needed to extract
+                // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+                writeShort(os, version(zip64)); // version needed to extract
                 writeShort(os, flag);           // general purpose bit flag
                 writeShort(os, method);         // compression method
                 // last modification time
@@ -2198,16 +2272,17 @@ class ZipFileSystem extends FileSystem {
             } else {
                 if (csize >= ZIP64_MINVAL || size >= ZIP64_MINVAL) {
                     elen64 = 20;    //headid(2) + size(2) + size(8) + csize(8)
-                    writeShort(os, 45);         // ver 4.5 for zip64
-                } else {
-                    writeShort(os, version0);   // version needed to extract
+                    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+                    zip64 = true;
                 }
+                writeShort(os, version(zip64)); // version needed to extract
                 writeShort(os, flag);           // general purpose bit flag
                 writeShort(os, method);         // compression method
                                                 // last modification time
                 writeInt(os, (int)javaToDosTime(mtime));
                 writeInt(os, crc);              // crc-32
-                if (elen64 != 0) {
+                // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+                if (zip64) {
                     writeInt(os, ZIP64_MINVAL);
                     writeInt(os, ZIP64_MINVAL);
                 } else {
@@ -2237,7 +2312,8 @@ class ZipFileSystem extends FileSystem {
             writeShort(os, nlen);
             writeShort(os, elen + elen64 + elenNTFS + elenEXTT);
             writeBytes(os, zname, 1, nlen);
-            if (elen64 != 0) {
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            if (zip64) {
                 writeShort(os, EXTID_ZIP64);
                 writeShort(os, 16);
                 writeLong(os, size);
@@ -2449,6 +2525,30 @@ class ZipFileSystem extends FileSystem {
             return null;
         }
 
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+
+        @Override
+        public UserPrincipal owner() {
+            throw new UnsupportedOperationException(
+                "ZipFileSystem does not support owner.");
+        }
+
+        @Override
+        public GroupPrincipal group() {
+            throw new UnsupportedOperationException(
+                "ZipFileSystem does not support group.");
+        }
+
+        @Override
+        public Set<PosixFilePermission> permissions() {
+            // In case there are no Posix permissions associated with the
+            // entry, we return an empty set of permissions.
+            // That way we can't distinguish between no permission information
+            // available and an explicit set of empty permissions. However
+            // we must not throw an Exception or return null at this place.
+            return posixPerms == -1 ? new HashSet<>() : ZipUtils.permsFromFlags(posixPerms);
+        }
+
         ///////// zip entry attributes ///////////
         public long compressedSize() {
             return csize;
@@ -2490,6 +2590,10 @@ class ZipFileSystem extends FileSystem {
             fm.format("    compressedSize  : %d%n", compressedSize());
             fm.format("    crc             : %x%n", crc());
             fm.format("    method          : %d%n", method());
+            // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+            if (posixPerms != -1) {
+                fm.format("    permissions     : %s%n", permissions());
+            }
             fm.close();
             return sb.toString();
         }
