@@ -48,6 +48,7 @@
 # SapMachine 2018-07-04, 2019-04-30
 # Windows: Testbug: users mixed up by our infrastructure
 # Aix: also in central exclude list, see 8211847.
+#
 # SapMachine 2019-07-16 Still fails
 java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
@@ -98,15 +99,21 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 # SapMachine 2019-02-07 Times out sporadically
 # SSLProtocolException: Input record too big: max = 16709 len = 26871
 # SapMachine 2019-05-08 Still fails in 11.
+#
 sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
 
 # SapMachine 2019-02-16
 # javax.crypto.AEADBadTagException: Tag mismatch!
-# SapMachine 2019-05-02 Still fails in 11 and 12
-javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
+# SapMachine 2019-05-02 Still fails in 11 and 12, but obviously not in 13+
+# SapMachine 2019-08-07 We saw another occurence on linux_x8664. Don't exclude it at the moment to collect more data.
+#
+#javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
 
 # SapMachine 2019-07-01
 # Sporadic on ppc64le. For sparc see above.
+#
+# SapMachine 2019-07-19 Added com/sun/nio/sctp/SctpMultiChannel/Send.java, probably related to ..., link added.
+#
 com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
 com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
@@ -125,52 +132,71 @@ java/awt/FontMetrics/MaxAdvanceIsMax.java                                    822
 
 # SapMachine 2019-06-17
 # java.lang.Exception: Failed for font java.awt.Font[family=Dialog,name=MS Gothic,style=bold,size=30]
+#
 java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
 
 # SapMachine 2019-06-28
+#
 # java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
 # Seen in 11, 13, 14.
+#
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
 
 # SapMachine 2019-06-28
+#
 # Seen in 11, 13, 14. timeouts.
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                         windows-x64
+#
+# Probably fixed in 14 by https://bugs.openjdk.java.net/browse/JDK-8227435. Downport to 11, 13!
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                 8227435 windows-x64
 
 # SapMachine 2019-06-28
 # timeout on ppc in 11 only.
+#
+#
+#
 jdk/jfr/event/compiler/TestCodeSweeper.java                                          generic-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
+#
 # java.lang.RuntimeException: Could not find root object
+#
 jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
 
 # SapMachine 2019-07-15
-# Issue started occuring in 06/2019 in jdk11u/jdk11u-dev. Need to investigate as
-# it could be related to JDK updates
-java/awt/print/PrinterJob/SameService.java                                           linux-s390x
+# Issue started occuring in 06/2019 but not related to JDK updates
+#
+#
+java/awt/print/PrinterJob/SameService.java                                   8229023 linux-s390x
 
 # SapMachine 2019-07-16
 # Exception in thread "main" java.lang.RuntimeException: Test failed for - cpu:getCpuSystemUsage, expected [2], got [2]
+#
+#
+# Fixed by JDK-8227642. Should be downported (along with 8228434).
 jdk/internal/platform/docker/TestSystemMetrics.java                                  linux-ppc64le,linux-s390x
 
 # SapMachine 2019-07-18
 # javax.net.ssl.SSLException: The status_request_v2 extension is inconsistent with the expected result: expected = true, actual = false
 # we see this sporadically on rs6000_64 - why? Adding this entry but commented out, for reference.
+#
 #javax/net/ssl/Stapling/StapleEnableProps.java                                        aix-all
 
 # SapMachine 2019-07-17
 # java.lang.NumberFormatException: For input string: "18446744073709551615"
+#
+#
+# SapMachine 2019-08-02: Change JDK-8228585 pushed to jdk13 and jdk14, backport for jdk11 in the queue.
 jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8228585 linux-x64
 
 # SapMachine 2019-07-19
 # These issues occur in our internal SapMachine test env.
-# http://sapjvm:1080/servlet/suiteresult?suiteid=15334934&date=20190719&group=sapmachine11
+#
 sun/management/jdp/JdpDefaultsTest.java                                              linux-ppc64le
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java                                  linux-ppc64le
 sun/management/jdp/JdpSpecificAddressTest.java                                       linux-ppc64le
 
 # SapMachine 2019-07-19
-# These occur in SapMachine test env.
+# These occur in SapMachine test env on ... . Disabling until solution found
 java/net/MulticastSocket/Promiscuous.java                                            linux-ppc64le
 java/net/MulticastSocket/SetLoopbackMode.java                                        linux-ppc64le
 java/net/MulticastSocket/Test.java                                                   linux-ppc64le,aix-all
@@ -186,6 +212,13 @@ java/nio/channels/DatagramChannel/Promiscuous.java                              
 # https://bugs.openjdk.java.net/browse/JDK-8228658
 sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                        linux-s390x
 
+# SapMachine 2019-08-01
+# Appears in 11, 13, 14. In 11 not seen for quite some time, but failures
+# with the same error in the database.
+#
+#
+java/awt/FontClass/FontSize1Test.java                                                darwinintel
+
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
@@ -194,11 +227,6 @@ sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                   
 # When running in concurrency mode, all tests that need a socket and run in
 # parallel to this test will fail.
 java/nio/channels/AsyncCloseAndInterrupt.java                                        generic-all
-
-# SapMachine 2018-10-05
-# Flaky tests / other failing - should be checked whether issue still exists
-#sun/tools/jstatd/TestJstatdExternalRegistry.java                                     generic-all
-#javax/accessibility/AccessibilityProvider/basic.sh                                   generic-all
 
 # SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
 # Need to check how this can be fixed.

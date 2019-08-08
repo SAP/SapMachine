@@ -65,16 +65,27 @@ serviceability/sa/ClhsdbLongConstant.java                                       
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of jdk11.
 
+# SapMachine 2019-01-08
+# RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
+# SapMachine 2019-08-07 Still failing
+#
+compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
+
 # SapMachine 2019-02-13
 # Timeouts seen sporadic on various platforms and Java versions.
 # Still failing 2019-04-29, 2019-07-16
 # Seems this one is fixed with 8206074 in OpenJDK 13 and 14. We shall take care of a backport.
-vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java 8206074 generic-all
+#
+# SapMachine 2019-08-02 Fix pushed to jdk11u-dev, shall remove this section in a few days after checking that it doesn't occur any more.
+#vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java 8206074 generic-all
 
 # SapMachine 2019-03-11
 # Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
-# For the timeout we should look into backporting 8205654 to 11
+#
+#
 # SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
+# SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
+# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
 serviceability/dcmd/framework/HelpTest.java                                          windows-all
 
 # SapMachine 2019-04-29
@@ -89,12 +100,13 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # SapMachine 2019-04-29
 # Very sporadic on linux/ppc.
 # Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
-# Disable this in 11.0.4 only to assure the tests of the release are green
-# Enable it in 11.0.5 to find one of the sporadic occurances and paste the link here.
+#
 serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
 
 # SapMachine 2019-05-08
 # These fail because a path breaks a windows limit in jdk11u-dev.
+#
+#
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
@@ -105,53 +117,67 @@ vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/Te
 
 # SapMachine 2019-06-07
 # Timeouts, observed only in 11.
+#
 # SapMachine 2019-07-17 Still occuring in 11
 vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
 # Sporadic on some x64 systems
-# Needs backporting to 11 and 13
-runtime/memory/RunUnitTestsConcurrently.java                                 8227041 linux-x64,windows-x64
+#
+#
+# SapMachine 2019-08-02 Fix pushed to 11.0.5 and 13, should remove this entry in a few days.
+#runtime/memory/RunUnitTestsConcurrently.java                                 8227041 linux-x64,windows-x64
 
 # SapMachine 2019-06-28
 # Error message: AttemptOOM allocation successful, seen on quite some hosts
 # Attention, the test has moved from the runtime subdirectory to the test root directory in 13
+#
+#
+#
 # SapMachine 2019-07-19 Still failing.
 runtime/containers/docker/TestMemoryAwareness.java                                   linux-ppc64le,linux-s390x
 
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
 
-# SapMachine 2019-06-17
-# Fixed in 11.0.5
-#compiler/codecache/cli/codeheapsize/TestCodeHeapSizeOptions.java             8177899 solaris-sparc
-#compiler/codecache/cli/printcodecache/TestPrintCodeCacheOption.java          8177899 solaris-sparc
-
 # SapMachine 2019-06-28
 # Frequent timeouts on all ppc platforms, 11 only. Above other similar excludes.
+#
+#
 # Still seen on 2019-07-16
-vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          generic-ppc64,linux-ppc64le
-vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        generic-ppc64,linux-ppc64le
+# SapMachine 2019-08-02 Added linux-x64 to the exclusion as well because the issue is seen there, too.
+vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,generic-ppc64,linux-ppc64le
+# Also seen on linux x86_64
+vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,generic-ppc64,linux-ppc64le
 vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     generic-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
-# RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr
-# or just timeout. Seen also in 13.
+# RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr or just timeout. Seen also in 13.
+#
+#
+# SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
+# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
 serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
 
 # SapMachine 2019-07-15
 # Occurred lately on our Solaris box.
-compiler/codegen/aes/TestCipherBlockChainingEncrypt.java                     8219513 solaris-sparcv9
+#
+# SapMachine 2019-08-02 Fix pushed to 11.0.5, should remove this entry in a few days.
+#compiler/codegen/aes/TestCipherBlockChainingEncrypt.java                     8219513 solaris-sparcv9
 
 # SapMachine 2019-07-16
 # We see this intermittently, mainly in SapMachine environment
-# Need to backport 8215901.
-runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 linux-all
+# SapMachine 2019-08-02 Fix pushed to 11.0.5, should remove this entry in a few days.
+#runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 linux-all
 
 # SapMachine 2019-07-16
 # 11-only crash at:
 # Klass::method_at_vtable
 # linkResolver::runtime_resolve_virtual_method
+#
+#
+#
+#
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390,windows-all
 
 ###############################################################################
@@ -159,6 +185,9 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 
 # SapMachine 2019-07-22
 # Timeout. We see this regularly.
+#
+#
+# This is already tracked by 8222030.
 compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-ppc64
 
 #############################################################################
@@ -234,7 +263,3 @@ compiler/aot/verification/vmflags/TrackedFlagTest.java                          
 # SapMachine 2019-01-30
 # This test fails for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
 compiler/runtime/cr6891750/Test6891750.java                                          linux-ppc64le,linux-ppc64
-
-# SapMachine 2019-07-16
-# Saw this today. We should probably backport JDK-8215901 to 11u-dev.
-runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 generic-all
