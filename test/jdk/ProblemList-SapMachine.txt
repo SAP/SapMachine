@@ -48,6 +48,7 @@
 # SapMachine 2018-07-04, 2019-04-30
 # Windows: Testbug: users mixed up by our infrastructure
 # Aix: also in central exclude list, see 8211847.
+#
 # SapMachine 2019-07-16 Still fails
 java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
@@ -103,12 +104,16 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 
 # SapMachine 2019-02-16
 # javax.crypto.AEADBadTagException: Tag mismatch!
-# SapMachine 2019-05-02 Still fails in 11 and 12
+# SapMachine 2019-05-02 Still fails in 11 and 12, but obviously not in 13+
+# SapMachine 2019-08-07 We saw another occurence on linux_x8664. Don't exclude it at the moment to collect more data.
+#
 #javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
 
 # SapMachine 2019-07-01
 # Sporadic on ppc64le. For sparc see above.
+#
 # SapMachine 2019-07-19 Added com/sun/nio/sctp/SctpMultiChannel/Send.java, probably related to certain test box, link added.
+#
 com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
 com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
@@ -127,48 +132,84 @@ java/awt/FontMetrics/MaxAdvanceIsMax.java                                    822
 
 # SapMachine 2019-06-17
 # java.lang.Exception: Failed for font java.awt.Font[family=Dialog,name=MS Gothic,style=bold,size=30]
+#
 java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
 
 # SapMachine 2019-06-28
+#
 # java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
 # Seen in 11, 13, 14.
+#
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
 
 # SapMachine 2019-06-28
+#
 # Seen in 11, 13, 14. timeouts.
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                         windows-x64
+#
+# Probably fixed in 14 by https://bugs.openjdk.java.net/browse/JDK-8227435. Downport to 11, 13!
+#sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                 8227435 windows-x64
 
 # SapMachine 2019-06-28
 # timeout on ppc in 11 only.
+#
+#
+#
 jdk/jfr/event/compiler/TestCodeSweeper.java                                          generic-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
+#
 # java.lang.RuntimeException: Could not find root object
+#
 jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
+
+# SapMachine 2019-07-15
+# Issue started occuring in 06/2019 but not related to JDK updates
+#
+#
+java/awt/print/PrinterJob/SameService.java                                   8229023 linux-s390x
 
 # SapMachine 2019-07-16
 # Exception in thread "main" java.lang.RuntimeException: Test failed for - cpu:getCpuSystemUsage, expected [2], got [2]
-# Fixed by JDK-8227642. Should be downported.
+#
+#
+# Fixed by JDK-8227642. Should be downported (along with 8228434).
 #jdk/internal/platform/docker/TestSystemMetrics.java                          8227642 linux-ppc64le,linux-s390x
 
 # SapMachine 2019-07-18
 # javax.net.ssl.SSLException: The status_request_v2 extension is inconsistent with the expected result: expected = true, actual = false
 # we see this sporadically on rs6000_64 - why? Adding this entry but commented out, for reference.
+#
 #javax/net/ssl/Stapling/StapleEnableProps.java                                        aix-all
 
 # SapMachine 2019-07-17
 # java.lang.NumberFormatException: For input string: "18446744073709551615"
-# There is another issue with this test, the NumberFormat fix probably does not solve.
-jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8228585 linux-x64
+#
+#
+# SapMachine 2019-08-08: Change JDK-8228585 pushed to jdk11u-dev, jdk13 and jdk14.
+# There seems to be another issue with this test which the NumberFormat fix probably does not solve.
+# Enabling the test to capture those other issues, new backlog item and Jira bug created:
+#
+# https://bugs.openjdk.java.net/browse/JDK-8229284
+#jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8228585 linux-x64
 
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
 
-# SapMachine 2019-08-01
+# SapMachine 2019-07-19
+# java.lang.RuntimeException: Total safepoint time illegal value: 0 ms (MIN = 1; MAX = 9223372036854775807)
+# Occurs in JDK13 since 2019-02.
 # We didn't see this in 11 yet, only 13, 14; but it's broken as well.
-# Fixed in 14. Needs to be downported.
-# https://bugs.openjdk.java.net/browse/JDK-8228658
+#
+#
+# Needs to be downported to 11.
 #sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                8228658 linux-s390x
+
+# SapMachine 2019-08-01
+# Appears in 11, 13, 14. In 11 not seen for quite some time, but failures
+# with the same error in the database.
+#
+#
+java/awt/FontClass/FontSize1Test.java                                                darwinintel
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -258,7 +299,10 @@ sun/security/tools/keytool/KeyToolTest.java                                     
 
 # SapMachine 2019-07-17
 # Unexpected value in Event. Occurs since about 2019-05.
-jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWith32BitOops.sh 8228359 linux-ppc64,linux-ppc64le
+#
+#
+# SapMachine 2019-08-08 Pushed fix. We shall remove this entry after a few days.
+#jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWith32BitOops.sh 8228359 linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-07-17
 # Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
@@ -268,15 +312,42 @@ java/awt/font/WindowsIndicFonts.java                                         822
 
 # SapMachine 2019-07-19
 # java.io.IOException: No route to host
+#
 # SapMachine 2019-08-01: adding mac. Oracle excluded this on mac due to 7122846.
 java/net/MulticastSocket/NoLoopbackPackets.java                                      aix-all,macosx-all
 
 # SapMachine 2019-08-01
 # Asserts in TestShutdownEvent.validateStackTrace().
+#
+#
+#
 jdk/jfr/event/runtime/TestShutdownEvent.java                                         linux-ppc64,linux-ppc64le
+
+# SapMachine 2019-08-08
+# We see this issue occuring for a long time already in 13 and 14.
+# Another one of these flaky font things??
+#
+java/awt/font/FontNames/FCCompositeTest.java                                         linux-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
+
+# SapMachine 2019-08-02
+# File needs to be added to test jar: java.nio.file.NoSuchFileException: ...
+sun/util/calendar/zi/TestZoneInfo310.java                                            generic-all
+
+# SapMachine 2019-08-02
+# RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
+# Seen only on linuxx86_64, .... Maybe a specific issue on that box?
+#
+#
+jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java                               linuxx86_64
+
+# SapMachine 2019-08-08
+# We see sporadic test failures in this new test.
+#
+# I opened https://bugs.openjdk.java.net/browse/JDK-8229280
+java/nio/file/attribute/BasicFileAttributeView/SetTimesNanos.java            8229280 linux-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

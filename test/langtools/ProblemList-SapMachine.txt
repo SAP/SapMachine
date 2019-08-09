@@ -64,8 +64,9 @@ jdk/jshell/CommandCompletionTest.java                               macosx-all
 # SapMachine 2019-06-28
 # java.lang.AssertionError: Error too big
 # Seen on 11.0.3/4 and 13 quite sporadic.
-# SapMachine 2019-07-22 enabled test after fix for 8227247 was committed
-# Fixed in 13,14 by https://bugs.openjdk.java.net/browse/JDK-8227247. Needs to be downported to 11.
+#
+#
+# SapMachine 2019-08-08 Fix for 8227247 pushed to jdk11u-dev. We can probably remove this entry in a few days.
 #tools/sjavac/IdleShutdown.java                             8227247 windows-x64
 
 ###############################################################################
