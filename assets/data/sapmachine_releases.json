@@ -355,8 +355,10 @@
         "14": {
             "releases": [
                 {
+                    "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B9/sapmachine-jdk-14-ea.9_windows-x64_bin.msi", 
                     "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B9/sapmachine-jdk-14-ea.9_linux-x64_bin.tar.gz", 
-                    "tag": "sapmachine-14+9"
+                    "tag": "sapmachine-14+9", 
+                    "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B9/sapmachine-jdk-14-ea.9_windows-x64_bin.zip"
                 }, 
                 {
                     "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B8/sapmachine-jdk-14-ea.8_linux-ppc64le_bin.tar.gz", 
