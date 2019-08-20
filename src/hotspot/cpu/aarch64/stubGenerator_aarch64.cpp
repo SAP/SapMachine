@@ -46,10 +46,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-#ifdef BUILTIN_SIM
-#include "../../../../../../simulator/simulator.hpp"
-#endif
-
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
@@ -217,16 +213,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // stub code
 
-    // we need a C prolog to bootstrap the x86 caller into the sim
-    __ c_stub_prolog(8, 0, MacroAssembler::ret_type_void);
-
     address aarch64_entry = __ pc();
 
-#ifdef BUILTIN_SIM
-    // Save sender's SP for stack traces.
-    __ mov(rscratch1, sp);
-    __ str(rscratch1, Address(__ pre(sp, -2 * wordSize)));
-#endif
     // set up frame and move sp to end of save area
     __ enter();
     __ sub(sp, rfp, -sp_after_call_off * wordSize);
@@ -297,8 +285,6 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r13, sp);
     __ blr(c_rarg4);
 
-    // tell the simulator we have returned to the stub
-
     // we do this here because the notify will already have been done
     // if we get to the next instruction via an exception
     //
@@ -308,9 +294,6 @@ class StubGenerator: public StubCodeGenerator {
     // pc against the address saved below. so we may need to allow for
     // this extra instruction in the check.
 
-    if (NotifySimulator) {
-      __ notify(Assembler::method_reentry);
-    }
     // save current address for use by exception handling code
 
     return_address = __ pc();
@@ -373,12 +356,6 @@ class StubGenerator: public StubCodeGenerator {
     __ ldp(c_rarg4, c_rarg5,  entry_point);
     __ ldp(c_rarg6, c_rarg7,  parameter_size);
 
-#ifndef PRODUCT
-    // tell the simulator we are about to end Java execution
-    if (NotifySimulator) {
-      __ notify(Assembler::method_exit);
-    }
-#endif
     // leave frame and return to caller
     __ leave();
     __ ret(lr);
@@ -411,13 +388,6 @@ class StubGenerator: public StubCodeGenerator {
   // rsp.
   //
   // r0: exception oop
-
-  // NOTE: this is used as a target from the signal handler so it
-  // needs an x86 prolog which returns into the current simulator
-  // executing the generated catch_exception code. so the prolog
-  // needs to install rax in a sim register and adjust the sim's
-  // restart pc to enter the generated code at the start position
-  // then return from native to simulated execution.
 
   address generate_catch_exception() {
     StubCodeMark mark(this, "StubRoutines", "catch_exception");
@@ -613,7 +583,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
     __ mov(rscratch1, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
-    __ blrt(rscratch1, 3, 0, 1);
+    __ blr(rscratch1);
 
     return start;
   }
@@ -725,8 +695,11 @@ class StubGenerator: public StubCodeGenerator {
       stub_name = "forward_copy_longs";
     else
       stub_name = "backward_copy_longs";
-    StubCodeMark mark(this, "StubRoutines", stub_name);
+
     __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+
     __ bind(start);
 
     Label unaligned_copy_long;
@@ -1381,12 +1354,6 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
-#ifdef BUILTIN_SIM
-    {
-      AArch64Simulator *sim = AArch64Simulator::get_current(UseSimulatorCache, DisableBCCheck);
-      sim->notifyCompile(const_cast<char*>(name), start);
-    }
-#endif
     return start;
   }
 
@@ -1452,12 +1419,6 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
-#ifdef BUILTIN_SIM
-    {
-      AArch64Simulator *sim = AArch64Simulator::get_current(UseSimulatorCache, DisableBCCheck);
-      sim->notifyCompile(const_cast<char*>(name), start);
-    }
-#endif
     return start;
 }
 
@@ -1976,13 +1937,13 @@ class StubGenerator: public StubCodeGenerator {
     const Register dst_pos    = c_rarg3;  // destination position
     const Register length     = c_rarg4;
 
-    StubCodeMark mark(this, "StubRoutines", name);
+    __ align(CodeEntryAlignment);
 
+    StubCodeMark mark(this, "StubRoutines", name);
 
     // Registers used as temps
     const Register dst_klass  = c_rarg5;
 
-    __ align(CodeEntryAlignment);
     address start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -3105,7 +3066,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#ifndef BUILTIN_SIM
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry,
                           address* fault_pc, address* continuation_pc) {
@@ -3145,7 +3105,6 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(r0, c_rarg1);
     __ ret(lr);
   }
-#endif
 
   /**
    *  Arguments:
@@ -3657,7 +3616,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_has_negatives(address &has_negatives_long) {
-    StubCodeMark mark(this, "StubRoutines", "has_negatives");
     const int large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
@@ -3665,6 +3623,9 @@ class StubGenerator: public StubCodeGenerator {
     Register ary1 = r1, len = r2, result = r0;
 
     __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", "has_negatives");
+
     address entry = __ pc();
 
     __ enter();
@@ -3904,7 +3865,6 @@ class StubGenerator: public StubCodeGenerator {
   // cnt1 = r10 - amount of elements left to check, reduced by wordSize
   // r3-r5 are reserved temporary registers
   address generate_large_array_equals() {
-    StubCodeMark mark(this, "StubRoutines", "large_array_equals");
     Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
         tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
         tmp7 = r12, tmp8 = r13;
@@ -3919,6 +3879,9 @@ class StubGenerator: public StubCodeGenerator {
         tmp5, tmp6, tmp7, tmp8);
 
     __ align(CodeEntryAlignment);
+
+    StubCodeMark mark(this, "StubRoutines", "large_array_equals");
+
     address entry = __ pc();
     __ enter();
     __ sub(cnt1, cnt1, wordSize);  // first 8 bytes were loaded outside of stub
@@ -4851,7 +4814,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(c_rarg0, rthread);
     BLOCK_COMMENT("call runtime_entry");
     __ mov(rscratch1, runtime_entry);
-    __ blrt(rscratch1, 3 /* number_of_arguments */, 0, 1);
+    __ blr(rscratch1);
 
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
@@ -5825,7 +5788,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare = g.generate_multiply();
     }
 
-#ifndef BUILTIN_SIM
     // generate GHASH intrinsics code
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
@@ -5859,7 +5821,6 @@ class StubGenerator: public StubCodeGenerator {
     generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
                                                        &StubRoutines::_safefetchN_fault_pc,
                                                        &StubRoutines::_safefetchN_continuation_pc);
-#endif
     StubRoutines::aarch64::set_completed();
   }
 
