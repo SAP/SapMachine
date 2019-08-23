@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.inline.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/monitorChunk.hpp"
+/**
+ * @test
+ * @bug 8225644
+ * @summary C1 dumps incorrect class name in CCE message
+ * @run main/othervm compiler.c1.CCEMessageTest
+ * @run main/othervm -Xcomp -XX:TieredStopAtLevel=1 compiler.c1.CCEMessageTest
+ */
 
-MonitorChunk::MonitorChunk(int number_on_monitors) {
-  _number_of_monitors = number_on_monitors;
-  _monitors           = NEW_C_HEAP_ARRAY(BasicObjectLock, number_on_monitors, mtSynchronizer);
-  _next               = NULL;
-}
+package compiler.c1;
 
-
-MonitorChunk::~MonitorChunk() {
-  FreeHeap(monitors());
-}
-
-
-void MonitorChunk::oops_do(OopClosure* f) {
-  for (int index = 0; index < number_of_monitors(); index++) {
-    at(index)->oops_do(f);
-  }
+public class CCEMessageTest {
+    public static void main(String... args) {
+        String[] s = null;
+        try {
+            s = (String[])new Object[1];
+        } catch (ClassCastException cce) {
+            if (!cce.getMessage().contains("[Ljava.lang.String;"))
+                throw new AssertionError("Incorrect CCE message", cce);
+        }
+        if (s != null)
+            throw new AssertionError("Unexpected error");
+    }
 }
