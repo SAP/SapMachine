@@ -30,6 +30,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -43,7 +44,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
@@ -159,19 +159,26 @@ public:
 class ZRootsIteratorThreadClosure : public ThreadClosure {
 private:
   ZRootsIteratorClosure* _cl;
+  const bool             _visit_invisible;
 
 public:
-  ZRootsIteratorThreadClosure(ZRootsIteratorClosure* cl) :
-      _cl(cl) {}
+  ZRootsIteratorThreadClosure(ZRootsIteratorClosure* cl, bool visit_invisible) :
+      _cl(cl),
+      _visit_invisible(visit_invisible) {}
 
   virtual void do_thread(Thread* thread) {
     ZRootsIteratorCodeBlobClosure code_cl(_cl);
     thread->oops_do(_cl, ClassUnloading ? &code_cl : NULL);
     _cl->do_thread(thread);
+    if (_visit_invisible && ZThreadLocalData::has_invisible_root(thread)) {
+      _cl->do_oop(ZThreadLocalData::invisible_root(thread));
+    }
   }
 };
 
-ZRootsIterator::ZRootsIterator() :
+ZRootsIterator::ZRootsIterator(bool visit_invisible, bool visit_jvmti_weak_export) :
+    _visit_invisible(visit_invisible),
+    _visit_jvmti_weak_export(visit_jvmti_weak_export),
     _universe(this),
     _object_synchronizer(this),
     _management(this),
@@ -239,7 +246,7 @@ void ZRootsIterator::do_system_dictionary(ZRootsIteratorClosure* cl) {
 void ZRootsIterator::do_threads(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsThreads);
   ResourceMark rm;
-  ZRootsIteratorThreadClosure thread_cl(cl);
+  ZRootsIteratorThreadClosure thread_cl(cl, _visit_invisible);
   Threads::possibly_parallel_threads_do(true, &thread_cl);
 }
 
@@ -248,7 +255,7 @@ void ZRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
   ZNMethod::oops_do(cl);
 }
 
-void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_export) {
+void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRoots);
   _universe.oops_do(cl);
   _object_synchronizer.oops_do(cl);
@@ -259,14 +266,14 @@ void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl, bool visit_jvmti_weak_ex
   if (!ClassUnloading) {
     _code_cache.oops_do(cl);
   }
-  if (visit_jvmti_weak_export) {
+  if (_visit_jvmti_weak_export) {
     _jvmti_weak_export.oops_do(cl);
   }
 }
 
 ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :
-    _jni_handles_iter(JNIHandles::global_handles()),
-    _vm_handles_iter(SystemDictionary::vm_global_oop_storage()),
+    _jni_handles_iter(OopStorageSet::jni_global()),
+    _vm_handles_iter(OopStorageSet::vm_global()),
     _cld_claim(cld_claim),
     _jni_handles(this),
     _vm_handles(this),
@@ -337,10 +344,10 @@ void ZWeakRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
 }
 
 ZConcurrentWeakRootsIterator::ZConcurrentWeakRootsIterator() :
-    _vm_weak_handles_iter(SystemDictionary::vm_weak_oop_storage()),
-    _jni_weak_handles_iter(JNIHandles::weak_global_handles()),
-    _string_table_iter(StringTable::weak_storage()),
-    _resolved_method_table_iter(ResolvedMethodTable::weak_storage()),
+    _vm_weak_handles_iter(OopStorageSet::vm_weak()),
+    _jni_weak_handles_iter(OopStorageSet::jni_weak()),
+    _string_table_iter(OopStorageSet::string_table_weak()),
+    _resolved_method_table_iter(OopStorageSet::resolved_method_table_weak()),
     _vm_weak_handles(this),
     _jni_weak_handles(this),
     _string_table(this),

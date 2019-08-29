@@ -261,11 +261,11 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _num_nested_signal = 0;
-  omFreeList = NULL;
-  omFreeCount = 0;
-  omFreeProvision = 32;
-  omInUseList = NULL;
-  omInUseCount = 0;
+  om_free_list = NULL;
+  om_free_count = 0;
+  om_free_provision = 32;
+  om_in_use_list = NULL;
+  om_in_use_count = 0;
 
 #ifdef ASSERT
   _visited_for_critical_count = false;
@@ -973,7 +973,7 @@ void Thread::print_value_on(outputStream* st) const {
 
 #ifdef ASSERT
 void Thread::print_owned_locks_on(outputStream* st) const {
-  Monitor *cur = _owned_locks;
+  Mutex* cur = _owned_locks;
   if (cur == NULL) {
     st->print(" (no locks) ");
   } else {
@@ -1013,7 +1013,7 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
   if (potential_vm_operation && !Universe::is_bootstrapping()) {
     // Make sure we do not hold any locks that the VM thread also uses.
     // This could potentially lead to deadlocks
-    for (Monitor *cur = _owned_locks; cur; cur = cur->next()) {
+    for (Mutex* cur = _owned_locks; cur; cur = cur->next()) {
       // Threads_lock is special, since the safepoint synchronization will not start before this is
       // acquired. Hence, a JavaThread cannot be holding it at a safepoint. So is VMOperationRequest_lock,
       // since it is used to transfer control between JavaThreads and the VMThread
@@ -4425,8 +4425,8 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
 
-  // Reclaim the ObjectMonitors from the omInUseList and omFreeList of the moribund thread.
-  ObjectSynchronizer::omFlush(p);
+  // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
+  ObjectSynchronizer::om_flush(p);
 
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice

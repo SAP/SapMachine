@@ -104,10 +104,9 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 
 # SapMachine 2019-02-16
 # javax.crypto.AEADBadTagException: Tag mismatch!
-# SapMachine 2019-05-02 Still fails in 11 and 12, but obviously not in 13+
-# SapMachine 2019-08-07 We saw another occurence on linux_x8664. Don't exclude it at the moment to collect more data.
+# SapMachine 2019-08-29 This test got excluded with JDK-8224991. Backported to 11.0.5, remove this entry after release of 11.0.5.
 #
-#javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
+#javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                    8212096 generic-all
 
 # SapMachine 2019-07-01
 # Sporadic on ppc64le. For sparc see above.
@@ -314,20 +313,27 @@ java/awt/font/WindowsIndicFonts.java                                         822
 # java.io.IOException: No route to host
 #
 # SapMachine 2019-08-01: adding mac. Oracle excluded this on mac due to 7122846.
-java/net/MulticastSocket/NoLoopbackPackets.java                                      aix-all,macosx-all
+# SapMachine 2019-08-29 8229706 was pushed to jdk/jdk. Requested backport to jdk13u.
+#java/net/MulticastSocket/NoLoopbackPackets.java                              8229706 aix-all,macosx-all
 
 # SapMachine 2019-08-01
 # Asserts in TestShutdownEvent.validateStackTrace().
 #
 #
-#
-jdk/jfr/event/runtime/TestShutdownEvent.java                                         linux-ppc64,linux-ppc64le
+# SapMachine 2019-08-28 (Test-)fix for 8219082 has been pushed, requested for 13u
+#jdk/jfr/event/runtime/TestShutdownEvent.java                                 8219082 linux-all
 
 # SapMachine 2019-08-08
 # We see this issue occuring for a long time already in 13 and 14.
 # Another one of these flaky font things??
 #
 java/awt/font/FontNames/FCCompositeTest.java                                         linux-all
+
+# SapMachine 2019-08-09
+# This test fails only on ..., probably a configuration issue
+# http://sapjvm:1080/servlet/testresult?show_similar_failed_tests=true&testid=207454864
+# https://sapjira.wdf.sap.corp/browse/TGSAPJVM-3904
+java/nio/file/WatchService/LotsOfCloses.java                                         linux-s390x
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
@@ -339,6 +345,7 @@ sun/util/calendar/zi/TestZoneInfo310.java                                       
 # SapMachine 2019-08-02
 # RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
 # Seen only on linuxx86_64, .... Maybe a specific issue on that box?
+#
 #
 #
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java                               linuxx86_64
