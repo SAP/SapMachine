@@ -99,15 +99,14 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 # SapMachine 2019-02-07 Times out sporadically
 # SSLProtocolException: Input record too big: max = 16709 len = 26871
 # SapMachine 2019-05-08 Still fails in 11.
-#
-sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
+# SapMachine 2019-07-16 Check if still failing
+#sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
 
 # SapMachine 2019-02-16
 # javax.crypto.AEADBadTagException: Tag mismatch!
-# SapMachine 2019-05-02 Still fails in 11 and 12, but obviously not in 13+
-# SapMachine 2019-08-07 We saw another occurence on linux_x8664. Don't exclude it at the moment to collect more data.
+# SapMachine 2019-08-29 This test got excluded with JDK-8224991. Backported to 11.0.5, remove this entry after release of 11.0.5.
 #
-#javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                            linux-s390x
+#javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                    8212096 generic-all
 
 # SapMachine 2019-07-01
 # Sporadic on ppc64le. For sparc see above.
@@ -185,11 +184,15 @@ jdk/internal/platform/docker/TestSystemMetrics.java                             
 # java.lang.NumberFormatException: For input string: "18446744073709551615"
 #
 #
-# SapMachine 2019-08-02: Change JDK-8228585 pushed to jdk13 and jdk14, backport for jdk11 in the queue.
-jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8228585 linux-x64
+# SapMachine 2019-08-08: Change JDK-8228585 pushed to jdk11u-dev, jdk13 and jdk14.
+# There seems to be another issue with this test which the NumberFormat fix probably does not solve.
+# Enabling the test to capture those other issues, new backlog item and Jira bug created:
+#
+#
+#jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8228585 linux-x64
 
 # SapMachine 2019-07-19
-# These issues occur in our internal SapMachine test env.
+# These issues occur in our internal SapMachine test env. Probably infra related on host ...
 #
 sun/management/jdp/JdpDefaultsTest.java                                              linux-ppc64le
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java                                  linux-ppc64le
@@ -206,17 +209,20 @@ java/nio/channels/DatagramChannel/Promiscuous.java                              
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
 
-# SapMachine 2019-08-01
+# SapMachine 2019-07-19
+# java.lang.RuntimeException: Total safepoint time illegal value: 0 ms (MIN = 1; MAX = 9223372036854775807)
+# Occurs in JDK13 since 2019-02.
 # We didn't see this in 11 yet, only 13, 14; but it's broken as well.
-# Fixed in 14. Needs to be downported.
-# https://bugs.openjdk.java.net/browse/JDK-8228658
-sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                        linux-s390x
+#
+#
+# Needs to be downported to 11.
+sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                8228658 linux-s390x
 
 # SapMachine 2019-08-01
-# Appears in 11, 13, 14. In 11 not seen for quite some time, but failures
-# with the same error in the database.
+# Appears in 11, 13, 14. In 11 not seen for quite some time, but failures with the same error in the database.
 #
 #
+# SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
 java/awt/FontClass/FontSize1Test.java                                                darwinintel
 
 ###############################################################################

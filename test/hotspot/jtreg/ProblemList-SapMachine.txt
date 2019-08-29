@@ -100,8 +100,8 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # SapMachine 2019-04-29
 # Very sporadic on linux/ppc.
 # Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
-#
-serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
+# Enable it to find one of the sporadic occurances and paste the link here.
+#serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
 
 # SapMachine 2019-05-08
 # These fail because a path breaks a windows limit in jdk11u-dev.
@@ -130,12 +130,11 @@ vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                   
 
 # SapMachine 2019-06-28
 # Error message: AttemptOOM allocation successful, seen on quite some hosts
-# Attention, the test has moved from the runtime subdirectory to the test root directory in 13
 #
 #
 #
 # SapMachine 2019-07-19 Still failing.
-runtime/containers/docker/TestMemoryAwareness.java                                   linux-ppc64le,linux-s390x
+containers/docker/TestMemoryAwareness.java                                   8229182 linux-ppc64le,linux-s390x
 
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
@@ -176,12 +175,22 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # linkResolver::runtime_resolve_virtual_method
 #
 #
-#
-#
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390,windows-all
+# SapMachine 2019-08-23 Trying if recent fixes help in jdk11u-dev (8228618 was pushed)
+#vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390,windows-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
+
+# SapMachine 2019-07-17
+# Crashes on s390
+#
+#
+# SapMachine 2019-07-30 8228618 was downported. These are fixed.
+# SapMachine 2019-08-28 We shall remove this entry after release of 11.0.5 and 13.0.2.
+#vmTestbase/nsk/jvmti/RedefineClasses/StressRedefine/TestDescription.java                          8228618 linux-s390x
+#vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8228618 linux-s390x
+# SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, requested for jdk13u
+#vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8229925 linux-s390x
 
 # SapMachine 2019-07-22
 # Timeout. We see this regularly.
