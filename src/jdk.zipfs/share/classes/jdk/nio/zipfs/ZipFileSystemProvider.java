@@ -38,6 +38,7 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
 import java.util.Map;
@@ -288,7 +289,10 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         readAttributes(Path path, Class<A> type, LinkOption... options)
         throws IOException
     {
-        if (type == BasicFileAttributes.class || type == ZipFileAttributes.class)
+        // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+        if (type == BasicFileAttributes.class ||
+            type == PosixFileAttributes.class ||
+            type == ZipFileAttributes.class)
             return (A)toZipPath(path).getAttributes();
         return null;
     }

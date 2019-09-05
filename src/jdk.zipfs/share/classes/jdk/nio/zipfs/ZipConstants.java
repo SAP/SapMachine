@@ -230,6 +230,8 @@ class ZipConstants {
     // central directory header (CEN) fields
     static final long CENSIG(byte[] b, int pos) { return LG(b, pos + 0); }
     static final int  CENVEM(byte[] b, int pos) { return SH(b, pos + 4); }
+    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+    static final int  CENVEM_FA(byte[] b, int pos) { return CH(b, pos + 5); }
     static final int  CENVER(byte[] b, int pos) { return SH(b, pos + 6); }
     static final int  CENFLG(byte[] b, int pos) { return SH(b, pos + 8); }
     static final int  CENHOW(byte[] b, int pos) { return SH(b, pos + 10);}
@@ -243,6 +245,8 @@ class ZipConstants {
     static final int  CENDSK(byte[] b, int pos) { return SH(b, pos + 34);}
     static final int  CENATT(byte[] b, int pos) { return SH(b, pos + 36);}
     static final long CENATX(byte[] b, int pos) { return LG(b, pos + 38);}
+    // SapMachine 2018-12-20 Support of PosixPermissions in zipfs
+    static final int  CENATX_PERMS(byte[] b, int pos) { return SH(b, pos + 40);}
     static final long CENOFF(byte[] b, int pos) { return LG(b, pos + 42);}
 
     /* The END header is followed by a variable length comment of size < 64k. */
