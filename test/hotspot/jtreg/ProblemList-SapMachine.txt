@@ -45,21 +45,18 @@
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
-# SapMachine 2018-08-22
-# Failing as of today, and ever before.
-# SapMachine 2019-03-07, 2019-04-30 Still fails in 11.
-#vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
-
 # SapMachine 2018-08-28
 # This crashes on sparc with "The system is out of physical RAM or swap space".
 # Only jdk11, why that? Ev. add -Xmx200M.
 # SapMachine 2019-02-21, 2019-05-08 Still failing in 11.
+# SapMachine 2019-08-29 check whether still failing.
 #runtime/appcds/sharedStrings/InvalidFileFormat.java                                  solaris-sparcv9
 
 # SapMachine 2018-11-07
 # Remaining tests failing on ntintel in jdk11.
 # ClhsdbLongConstant.java:84: Reading markOopDesc::hash_mask_in_place. Expected 4294967168. Obtained -128 instead.
 # SapMachine 2019-05-08 Still fails in 11.
+# SapMachine 2019-08-29 check whether still failing.
 #serviceability/sa/ClhsdbLongConstant.java                                            windows-i586
 
 ###############################################################################
@@ -67,10 +64,10 @@
 
 # SapMachine 2018-11-08
 # RuntimeException: The size computed by SA for java.lang.Object does not match.
-# SapMachine 2019-07-16 still failing on linuxxppc64, linux-ppc64le
-# excluding also solaris-all because of common exclude list
 #
-serviceability/sa/TestInstanceKlassSize.java                                 8193639 solaris-all,linux-ppc64le,linux-ppc64
+# SapMachine 2019-09-05: Opened https://bugs.openjdk.java.net/browse/JDK-8230664 to track resolution and
+#                           https://bugs.openjdk.java.net/browse/JDK-8230666 to exclude the test (solaris-all is already in common exclude list)
+serviceability/sa/TestInstanceKlassSize.java                         8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 
 # SapMachine 2019-01-08
 # RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
@@ -153,9 +150,8 @@ vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/Te
 #
 #
 #
-# SapMachine 2019-07-19 Still failing.
-#
-containers/docker/TestMemoryAwareness.java                                   8229182 linux-ppc64le,linux-s390x
+# SapMachine 2019-09-06 Fix pushed to jdk/jdk
+#containers/docker/TestMemoryAwareness.java                                   8229182 linux-ppc64le,linux-s390x
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
@@ -241,6 +237,21 @@ runtime/TLS/testtls.sh                                                          
 #
 #
 #runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
+
+# SapMachine 2019-08-29
+# We have a problem on Solaris ... Excluding until it is fixed.
+#
+#
+gtest/GTestWrapper.java                                                              solaris-all
+
+# SapMachine 2019-08-29
+# Some aarch stuff, we don't really care. Do we?
+# Check later on whether it's fixed.
+#
+compiler/c2/aarch64/TestVolatilesG1.java                                             linux-aarch64
+compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
+#
+gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
