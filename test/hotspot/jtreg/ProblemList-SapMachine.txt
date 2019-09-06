@@ -45,22 +45,19 @@
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
 
-# SapMachine 2018-08-22, 2019-03-07
-# Failing as of today, and ever before.
-# SapMachine 2019-04-30 Still fails in 11.
-vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java windows-all
-
 # SapMachine 2018-08-28
 # This crashes on sparc with "The system is out of physical RAM or swap space".
 # Only jdk11, why that? Ev. add -Xmx200M.
 # SapMachine 2019-02-21, 2019-05-08 Still failing in 11.
-runtime/appcds/sharedStrings/InvalidFileFormat.java                                  solaris-sparcv9
+# SapMachine 2019-08-29 check whether still failing.
+#runtime/appcds/sharedStrings/InvalidFileFormat.java                                  solaris-sparcv9
 
 # SapMachine 2018-11-07
 # Remaining tests failing on ntintel in jdk11.
 # ClhsdbLongConstant.java:84: Reading markOopDesc::hash_mask_in_place. Expected 4294967168. Obtained -128 instead.
 # SapMachine 2019-05-08 Still fails in 11.
-serviceability/sa/ClhsdbLongConstant.java                                            windows-i586
+# SapMachine 2019-08-29 check whether still failing.
+#serviceability/sa/ClhsdbLongConstant.java                                            windows-i586
 
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of jdk11.
@@ -145,10 +142,10 @@ containers/docker/TestMemoryAwareness.java                                   822
 #
 # Still seen on 2019-07-16
 # SapMachine 2019-08-02 Added linux-x64 to the exclusion as well because the issue is seen there, too.
-vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,generic-ppc64,linux-ppc64le
-# Also seen on linux x86_64
-vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,generic-ppc64,linux-ppc64le
-vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     generic-ppc64,linux-ppc64le
+# SapMachine 2019-08-29 Added solaris-sparcv9 to the exclusion as well because the issue is seen there, too.
+vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,generic-ppc64,linux-ppc64le,solaris-sparcv9
+vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,generic-ppc64,linux-ppc64le,solaris-sparcv9
+vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     generic-ppc64,linux-ppc64le,solaris-sparcv9
 
 # SapMachine 2019-06-28
 # RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr or just timeout. Seen also in 13.

@@ -70,18 +70,21 @@ com/sun/nio/sctp/SctpMultiChannel/Send.java                                     
 com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             solaris-sparcv9
 # These even crash!!
 # SapMachine 2019-04-30 Still fails in 11.
-sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
-sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
-javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                              solaris-sparcv9
+# SapMachine 2019-09-03 See if still failing
+#sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
+#sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
+#javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                              solaris-sparcv9
 
 # SapMachine 2018-08-22
 # RuntimeException: Could not find class leak.
 # SapMachine 2019-04-30 Still fails in 11.
-jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
+# SapMachine 2019-09-03 See if still failing
+#jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
 
 # SapMachine 2018-08-22
 # We see timeouts after 12 min in all jdk9 - jdk12
-java/net/httpclient/SmokeTest.java                                                   windows-all
+# SapMachine 2019-09-03 See if still failing
+#java/net/httpclient/SmokeTest.java                                                   windows-all
 
 # SapMachine 2018-06-22, 2019-04-30
 # Fails only on linuxx86_64. "RuntimeException: Test failed for angle 15.0" on SLES 12.2; SLES 15.
@@ -95,12 +98,6 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of 11.
-
-# SapMachine 2019-02-07 Times out sporadically
-# SSLProtocolException: Input record too big: max = 16709 len = 26871
-# SapMachine 2019-05-08 Still fails in 11.
-# SapMachine 2019-07-16 Check if still failing
-#sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                              linux-s390x
 
 # SapMachine 2019-02-16
 # javax.crypto.AEADBadTagException: Tag mismatch!
@@ -223,7 +220,13 @@ sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                822
 #
 #
 # SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
-java/awt/FontClass/FontSize1Test.java                                                darwinintel
+java/awt/FontClass/FontSize1Test.java                                                macosx-all
+
+# SapMachine 2019-08-29
+# We see errors in jdk/jdk (14) and recently in 11 as well. So, it must be introduced
+# by some change that had been backported.
+# Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
+sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
