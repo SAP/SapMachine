@@ -319,6 +319,7 @@ static void print_legend(outputStream* st, const print_info_t* pi) {
   if (pi->scale != 0) {
     const char* display_unit = NULL;
     switch (pi->scale) {
+      case 1: display_unit = "  "; break;
       case K: display_unit = "KB"; break;
       case M: display_unit = "MB"; break;
       case G: display_unit = "GB"; break;
@@ -334,6 +335,9 @@ static void print_legend(outputStream* st, const print_info_t* pi) {
 // width: printing width.
 static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  {
 
+  // If we forced a unit via scale=.. argument, we suppress display of the unit
+  // since we already know which unit is used. That saves horizontal space and
+  // makes automatic processing of the data easier.
   bool print_unit = false;
 
   if (scale == 0) {
@@ -369,7 +373,7 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
   // the display. Who cares for half kbytes.
   int precision = scale < G ? 0 : 1;
 
-  if (byte_size > 0 && byte_size < K) {
+  if (scale > 1 && byte_size > 0 && byte_size < K) {
     // Prevent values smaller than one K but not 0 showing up as .
     l = printf_helper(st, "<1%s", display_unit);
   } else {

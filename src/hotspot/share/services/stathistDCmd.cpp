@@ -66,6 +66,8 @@ int StatHistDCmd::num_arguments() {
 static bool scale_from_name(const char* scale, size_t* out) {
   if (strcasecmp(scale, "dynamic") == 0) {
     *out = 0;
+  } else if (strcasecmp(scale, "1") == 0 || strcasecmp(scale, "b") == 0) {
+    *out = 1;
   } else if (strcasecmp(scale, "kb") == 0 || strcasecmp(scale, "k") == 0) {
     *out = K;
   } else if (strcasecmp(scale, "mb") == 0 || strcasecmp(scale, "m") == 0) {
