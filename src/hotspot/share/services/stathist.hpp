@@ -37,7 +37,7 @@ namespace StatisticsHistory {
 
   struct print_info_t {
     bool raw;
-    bool cvs;
+    bool csv;
     // Omit printing a legend.
     bool no_legend;
     // Normally, when we print a report, we sample the current values too and print it atop of the table.

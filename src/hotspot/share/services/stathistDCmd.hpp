@@ -33,7 +33,7 @@ namespace StatisticsHistory {
 class StatHistDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _scale;
-  DCmdArgument<bool> _cvs;
+  DCmdArgument<bool> _csv;
   DCmdArgument<bool> _no_legend;
 #ifdef ASSERT
   DCmdArgument<bool> _raw;

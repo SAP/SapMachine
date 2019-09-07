@@ -192,7 +192,7 @@ bool initialize_space_for_now_record() {
 
 static void print_category_line(outputStream* st, int widths[], const print_info_t* pi) {
 
-  assert(pi->cvs == false, "Not in cvs mode");
+  assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
 
   const Column* c = ColumnList::the_list()->first();
@@ -220,7 +220,7 @@ static void print_category_line(outputStream* st, int widths[], const print_info
 
 static void print_header_line(outputStream* st, int widths[], const print_info_t* pi) {
 
-  assert(pi->cvs == false, "Not in cvs mode");
+  assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
 
   const Column* c = ColumnList::the_list()->first();
@@ -256,7 +256,7 @@ static void print_header_line(outputStream* st, int widths[], const print_info_t
 static void print_column_names(outputStream* st, int widths[], const print_info_t* pi) {
 
   // Leave space for timestamp column
-  if (pi->cvs == false) {
+  if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
   } else {
     st->put(',');
@@ -265,10 +265,10 @@ static void print_column_names(outputStream* st, int widths[], const print_info_
   const Column* c = ColumnList::the_list()->first();
   const Column* previous = NULL;
   while (c != NULL) {
-    if (pi->cvs == false) {
+    if (pi->csv == false) {
       st->print("%-*s ", widths[c->index()], c->name());
-    } else { // cvs mode
-      // cvs: use comma as delimiter, don't pad, and precede name with header if there is one.
+    } else { // csv mode
+      // csv: use comma as delimiter, don't pad, and precede name with header if there is one.
       if (c->header() != NULL) {
         st->print("%s-", c->header());
       }
@@ -402,8 +402,8 @@ void Column::print_value(outputStream* st, value_t value, value_t last_value,
 #endif
   // We print all values right aligned.
   int needed = calc_print_size(value, last_value, last_value_age, pi);
-  if (pi->cvs == false && min_width > needed) {
-    // In ascii (non cvs) mode, pad to minimum width
+  if (pi->csv == false && min_width > needed) {
+    // In ascii (non csv) mode, pad to minimum width
     ostream_put_n(st, ' ', min_width - needed);
   }
   do_print(st, value, last_value, last_value_age, pi);
@@ -471,7 +471,7 @@ static void print_one_record(outputStream* st, const record_t* record,
     print_timestamp(st, record->timestamp);
   }
 
-  if (pi->cvs == false) {
+  if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_DIVIDER_LEN);
   } else {
     st->put(',');
@@ -489,7 +489,7 @@ static void print_one_record(outputStream* st, const record_t* record,
     }
     const int min_width = widths[idx];
     c->print_value(st, v, v2, age, min_width, pi);
-    st->put(pi->cvs ? ',' : ' ');
+    st->put(pi->csv ? ',' : ' ');
     c = c->next();
   }
   st->cr();
@@ -689,8 +689,8 @@ public:
       update_widths_from_one_record(values_now, youngest_in_table, g_widths, pi);
     }
 
-    // Print headers (not in cvs mode)
-    if (pi->cvs == false) {
+    // Print headers (not in csv mode)
+    if (pi->csv == false) {
       print_category_line(st, g_widths, pi);
       print_header_line(st, g_widths, pi);
     }
@@ -1143,7 +1143,7 @@ void print_report(outputStream* st, const print_info_t* pi) {
 
   static const print_info_t default_settings = {
       false, // raw
-      false, // cvs
+      false, // csv
       false, // omit_legend
       true   // avoid_sampling
   };
@@ -1152,8 +1152,8 @@ void print_report(outputStream* st, const print_info_t* pi) {
     pi = &default_settings;
   }
 
-  // Print legend at the top (omit if suppressed on command line, or in cvs mode).
-  if (pi->no_legend == false && pi->cvs == false) {
+  // Print legend at the top (omit if suppressed on command line, or in csv mode).
+  if (pi->no_legend == false && pi->csv == false) {
     print_legend(st, pi);
     st->cr();
   }

@@ -38,7 +38,7 @@ StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
     _scale("scale", "Memory usage in which to scale. Valid values are: k, m, g (fixed scale) "
            "or \"dynamic\" for a dynamically chosen scale.",
            "STRING", false, "dynamic"),
-    _cvs("cvs", "CVS format.", "BOOLEAN", false, "false"),
+    _csv("csv", "csv format.", "BOOLEAN", false, "false"),
     _no_legend("no-legend", "Omit legend.", "BOOLEAN", false, "false")
 #ifdef ASSERT
     , _raw("raw", "Print raw values (debug only).", "BOOLEAN", false, "false")
@@ -47,7 +47,7 @@ StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
   _dcmdparser.add_dcmd_option(&_scale);
   _dcmdparser.add_dcmd_option(&_no_legend);
   DEBUG_ONLY(_dcmdparser.add_dcmd_option(&_raw);)
-  _dcmdparser.add_dcmd_option(&_cvs);
+  _dcmdparser.add_dcmd_option(&_csv);
 }
 
 int StatHistDCmd::num_arguments() {
@@ -83,7 +83,7 @@ void StatHistDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
   DEBUG_ONLY(pi.raw = _raw.value();)
-  pi.cvs = _cvs.value();
+  pi.csv = _csv.value();
   pi.no_legend = _no_legend.value();
   pi.avoid_sampling = false;
 
