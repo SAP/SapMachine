@@ -406,7 +406,14 @@ void Column::print_value(outputStream* st, value_t value, value_t last_value,
     // In ascii (non csv) mode, pad to minimum width
     ostream_put_n(st, ' ', min_width - needed);
   }
+  // csv values shall be enclosed in quotes.
+  if (pi->csv) {
+    st->put('"');
+  }
   do_print(st, value, last_value, last_value_age, pi);
+  if (pi->csv) {
+    st->put('"');
+  }
 }
 
 // Returns the number of characters this value needs to be printed.
