@@ -52,6 +52,10 @@ namespace StatisticsHistory {
   // If no print info is given (print_info == NULL), we print with default settings
   void print_report(outputStream* st, const print_info_t* print_info = NULL);
 
+  // Dump both textual and csv style reports to two files, "vitals_<pid>.txt" and "vitals_<pid>.csv".
+  // If these files exist, they are overwritten.
+  void dump_reports();
+
   // These are counters for the statistics history. Ideally, they would live
   // inside their thematical homes, e.g. thread.cpp or classLoaderDataGraph.cpp,
   // however since this is unlikely ever to be brought upstream we keep this separate

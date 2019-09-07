@@ -31,6 +31,7 @@
 #include "code/codeCache.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "services/stathist.hpp"
@@ -1260,6 +1261,34 @@ void print_report(outputStream* st, const print_info_t* pi) {
   }
 
   RecordTables::the_tables()->print_all(st, pi, values_now);
+
+}
+
+// Dump both textual and csv style reports to two files, "vitals_<pid>.txt" and "vitals_<pid>.csv".
+// If these files exist, they are overwritten.
+void dump_reports() {
+
+  char vitals_file_name[64];
+
+  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "vitals_%d.txt", os::current_process_id());
+  ::printf("Dumping Vitals to %s.\n", vitals_file_name);
+  print_info_t pi;
+  memset(&pi, 0, sizeof(pi));
+  pi.avoid_sampling = true; // this is called during exit, so lets be a bit careful.
+  {
+    fileStream fs(vitals_file_name);
+    print_report(&fs, &pi);
+  }
+
+  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "vitals_%d.csv", os::current_process_id());
+  ::printf("Dumping Vitals csv to %s.\n", vitals_file_name);
+  pi.csv = true;
+  pi.scale = 1 * K;
+  pi.reverse_ordering = true;
+  {
+    fileStream fs(vitals_file_name);
+    print_report(&fs, &pi);
+  }
 
 }
 
