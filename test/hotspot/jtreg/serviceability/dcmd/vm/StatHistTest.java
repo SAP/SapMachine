@@ -47,7 +47,24 @@ public class StatHistTest {
         output.shouldContain("--jvm--");
         output.shouldContain("--heap--");
         output.shouldContain("--meta--");
+
+        output = executor.execute("VM.vitals reverse");
+        output.shouldContain("--jvm--");
+        output.shouldContain("--heap--");
+        output.shouldContain("--meta--");
+
+        output = executor.execute("VM.vitals scale=m");
+        output.shouldContain("--jvm--");
+        output.shouldContain("--heap--");
+        output.shouldContain("--meta--");
+
         output = executor.execute("VM.vitals csv");
+        output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
+
+        output = executor.execute("VM.vitals csv");
+        output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
+
+        output = executor.execute("VM.vitals csv reverse");
         output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
     }
 

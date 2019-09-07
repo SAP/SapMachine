@@ -525,6 +525,11 @@ class RecordTable : public CHeapObj<mtInternal> {
 
   record_t* _records;
 
+  // _pos: index of next slot to write to. If we did not yet wrap,
+  //  this position is invalid, otherwise this is the position of the oldest slot.
+  //
+  // Valid ranges: not yet wrapped:    [0 .. _pos)
+  //               wrapped:            [_pos ... (_num_records-1 -> 0) ... _pos)
   int _pos;
   bool _did_wrap;
 
@@ -532,12 +537,53 @@ class RecordTable : public CHeapObj<mtInternal> {
   const int _follower_ratio;
   int _follower_countdown;
 
-  void check_pos(int pos) const {
-    assert(pos >= 0 && pos < _num_records, "invalid position");
+  #ifdef ASSERT
+    bool valid_pos(int pos) const           { return pos >= 0 && pos < _num_records; }
+    bool valid_pos_or_null(int pos) const   { return pos == -1 || valid_pos(pos); }
+  #endif
+
+  // Returns the position of the last slot we wrote to.
+  // -1 if this table is empty.
+  int youngest_pos() const {
+    int pos = _pos - 1;
+    if (pos == -1) {
+      if (_did_wrap) {
+        pos = _num_records - 1;
+      }
+    }
+    return pos;
+  }
+
+  // Returns the position of the oldest slot we wrote to.
+  // -1 if this table is empty.
+  int oldest_pos() const {
+    if (_did_wrap) {
+      return _pos;
+    } else {
+      return _pos > 0 ? 0 : -1;
+    }
+  }
+
+  // Return the position following pos.
+  //  Input position must be a valid position.
+  //  Returns -1 if there is no following slot.
+  int following_pos(int pos) const {
+    assert(valid_pos(pos), "Sanity");
+    int p2 = pos + 1;
+    if (_did_wrap) {
+      if (p2 == _num_records) {
+        p2 = 0;
+      }
+    }
+    if (p2 == _pos) {
+      p2 = -1;
+    }
+    assert(valid_pos_or_null(p2), "Sanity");
+    return p2;
   }
 
   int preceeding_pos(int pos) const {
-    check_pos(pos);
+    assert(valid_pos(pos), "Sanity");
     int p2 = pos - 1;
     if (p2 == -1) {
       if (_did_wrap) {
@@ -547,11 +593,12 @@ class RecordTable : public CHeapObj<mtInternal> {
       assert(_did_wrap, "Sanity");
       p2 = -1;
     }
+    assert(valid_pos_or_null(p2), "Sanity");
     return p2;
   }
 
   record_t* at(int pos) const {
-    check_pos(pos);
+    assert(valid_pos(pos), "Sanity");
     return (record_t*) ((address)_records + (record_size_in_bytes() * pos));
   }
 
@@ -564,21 +611,50 @@ class RecordTable : public CHeapObj<mtInternal> {
     return NULL;
   }
 
-  class ConstReverseIterator {
+  class ConstIterator {
     const RecordTable* const _rt;
+    const bool _reverse;
     int _p;
+
+    void move_to_oldest() {
+      _p = _rt->oldest_pos();
+    }
+
+    void move_to_youngest() {
+      _p = _rt->youngest_pos();
+    }
+
+    void step_forward() {
+      if (valid()) {
+        _p = _rt->following_pos(_p);
+      }
+    }
+
+    void step_back() {
+      if (valid()) {
+        _p = _rt->preceeding_pos(_p);
+      }
+    }
 
   public:
 
-    ConstReverseIterator(const RecordTable* rt) : _rt(rt), _p(-1) {
-      _p = _rt->preceeding_pos(_rt->_pos);
+    ConstIterator(const RecordTable* rt, bool reverse = false)
+      : _rt(rt), _reverse(reverse), _p(-1)
+    {
+      if (_reverse) {
+        move_to_oldest();
+      } else {
+        move_to_youngest();
+      }
     }
 
     bool valid() const { return _p != -1; }
 
     void step() {
-      if (valid()) {
-        _p = _rt->preceeding_pos(_p);
+      if (_reverse) {
+        step_forward();
+      } else {
+        step_back();
       }
     }
 
@@ -587,6 +663,8 @@ class RecordTable : public CHeapObj<mtInternal> {
       return _rt->at(_p);
     }
 
+    // Returns the record directly preceding, age-wise, the current
+    // record. This has nothing to do with iteratore
     // May return NULL
     const record_t* get_preceeding() const {
       return _rt->preceeding(_p);
@@ -611,7 +689,7 @@ class RecordTable : public CHeapObj<mtInternal> {
       c = c->next();
     }
 
-    ConstReverseIterator it(this);
+    ConstIterator it(this);
     while(it.valid()) {
       const record_t* record = it.get();
       const record_t* previous_record = it.get_preceeding();
@@ -622,7 +700,7 @@ class RecordTable : public CHeapObj<mtInternal> {
 
   // Print all records.
   void print_all_records(outputStream* st, const int widths[], const print_info_t* pi) const {
-    ConstReverseIterator it(this);
+    ConstIterator it(this, pi->reverse_ordering);
     while(it.valid()) {
       const record_t* record = it.get();
       const record_t* previous_record = it.get_preceeding();
@@ -697,11 +775,15 @@ public:
     print_column_names(st, g_widths, pi);
     st->cr();
 
-    // Now print the actual values. Youngest to oldest, first one the now-values.
-    if (values_now != NULL) {
+    // Now print the actual values. We preceede the table values with the now value
+    //  (if printing order is youngest-to-oldest) or write it last (if printing order is oldest-to-youngest).
+    if (values_now != NULL && pi->reverse_ordering == false) {
       print_one_record(st, values_now, youngest_in_table, g_widths, pi);
     }
     print_all_records(st, g_widths, pi);
+    if (values_now != NULL && pi->reverse_ordering == true) {
+      print_one_record(st, values_now, youngest_in_table, g_widths, pi);
+    }
 
   }
 };

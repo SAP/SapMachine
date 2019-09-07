@@ -35,6 +35,7 @@ protected:
   DCmdArgument<char*> _scale;
   DCmdArgument<bool> _csv;
   DCmdArgument<bool> _no_legend;
+  DCmdArgument<bool> _reverse;
 #ifdef ASSERT
   DCmdArgument<bool> _raw;
 #endif
