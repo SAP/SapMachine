@@ -63,6 +63,11 @@ public class StatHistTest {
         output.shouldContain("--heap--");
         output.shouldContain("--meta--");
 
+        output = executor.execute("VM.vitals raw");
+        output.shouldContain("--jvm--");
+        output.shouldContain("--heap--");
+        output.shouldContain("--meta--");
+
         output = executor.execute("VM.vitals csv");
         output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
 
@@ -70,6 +75,9 @@ public class StatHistTest {
         output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
 
         output = executor.execute("VM.vitals csv reverse");
+        output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
+
+        output = executor.execute("VM.vitals csv reverse raw");
         output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
     }
 

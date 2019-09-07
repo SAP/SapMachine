@@ -399,12 +399,12 @@ Column::Column(const char* category, const char* header, const char* name, const
 
 void Column::print_value(outputStream* st, value_t value, value_t last_value,
     int last_value_age, int min_width, const print_info_t* pi) const {
-#ifdef ASSERT
+
   if (pi->raw) {
     printf_helper(st, UINT64_FORMAT, value);
     return;
   }
-#endif
+
   // We print all values right aligned.
   int needed = calc_print_size(value, last_value, last_value_age, pi);
   if (pi->csv == false && min_width > needed) {

@@ -40,15 +40,13 @@ StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
            "STRING", false, "dynamic"),
     _csv("csv", "csv format.", "BOOLEAN", false, "false"),
     _no_legend("no-legend", "Omit legend.", "BOOLEAN", false, "false"),
-    _reverse("reverse", "Reverse printing order.", "BOOLEAN", false, "false")
-#ifdef ASSERT
-    , _raw("raw", "Print raw values (debug only).", "BOOLEAN", false, "false")
-#endif
+    _reverse("reverse", "Reverse printing order.", "BOOLEAN", false, "false"),
+    _raw("raw", "Print raw values (debug only).", "BOOLEAN", false, "false")
 {
   _dcmdparser.add_dcmd_option(&_scale);
   _dcmdparser.add_dcmd_option(&_no_legend);
   _dcmdparser.add_dcmd_option(&_reverse);
-  DEBUG_ONLY(_dcmdparser.add_dcmd_option(&_raw);)
+  _dcmdparser.add_dcmd_option(&_raw);
   _dcmdparser.add_dcmd_option(&_csv);
 }
 
@@ -86,7 +84,7 @@ void StatHistDCmd::execute(DCmdSource source, TRAPS) {
     output()->print_cr("Invalid scale: \"%s\".", _scale.value());
     return;
   }
-  DEBUG_ONLY(pi.raw = _raw.value();)
+  pi.raw = _raw.value();
   pi.csv = _csv.value();
   pi.no_legend = _no_legend.value();
   pi.reverse_ordering = _reverse.value();
