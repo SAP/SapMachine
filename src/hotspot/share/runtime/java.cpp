@@ -72,6 +72,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/memTracker.hpp"
+// SapMachine 2019-09-01: vitals.
 #include "services/stathist.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
