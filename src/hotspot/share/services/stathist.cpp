@@ -849,7 +849,7 @@ public:
     record_stack_base_and_size();
     for (;;) {
       take_sample();
-      os::sleep(this, RecordTables::the_tables()->short_term_interval() * 1000, false);
+      os::naked_sleep(RecordTables::the_tables()->short_term_interval() * 1000);
       if (_stop) {
         break;
       }

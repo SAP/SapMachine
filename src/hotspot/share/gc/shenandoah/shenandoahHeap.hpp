@@ -214,6 +214,9 @@ private:
   ShenandoahRegionIterator _update_refs_iterator;
 
 public:
+
+  inline HeapWord* base() const { return _heap_region.start(); }
+
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
 
@@ -529,6 +532,9 @@ public:
   bool is_maximal_no_gc() const shenandoah_not_implemented_return(false);
 
   bool is_in(const void* p) const;
+
+  MemRegion reserved_region() const { return _reserved; }
+  bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   void collect(GCCause::Cause cause);
   void do_full_collection(bool clear_all_soft_refs);

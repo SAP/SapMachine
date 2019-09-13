@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,13 +19,37 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/g1HeapSizingPolicy.hpp"
-#include "memory/allocation.inline.hpp"
+package jdk.test.lib.security;
 
-G1HeapSizingPolicy* G1HeapSizingPolicy::create(const G1CollectedHeap* g1h, const G1Analytics* analytics) {
-  return new G1HeapSizingPolicy(g1h, analytics);
+/*
+ * An entry in key store.
+ */
+public class KeyEntry {
+
+    // The key algorithm
+    public final String keyAlgo;
+
+    // The PEM-encoded PKCS8 key string
+    public final String keyStr;
+
+    // The password to protect the key
+    public final String password;
+
+    // The certificate chain
+    // Every certificate is a PEM-encoded string
+    public final String[] certStrs;
+
+    public KeyEntry(String keyAlgo, String keyStr, String password,
+            String[] certStrs) {
+        this.keyAlgo = keyAlgo;
+        this.keyStr = keyStr;
+        this.password = password;
+        this.certStrs = certStrs;
+    }
+
+    public KeyEntry(String keyAlgo, String keyStr, String[] certStrs) {
+        this(keyAlgo, keyStr, null, certStrs);
+    }
 }

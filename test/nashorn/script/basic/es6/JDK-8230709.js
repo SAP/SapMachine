@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_RUNTIME_OS_EXT_HPP
-#define SHARE_RUNTIME_OS_EXT_HPP
+/**
+ * JDK-8230709: Array index out of bounds in ES6 mode
+ *
+ * @test
+ * @run
+ * @option --language=es6
+ */
 
-#define EMIT_RANGES_FOR_GLOBALS_EXT // NOP
-#define EMIT_CONSTRAINTS_FOR_GLOBALS_EXT // NOP
-#define EMIT_WRITEABLES_FOR_GLOBALS_EXT // NOP
-
-public:
-  static void init_globals_ext() {} // Run from init_globals().
-                                    // See os.hpp/cpp and init.cpp.
-
- private:
-
-#endif // SHARE_RUNTIME_OS_EXT_HPP
+{{{{{{{{{{{{{{{ let x; }}}}}}}}}}}}}}}

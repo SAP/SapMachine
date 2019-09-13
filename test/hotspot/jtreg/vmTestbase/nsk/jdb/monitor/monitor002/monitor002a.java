@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,51 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_RUNTIME_GLOBALS_EXT_HPP
-#define SHARE_RUNTIME_GLOBALS_EXT_HPP
+package nsk.jdb.monitor.monitor002;
 
-#include "runtime/flags/jvmFlag.hpp"
+import nsk.share.*;
+import nsk.share.jpda.*;
+import nsk.share.jdb.*;
 
-// globals_extension.hpp extension
+import java.io.*;
 
-// Additional JVMFlagsEnum values
-#define JVMFLAGSENUM_EXT
+//    THIS TEST IS LINE NUMBER SENSITIVE
 
+/* This is debuggee aplication */
+public class monitor002a {
+    static monitor002a _monitor002a = new monitor002a();
 
-// globals.cpp extension
+    public static void main(String args[]) {
+        System.exit(monitor002.JCK_STATUS_BASE + _monitor002a.runIt(args, System.out));
+    }
 
-// Additional flag definitions
-#define MATERIALIZE_FLAGS_EXT
+    static void lastBreak () {}
 
-// Additional flag descriptors: see flagTable definition
-#define FLAGTABLE_EXT
-
-
-// Default method implementations
-
-inline bool JVMFlag::is_unlocker_ext() const {
-  return false;
+    public int runIt(String args[], PrintStream out) {
+        JdbArgumentHandler argumentHandler = new JdbArgumentHandler(args);
+        Log log = new Log(out, argumentHandler);
+        int localInt = 0; // monitor002.LINE_NUMBER
+        localInt++; // dummy breakpoint
+        log.display("Debuggee PASSED");
+        return monitor002.PASSED;
+    }
 }
-
-inline bool JVMFlag::is_unlocked_ext() const {
-  return true;
-}
-
-inline bool JVMFlag::is_writeable_ext() const {
-  return false;
-}
-
-inline bool JVMFlag::is_external_ext() const {
-  return false;
-}
-
-inline JVMFlag::MsgType JVMFlag::get_locked_message_ext(char* buf, int buflen) const {
-  assert(buf != NULL, "Buffer cannot be NULL");
-  buf[0] = '\0';
-  return JVMFlag::NONE;
-}
-
-#endif // SHARE_RUNTIME_GLOBALS_EXT_HPP

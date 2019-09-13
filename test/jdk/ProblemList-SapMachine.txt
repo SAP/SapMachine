@@ -150,8 +150,10 @@ javax/swing/JFileChooser/4847375/bug4847375.java                                
 # timeout on ppc in 11 only.
 #
 #
+# SapMachine 2019-09-06
 #
-jdk/jfr/event/compiler/TestCodeSweeper.java                                          generic-ppc64,linux-ppc64le
+#                       Note as well, that Oracle has disabled the test in jdk/jdk because of timeout issues, tracked by JDK-8225209. Results could be interesting for us in 11, too.
+#jdk/jfr/event/compiler/TestCodeSweeper.java                                          generic-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
 #
@@ -321,6 +323,14 @@ java/awt/font/WindowsIndicFonts.java                                         822
 # SapMachine 2019-08-28 (Test-)fix for 8219082 has been pushed, requested for 13u
 #jdk/jfr/event/runtime/TestShutdownEvent.java                                 8219082 linux-all
 
+# SapMachine 2019-08-02
+# RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
+# Seen only on linuxx86_64, ... . Maybe a specific issue on that box?
+#
+#
+# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990, got excluded by 8230115. Need to downport it.
+#jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
+
 # SapMachine 2019-08-08
 # We see this issue occuring for a long time already in 13 and 14.
 # Another one of these flaky font things??
@@ -329,9 +339,16 @@ java/awt/font/FontNames/FCCompositeTest.java                                    
 
 # SapMachine 2019-08-09
 # This test fails only on ..., probably a configuration issue
-# http://sapjvm:1080/servlet/testresult?show_similar_failed_tests=true&testid=207454864
-# https://sapjira.wdf.sap.corp/browse/TGSAPJVM-3904
+#
+#
 java/nio/file/WatchService/LotsOfCloses.java                                         linux-s390x
+
+# SapMachine 2019-09-09
+# Maybe related to new Socket Impl
+#
+#
+# First occurence on 2019-06-04
+#java/net/Socket/asyncClose/Race.java                                                 aix-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
@@ -340,19 +357,12 @@ java/nio/file/WatchService/LotsOfCloses.java                                    
 # File needs to be added to test jar: java.nio.file.NoSuchFileException: ...
 sun/util/calendar/zi/TestZoneInfo310.java                                            generic-all
 
-# SapMachine 2019-08-02
-# RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
-# Seen only on linuxx86_64, .... Maybe a specific issue on that box?
-#
-#
-#
-jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java                               linuxx86_64
-
 # SapMachine 2019-08-08
 # We see sporadic test failures in this new test.
 #
 # I opened https://bugs.openjdk.java.net/browse/JDK-8229280
-java/nio/file/attribute/BasicFileAttributeView/SetTimesNanos.java            8229280 linux-all
+# SapMachine 2019-09-06 The bug is resolved, test whether it works.
+#java/nio/file/attribute/BasicFileAttributeView/SetTimesNanos.java            8229280 linux-all
 
 # SapMachine 2019-08-29
 # GC overhead limit exceeded, occurs very often

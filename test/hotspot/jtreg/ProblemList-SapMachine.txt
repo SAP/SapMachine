@@ -219,6 +219,7 @@ gc/z/TestUncommit.java                                                          
 # SapMachine 2019-08-15
 # This is a regression in 13. But just tracing. Working on a fix.
 #
+#
 serviceability/logging/TestQuotedLogOutputs.java                                     windows-all
 
 ###############################################################################
@@ -252,6 +253,20 @@ compiler/c2/aarch64/TestVolatilesG1.java                                        
 compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
 #
 gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
+
+# SapMachine 2019-09-09
+# Crash: Error: Shenandoah assert_correct failed; Object klass pointer should not be NULL
+#
+# This is a shenandoah issue. Just adding this entry for reference.
+# Zhengyu has provided us a test patch which I've put into the queue.
+#gc/stress/CriticalNativeStress.java                                                  generic-all
+
+# SapMachine 2019-09-09
+# This test was reactivated on 2019-08-30 with https://bugs.openjdk.java.net/browse/JDK-8228960
+# After that, we see errors again on ... and ... . Opened a Backlog item.
+#
+#
+#containers/docker/TestJcmdWithSideCar.java                                           linux-s390x, linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

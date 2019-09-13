@@ -1330,16 +1330,12 @@ NamedThread::NamedThread() :
 {}
 
 NamedThread::~NamedThread() {
-  if (_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, _name);
-    _name = NULL;
-  }
+  FREE_C_HEAP_ARRAY(char, _name);
 }
 
 void NamedThread::set_name(const char* format, ...) {
   guarantee(_name == NULL, "Only get to set name once.");
   _name = NEW_C_HEAP_ARRAY(char, max_name_len, mtThread);
-  guarantee(_name != NULL, "alloc failure");
   va_list ap;
   va_start(ap, format);
   jio_vsnprintf(_name, max_name_len, format, ap);
@@ -3238,7 +3234,7 @@ WordSize JavaThread::popframe_preserved_args_size_in_words() {
 
 void JavaThread::popframe_free_preserved_args() {
   assert(_popframe_preserved_args != NULL, "should not free PopFrame preserved arguments twice");
-  FREE_C_HEAP_ARRAY(char, (char*) _popframe_preserved_args);
+  FREE_C_HEAP_ARRAY(char, (char*)_popframe_preserved_args);
   _popframe_preserved_args = NULL;
   _popframe_preserved_args_size = 0;
 }
