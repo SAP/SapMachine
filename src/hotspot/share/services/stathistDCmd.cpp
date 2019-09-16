@@ -41,7 +41,7 @@ StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
     _csv("csv", "csv format.", "BOOLEAN", false, "false"),
     _no_legend("no-legend", "Omit legend.", "BOOLEAN", false, "false"),
     _reverse("reverse", "Reverse printing order.", "BOOLEAN", false, "false"),
-    _raw("raw", "Print raw values (debug only).", "BOOLEAN", false, "false")
+    _raw("raw", "Print raw values.", "BOOLEAN", false, "false")
 {
   _dcmdparser.add_dcmd_option(&_scale);
   _dcmdparser.add_dcmd_option(&_no_legend);

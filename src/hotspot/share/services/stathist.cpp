@@ -339,10 +339,10 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
   // If we forced a unit via scale=.. argument, we suppress display of the unit
   // since we already know which unit is used. That saves horizontal space and
   // makes automatic processing of the data easier.
-  bool print_unit = false;
+  bool dynamic_mode = false;
 
   if (scale == 0) {
-    print_unit = true;
+    dynamic_mode = true;
     // Dynamic mode. Choose scale for this value.
     if (byte_size == 0) {
       scale = K;
@@ -358,7 +358,7 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
   }
 
   const char* display_unit = "";
-  if (print_unit) {
+  if (dynamic_mode) {
     switch(scale) {
       case K: display_unit = "k"; break;
       case M: display_unit = "m"; break;
@@ -368,18 +368,38 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
     }
   }
 
-  int l = 0;
-  float display_value = (float) byte_size / scale;
-  // Values smaller than 1M are shown are rounded up to whole numbers to de-clutter
-  // the display. Who cares for half kbytes.
-  int precision = scale < G ? 0 : 1;
+  // How we display stuff:
+  // scale=1 (manually set)          - print exact byte values without unit
+  // scale=0 (default, dynamic mode) - print values < 1024KB as "..k", <1024MB as "..m", "..g" above that
+  //                                 - to distinguish between 0 and "almost 0" print very small values as "<1K"
+  //                                 - print "k", "m" values with precision 0, "g" values with precision 1.
+  // scale=k,m or g (manually set)   - print value divided by scale and without unit. No smart printing.
+  //                                   Used mostly for automated processing, lets keep parsing simple.
 
-  if (scale > 1 && byte_size > 0 && byte_size < K) {
-    // Prevent values smaller than one K but not 0 showing up as .
-    l = printf_helper(st, "<1%s", display_unit);
+  int l = 0;
+  if (scale == 1) {
+    // scale = 1 - print exact bytes
+    l = printf_helper(st, SIZE_FORMAT, byte_size);
+
   } else {
-    l = printf_helper(st, "%.*f%s", precision, display_value, display_unit);
+    const float display_value = (float) byte_size / scale;
+    if (dynamic_mode) {
+      // dynamic scale
+      const int precision = scale >= G ? 1 : 0;
+      if (byte_size > 0 && byte_size < 1 * K) {
+        // very small but not zero.
+        assert(scale == K, "Sanity");
+        l = printf_helper(st, "<1%s", display_unit);
+      } else {
+        l = printf_helper(st, "%.*f%s", precision, display_value, display_unit);
+      }
+    } else {
+      // fixed scale K, M or G
+      const int precision = 0;
+      l = printf_helper(st, "%.*f%s", precision, display_value, display_unit);
+    }
   }
+
   return l;
 
 }
@@ -1268,26 +1288,43 @@ void print_report(outputStream* st, const print_info_t* pi) {
 // If these files exist, they are overwritten.
 void dump_reports() {
 
+  static const char* file_prefix = "sapmachine_vitals_";
   char vitals_file_name[64];
 
-  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "vitals_%d.txt", os::current_process_id());
-  ::printf("Dumping Vitals to %s.\n", vitals_file_name);
+  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
+  ::printf("Dumping Vitals to %s\n", vitals_file_name);
   print_info_t pi;
   memset(&pi, 0, sizeof(pi));
   pi.avoid_sampling = true; // this is called during exit, so lets be a bit careful.
   {
     fileStream fs(vitals_file_name);
-    print_report(&fs, &pi);
+    static const StatisticsHistory::print_info_t settings = {
+        false, // raw
+        false, // csv
+        false, // no_legend
+        true,  // avoid_sampling
+        true,  // reverse_ordering
+        0      // scale
+    };
+    print_report(&fs, &settings);
   }
 
-  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "vitals_%d.csv", os::current_process_id());
-  ::printf("Dumping Vitals csv to %s.\n", vitals_file_name);
+  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
+  ::printf("Dumping Vitals csv to %s\n", vitals_file_name);
   pi.csv = true;
   pi.scale = 1 * K;
   pi.reverse_ordering = true;
   {
     fileStream fs(vitals_file_name);
-    print_report(&fs, &pi);
+    static const StatisticsHistory::print_info_t settings = {
+        false, // raw
+        true,  // csv
+        false, // no_legend
+        true,  // avoid_sampling
+        true,  // reverse_ordering
+        1 * K  // scale
+    };
+    print_report(&fs, &settings);
   }
 
 }
