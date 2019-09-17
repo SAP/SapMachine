@@ -38,16 +38,16 @@ StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
     _scale("scale", "Memory usage in which to scale. Valid values are: k, m, g (fixed scale) "
            "or \"dynamic\" for a dynamically chosen scale.",
            "STRING", false, "dynamic"),
-    _cvs("cvs", "CVS format.", "BOOLEAN", false, "false"),
-    _no_legend("no-legend", "Omit legend.", "BOOLEAN", false, "false")
-#ifdef ASSERT
-    , _raw("raw", "Print raw values (debug only).", "BOOLEAN", false, "false")
-#endif
+    _csv("csv", "csv format.", "BOOLEAN", false, "false"),
+    _no_legend("no-legend", "Omit legend.", "BOOLEAN", false, "false"),
+    _reverse("reverse", "Reverse printing order.", "BOOLEAN", false, "false"),
+    _raw("raw", "Print raw values.", "BOOLEAN", false, "false")
 {
   _dcmdparser.add_dcmd_option(&_scale);
   _dcmdparser.add_dcmd_option(&_no_legend);
-  DEBUG_ONLY(_dcmdparser.add_dcmd_option(&_raw);)
-  _dcmdparser.add_dcmd_option(&_cvs);
+  _dcmdparser.add_dcmd_option(&_reverse);
+  _dcmdparser.add_dcmd_option(&_raw);
+  _dcmdparser.add_dcmd_option(&_csv);
 }
 
 int StatHistDCmd::num_arguments() {
@@ -64,6 +64,8 @@ int StatHistDCmd::num_arguments() {
 static bool scale_from_name(const char* scale, size_t* out) {
   if (strcasecmp(scale, "dynamic") == 0) {
     *out = 0;
+  } else if (strcasecmp(scale, "1") == 0 || strcasecmp(scale, "b") == 0) {
+    *out = 1;
   } else if (strcasecmp(scale, "kb") == 0 || strcasecmp(scale, "k") == 0) {
     *out = K;
   } else if (strcasecmp(scale, "mb") == 0 || strcasecmp(scale, "m") == 0) {
@@ -82,9 +84,10 @@ void StatHistDCmd::execute(DCmdSource source, TRAPS) {
     output()->print_cr("Invalid scale: \"%s\".", _scale.value());
     return;
   }
-  DEBUG_ONLY(pi.raw = _raw.value();)
-  pi.cvs = _cvs.value();
+  pi.raw = _raw.value();
+  pi.csv = _csv.value();
   pi.no_legend = _no_legend.value();
+  pi.reverse_ordering = _reverse.value();
   pi.avoid_sampling = false;
 
   StatisticsHistory::print_report(output(), &pi);
