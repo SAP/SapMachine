@@ -1284,7 +1284,7 @@ void print_report(outputStream* st, const print_info_t* pi) {
 
 }
 
-// Dump both textual and csv style reports to two files, "vitals_<pid>.txt" and "vitals_<pid>.csv".
+// Dump both textual and csv style reports to two files, "sapmachine_vitals_<pid>.txt" and "sapmachine_vitals_<pid>.csv".
 // If these files exist, they are overwritten.
 void dump_reports() {
 
