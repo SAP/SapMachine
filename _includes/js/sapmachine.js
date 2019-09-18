@@ -209,9 +209,11 @@ All rights reserved. Confidential and proprietary.
 
             if (versionSelectorEmpty) {
                 this._downloadButton.addClass('download_button_disabled')
+                this._copyURLButton.addClass('download_button_disabled')
                 this._versionSelector.addClass('download_select_disabled')
             } else {
                 this._downloadButton.removeClass('download_button_disabled')
+                this._copyURLButton.removeClass('download_button_disabled')
                 this._versionSelector.removeClass('download_select_disabled')
             }
 
