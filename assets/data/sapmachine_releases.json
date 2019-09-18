@@ -41,12 +41,6 @@
         {
             "lts": false, 
             "ea": false, 
-            "id": "12", 
-            "label": "SapMachine 12"
-        }, 
-        {
-            "lts": false, 
-            "ea": false, 
             "id": "13", 
             "label": "SapMachine 13"
         }, 
@@ -81,19 +75,6 @@
                     "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-13/sapmachine-jdk-13_linux-ppc64_bin.tar.gz", 
                     "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-13/sapmachine-jdk-13_windows-x64_bin.msi", 
                     "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-13/sapmachine-jdk-13_linux-x64_bin.tar.gz"
-                }
-            ]
-        }, 
-        "12": {
-            "releases": [
-                {
-                    "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12.0.2/sapmachine-jdk-12.0.2_linux-ppc64le_bin.tar.gz", 
-                    "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12.0.2/sapmachine-jdk-12.0.2_osx-x64_bin.tar.gz", 
-                    "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12.0.2/sapmachine-jdk-12.0.2_windows-x64_bin.zip", 
-                    "tag": "sapmachine-12.0.2", 
-                    "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12.0.2/sapmachine-jdk-12.0.2_linux-ppc64_bin.tar.gz", 
-                    "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12.0.2/sapmachine-jdk-12.0.2_windows-x64_bin.msi", 
-                    "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-12.0.2/sapmachine-jdk-12.0.2_linux-x64_bin.tar.gz"
                 }
             ]
         }, 
