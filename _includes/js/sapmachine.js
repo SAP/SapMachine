@@ -166,6 +166,7 @@ All rights reserved. Confidential and proprietary.
         this._osSelector = $('#sapmachine_os_select')
         this._versionSelector = $('#sapmachine_version_select')
         this._downloadButton = $('#sapmachine_download_button')
+        this._copyURLButton = $('#sapmachine_copy_button')
         this._ltsCheckbox = $('#sapmachine_lts_checkbox')
         this._nonLtsCheckbox = $('#sapmachine_nonlts_checkbox')
         this._eaCheckbox = $('#sapmachine_ea_checkbox')
@@ -253,11 +254,13 @@ All rights reserved. Confidential and proprietary.
 
             if (imageTypeSelectorEmpty) {
                 this._downloadButton.addClass('download_button_disabled')
+                this._copyURLButton.addClass('download_button_disabled')
                 this._versionSelector.addClass('download_select_disabled')
                 this._osSelector.addClass('download_select_disabled')
                 this._imageTypeSelector.addClass('download_select_disabled')
             } else {
                 this._downloadButton.removeClass('download_button_disabled')
+                this._copyURLButton.removeClass('download_button_disabled')
                 this._versionSelector.removeClass('download_select_disabled')
                 this._osSelector.removeClass('download_select_disabled')
                 this._imageTypeSelector.removeClass('download_select_disabled')

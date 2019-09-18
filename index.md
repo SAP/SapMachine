@@ -29,7 +29,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 <div class="download_label_section">
   <div id="download_label" class="download_label"></div>
-  <button id="copy_button" type="button" class="download_button">Copy Download URL</button>
+  <button id="sapmachine_copy_button" type="button" class="download_button">Copy Download URL</button>
 </div>
 
 <div class="download_filter">
