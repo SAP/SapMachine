@@ -657,7 +657,8 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, StackTraceInThrowable, true,                                \
           "Collect backtrace in throwable when exception happens")          \
                                                                             \
-  product(bool, OmitStackTraceInFastThrow, true,                            \
+  /* SapMachine 2019-09-19 Issue 501. We want to see full exceptions. */    \
+  product(bool, OmitStackTraceInFastThrow, false,                           \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
                                                                             \
   product(bool, PrintWarnings, true,                                        \
