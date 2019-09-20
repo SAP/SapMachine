@@ -512,7 +512,7 @@ const size_t minimumSymbolTableSize = 1024;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
-  /* SapMachine 2019-02-20 : stathist */                                    \
+  /* SapMachine 2019-02-20 : vitals */                                      \
   product(bool, EnableVitals, true,                                         \
           "Enable sampling of vitals: memory, cpu utilization and various " \
           "VM core statistics; display via jcmd \"VM.vitals\".")            \
@@ -522,6 +522,10 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   experimental(bool, VitalsLockFreeSampling, false,                         \
           "When sampling vitals, omit any actions which require locking.")  \
+                                                                            \
+  product(bool, DumpVitalsAtExit, false,                                    \
+	        "Dump vitals at VM exit into two files, vitals_<pid>.txt and "    \
+	        "vitals_<pid>.csv, respectively.")                                \
                                                                             \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
