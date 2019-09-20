@@ -31,6 +31,7 @@
 #include "code/codeCache.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "services/stathist.hpp"
@@ -192,7 +193,7 @@ bool initialize_space_for_now_record() {
 
 static void print_category_line(outputStream* st, int widths[], const print_info_t* pi) {
 
-  assert(pi->cvs == false, "Not in cvs mode");
+  assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
 
   const Column* c = ColumnList::the_list()->first();
@@ -220,7 +221,7 @@ static void print_category_line(outputStream* st, int widths[], const print_info
 
 static void print_header_line(outputStream* st, int widths[], const print_info_t* pi) {
 
-  assert(pi->cvs == false, "Not in cvs mode");
+  assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
 
   const Column* c = ColumnList::the_list()->first();
@@ -256,7 +257,7 @@ static void print_header_line(outputStream* st, int widths[], const print_info_t
 static void print_column_names(outputStream* st, int widths[], const print_info_t* pi) {
 
   // Leave space for timestamp column
-  if (pi->cvs == false) {
+  if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
   } else {
     st->put(',');
@@ -265,10 +266,10 @@ static void print_column_names(outputStream* st, int widths[], const print_info_
   const Column* c = ColumnList::the_list()->first();
   const Column* previous = NULL;
   while (c != NULL) {
-    if (pi->cvs == false) {
+    if (pi->csv == false) {
       st->print("%-*s ", widths[c->index()], c->name());
-    } else { // cvs mode
-      // cvs: use comma as delimiter, don't pad, and precede name with header if there is one.
+    } else { // csv mode
+      // csv: use comma as delimiter, don't pad, and precede name with header if there is one.
       if (c->header() != NULL) {
         st->print("%s-", c->header());
       }
@@ -319,6 +320,7 @@ static void print_legend(outputStream* st, const print_info_t* pi) {
   if (pi->scale != 0) {
     const char* display_unit = NULL;
     switch (pi->scale) {
+      case 1: display_unit = "  "; break;
       case K: display_unit = "KB"; break;
       case M: display_unit = "MB"; break;
       case G: display_unit = "GB"; break;
@@ -334,10 +336,13 @@ static void print_legend(outputStream* st, const print_info_t* pi) {
 // width: printing width.
 static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  {
 
-  bool print_unit = false;
+  // If we forced a unit via scale=.. argument, we suppress display of the unit
+  // since we already know which unit is used. That saves horizontal space and
+  // makes automatic processing of the data easier.
+  bool dynamic_mode = false;
 
   if (scale == 0) {
-    print_unit = true;
+    dynamic_mode = true;
     // Dynamic mode. Choose scale for this value.
     if (byte_size == 0) {
       scale = K;
@@ -353,7 +358,7 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
   }
 
   const char* display_unit = "";
-  if (print_unit) {
+  if (dynamic_mode) {
     switch(scale) {
       case K: display_unit = "k"; break;
       case M: display_unit = "m"; break;
@@ -363,18 +368,38 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
     }
   }
 
-  int l = 0;
-  float display_value = (float) byte_size / scale;
-  // Values smaller than 1M are shown are rounded up to whole numbers to de-clutter
-  // the display. Who cares for half kbytes.
-  int precision = scale < G ? 0 : 1;
+  // How we display stuff:
+  // scale=1 (manually set)          - print exact byte values without unit
+  // scale=0 (default, dynamic mode) - print values < 1024KB as "..k", <1024MB as "..m", "..g" above that
+  //                                 - to distinguish between 0 and "almost 0" print very small values as "<1K"
+  //                                 - print "k", "m" values with precision 0, "g" values with precision 1.
+  // scale=k,m or g (manually set)   - print value divided by scale and without unit. No smart printing.
+  //                                   Used mostly for automated processing, lets keep parsing simple.
 
-  if (byte_size > 0 && byte_size < K) {
-    // Prevent values smaller than one K but not 0 showing up as .
-    l = printf_helper(st, "<1%s", display_unit);
+  int l = 0;
+  if (scale == 1) {
+    // scale = 1 - print exact bytes
+    l = printf_helper(st, SIZE_FORMAT, byte_size);
+
   } else {
-    l = printf_helper(st, "%.*f%s", precision, display_value, display_unit);
+    const float display_value = (float) byte_size / scale;
+    if (dynamic_mode) {
+      // dynamic scale
+      const int precision = scale >= G ? 1 : 0;
+      if (byte_size > 0 && byte_size < 1 * K) {
+        // very small but not zero.
+        assert(scale == K, "Sanity");
+        l = printf_helper(st, "<1%s", display_unit);
+      } else {
+        l = printf_helper(st, "%.*f%s", precision, display_value, display_unit);
+      }
+    } else {
+      // fixed scale K, M or G
+      const int precision = 0;
+      l = printf_helper(st, "%.*f%s", precision, display_value, display_unit);
+    }
   }
+
   return l;
 
 }
@@ -394,19 +419,26 @@ Column::Column(const char* category, const char* header, const char* name, const
 
 void Column::print_value(outputStream* st, value_t value, value_t last_value,
     int last_value_age, int min_width, const print_info_t* pi) const {
-#ifdef ASSERT
+
   if (pi->raw) {
     printf_helper(st, UINT64_FORMAT, value);
     return;
   }
-#endif
+
   // We print all values right aligned.
   int needed = calc_print_size(value, last_value, last_value_age, pi);
-  if (pi->cvs == false && min_width > needed) {
-    // In ascii (non cvs) mode, pad to minimum width
+  if (pi->csv == false && min_width > needed) {
+    // In ascii (non csv) mode, pad to minimum width
     ostream_put_n(st, ' ', min_width - needed);
   }
+  // csv values shall be enclosed in quotes.
+  if (pi->csv) {
+    st->put('"');
+  }
   do_print(st, value, last_value, last_value_age, pi);
+  if (pi->csv) {
+    st->put('"');
+  }
 }
 
 // Returns the number of characters this value needs to be printed.
@@ -471,7 +503,7 @@ static void print_one_record(outputStream* st, const record_t* record,
     print_timestamp(st, record->timestamp);
   }
 
-  if (pi->cvs == false) {
+  if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_DIVIDER_LEN);
   } else {
     st->put(',');
@@ -489,7 +521,7 @@ static void print_one_record(outputStream* st, const record_t* record,
     }
     const int min_width = widths[idx];
     c->print_value(st, v, v2, age, min_width, pi);
-    st->put(pi->cvs ? ',' : ' ');
+    st->put(pi->csv ? ',' : ' ');
     c = c->next();
   }
   st->cr();
@@ -525,6 +557,11 @@ class RecordTable : public CHeapObj<mtInternal> {
 
   record_t* _records;
 
+  // _pos: index of next slot to write to. If we did not yet wrap,
+  //  this position is invalid, otherwise this is the position of the oldest slot.
+  //
+  // Valid ranges: not yet wrapped:    [0 .. _pos)
+  //               wrapped:            [_pos ... (_num_records-1 -> 0) ... _pos)
   int _pos;
   bool _did_wrap;
 
@@ -532,12 +569,53 @@ class RecordTable : public CHeapObj<mtInternal> {
   const int _follower_ratio;
   int _follower_countdown;
 
-  void check_pos(int pos) const {
-    assert(pos >= 0 && pos < _num_records, "invalid position");
+  #ifdef ASSERT
+    bool valid_pos(int pos) const           { return pos >= 0 && pos < _num_records; }
+    bool valid_pos_or_null(int pos) const   { return pos == -1 || valid_pos(pos); }
+  #endif
+
+  // Returns the position of the last slot we wrote to.
+  // -1 if this table is empty.
+  int youngest_pos() const {
+    int pos = _pos - 1;
+    if (pos == -1) {
+      if (_did_wrap) {
+        pos = _num_records - 1;
+      }
+    }
+    return pos;
+  }
+
+  // Returns the position of the oldest slot we wrote to.
+  // -1 if this table is empty.
+  int oldest_pos() const {
+    if (_did_wrap) {
+      return _pos;
+    } else {
+      return _pos > 0 ? 0 : -1;
+    }
+  }
+
+  // Return the position following pos.
+  //  Input position must be a valid position.
+  //  Returns -1 if there is no following slot.
+  int following_pos(int pos) const {
+    assert(valid_pos(pos), "Sanity");
+    int p2 = pos + 1;
+    if (_did_wrap) {
+      if (p2 == _num_records) {
+        p2 = 0;
+      }
+    }
+    if (p2 == _pos) {
+      p2 = -1;
+    }
+    assert(valid_pos_or_null(p2), "Sanity");
+    return p2;
   }
 
   int preceeding_pos(int pos) const {
-    check_pos(pos);
+    assert(valid_pos(pos), "Sanity");
     int p2 = pos - 1;
     if (p2 == -1) {
       if (_did_wrap) {
@@ -547,11 +625,12 @@ class RecordTable : public CHeapObj<mtInternal> {
       assert(_did_wrap, "Sanity");
       p2 = -1;
     }
+    assert(valid_pos_or_null(p2), "Sanity");
     return p2;
   }
 
   record_t* at(int pos) const {
-    check_pos(pos);
+    assert(valid_pos(pos), "Sanity");
     return (record_t*) ((address)_records + (record_size_in_bytes() * pos));
   }
 
@@ -564,21 +643,50 @@ class RecordTable : public CHeapObj<mtInternal> {
     return NULL;
   }
 
-  class ConstReverseIterator {
+  class ConstIterator {
     const RecordTable* const _rt;
+    const bool _reverse;
     int _p;
+
+    void move_to_oldest() {
+      _p = _rt->oldest_pos();
+    }
+
+    void move_to_youngest() {
+      _p = _rt->youngest_pos();
+    }
+
+    void step_forward() {
+      if (valid()) {
+        _p = _rt->following_pos(_p);
+      }
+    }
+
+    void step_back() {
+      if (valid()) {
+        _p = _rt->preceeding_pos(_p);
+      }
+    }
 
   public:
 
-    ConstReverseIterator(const RecordTable* rt) : _rt(rt), _p(-1) {
-      _p = _rt->preceeding_pos(_rt->_pos);
+    ConstIterator(const RecordTable* rt, bool reverse = false)
+      : _rt(rt), _reverse(reverse), _p(-1)
+    {
+      if (_reverse) {
+        move_to_oldest();
+      } else {
+        move_to_youngest();
+      }
     }
 
     bool valid() const { return _p != -1; }
 
     void step() {
-      if (valid()) {
-        _p = _rt->preceeding_pos(_p);
+      if (_reverse) {
+        step_forward();
+      } else {
+        step_back();
       }
     }
 
@@ -587,6 +695,8 @@ class RecordTable : public CHeapObj<mtInternal> {
       return _rt->at(_p);
     }
 
+    // Returns the record directly preceding, age-wise, the current
+    // record. This has nothing to do with iteratore
     // May return NULL
     const record_t* get_preceeding() const {
       return _rt->preceeding(_p);
@@ -611,7 +721,7 @@ class RecordTable : public CHeapObj<mtInternal> {
       c = c->next();
     }
 
-    ConstReverseIterator it(this);
+    ConstIterator it(this);
     while(it.valid()) {
       const record_t* record = it.get();
       const record_t* previous_record = it.get_preceeding();
@@ -622,7 +732,7 @@ class RecordTable : public CHeapObj<mtInternal> {
 
   // Print all records.
   void print_all_records(outputStream* st, const int widths[], const print_info_t* pi) const {
-    ConstReverseIterator it(this);
+    ConstIterator it(this, pi->reverse_ordering);
     while(it.valid()) {
       const record_t* record = it.get();
       const record_t* previous_record = it.get_preceeding();
@@ -689,19 +799,23 @@ public:
       update_widths_from_one_record(values_now, youngest_in_table, g_widths, pi);
     }
 
-    // Print headers (not in cvs mode)
-    if (pi->cvs == false) {
+    // Print headers (not in csv mode)
+    if (pi->csv == false) {
       print_category_line(st, g_widths, pi);
       print_header_line(st, g_widths, pi);
     }
     print_column_names(st, g_widths, pi);
     st->cr();
 
-    // Now print the actual values. Youngest to oldest, first one the now-values.
-    if (values_now != NULL) {
+    // Now print the actual values. We preceede the table values with the now value
+    //  (if printing order is youngest-to-oldest) or write it last (if printing order is oldest-to-youngest).
+    if (values_now != NULL && pi->reverse_ordering == false) {
       print_one_record(st, values_now, youngest_in_table, g_widths, pi);
     }
     print_all_records(st, g_widths, pi);
+    if (values_now != NULL && pi->reverse_ordering == true) {
+      print_one_record(st, values_now, youngest_in_table, g_widths, pi);
+    }
 
   }
 };
@@ -1112,7 +1226,7 @@ void print_report(outputStream* st, const print_info_t* pi) {
 
   static const print_info_t default_settings = {
       false, // raw
-      false, // cvs
+      false, // csv
       false, // omit_legend
       true   // avoid_sampling
   };
@@ -1121,8 +1235,8 @@ void print_report(outputStream* st, const print_info_t* pi) {
     pi = &default_settings;
   }
 
-  // Print legend at the top (omit if suppressed on command line, or in cvs mode).
-  if (pi->no_legend == false && pi->cvs == false) {
+  // Print legend at the top (omit if suppressed on command line, or in csv mode).
+  if (pi->no_legend == false && pi->csv == false) {
     print_legend(st, pi);
     st->cr();
   }
@@ -1136,6 +1250,51 @@ void print_report(outputStream* st, const print_info_t* pi) {
   }
 
   RecordTables::the_tables()->print_all(st, pi, values_now);
+
+}
+
+// Dump both textual and csv style reports to two files, "sapmachine_vitals_<pid>.txt" and "sapmachine_vitals_<pid>.csv".
+// If these files exist, they are overwritten.
+void dump_reports() {
+
+  static const char* file_prefix = "sapmachine_vitals_";
+  char vitals_file_name[64];
+
+  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
+  ::printf("Dumping Vitals to %s\n", vitals_file_name);
+  print_info_t pi;
+  memset(&pi, 0, sizeof(pi));
+  pi.avoid_sampling = true; // this is called during exit, so lets be a bit careful.
+  {
+    fileStream fs(vitals_file_name);
+    static const StatisticsHistory::print_info_t settings = {
+        false, // raw
+        false, // csv
+        false, // no_legend
+        true,  // avoid_sampling
+        true,  // reverse_ordering
+        0      // scale
+    };
+    print_report(&fs, &settings);
+  }
+
+  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
+  ::printf("Dumping Vitals csv to %s\n", vitals_file_name);
+  pi.csv = true;
+  pi.scale = 1 * K;
+  pi.reverse_ordering = true;
+  {
+    fileStream fs(vitals_file_name);
+    static const StatisticsHistory::print_info_t settings = {
+        false, // raw
+        true,  // csv
+        false, // no_legend
+        true,  // avoid_sampling
+        true,  // reverse_ordering
+        1 * K  // scale
+    };
+    print_report(&fs, &settings);
+  }
 
 }
 
