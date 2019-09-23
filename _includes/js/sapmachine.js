@@ -171,7 +171,6 @@ All rights reserved. Confidential and proprietary.
         this._nonLtsCheckbox = $('#sapmachine_nonlts_checkbox')
         this._eaCheckbox = $('#sapmachine_ea_checkbox')
         this._downloadLabel = $('#download_label')
-        this._copyButton = $('#copy_button')
         this._assets = null
         this._data = null
 
@@ -311,7 +310,7 @@ All rights reserved. Confidential and proprietary.
             this._onUpdateData()
         }.bind(this))
 
-        this._copyButton.click(function onCopyButtonClick() {
+        this._copyURLButton.click(function onCopyButtonClick() {
             copyToClipboard(this._downloadLabel.text())
         }.bind(this))
 
