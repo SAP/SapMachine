@@ -461,11 +461,12 @@ const TypeFunc* ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type() {
 }
 
 const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
-  const Type **fields = TypeTuple::fields(3);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // src
-  fields[TypeFunc::Parms+1] = TypeInstPtr::NOTNULL; // dst
-  fields[TypeFunc::Parms+2] = TypeInt::INT; // length
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3, fields);
+  const Type **fields = TypeTuple::fields(4);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // src oop
+  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL;  // src
+  fields[TypeFunc::Parms+2] = TypeRawPtr::NOTNULL;  // dst
+  fields[TypeFunc::Parms+3] = TypeInt::INT;         // length
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+4, fields);
 
   // create result type (range)
   fields = TypeTuple::fields(0);
@@ -754,7 +755,7 @@ bool ShenandoahBarrierSetC2::optimize_loops(PhaseIdealLoop* phase, LoopOptsMode 
 }
 
 bool ShenandoahBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
-  bool is_oop = type == T_OBJECT || type == T_ARRAY;
+  bool is_oop = is_reference_type(type);
   if (!is_oop) {
     return false;
   }
@@ -787,7 +788,7 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(Node* src, PhaseGVN& gvn) {
         }
   } else if (src_type->isa_aryptr()) {
     BasicType src_elem  = src_type->klass()->as_array_klass()->element_type()->basic_type();
-    if (src_elem == T_OBJECT || src_elem == T_ARRAY) {
+    if (is_reference_type(src_elem)) {
       return true;
     }
   } else {
@@ -807,13 +808,16 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
   assert (src_offset == NULL && dest_offset == NULL, "for clone offsets should be null");
+  assert (src->is_AddP(), "for clone the src should be the interior ptr");
+  assert (dest->is_AddP(), "for clone the dst should be the interior ptr");
+
   if (ShenandoahCloneBarrier && clone_needs_barrier(src, phase->igvn())) {
     Node* call = phase->make_leaf_call(ctrl, mem,
                     ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type(),
                     CAST_FROM_FN_PTR(address, ShenandoahRuntime::shenandoah_clone_barrier),
                     "shenandoah_clone",
                     TypeRawPtr::BOTTOM,
-                    src, dest, length);
+                    src->in(AddPNode::Base), src, dest, length);
     call = phase->transform_later(call);
     phase->igvn().replace_node(ac, call);
   } else {

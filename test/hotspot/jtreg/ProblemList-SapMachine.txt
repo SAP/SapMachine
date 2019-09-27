@@ -67,7 +67,7 @@
 #
 # SapMachine 2019-09-05: Opened https://bugs.openjdk.java.net/browse/JDK-8230664 to track resolution and
 #                           https://bugs.openjdk.java.net/browse/JDK-8230666 to exclude the test (solaris-all is already in common exclude list)
-serviceability/sa/TestInstanceKlassSize.java                         8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
+#serviceability/sa/TestInstanceKlassSize.java                         8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 
 # SapMachine 2019-01-08
 # RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
@@ -175,6 +175,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #
 #
 # SapMachine 2019-09-19 CodeHeap::invalidate is too slow in dbg build
+#
 compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
 
 # SapMachine 2019-07-17
@@ -209,18 +210,19 @@ runtime/NMT/VirtualAllocTestType.java                                           
 # Timeout. We see this regularly.
 #
 #
-compiler/jsr292/ContinuousCallSiteTargetChange.java                                  linux-ppc64
+# This is already tracked by 8222030.
+compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-ppc64,linux-aarch64
 
 # SapMachine 2019-08-02
 # Exception: Uncommitted too slow
 # In SapMachine, we also see this in 13.
 gc/z/TestUncommit.java                                                               generic-all
 
-# SapMachine 2019-08-15
-# This is a regression in 13. But just tracing. Working on a fix.
+# SapMachine 2019-08-29
+# Some aarch stuff, we don't really care. Do we?
+# Check later on whether it's fixed.
 #
-#
-serviceability/logging/TestQuotedLogOutputs.java                                     windows-all
+compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
@@ -237,20 +239,23 @@ runtime/TLS/testtls.sh                                                          
 # Seems to occur only on ..., so only excluding it for jdk/jdk which we test on that machine
 #
 #
+# SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
+#
+#
 #runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
 
 # SapMachine 2019-08-29
 # We have a problem on Solaris ... Excluding until it is fixed.
 #
 #
-gtest/GTestWrapper.java                                                              solaris-all
+# SapMachine 2019-09-23 Re-enabling.
+#gtest/GTestWrapper.java                                                              solaris-all
 
 # SapMachine 2019-08-29
 # Some aarch stuff, we don't really care. Do we?
 # Check later on whether it's fixed.
 #
 compiler/c2/aarch64/TestVolatilesG1.java                                             linux-aarch64
-compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
 #
 gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
 
@@ -266,7 +271,13 @@ gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                           
 # After that, we see errors again on ... and ... . Opened a Backlog item.
 #
 #
-#containers/docker/TestJcmdWithSideCar.java                                           linux-s390x, linux-ppc64le
+#containers/docker/TestJcmdWithSideCar.java                                           linux-s390x,linux-ppc64le
+
+# SapMachine 2019-09-27
+# This test came new with JDK-8231058. -XX:+VerifyOops doesn't work for linuxppc64 and linux-s390x.
+# Goetz is working on this.
+#
+runtime/CheckUnhandledOops/TestVerifyOops.java                                       linux-s390x,linux-ppc64le,linux-ppc64
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
