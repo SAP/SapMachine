@@ -43,6 +43,8 @@
 #include "runtime/vm_operations.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+// SapMachine 2019-02-20 : stathist
+#include "services/stathist.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -97,6 +99,16 @@ const char *env_list[] = {
   "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR",
 
   (const char *)0
+};
+
+// SapMachine 2019-09-16: Vitals
+static const StatisticsHistory::print_info_t vitals_print_settings = {
+    false, // raw
+    false, // csv
+    false, // no_legend
+    true,  // avoid_sampling
+    false, // reverse_ordering
+    0      // scale
 };
 
 // A simple parser for -XX:OnError, usage:
@@ -985,6 +997,12 @@ void VMError::report(outputStream* st, bool _verbose) {
        MemTracker::error_report(st);
      }
 
+  // SapMachine 2019-02-20 : stathist
+  STEP("Vitals")
+     if (_verbose) {
+       StatisticsHistory::print_report(st, &vitals_print_settings);
+     }
+
   STEP("printing system")
 
      if (_verbose) {
@@ -1155,6 +1173,10 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Native Memory Tracking")
 
   MemTracker::error_report(st);
+
+  // SapMachine 2019-02-20 : stathist
+  // STEP("Vitals")
+  StatisticsHistory::print_report(st, &vitals_print_settings);
 
   // STEP("printing system")
 
