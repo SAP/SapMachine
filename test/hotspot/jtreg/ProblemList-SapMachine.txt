@@ -137,7 +137,7 @@ containers/docker/TestMemoryAwareness.java                                   822
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
 
 # SapMachine 2019-06-28
-# Frequent timeouts on all ppc platforms, 11 only. Above other similar excludes.
+# Frequent timeouts on several platforms.
 #
 #
 # Still seen on 2019-07-16
@@ -172,8 +172,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # linkResolver::runtime_resolve_virtual_method
 #
 #
-# SapMachine 2019-08-23 Trying if recent fixes help in jdk11u-dev (8228618 was pushed)
-#vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390,windows-all
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390,windows-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
@@ -193,8 +192,16 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # Timeout. We see this regularly.
 #
 #
-# This is already tracked by 8222030.
+# SapMachine 2019-09-16 This is already tracked by 8222030.
 compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-ppc64
+
+# SapMachine 2019-07-15
+# This times out on power platforms. Excluding.
+#
+#
+# SapMachine 2019-07-19 CodeHeap::invalidate is too slow in dbg build
+# SapMachine 2019-09-20 We see it in 11 now, too. Lutz is working on it.
+compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
