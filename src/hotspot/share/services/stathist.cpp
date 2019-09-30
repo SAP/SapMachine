@@ -1289,9 +1289,13 @@ void print_report(outputStream* st, const print_info_t* pi) {
 void dump_reports() {
 
   static const char* file_prefix = "sapmachine_vitals_";
-  char vitals_file_name[64];
+  char vitals_file_name[1024];
 
-  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
+  if (VitalsFile != NULL) {
+    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s.txt", VitalsFile);
+  } else {
+    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
+  }
   ::printf("Dumping Vitals to %s\n", vitals_file_name);
   print_info_t pi;
   memset(&pi, 0, sizeof(pi));
@@ -1309,7 +1313,11 @@ void dump_reports() {
     print_report(&fs, &settings);
   }
 
-  os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
+  if (VitalsFile != NULL) {
+    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s.csv", VitalsFile);
+  } else {
+    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
+  }
   ::printf("Dumping Vitals csv to %s\n", vitals_file_name);
   pi.csv = true;
   pi.scale = 1 * K;
