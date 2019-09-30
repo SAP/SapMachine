@@ -514,9 +514,9 @@ const size_t minimumSymbolTableSize = 1024;
           "When sampling vitals, omit any actions which require locking.")  \
                                                                             \
   product(bool, DumpVitalsAtExit, false,                                    \
-	        "Dump vitals at VM exit into two files, by default called "       \
-	        "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
-	        "Use -XX:VitalsFile option to change the file names.")            \
+          "Dump vitals at VM exit into two files, by default called "       \
+          "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
+          "Use -XX:VitalsFile option to change the file names.")            \
                                                                             \
   product(ccstr, VitalsFile, NULL,                                          \
           "When DumpVitalsAtExit is set, the file name prefix for the "     \
