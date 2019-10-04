@@ -52,48 +52,47 @@
 # SapMachine 2019-07-16 Still fails
 java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
-# SapMachine 2018-08-22 Failures on sparc.
+# SapMachine 2018-08-22 Failures on sparc/linuxppc64le.
 # Some just fail sporadic.
+#
 com/sun/nio/sctp/SctpChannel/Bind.java                                               solaris-sparcv9
-com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
-com/sun/nio/sctp/SctpChannel/CommUp.java                                             solaris-sparcv9
-com/sun/nio/sctp/SctpChannel/Connect.java                                            solaris-sparcv9
+#
 com/sun/nio/sctp/SctpChannel/Receive.java                                            solaris-sparcv9
+#
 com/sun/nio/sctp/SctpChannel/ReceiveIntoDirect.java                                  solaris-sparcv9
+#
 com/sun/nio/sctp/SctpChannel/Shutdown.java                                           solaris-sparcv9
-com/sun/nio/sctp/SctpChannel/Send.java                                               solaris-sparcv9
-com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  solaris-sparcv9
+#
 com/sun/nio/sctp/SctpServerChannel/Accept.java                                       solaris-sparcv9
+#
+com/sun/nio/sctp/SctpChannel/CommUp.java                                             solaris-sparcv9
+#
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java                            solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/Send.java                                          solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             solaris-sparcv9
-# These even crash!!
-# SapMachine 2019-04-30 Still fails in 11.
-# SapMachine 2019-09-03 See if still failing
-#sun/security/tools/jarsigner/TimestampCheck.java                                     solaris-sparcv9
-#sun/security/tools/keytool/WeakAlg.java                                              solaris-sparcv9
-#javax/net/ssl/TLSCommon/ConcurrentClientAccessTest.java                              solaris-sparcv9
-
-# SapMachine 2018-08-22
-# RuntimeException: Could not find class leak.
-# SapMachine 2019-04-30 Still fails in 11.
-# SapMachine 2019-09-03 See if still failing
-#jdk/jfr/event/oldobject/TestClassLoaderLeak.java                                     solaris-sparcv9
-
-# SapMachine 2018-08-22
-# We see timeouts after 12 min in all jdk9 - jdk12
-# SapMachine 2019-09-03 See if still failing
-#java/net/httpclient/SmokeTest.java                                                   windows-all
+#
+com/sun/nio/sctp/SctpChannel/Connect.java                                            solaris-sparcv9
+#
+com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
+#
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le,solaris-sparcv9
+#
+com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le,solaris-sparcv9
+#
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
+#
+com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
+# SapMachine 2019-09-18 See if these still occur
+#com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
 
 # SapMachine 2018-06-22, 2019-04-30
-# Fails only on linuxx86_64. "RuntimeException: Test failed for angle 15.0" on SLES 12.2; SLES 15.
-# The test passes on SLES 12.0; SLES 11.3; RHEL 6.1
-# Opened bug for this:
-# 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
-# This happens on recent SuSE systems, they have a different default font that causes the issue.
-# Oracle accepted the bug, but did not take any actions yet.
-java/awt/font/Rotate/RotatedTextTest.java                                            linux-all
+# Fails only on recent Suse systems (e.g. SLES 12.2, 12.4, 15): "RuntimeException: Test failed for angle 15.0"
+# The test passes on SLES 12.0, SLES 11.3, RHEL 6.1
+#
+# Opened bug for this: 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
+java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-all
+
+# SapMachine 2019-09-26
+# This seems to fail on RHEL 7: java.lang.RuntimeException: Font metrics differ for angle 165
+#
 java/awt/font/Rotate/RotatedFontMetricsTest.java                                     linux-all
 
 ###############################################################################
@@ -105,23 +104,13 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 #
 #javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                    8212096 generic-all
 
-# SapMachine 2019-07-01
-# Sporadic on ppc64le. For sparc see above.
-#
-# SapMachine 2019-07-19 Added com/sun/nio/sctp/SctpMultiChannel/Send.java, probably related to certain test host, link added.
-#
-com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
-com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le,solaris-sparcv9
-com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le,solaris-sparcv9
-
 # SapMachine 2019-07-12
-# Issue with certain font configurations. Excluding this test for now.
-# There is already an exclusion of this test for solaris and mac in the generic
-# exclusion list.
-# JDK-8223869 was opened asking for exclusion on more platforms.
-java/awt/FontMetrics/MaxAdvanceIsMax.java                                    8223869 generic-all
+# Issue with certain font configurations. There is already an exclusion of this test for
+# solaris and mac in the generic exclusion list. Excluding this test for linux now as well.
+# https://bugs.openjdk.java.net/browse/JDK-8231495 to track resolution.
+# https://bugs.openjdk.java.net/browse/JDK-8223869 for exclusion request.
+# SapMachine 2019-10-02 Pushed exclusion to jdk/jdk, requested backport to 11.0.6 and 13.0.2
+#java/awt/FontMetrics/MaxAdvanceIsMax.java                            8221305,8231495 solaris-all,macosx-all,linux-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
@@ -143,16 +132,14 @@ javax/swing/JFileChooser/4847375/bug4847375.java                                
 #
 #
 # Most likely fixed by https://bugs.openjdk.java.net/browse/JDK-8227435.
-# SapMachine 2019-09-03: Fix is already in 14, requesting downports to 11, 13
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                 8227435 windows-x64
+# SapMachine 2019-10-02: Fix pushed to JDK14, 13.0.2 and 11.0.6
+#sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                 8227435 windows-x64
 
 # SapMachine 2019-06-28
 # timeout on ppc in 11 only.
 #
 #
-# SapMachine 2019-09-06 Added JDK-8223444 to jdk11u-dev queue but not to jdk11u queue.
-#                       Also improved the test diagnosis patch in jdk11u/jdk11u-dev queues to print time stamps, to verify that issue occurs in freeing code blobs.
-#                       Note as well, that Oracle has disabled the test in jdk/jdk because of timeout issues, tracked by JDK-8225209. Results could be interesting for us in 11, too.
+# SapMachine 2019-09-24 Re-enabled test in jdk/jdk and jdk11u-dev because Lutz is heavily testing.
 #jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
@@ -171,8 +158,8 @@ java/awt/print/PrinterJob/SameService.java                                   822
 # Exception in thread "main" java.lang.RuntimeException: Test failed for - cpu:getCpuSystemUsage, expected [2], got [2]
 #
 #
-# Fixed by JDK-8227642. Should be downported (along with 8228434).
-#jdk/internal/platform/docker/TestSystemMetrics.java                                  linux-ppc64le,linux-s390x
+# SapMachine 2019-10-02 Fixed by JDK-8227642 in jdk and JDK13. Should be downported (along with 8228434) to 11.0.6.
+#jdk/internal/platform/docker/TestSystemMetrics.java                          8227642 linux-ppc64le,linux-s390x
 
 # SapMachine 2019-07-18
 # javax.net.ssl.SSLException: The status_request_v2 extension is inconsistent with the expected result: expected = true, actual = false
@@ -184,12 +171,15 @@ java/awt/print/PrinterJob/SameService.java                                   822
 # java.lang.NumberFormatException: For input string: "18446744073709551615"
 #
 #
-# SapMachine 2019-08-08: Change JDK-8228585 pushed to jdk11u-dev, jdk13 and jdk14.
-# There seems to be another issue with this test which the NumberFormat fix probably does not solve.
-# Enabling the test to capture those other issues, new backlog item and Jira bug created:
+# https://bugs.openjdk.java.net/browse/JDK-8228585
+# SapMachine 2019-08-08: Change JDK-8228585 pushed to 11.0.5, 13 and 14.
+#
+# SapMachine 2019-08-08: There seems to be another issue: memory:getMemoryUsage, expected [23040819200], got [23061266432]
+#
 #
 # https://bugs.openjdk.java.net/browse/JDK-8229284
-jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8229284 linux-x64
+# SapMachine 2019-09-23: Change JDK-8229284 already pushed to jdk/jdk. Working on backports to jdk13 and 11.
+#jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8229284 linux-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
@@ -200,15 +190,15 @@ jdk/internal/platform/cgroup/TestCgroupMetrics.java                          822
 # We didn't see this in 11 yet, only 13, 14; but it's broken as well.
 #
 #
-# Needs to be downported to 11.
+# SapMachine 2019-10-02 Part of jdk/jdk, jdk 13.0.0, jdk 11.0.5
 #sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                8228658 linux-s390x
 
 # SapMachine 2019-08-01
-# Appears in 11, 13, 14. In 11 not seen for quite some time, but failures
-# with the same error in the database.
+# Appears in 11, 13, 14. In 11 not seen for quite some time, but failures with the same error in the database.
 #
 #
-java/awt/FontClass/FontSize1Test.java                                                darwinintel
+#
+java/awt/FontClass/FontSize1Test.java                                                macosx-all
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -281,27 +271,12 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 ###############################################################################
 # Failing new tests, unsupported new features in jdk13
 
-# SapMachine 2018-12-31
-# Tests failing on aarch64, which is unsupported by us. Won't fix.
-# SapMachine 2019-06-28 Check whether fixed
-#sun/nio/cs/FindEncoderBugs.java                                                      linux-aarch64
-# Saw DEADLOCK
-# SapMachine 2019-06-28 Check whether fixed
-#java/beans/XMLDecoder/8028054/TestMethodFinder.java                                  linux-aarch64
-
 # SapMachine 2019-02-21
 # All crash reproducible on one test machine. SIGSEGV [libucrypto.so.1+0xb5a90]  ucrypto_digest_update+0x4
 java/net/httpclient/DigestEchoClientSSL.java                                         solaris-sparcv9
 java/net/httpclient/ProxyAuthDisabledSchemesSSL.java                                 solaris-sparcv9
 sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest                       solaris-sparcv9
 sun/security/tools/keytool/KeyToolTest.java                                          solaris-sparcv9
-
-# SapMachine 2019-07-17
-# Unexpected value in Event. Occurs since about 2019-05.
-#
-#
-# SapMachine 2019-08-08 Pushed fix. We shall remove this entry after a few days.
-#jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWith32BitOops.sh 8228359 linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-07-17
 # Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
@@ -312,24 +287,24 @@ java/awt/font/WindowsIndicFonts.java                                         822
 # SapMachine 2019-07-19
 # java.io.IOException: No route to host
 #
-# SapMachine 2019-08-01: adding mac.  Oracle excluded this on mac due to 7122846.
-# SapMachine 2019-08-29 8229706 was pushed to jdk/jdk. Requested backport to jdk13u.
-java/net/MulticastSocket/NoLoopbackPackets.java                              8229706 aix-all,macosx-all
+# SapMachine 2019-08-01: adding mac. Oracle excluded this on mac due to 7122846.
+# SapMachine 2019-10-02 8229706 was pushed to jdk/jdk and 13.0.2
+#java/net/MulticastSocket/NoLoopbackPackets.java                              8229706 aix-all,macosx-all
 
 # SapMachine 2019-08-01
 # Asserts in TestShutdownEvent.validateStackTrace().
 #
 #
-# SapMachine 2019-08-28 (Test-)fix for 8219082 has been pushed, requested for 13u
-jdk/jfr/event/runtime/TestShutdownEvent.java                                 8219082 linux-all
+# SapMachine 2019-10-02 Fix for 8219082 has been pushed to jdk/jdk and jdk13u (13.0.2)
+#jdk/jfr/event/runtime/TestShutdownEvent.java                                 8219082 linux-all
 
 # SapMachine 2019-08-02
 # RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
 # Seen only on linuxx86_64, ... . Maybe a specific issue on that box?
 #
 #
-# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990, got excluded by 8230115. Need to downport it.
-jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
+# SapMachine 2019-10-02 Excluded by 8230115 and backported to 13.0.2
+#jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
 
 # SapMachine 2019-08-08
 # We see this issue occuring for a long time already in 13 and 14.
@@ -364,6 +339,13 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 
 ###############################################################################
 # New failures detected after GA of 13
+
+# SapMachine 2019-09-26
+# This test is failing on our new Ubuntu 18.04 systems for ppcle.
+# Currently only affecting 13 and 14
+#
+#
+javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

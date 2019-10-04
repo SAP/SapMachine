@@ -65,9 +65,8 @@
 # SapMachine 2018-11-08
 # RuntimeException: The size computed by SA for java.lang.Object does not match.
 #
-# SapMachine 2019-09-05: Opened https://bugs.openjdk.java.net/browse/JDK-8230664 to track resolution and
-#                        https://bugs.openjdk.java.net/browse/JDK-8230666 to exclude the test (solaris-all is already in common exclude list)
-serviceability/sa/TestInstanceKlassSize.java                         8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
+# SapMachine 2019-10-02: Excluded with JDK-8230666, requested jdk13 backport
+#serviceability/sa/TestInstanceKlassSize.java                         8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 
 # SapMachine 2019-01-08
 # RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
@@ -122,6 +121,7 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # These fail because a path breaks a windows limit in jdk11u-dev.
 #
 #
+# SapMachine 2019-10-02 JDK-8191521 was pushed. Working on backports
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
 vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
@@ -148,8 +148,8 @@ vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/Te
 #
 #
 #
-# SapMachine 2019-07-19 Still failing.
-containers/docker/TestMemoryAwareness.java                                           linux-ppc64le,linux-s390x
+# SapMachine 2019-10-02 Fix pushed to jdk/jdk, backported to 11.0.6, requested backport to 13
+#containers/docker/TestMemoryAwareness.java                                           linux-ppc64le,linux-s390x
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk13
@@ -173,6 +173,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #
 #
 # SapMachine 2019-07-19 CodeHeap::invalidate is too slow in dbg build
+# SapMachine 2019-09-20 We see it in 11 now, too. Lutz is working on it.
 compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
 
 # SapMachine 2019-07-17
@@ -200,19 +201,20 @@ runtime/NMT/VirtualAllocTestType.java                                           
 # SapMachine 2019-08-28 We shall remove this entry after release of 11.0.5 and 13.0.2.
 #vmTestbase/nsk/jvmti/RedefineClasses/StressRedefine/TestDescription.java                          8228618 linux-s390x
 #vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8228618 linux-s390x
-# SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, requested for jdk13u
-vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8229925 linux-s390x
+# SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, 13.0.2
+#vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8229925 linux-s390x
 
 # SapMachine 2019-07-22
 # Timeout. We see this regularly.
 #
 #
+# SapMachine 2019-09-16 This is already tracked by 8222030.
 compiler/jsr292/ContinuousCallSiteTargetChange.java                                  linux-ppc64
 
 # SapMachine 2019-08-15
-# This is a regression in 13. But just tracing. Working on a fix.
-#
-#serviceability/logging/TestQuotedLogOutputs.java                                     windows-all
+# Exception: Uncommitted too slow
+# In SapMachine, we also see this in 13.
+gc/z/TestUncommit.java                                                               generic-all
 
 # SapMachine 2019-08-29
 # Some aarch stuff, we don't really care. Do we?
