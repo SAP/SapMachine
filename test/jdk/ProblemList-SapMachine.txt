@@ -78,9 +78,10 @@ com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                        
 com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le,solaris-sparcv9
 #
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
+#
+com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
 # SapMachine 2019-09-18 See if these still occur
 #com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
-#com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
 
 # SapMachine 2018-06-22, 2019-04-30
 # Fails only on recent Suse systems (e.g. SLES 12.2, 12.4, 15): "RuntimeException: Test failed for angle 15.0"
@@ -89,7 +90,7 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                             
 # Opened bug for this: 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
 java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-all
 
-#SapMachine 2019-09-26
+# SapMachine 2019-09-26
 # This seems to fail on RHEL 7: java.lang.RuntimeException: Font metrics differ for angle 165
 #
 java/awt/font/Rotate/RotatedFontMetricsTest.java                                     linux-all
@@ -108,7 +109,7 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 # solaris and mac in the generic exclusion list. Excluding this test for linux now as well.
 # https://bugs.openjdk.java.net/browse/JDK-8231495 to track resolution.
 # https://bugs.openjdk.java.net/browse/JDK-8223869 for exclusion request.
-# Remove this entry once exclusion is pushed in 11, 13 and 14
+# SapMachine 2019-10-02 Pushed exclusion to jdk/jdk, requested backport to 11.0.6 and 13.0.2
 #java/awt/FontMetrics/MaxAdvanceIsMax.java                            8221305,8231495 solaris-all,macosx-all,linux-all
 
 ###############################################################################
@@ -270,27 +271,12 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 ###############################################################################
 # Failing new tests, unsupported new features in jdk13
 
-# SapMachine 2018-12-31
-# Tests failing on aarch64, which is unsupported by us. Won't fix.
-# SapMachine 2019-06-28 Check whether fixed
-#sun/nio/cs/FindEncoderBugs.java                                                      linux-aarch64
-# Saw DEADLOCK
-# SapMachine 2019-06-28 Check whether fixed
-#java/beans/XMLDecoder/8028054/TestMethodFinder.java                                  linux-aarch64
-
 # SapMachine 2019-02-21
 # All crash reproducible on one test machine. SIGSEGV [libucrypto.so.1+0xb5a90]  ucrypto_digest_update+0x4
 java/net/httpclient/DigestEchoClientSSL.java                                         solaris-sparcv9
 java/net/httpclient/ProxyAuthDisabledSchemesSSL.java                                 solaris-sparcv9
 sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest                       solaris-sparcv9
 sun/security/tools/keytool/KeyToolTest.java                                          solaris-sparcv9
-
-# SapMachine 2019-07-17
-# Unexpected value in Event. Occurs since about 2019-05.
-#
-#
-# SapMachine 2019-08-08 Pushed fix. We shall remove this entry after a few days.
-#jdk/jfr/event/gc/configuration/TestGCHeapConfigurationEventWith32BitOops.sh 8228359 linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-07-17
 # Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
@@ -309,7 +295,7 @@ java/awt/font/WindowsIndicFonts.java                                         822
 # Asserts in TestShutdownEvent.validateStackTrace().
 #
 #
-# SapMachine 2019-08-28 (Test-)fix for 8219082 has been pushed, requested for 13u
+# SapMachine 2019-10-02 Fix for 8219082 has been pushed to jdk/jdk and jdk13u (13.0.2)
 #jdk/jfr/event/runtime/TestShutdownEvent.java                                 8219082 linux-all
 
 # SapMachine 2019-08-02
@@ -332,27 +318,6 @@ java/awt/font/FontNames/FCCompositeTest.java                                    
 #
 java/nio/file/WatchService/LotsOfCloses.java                                         linux-s390x
 
-# SapMachine 2019-09-09
-# Maybe related to new Socket Impl
-#
-#
-# First occurence on 2019-06-04
-#java/net/Socket/asyncClose/Race.java                                                 aix-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk14
-
-# SapMachine 2019-08-02
-# File needs to be added to test jar: java.nio.file.NoSuchFileException: ...
-sun/util/calendar/zi/TestZoneInfo310.java                                            generic-all
-
-# SapMachine 2019-08-08
-# We see sporadic test failures in this new test.
-#
-# I opened https://bugs.openjdk.java.net/browse/JDK-8229280
-# SapMachine 2019-09-06 The bug is resolved, test whether it works.
-#java/nio/file/attribute/BasicFileAttributeView/SetTimesNanos.java            8229280 linux-all
-
 # SapMachine 2019-08-29
 # GC overhead limit exceeded, occurs very often
 #
@@ -364,6 +329,16 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 # by some change that had been backported.
 # Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
 sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
+
+# SapMachine 2019-09-09
+# Maybe related to new Socket Impl
+#
+#
+# First occurence on 2019-06-04
+#java/net/Socket/asyncClose/Race.java                                                 aix-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk14
 
 # SapMachine 2019-08-30
 # Richard's new test unveils an aarch64 issue. Exclude for the time being. Still a patch in patch queue.

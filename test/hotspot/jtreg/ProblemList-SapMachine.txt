@@ -65,8 +65,7 @@
 # SapMachine 2018-11-08
 # RuntimeException: The size computed by SA for java.lang.Object does not match.
 #
-# SapMachine 2019-09-05: Opened https://bugs.openjdk.java.net/browse/JDK-8230664 to track resolution and
-#                           https://bugs.openjdk.java.net/browse/JDK-8230666 to exclude the test (solaris-all is already in common exclude list)
+# SapMachine 2019-10-02: Excluded with JDK-8230666, requested jdk13 backport
 #serviceability/sa/TestInstanceKlassSize.java                         8193639,8230664 solaris-all,linux-ppc64le,linux-ppc64
 
 # SapMachine 2019-01-08
@@ -122,15 +121,14 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # These fail because a path breaks a windows limit in jdk11u-dev.
 #
 #
-#
-# To be fixed by 8191521: handle long relative path specified in -Xbootclasspath/a on windows.
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
+# SapMachine 2019-10-02 JDK-8191521 was pushed. Working on backports
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
 
 # SapMachine 2019-06-07
 # Timeouts, observed only in 11.
