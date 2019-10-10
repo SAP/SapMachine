@@ -148,7 +148,7 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 #
 #
 #
-# SapMachine 2019-09-06 Fix pushed to jdk/jdk
+# SapMachine 2019-10-02 Fix pushed to jdk/jdk, backported to 11.0.6, requested backport to 13
 #containers/docker/TestMemoryAwareness.java                                   8229182 linux-ppc64le,linux-s390x
 
 ###############################################################################
@@ -169,12 +169,12 @@ gc/shenandoah/TestWithLogLevel.java                                             
 serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
 
 # SapMachine 2019-07-15
-# This times out since about 19-05-18 in OpenJDK 13 and 14 tests on power platforms. Excluding.
+# This times out on power platforms. Excluding.
 #
 #
-# SapMachine 2019-09-19 CodeHeap::invalidate is too slow in dbg build
 #
-compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
+#
+#compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
 
 # SapMachine 2019-07-17
 # Excluding for now and opening a bug.
@@ -208,8 +208,9 @@ runtime/NMT/VirtualAllocTestType.java                                           
 # Timeout. We see this regularly.
 #
 #
-# This is already tracked by 8222030.
-compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-ppc64,linux-aarch64
+#
+# SapMachine 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
+compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-aarch64
 
 # SapMachine 2019-08-02
 # Exception: Uncommitted too slow
@@ -241,13 +242,6 @@ runtime/TLS/testtls.sh                                                          
 #
 #
 #runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
-
-# SapMachine 2019-08-29
-# We have a problem on Solaris ... Excluding until it is fixed.
-#
-#
-# SapMachine 2019-09-23 Re-enabling.
-#gtest/GTestWrapper.java                                                              solaris-all
 
 # SapMachine 2019-08-29
 # Some aarch stuff, we don't really care. Do we?
