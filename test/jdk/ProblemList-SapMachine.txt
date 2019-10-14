@@ -118,7 +118,9 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 # SapMachine 2019-06-17
 # java.lang.Exception: Failed for font java.awt.Font[family=Dialog,name=MS Gothic,style=bold,size=30]
 #
-java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
+#
+# SapMachine 2019-10-09 I believe this is caused by outdated libfreetype versions and hence fixed by using configure option --with-freetype=bundled everywhere
+#java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
 
 # SapMachine 2019-06-28
 #
@@ -140,7 +142,7 @@ javax/swing/JFileChooser/4847375/bug4847375.java                                
 #
 #
 # SapMachine 2019-09-24 Re-enabled test in jdk/jdk and jdk11u-dev because Lutz is heavily testing.
-#jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
+jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
 #
@@ -273,10 +275,11 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 
 # SapMachine 2019-02-21
 # All crash reproducible on one test machine. SIGSEGV [libucrypto.so.1+0xb5a90]  ucrypto_digest_update+0x4
-java/net/httpclient/DigestEchoClientSSL.java                                         solaris-sparcv9
-java/net/httpclient/ProxyAuthDisabledSchemesSSL.java                                 solaris-sparcv9
-sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest                       solaris-sparcv9
-sun/security/tools/keytool/KeyToolTest.java                                          solaris-sparcv9
+# SapMachine 2019-10-09 See if this still occurs.
+#java/net/httpclient/DigestEchoClientSSL.java                                         solaris-sparcv9
+#java/net/httpclient/ProxyAuthDisabledSchemesSSL.java                                 solaris-sparcv9
+#sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest                       solaris-sparcv9
+#sun/security/tools/keytool/KeyToolTest.java                                          solaris-sparcv9
 
 # SapMachine 2019-07-17
 # Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
@@ -346,6 +349,12 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 #
 #
 javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-ppc64le
+
+# SapMachine 2019-10-04
+# Seems a certificate got revoked. Opened a JBS bug and adding exclusion here for the time being.
+# https://bugs.openjdk.java.net/browse/JDK-8231887
+# SapMachine 2019-10-10 Fix pushed to jdk/jdk. Requesting all backports.
+#security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java 8231887 generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
