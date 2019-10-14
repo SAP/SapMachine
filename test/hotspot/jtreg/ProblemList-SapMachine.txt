@@ -122,13 +122,13 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 #
 #
 # SapMachine 2019-10-02 JDK-8191521 was pushed. Working on backports
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
+#vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
 
 # SapMachine 2019-06-07
 # Timeouts, observed only in 11.
@@ -202,14 +202,16 @@ runtime/NMT/VirtualAllocTestType.java                                           
 #vmTestbase/nsk/jvmti/RedefineClasses/StressRedefine/TestDescription.java                          8228618 linux-s390x
 #vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8228618 linux-s390x
 # SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, 13.0.2
-#vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8229925 linux-s390x
+# SapMachine 2019-10-14 There are still issues. Martin has prepared another fix: JDK-8232005.
+vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8232005 linux-s390x
 
 # SapMachine 2019-07-22
 # Timeout. We see this regularly.
 #
 #
-# SapMachine 2019-09-16 This is already tracked by 8222030.
-compiler/jsr292/ContinuousCallSiteTargetChange.java                                  linux-ppc64
+# https://bugs.openjdk.java.net/browse/JDK-8222030
+# SapMachine CL 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
+compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-aarch64
 
 # SapMachine 2019-08-15
 # Exception: Uncommitted too slow
