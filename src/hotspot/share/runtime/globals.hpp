@@ -789,6 +789,10 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   notproduct(bool, ProfilerCheckIntervals, false,                           \
           "Collect and print information on spacing of profiler ticks")     \
                                                                             \
+  manageable(bool, ShowCodeDetailsInExceptionMessages, false,               \
+          "Show exception messages from RuntimeExceptions that contain "    \
+          "snippets of the failing code. Disable this to improve privacy.") \
+                                                                            \
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \
