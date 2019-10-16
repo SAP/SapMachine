@@ -78,9 +78,10 @@ com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                        
 com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le,solaris-sparcv9
 #
 com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
+#
+com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
 # SapMachine 2019-09-18 See if these still occur
 #com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
-#com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
 
 # SapMachine 2018-06-22, 2019-04-30
 # Fails only on recent Suse systems (e.g. SLES 12.2, 12.4, 15): "RuntimeException: Test failed for angle 15.0"
@@ -117,7 +118,9 @@ java/awt/FontMetrics/MaxAdvanceIsMax.java                            8221305,823
 # SapMachine 2019-06-17
 # java.lang.Exception: Failed for font java.awt.Font[family=Dialog,name=MS Gothic,style=bold,size=30]
 #
-java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
+#
+# SapMachine 2019-10-09 I believe this is caused by outdated libfreetype versions and hence fixed by using configure option --with-freetype=bundled everywhere
+#java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
 
 # SapMachine 2019-06-28
 #
@@ -131,7 +134,7 @@ javax/swing/JFileChooser/4847375/bug4847375.java                                
 #
 #
 # Most likely fixed by https://bugs.openjdk.java.net/browse/JDK-8227435.
-# SapMachine 2019-09-03: Fix is already in 14, requesting downports to 11, 13
+# SapMachine 2019-10-02: Fix pushed to JDK14, 13.0.2 and 11.0.6
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                 8227435 windows-x64
 
 # SapMachine 2019-06-28
@@ -227,6 +230,12 @@ jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,822
 # by some change that had been backported.
 # Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
 sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
+
+# SapMachine 2019-10-04
+# Seems a certificate got revoked. Opened a JBS bug and adding exclusion here for the time being.
+# https://bugs.openjdk.java.net/browse/JDK-8231887
+# SapMachine 2019-10-10 Fix pushed to jdk/jdk. Requesting all backports.
+security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java 8231887 generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
