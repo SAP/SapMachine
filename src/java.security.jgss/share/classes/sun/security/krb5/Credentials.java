@@ -59,12 +59,22 @@ public class Credentials {
     KerberosTime endTime;
     KerberosTime renewTill;
     HostAddresses cAddr;
-    EncryptionKey serviceKey;
     AuthorizationData authzData;
     private static boolean DEBUG = Krb5.DEBUG;
     private static CredentialsCache cache;
     static boolean alreadyLoaded = false;
     private static boolean alreadyTried = false;
+
+    private Credentials proxy = null;
+
+    public Credentials getProxy() {
+        return proxy;
+    }
+
+    public Credentials setProxy(Credentials proxy) {
+        this.proxy = proxy;
+        return this;
+    }
 
     // Read native ticket with session key type in the given list
     private static native Credentials acquireDefaultNativeCreds(int[] eTypes);
@@ -360,20 +370,19 @@ public class Credentials {
             return null;
         }
 
-        sun.security.krb5.internal.ccache.Credentials tgtCred  =
-            ccache.getDefaultCreds();
+        Credentials tgtCred = ccache.getInitialCreds();
 
         if (tgtCred == null) {
             return null;
         }
 
-        if (EType.isSupported(tgtCred.getEType())) {
-            return tgtCred.setKrbCreds();
+        if (EType.isSupported(tgtCred.key.getEType())) {
+            return tgtCred;
         } else {
             if (DEBUG) {
                 System.out.println(
                     ">>> unsupported key type found the default TGT: " +
-                    tgtCred.getEType());
+                    tgtCred.key.getEType());
             }
             return null;
         }
@@ -408,20 +417,19 @@ public class Credentials {
             cache = CredentialsCache.getInstance();
         }
         if (cache != null) {
-            sun.security.krb5.internal.ccache.Credentials temp =
-                cache.getDefaultCreds();
+            Credentials temp = cache.getInitialCreds();
             if (temp != null) {
                 if (DEBUG) {
                     System.out.println(">>> KrbCreds found the default ticket"
                             + " granting ticket in credential cache.");
                 }
-                if (EType.isSupported(temp.getEType())) {
-                    result = temp.setKrbCreds();
+                if (EType.isSupported(temp.key.getEType())) {
+                    result = temp;
                 } else {
                     if (DEBUG) {
                         System.out.println(
                             ">>> unsupported key type found the default TGT: " +
-                            temp.getEType());
+                            temp.key.getEType());
                     }
                 }
             }
@@ -496,10 +504,6 @@ public class Credentials {
 
     public CredentialsCache getCache() {
         return cache;
-    }
-
-    public EncryptionKey getServiceKey() {
-        return serviceKey;
     }
 
     /*
