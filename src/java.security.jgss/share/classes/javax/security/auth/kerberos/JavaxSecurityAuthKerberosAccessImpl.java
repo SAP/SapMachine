@@ -33,6 +33,12 @@ class JavaxSecurityAuthKerberosAccessImpl
             KeyTab ktab) {
         return ktab.takeSnapshot();
     }
+    public KerberosTicket kerberosTicketGetProxy(KerberosTicket t) {
+        return t.proxy;
+    }
+    public void kerberosTicketSetProxy(KerberosTicket t, KerberosTicket p) {
+        t.proxy = p;
+    }
 
     public KerberosPrincipal kerberosTicketGetClientAlias(KerberosTicket t) {
         return t.clientAlias;
