@@ -201,8 +201,9 @@ runtime/NMT/VirtualAllocTestType.java                                           
 # SapMachine 2019-08-28 We shall remove this entry after release of 11.0.5 and 13.0.2.
 #vmTestbase/nsk/jvmti/RedefineClasses/StressRedefine/TestDescription.java                          8228618 linux-s390x
 #vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8228618 linux-s390x
-# SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, requested for jdk13u
-#vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8229925 linux-s390x
+# SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, 13.0.2
+# SapMachine 2019-10-14 There are still issues. Martin has prepared another fix: JDK-8232005.
+vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8232005 linux-s390x
 
 # SapMachine 2019-07-22
 # Timeout. We see this regularly.
@@ -241,7 +242,7 @@ runtime/TLS/testtls.sh                                                          
 # SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
 #
 #
-#runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
+runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
 
 # SapMachine 2019-08-29
 # Some aarch stuff, we don't really care. Do we?

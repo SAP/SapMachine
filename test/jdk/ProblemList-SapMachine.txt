@@ -354,6 +354,12 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 #
 javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-ppc64le
 
+# SapMachine 2019-10-04
+# Seems a certificate got revoked. Opened a JBS bug and adding exclusion here for the time being.
+# https://bugs.openjdk.java.net/browse/JDK-8231887
+# SapMachine 2019-10-10 Fix pushed to jdk/jdk. Requesting all backports.
+#security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java 8231887 generic-all
+
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
