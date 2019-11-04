@@ -608,7 +608,8 @@ class ZipFileSystem extends FileSystem {
                 // (3) If parent "dir" is relative when ZipDirectoryStream
                 //     is created, the returned child path needs to be relative
                 //     as well.
-                ZipPath childPath = new ZipPath(this, child.name, true);
+                byte[] cname = child.name;
+                ZipPath childPath = new ZipPath(this, cname, true);
                 ZipPath childFileName = childPath.getFileName();
                 ZipPath zpath = dir.resolve(childFileName);
                 if (filter == null || filter.accept(zpath))
@@ -1066,7 +1067,7 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
-    private static byte[] getParent(byte[] path) {
+    static byte[] getParent(byte[] path) {
         int off = getParentOff(path);
         if (off <= 1)
             return ROOTPATH;
@@ -1081,11 +1082,11 @@ class ZipFileSystem extends FileSystem {
         return off;
     }
 
-    private void beginWrite() {
+    final void beginWrite() {
         rwlock.writeLock().lock();
     }
 
-    private void endWrite() {
+    final void endWrite() {
         rwlock.writeLock().unlock();
     }
 
@@ -1108,7 +1109,7 @@ class ZipFileSystem extends FileSystem {
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
     // name -> pos (in cen), IndexNode itself can be used as a "key"
-    private LinkedHashMap<IndexNode, IndexNode> inodes;
+    LinkedHashMap<IndexNode, IndexNode> inodes;
 
     final byte[] getBytes(String name) {
         return zc.getBytes(name);

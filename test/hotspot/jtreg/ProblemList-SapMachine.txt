@@ -43,38 +43,13 @@
 ###############################################################################
 
 ###############################################################################
-# Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
-
-# SapMachine 2018-08-28
-# This crashes on sparc with "The system is out of physical RAM or swap space".
-# Only jdk11, why that? Ev. add -Xmx200M.
-# SapMachine 2019-02-21, 2019-05-08 Still failing in 11.
-# SapMachine 2019-08-29 check whether still failing.
-#runtime/appcds/sharedStrings/InvalidFileFormat.java                                  solaris-sparcv9
-
-# SapMachine 2018-11-07
-# Remaining tests failing on ntintel in jdk11.
-# ClhsdbLongConstant.java:84: Reading markOopDesc::hash_mask_in_place. Expected 4294967168. Obtained -128 instead.
-# SapMachine 2019-05-08 Still fails in 11.
-# SapMachine 2019-08-29 check whether still failing.
-#serviceability/sa/ClhsdbLongConstant.java                                            windows-i586
-
-###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of jdk11.
+# New failures detected after GA or caused by changes pushed after GA of 11.
 
 # SapMachine 2019-01-08
 # RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
 # SapMachine 2019-08-07 Still failing
 #
 compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
-
-# SapMachine 2019-02-13
-# Timeouts seen sporadic on various platforms and Java versions.
-# Still failing 2019-04-29, 2019-07-16
-# Seems this one is fixed with 8206074 in OpenJDK 13 and 14. We shall take care of a backport.
-#
-# SapMachine 2019-08-02 Fix pushed to jdk11u-dev, shall remove this section in a few days after checking that it doesn't occur any more.
-#vmTestbase/nsk/jdi/EventRequestManager/createStepRequest/crstepreq001/TestDescription.java 8206074 generic-all
 
 # SapMachine 2019-03-11
 # Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
@@ -100,53 +75,22 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # Enable it to find one of the sporadic occurances and paste the link here.
 #serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
 
-# SapMachine 2019-05-08
-# These fail because a path breaks a windows limit in jdk11u-dev.
-#
-#
-# SapMachine 2019-10-02 JDK-8191521 was pushed. Working on backports
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch001/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch003/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch004/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch007/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch010/TestDescription.java         8191521 windows-all
-vmTestbase/nsk/jvmti/unit/functions/AddToBootstrapClassLoaderSearch/JvmtiTest/TestDescription.java 8191521 windows-all
-
 # SapMachine 2019-06-07
-# Timeouts, observed only in 11.
+# Frequent timeouts on several platforms, observed only in 11.
 #
-# SapMachine 2019-07-17 Still occuring in 11
+# Oracle does see these issues as well: https://bugs.openjdk.java.net/browse/JDK-8231169
+# Backport JDK-8212028, JDK-8211037 and see if this helps
+# http://sapjvm:1080/servlet/testresult?testid=208070184
+vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,solaris-sparcv9
+# http://sapjvm:1080/servlet/testresult?testid=208070185
+vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,solaris-sparcv9
+# http://sapjvm:1080/servlet/testresult?testid=206443777
 vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
-
-# SapMachine 2019-06-28
-# Sporadic on some x64 systems
-#
-#
-# SapMachine 2019-08-02 Fix pushed to 11.0.5 and 13, should remove this entry in a few days.
-#runtime/memory/RunUnitTestsConcurrently.java                                 8227041 linux-x64,windows-x64
-
-# SapMachine 2019-06-28
-# Error message: AttemptOOM allocation successful, seen on quite some hosts
-#
-#
-#
-# SapMachine 2019-07-19 Still failing.
-containers/docker/TestMemoryAwareness.java                                   8229182 linux-ppc64le,linux-s390x
+# http://sapjvm:1080/servlet/testresult?testid=208070186
+vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
 
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
-
-# SapMachine 2019-06-28
-# Frequent timeouts on several platforms.
-#
-#
-# Still seen on 2019-07-16
-# SapMachine 2019-08-02 Added linux-x64 to the exclusion as well because the issue is seen there, too.
-# SapMachine 2019-08-29 Added solaris-sparcv9 to the exclusion as well because the issue is seen there, too.
-vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,generic-ppc64,linux-ppc64le,solaris-sparcv9
-vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,generic-ppc64,linux-ppc64le,solaris-sparcv9
-vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     generic-ppc64,linux-ppc64le,solaris-sparcv9
 
 # SapMachine 2019-06-28
 # RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr or just timeout. Seen also in 13.
@@ -156,24 +100,13 @@ vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                
 # For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
 serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
 
-# SapMachine 2019-07-15
-# Occurred lately on our Solaris box.
-#
-# SapMachine 2019-08-02 Fix pushed to 11.0.5, should remove this entry in a few days.
-#compiler/codegen/aes/TestCipherBlockChainingEncrypt.java                     8219513 solaris-sparcv9
-
-# SapMachine 2019-07-16
-# We see this intermittently, mainly in SapMachine environment
-# SapMachine 2019-08-02 Fix pushed to 11.0.5, should remove this entry in a few days.
-#runtime/jni/checked/TestCheckedEnsureLocalCapacity.java                      8215901 linux-all
-
 # SapMachine 2019-07-16
 # 11-only crash at:
 # Klass::method_at_vtable
 # linkResolver::runtime_resolve_virtual_method
 #
 #
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390,windows-all
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390x,windows-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
@@ -182,13 +115,9 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 # Crashes on s390
 #
 #
-# SapMachine 2019-07-30 8228618 was downported. These are fixed.
-# SapMachine 2019-08-28 We shall remove this entry after release of 11.0.5 and 13.0.2.
-#vmTestbase/nsk/jvmti/RedefineClasses/StressRedefine/TestDescription.java                          8228618 linux-s390x
-#vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8228618 linux-s390x
 # SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, 13.0.2
-# SapMachine 2019-10-14 There are still issues. Martin has prepared another fix: JDK-8232005.
-vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8232005 linux-s390x
+# SapMachine 2019-10-25 New Fix: JDK-8232005. Pushed to jdk/jdk, backports to 11 and 13 pending.
+#vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8232005 linux-s390x
 
 # SapMachine 2019-07-22
 # Timeout. We see this regularly.
@@ -205,6 +134,9 @@ vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java    
 # SapMachine 2019-07-19 CodeHeap::invalidate is too slow in dbg build
 # SapMachine 2019-09-20 We see it in 11 now, too. Lutz is working on it.
 compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
+
+###############################################################################
+# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

@@ -116,13 +116,58 @@ class JarFileSystem extends ZipFileSystem {
         getVersionMap(version, verdir).values().forEach(versionNode ->
             walk(versionNode.child, entryNode ->
                 aliasMap.put(
-                    getOrCreateInode(getRootName(entryNode, versionNode), entryNode.isdir),
+                    getNodeInRootTree(getRootName(entryNode, versionNode), entryNode.isdir),
                     entryNode.name))
         );
         lookup = path -> {
             byte[] entry = aliasMap.get(IndexNode.keyOf(path));
             return entry == null ? path : entry;
         };
+    }
+
+    /**
+     * Return the node from the root tree. Create it, if it doesn't exist.
+     */
+    private IndexNode getNodeInRootTree(byte[] path, boolean isdir) {
+        IndexNode node = getInode(path);
+        if (node != null) {
+            return node;
+        }
+        IndexNode parent = getParentDir(path);
+        beginWrite();
+        try {
+            node = new IndexNode(path, isdir);
+            node.sibling = parent.child;
+            parent.child = node;
+            inodes.put(node, node);
+            return node;
+        } finally {
+            endWrite();
+        }
+    }
+
+    /**
+     * Return the parent directory node of a path. If the node doesn't exist,
+     * it will be created. Parent directories will be created recursively.
+     * Recursion fuse: We assume at latest the root path can be resolved to a node.
+     */
+    private IndexNode getParentDir(byte[] path) {
+        byte[] parentPath = getParent(path);
+        IndexNode node = inodes.get(IndexNode.keyOf(parentPath));
+        if (node != null) {
+            return node;
+        }
+        IndexNode parent = getParentDir(parentPath);
+        beginWrite();
+        try {
+            node = new IndexNode(parentPath, true);
+            node.sibling = parent.child;
+            parent.child = node;
+            inodes.put(node, node);
+            return node;
+        } finally {
+            endWrite();
+        }
     }
 
     /**
