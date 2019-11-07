@@ -144,7 +144,6 @@ void DCmdRegistrant::register_dcmds_ext(){
 }
 #endif
 
-
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
   _all("-all", "Show help for all commands", "BOOLEAN", false, "false"),
   _cmd("command name", "The name of the command for which we want help",
@@ -152,7 +151,6 @@ HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, hea
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_cmd);
 };
-
 
 static int compare_strings(const char** s1, const char** s2) {
   return ::strcmp(*s1, *s2);

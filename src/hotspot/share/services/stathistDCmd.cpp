@@ -41,13 +41,15 @@ StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
     _csv("csv", "csv format.", "BOOLEAN", false, "false"),
     _no_legend("no-legend", "Omit legend.", "BOOLEAN", false, "false"),
     _reverse("reverse", "Reverse printing order.", "BOOLEAN", false, "false"),
-    _raw("raw", "Print raw values.", "BOOLEAN", false, "false")
+    _raw("raw", "Print raw values.", "BOOLEAN", false, "false"),
+    _max("max", "Limit number of printed samples.", "STRING", false, "")
 {
   _dcmdparser.add_dcmd_option(&_scale);
   _dcmdparser.add_dcmd_option(&_no_legend);
   _dcmdparser.add_dcmd_option(&_reverse);
   _dcmdparser.add_dcmd_option(&_raw);
   _dcmdparser.add_dcmd_option(&_csv);
+  _dcmdparser.add_dcmd_option(&_max);
 }
 
 int StatHistDCmd::num_arguments() {
@@ -88,7 +90,11 @@ void StatHistDCmd::execute(DCmdSource source, TRAPS) {
   pi.csv = _csv.value();
   pi.no_legend = _no_legend.value();
   pi.reverse_ordering = _reverse.value();
-  pi.avoid_sampling = false;
+  if (::strlen(_max.value()) > 0) {
+    pi.max = ::atoi(_max.value());
+  } else {
+    pi.max = 0;
+  }
 
   StatisticsHistory::print_report(output(), &pi);
 }
