@@ -89,6 +89,15 @@ vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                   
 # http://sapjvm:1080/servlet/testresult?testid=208070186
 vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
 
+# SapMachine 2019-08-07
+# Seems to occur only on ...
+#
+#
+# SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
+# It fails for jdk11 and jdk14 on ..., which is SLES 12.1.
+# It passes for both on ...: SLES 12.3, ...: RHEL 7.2, ...: RHEL 7.3 and ...: Ubuntu 16.4
+runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
+
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
 
