@@ -69,6 +69,8 @@
 #include "runtime/timer.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memTracker.hpp"
+// SapMachine 2019-09-01: vitals.
+#include "services/stathist.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/histogram.hpp"
@@ -363,6 +365,11 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
+  // SapMachine 2019-09-01: vitals.
+  if (DumpVitalsAtExit) {
+    StatisticsHistory::dump_reports();
+  }
+
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -404,6 +411,11 @@ void print_statistics() {
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  // SapMachine 2019-09-01: vitals.
+  if (DumpVitalsAtExit) {
+    StatisticsHistory::dump_reports();
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
