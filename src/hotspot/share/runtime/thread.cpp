@@ -4760,6 +4760,13 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     st->cr();
   }
 
+  // SapMachine 2019-11-07 : stathist
+  const Thread* stathist_sampler_thread = StatisticsHistory::samplerthread();
+  if (stathist_sampler_thread != NULL) {
+    stathist_sampler_thread->print_on(st);
+    st->cr();
+  }
+
   st->flush();
 }
 
@@ -4812,6 +4819,9 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->print_cr("Other Threads:");
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
+  // SapMachine 2019-11-07 : stathist
+  print_on_error(const_cast<Thread*>(StatisticsHistory::samplerthread()),
+                 st, current, buf, buflen, &found_current);
 
   PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
   Universe::heap()->gc_threads_do(&print_closure);

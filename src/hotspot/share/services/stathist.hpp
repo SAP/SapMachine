@@ -60,6 +60,9 @@ namespace StatisticsHistory {
   // If these files exist, they are overwritten.
   void dump_reports();
 
+  // For printing in thread lists only.
+  const Thread* samplerthread();
+
   // These are counters for the statistics history. Ideally, they would live
   // inside their thematical homes, e.g. thread.cpp or classLoaderDataGraph.cpp,
   // however since this is unlikely ever to be brought upstream we keep this separate

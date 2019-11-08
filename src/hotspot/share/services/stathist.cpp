@@ -1340,4 +1340,7 @@ void dump_reports() {
 
 }
 
+// For printing in thread lists only.
+const Thread* samplerthread() { return g_sampler_thread; }
+
 } // namespace StatisticsHistory
