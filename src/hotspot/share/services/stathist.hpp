@@ -45,10 +45,16 @@ namespace StatisticsHistory {
 
     size_t scale;
 
+    // max number of samples to print (0 = print all)
+    int max;
+
   };
 
+  // text output, youngest-to-oldest ordered, with legend, all records, dynamic scale.
+  const print_info_t* default_settings();
 
-  void print_report(outputStream* st, const print_info_t* print_info);
+  // Print report to stream. Leave print_info NULL for default settings.
+  void print_report(outputStream* st, const print_info_t* print_info = NULL);
 
   // Dump both textual and csv style reports to two files, "vitals_<pid>.txt" and "vitals_<pid>.csv".
   // If these files exist, they are overwritten.

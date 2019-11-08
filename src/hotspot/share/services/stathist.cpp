@@ -74,6 +74,11 @@ void inc_threads_created(size_t count) {
 
 } // namespace counters
 
+// context for printing
+struct print_context_t {
+  int records_printed;
+};
+
 // helper function for the missing outputStream::put(int c, int repeat)
 static void ostream_put_n(outputStream* st, int c, int repeat) {
   for (int i = 0; i < repeat; i ++) {
@@ -732,13 +737,14 @@ class RecordTable : public CHeapObj<mtInternal> {
   }
 
   // Print all records.
-  void print_all_records(outputStream* st, const int widths[], const print_info_t* pi) const {
+  void print_all_records(outputStream* st, const int widths[], const print_info_t* pi, print_context_t* pc) const {
     ConstIterator it(this, pi->reverse_ordering);
-    while(it.valid()) {
+    while(it.valid() && (pi->max == 0 || pc->records_printed < pi->max)) {
       const record_t* record = it.get();
       const record_t* previous_record = it.get_preceeding();
       print_one_record(st, record, previous_record, widths, pi);
       it.step();
+      pc->records_printed ++;
     }
   }
 
@@ -787,7 +793,7 @@ public:
     }
   }
 
-  void print_table(outputStream* st, const print_info_t* pi) const {
+  void print_table(outputStream* st, const print_info_t* pi, print_context_t* pc) const {
 
     if (is_empty()) {
       st->print_cr("(no records)");
@@ -810,7 +816,7 @@ public:
 
     // Now print the actual values. We preceede the table values with the now value
     //  (if printing order is youngest-to-oldest) or write it last (if printing order is oldest-to-youngest).
-    print_all_records(st, g_widths, pi);
+    print_all_records(st, g_widths, pi, pc);
 
   }
 };
@@ -884,19 +890,28 @@ public:
 
   void print_all(outputStream* st, const print_info_t* pi) const {
 
-    st->print_cr("Short Term Values:");
-    // At the start of the short term table we print the current (now) values. The intent is to be able
-    // to see very short term developments (e.g. a spike in heap usage in the last n seconds)
-    _short_term_table->print_table(st, pi);
-    st->cr();
+    print_context_t pc;
+    pc.records_printed = 0;
 
-    st->print_cr("Mid Term Values:");
-    _mid_term_table->print_table(st, pi);
-    st->cr();
+    if (pi->max == 0 || pc.records_printed < pi->max) {
+      st->print_cr("Short Term Values:");
+      // At the start of the short term table we print the current (now) values. The intent is to be able
+      // to see very short term developments (e.g. a spike in heap usage in the last n seconds)
+      _short_term_table->print_table(st, pi, &pc);
+      st->cr();
+    }
 
-    st->print_cr("Long Term Values:");
-    _long_term_table->print_table(st, pi);
-    st->cr();
+    if (pi->max == 0 || pc.records_printed < pi->max) {
+      st->print_cr("Mid Term Values:");
+      _mid_term_table->print_table(st, pi, &pc);
+      st->cr();
+    }
+
+    if (pi->max == 0 || pc.records_printed < pi->max) {
+      st->print_cr("Long Term Values:");
+      _long_term_table->print_table(st, pi, &pc);
+      st->cr();
+    }
 
   }
 
@@ -1238,6 +1253,18 @@ void cleanup() {
   }
 }
 
+const print_info_t* default_settings() {
+  static const print_info_t x = {
+      false, // raw
+      false, // csv
+      false, // omit_legend
+      false, // reverse_ordering;
+      0,     // scale
+      0      // max
+  };
+  return &x;
+}
+
 void print_report(outputStream* st, const print_info_t* pi) {
 
   st->print("Vitals:");
@@ -1249,15 +1276,8 @@ void print_report(outputStream* st, const print_info_t* pi) {
 
   st->cr();
 
-  static const print_info_t default_settings = {
-      false, // raw
-      false, // csv
-      false, // omit_legend
-      true   // avoid_sampling
-  };
-
   if (pi == NULL) {
-    pi = &default_settings;
+    pi = default_settings();
   }
 
   // Print legend at the top (omit if suppressed on command line, or in csv mode).
@@ -1282,6 +1302,9 @@ void dump_reports() {
   } else {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
   }
+
+  // Note: we print two reports, both in reverse order (oldest to youngest). One in text form, one as csv.
+
   ::printf("Dumping Vitals to %s\n", vitals_file_name);
   {
     fileStream fs(vitals_file_name);
@@ -1290,7 +1313,8 @@ void dump_reports() {
         false, // csv
         false, // no_legend
         true,  // reverse_ordering
-        0      // scale
+        0,     // scale
+        0      // max
     };
     print_report(&fs, &settings);
   }
@@ -1308,7 +1332,8 @@ void dump_reports() {
         true,  // csv
         false, // no_legend
         true,  // reverse_ordering
-        1 * K  // scale
+        1 * K, // scale
+        0      // max
     };
     print_report(&fs, &settings);
   }
