@@ -40,9 +40,6 @@ namespace StatisticsHistory {
     bool csv;
     // Omit printing a legend.
     bool no_legend;
-    // Normally, when we print a report, we sample the current values too and print it atop of the table.
-    // We may want to avoid that, e.g. during error handling.
-    bool avoid_sampling;
     // Reverse printing order (default: youngest-to-oldest; reversed: oldest-to-youngest)
     bool reverse_ordering;
 

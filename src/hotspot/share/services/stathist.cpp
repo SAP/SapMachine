@@ -787,9 +787,9 @@ public:
     }
   }
 
-  void print_table(outputStream* st, const print_info_t* pi, const record_t* values_now = NULL) const {
+  void print_table(outputStream* st, const print_info_t* pi) const {
 
-    if (is_empty() && values_now == NULL) {
+    if (is_empty()) {
       st->print_cr("(no records)");
       return;
     }
@@ -799,9 +799,6 @@ public:
     // Before actually printing, lets calculate the printing widths
     // (if now-values are given, they are part of the table too, so include them in the widths calculation)
     update_widths_from_all_records(g_widths, pi);
-    if (values_now != NULL) {
-      update_widths_from_one_record(values_now, youngest_in_table, g_widths, pi);
-    }
 
     // Print headers (not in csv mode)
     if (pi->csv == false) {
@@ -813,13 +810,7 @@ public:
 
     // Now print the actual values. We preceede the table values with the now value
     //  (if printing order is youngest-to-oldest) or write it last (if printing order is oldest-to-youngest).
-    if (values_now != NULL && pi->reverse_ordering == false) {
-      print_one_record(st, values_now, youngest_in_table, g_widths, pi);
-    }
     print_all_records(st, g_widths, pi);
-    if (values_now != NULL && pi->reverse_ordering == true) {
-      print_one_record(st, values_now, youngest_in_table, g_widths, pi);
-    }
 
   }
 };
@@ -891,12 +882,12 @@ public:
 
   }
 
-  void print_all(outputStream* st, const print_info_t* pi, const record_t* values_now = NULL) const {
+  void print_all(outputStream* st, const print_info_t* pi) const {
 
     st->print_cr("Short Term Values:");
     // At the start of the short term table we print the current (now) values. The intent is to be able
     // to see very short term developments (e.g. a spike in heap usage in the last n seconds)
-    _short_term_table->print_table(st, pi, values_now);
+    _short_term_table->print_table(st, pi);
     st->cr();
 
     st->print_cr("Mid Term Values:");
@@ -1275,15 +1266,7 @@ void print_report(outputStream* st, const print_info_t* pi) {
     st->cr();
   }
 
-  record_t* values_now = NULL;
-  if (!pi->avoid_sampling) {
-    // Sample the current values (not when reporting errors, since we do not want to risk secondary errors).
-    values_now = g_record_now;
-    values_now->timestamp = 0; // means "Now"
-    sample_values(values_now, true);
-  }
-
-  RecordTables::the_tables()->print_all(st, pi, values_now);
+  RecordTables::the_tables()->print_all(st, pi);
 
 }
 
@@ -1300,16 +1283,12 @@ void dump_reports() {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
   }
   ::printf("Dumping Vitals to %s\n", vitals_file_name);
-  print_info_t pi;
-  memset(&pi, 0, sizeof(pi));
-  pi.avoid_sampling = true; // this is called during exit, so lets be a bit careful.
   {
     fileStream fs(vitals_file_name);
     static const StatisticsHistory::print_info_t settings = {
         false, // raw
         false, // csv
         false, // no_legend
-        true,  // avoid_sampling
         true,  // reverse_ordering
         0      // scale
     };
@@ -1322,16 +1301,12 @@ void dump_reports() {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
   }
   ::printf("Dumping Vitals csv to %s\n", vitals_file_name);
-  pi.csv = true;
-  pi.scale = 1 * K;
-  pi.reverse_ordering = true;
   {
     fileStream fs(vitals_file_name);
     static const StatisticsHistory::print_info_t settings = {
         false, // raw
         true,  // csv
         false, // no_legend
-        true,  // avoid_sampling
         true,  // reverse_ordering
         1 * K  // scale
     };

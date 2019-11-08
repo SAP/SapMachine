@@ -88,7 +88,6 @@ void StatHistDCmd::execute(DCmdSource source, TRAPS) {
   pi.csv = _csv.value();
   pi.no_legend = _no_legend.value();
   pi.reverse_ordering = _reverse.value();
-  pi.avoid_sampling = false;
 
   StatisticsHistory::print_report(output(), &pi);
 }

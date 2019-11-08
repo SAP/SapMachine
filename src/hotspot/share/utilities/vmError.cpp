@@ -110,7 +110,6 @@ static const StatisticsHistory::print_info_t vitals_print_settings = {
     false, // raw
     false, // csv
     false, // no_legend
-    true,  // avoid_sampling
     false, // reverse_ordering
     0      // scale
 };
