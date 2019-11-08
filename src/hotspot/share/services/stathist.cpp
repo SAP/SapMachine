@@ -817,13 +817,13 @@ public:
 
 class RecordTables: public CHeapObj<mtInternal> {
 
-  // short term: 15 seconds per sample, 240 samples or 60 minutes total
-  static const int short_term_interval_default = 15;
-  static const int short_term_num_samples = 240;
+  // short term: 10 seconds per sample, 360 samples or 60 minutes total
+  static const int short_term_interval_default = 10;
+  static const int short_term_num_samples = 360;
 
-  // mid term: 15 minutes per sample (aka 60 short term samples), 96 samples or 24 hours in total
+  // mid term: 10 minutes per sample (aka 60 short term samples), 144 samples or 24 hours in total
   static const int mid_term_interval_ratio = 60;
-  static const int mid_term_num_samples = 96;
+  static const int mid_term_num_samples = 144;
 
   // long term history: 2 hour intervals (aka 8 mid term samples), 120 samples or 10 days in total
   static const int long_term_interval_ratio = 8;
