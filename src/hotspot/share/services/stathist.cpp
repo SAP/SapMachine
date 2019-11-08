@@ -647,6 +647,8 @@ class RecordTable : public CHeapObj<mtInternal> {
     const RecordTable* const _rt;
     const bool _reverse;
     int _p;
+    const int _max_steps;
+    int _step;
 
     void move_to_oldest() {
       _p = _rt->oldest_pos();
@@ -656,22 +658,14 @@ class RecordTable : public CHeapObj<mtInternal> {
       _p = _rt->youngest_pos();
     }
 
-    void step_forward() {
-      if (valid()) {
-        _p = _rt->following_pos(_p);
-      }
-    }
-
-    void step_back() {
-      if (valid()) {
-        _p = _rt->preceeding_pos(_p);
-      }
-    }
+    void step_forward() { _p = _rt->following_pos(_p); }
+    void step_back()    { _p = _rt->preceeding_pos(_p); }
 
   public:
 
     ConstIterator(const RecordTable* rt, bool reverse = false)
-      : _rt(rt), _reverse(reverse), _p(-1)
+      : _rt(rt), _reverse(reverse), _p(-1),
+        _max_steps(rt->size()), _step(0)
     {
       if (_reverse) {
         move_to_oldest();
@@ -683,10 +677,17 @@ class RecordTable : public CHeapObj<mtInternal> {
     bool valid() const { return _p != -1; }
 
     void step() {
-      if (_reverse) {
-        step_forward();
-      } else {
-        step_back();
+      if (valid()) {
+        if (_reverse) {
+          step_forward();
+        } else {
+          step_back();
+        }
+        // Safety.
+        _step ++;
+        if (_step > _max_steps) {
+          _p = -1;
+        }
       }
     }
 
@@ -763,6 +764,9 @@ public:
   record_t* current_record() {
     return at(_pos);
   }
+
+  // Returns max. number of entries size of this record table.
+  int size() const { return _num_records; }
 
   // finish the current record: advances the write position in the FIFO buffer by one.
   // Should that cause a record to fall out of the FIFO end, it propagates the record to
