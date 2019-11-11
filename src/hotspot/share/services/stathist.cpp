@@ -74,6 +74,11 @@ void inc_threads_created(size_t count) {
 
 } // namespace counters
 
+// context for printing
+struct print_context_t {
+  int records_printed;
+};
+
 // helper function for the missing outputStream::put(int c, int repeat)
 static void ostream_put_n(outputStream* st, int c, int repeat) {
   for (int i = 0; i < repeat; i ++) {
@@ -647,6 +652,8 @@ class RecordTable : public CHeapObj<mtInternal> {
     const RecordTable* const _rt;
     const bool _reverse;
     int _p;
+    const int _max_steps;
+    int _step;
 
     void move_to_oldest() {
       _p = _rt->oldest_pos();
@@ -656,22 +663,14 @@ class RecordTable : public CHeapObj<mtInternal> {
       _p = _rt->youngest_pos();
     }
 
-    void step_forward() {
-      if (valid()) {
-        _p = _rt->following_pos(_p);
-      }
-    }
-
-    void step_back() {
-      if (valid()) {
-        _p = _rt->preceeding_pos(_p);
-      }
-    }
+    void step_forward() { _p = _rt->following_pos(_p); }
+    void step_back()    { _p = _rt->preceeding_pos(_p); }
 
   public:
 
     ConstIterator(const RecordTable* rt, bool reverse = false)
-      : _rt(rt), _reverse(reverse), _p(-1)
+      : _rt(rt), _reverse(reverse), _p(-1),
+        _max_steps(rt->size()), _step(0)
     {
       if (_reverse) {
         move_to_oldest();
@@ -683,10 +682,17 @@ class RecordTable : public CHeapObj<mtInternal> {
     bool valid() const { return _p != -1; }
 
     void step() {
-      if (_reverse) {
-        step_forward();
-      } else {
-        step_back();
+      if (valid()) {
+        if (_reverse) {
+          step_forward();
+        } else {
+          step_back();
+        }
+        // Safety.
+        _step ++;
+        if (_step > _max_steps) {
+          _p = -1;
+        }
       }
     }
 
@@ -731,13 +737,14 @@ class RecordTable : public CHeapObj<mtInternal> {
   }
 
   // Print all records.
-  void print_all_records(outputStream* st, const int widths[], const print_info_t* pi) const {
+  void print_all_records(outputStream* st, const int widths[], const print_info_t* pi, print_context_t* pc) const {
     ConstIterator it(this, pi->reverse_ordering);
-    while(it.valid()) {
+    while(it.valid() && (pi->max == 0 || pc->records_printed < pi->max)) {
       const record_t* record = it.get();
       const record_t* previous_record = it.get_preceeding();
       print_one_record(st, record, previous_record, widths, pi);
       it.step();
+      pc->records_printed ++;
     }
   }
 
@@ -764,6 +771,9 @@ public:
     return at(_pos);
   }
 
+  // Returns max. number of entries size of this record table.
+  int size() const { return _num_records; }
+
   // finish the current record: advances the write position in the FIFO buffer by one.
   // Should that cause a record to fall out of the FIFO end, it propagates the record to
   // the follower table if needed.
@@ -783,9 +793,9 @@ public:
     }
   }
 
-  void print_table(outputStream* st, const print_info_t* pi, const record_t* values_now = NULL) const {
+  void print_table(outputStream* st, const print_info_t* pi, print_context_t* pc) const {
 
-    if (is_empty() && values_now == NULL) {
+    if (is_empty()) {
       st->print_cr("(no records)");
       return;
     }
@@ -795,9 +805,6 @@ public:
     // Before actually printing, lets calculate the printing widths
     // (if now-values are given, they are part of the table too, so include them in the widths calculation)
     update_widths_from_all_records(g_widths, pi);
-    if (values_now != NULL) {
-      update_widths_from_one_record(values_now, youngest_in_table, g_widths, pi);
-    }
 
     // Print headers (not in csv mode)
     if (pi->csv == false) {
@@ -809,32 +816,25 @@ public:
 
     // Now print the actual values. We preceede the table values with the now value
     //  (if printing order is youngest-to-oldest) or write it last (if printing order is oldest-to-youngest).
-    if (values_now != NULL && pi->reverse_ordering == false) {
-      print_one_record(st, values_now, youngest_in_table, g_widths, pi);
-    }
-    print_all_records(st, g_widths, pi);
-    if (values_now != NULL && pi->reverse_ordering == true) {
-      print_one_record(st, values_now, youngest_in_table, g_widths, pi);
-    }
+    print_all_records(st, g_widths, pi, pc);
 
   }
 };
 
 class RecordTables: public CHeapObj<mtInternal> {
 
-  enum {
-    // short term: 15 seconds per sample, 240 samples or 60 minutes total
-    short_term_interval_default = 15,
-    short_term_num_samples = 240,
+  // short term: 10 seconds per sample, 360 samples or 60 minutes total
+  static const int short_term_interval_default = 10;
+  static const int short_term_num_samples = 360;
 
-    // mid term: 15 minutes per sample (aka 60 short term samples), 96 samples or 24 hours in total
-    mid_term_interval_ratio = 60,
-    mid_term_num_samples = 96,
+  // mid term: 10 minutes per sample (aka 60 short term samples), 144 samples or 24 hours in total
+  static const int mid_term_interval_ratio = 60;
+  static const int mid_term_num_samples = 144;
 
-    // long term history: 2 hour intervals (aka 8 mid term samples), 120 samples or 10 days in total
-    long_term_interval_ratio = 8,
-    long_term_num_samples = 120
-  };
+  // long term history: 2 hour intervals (aka 8 mid term samples), 120 samples or 10 days in total
+  static const int long_term_interval_ratio = 8;
+  static const int long_term_num_samples = 120;
+
 
   int _short_term_interval;
 
@@ -888,21 +888,30 @@ public:
 
   }
 
-  void print_all(outputStream* st, const print_info_t* pi, const record_t* values_now = NULL) const {
+  void print_all(outputStream* st, const print_info_t* pi) const {
 
-    st->print_cr("Short Term Values:");
-    // At the start of the short term table we print the current (now) values. The intent is to be able
-    // to see very short term developments (e.g. a spike in heap usage in the last n seconds)
-    _short_term_table->print_table(st, pi, values_now);
-    st->cr();
+    print_context_t pc;
+    pc.records_printed = 0;
 
-    st->print_cr("Mid Term Values:");
-    _mid_term_table->print_table(st, pi);
-    st->cr();
+    if (pi->max == 0 || pc.records_printed < pi->max) {
+      st->print_cr("Short Term Values:");
+      // At the start of the short term table we print the current (now) values. The intent is to be able
+      // to see very short term developments (e.g. a spike in heap usage in the last n seconds)
+      _short_term_table->print_table(st, pi, &pc);
+      st->cr();
+    }
 
-    st->print_cr("Long Term Values:");
-    _long_term_table->print_table(st, pi);
-    st->cr();
+    if (pi->max == 0 || pc.records_printed < pi->max) {
+      st->print_cr("Mid Term Values:");
+      _mid_term_table->print_table(st, pi, &pc);
+      st->cr();
+    }
+
+    if (pi->max == 0 || pc.records_printed < pi->max) {
+      st->print_cr("Long Term Values:");
+      _long_term_table->print_table(st, pi, &pc);
+      st->cr();
+    }
 
   }
 
@@ -1244,6 +1253,18 @@ void cleanup() {
   }
 }
 
+const print_info_t* default_settings() {
+  static const print_info_t x = {
+      false, // raw
+      false, // csv
+      false, // omit_legend
+      false, // reverse_ordering;
+      0,     // scale
+      0      // max
+  };
+  return &x;
+}
+
 void print_report(outputStream* st, const print_info_t* pi) {
 
   st->print("Vitals:");
@@ -1255,15 +1276,8 @@ void print_report(outputStream* st, const print_info_t* pi) {
 
   st->cr();
 
-  static const print_info_t default_settings = {
-      false, // raw
-      false, // csv
-      false, // omit_legend
-      true   // avoid_sampling
-  };
-
   if (pi == NULL) {
-    pi = &default_settings;
+    pi = default_settings();
   }
 
   // Print legend at the top (omit if suppressed on command line, or in csv mode).
@@ -1272,15 +1286,7 @@ void print_report(outputStream* st, const print_info_t* pi) {
     st->cr();
   }
 
-  record_t* values_now = NULL;
-  if (!pi->avoid_sampling) {
-    // Sample the current values (not when reporting errors, since we do not want to risk secondary errors).
-    values_now = g_record_now;
-    values_now->timestamp = 0; // means "Now"
-    sample_values(values_now, true);
-  }
-
-  RecordTables::the_tables()->print_all(st, pi, values_now);
+  RecordTables::the_tables()->print_all(st, pi);
 
 }
 
@@ -1296,19 +1302,19 @@ void dump_reports() {
   } else {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
   }
+
+  // Note: we print two reports, both in reverse order (oldest to youngest). One in text form, one as csv.
+
   ::printf("Dumping Vitals to %s\n", vitals_file_name);
-  print_info_t pi;
-  memset(&pi, 0, sizeof(pi));
-  pi.avoid_sampling = true; // this is called during exit, so lets be a bit careful.
   {
     fileStream fs(vitals_file_name);
     static const StatisticsHistory::print_info_t settings = {
         false, // raw
         false, // csv
         false, // no_legend
-        true,  // avoid_sampling
         true,  // reverse_ordering
-        0      // scale
+        0,     // scale
+        0      // max
     };
     print_report(&fs, &settings);
   }
@@ -1319,22 +1325,22 @@ void dump_reports() {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
   }
   ::printf("Dumping Vitals csv to %s\n", vitals_file_name);
-  pi.csv = true;
-  pi.scale = 1 * K;
-  pi.reverse_ordering = true;
   {
     fileStream fs(vitals_file_name);
     static const StatisticsHistory::print_info_t settings = {
         false, // raw
         true,  // csv
         false, // no_legend
-        true,  // avoid_sampling
         true,  // reverse_ordering
-        1 * K  // scale
+        1 * K, // scale
+        0      // max
     };
     print_report(&fs, &settings);
   }
 
 }
+
+// For printing in thread lists only.
+const Thread* samplerthread() { return g_sampler_thread; }
 
 } // namespace StatisticsHistory
