@@ -37,6 +37,7 @@ protected:
   DCmdArgument<bool> _no_legend;
   DCmdArgument<bool> _reverse;
   DCmdArgument<bool> _raw;
+  DCmdArgument<jlong> _max;
 public:
   StatHistDCmd(outputStream* output, bool heap);
   static const char* name() {

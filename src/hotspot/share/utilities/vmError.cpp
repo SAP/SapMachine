@@ -101,16 +101,6 @@ const char *env_list[] = {
   (const char *)0
 };
 
-// SapMachine 2019-09-16: Vitals
-static const StatisticsHistory::print_info_t vitals_print_settings = {
-    false, // raw
-    false, // csv
-    false, // no_legend
-    true,  // avoid_sampling
-    false, // reverse_ordering
-    0      // scale
-};
-
 // A simple parser for -XX:OnError, usage:
 //  ptr = OnError;
 //  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr) != NULL)
@@ -1000,7 +990,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   // SapMachine 2019-02-20 : stathist
   STEP("Vitals")
      if (_verbose) {
-       StatisticsHistory::print_report(st, &vitals_print_settings);
+       StatisticsHistory::print_report(st);
      }
 
   STEP("printing system")
@@ -1176,7 +1166,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   // SapMachine 2019-02-20 : stathist
   // STEP("Vitals")
-  StatisticsHistory::print_report(st, &vitals_print_settings);
+  StatisticsHistory::print_report(st);
 
   // STEP("printing system")
 

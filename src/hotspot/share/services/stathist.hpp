@@ -40,22 +40,28 @@ namespace StatisticsHistory {
     bool csv;
     // Omit printing a legend.
     bool no_legend;
-    // Normally, when we print a report, we sample the current values too and print it atop of the table.
-    // We may want to avoid that, e.g. during error handling.
-    bool avoid_sampling;
     // Reverse printing order (default: youngest-to-oldest; reversed: oldest-to-youngest)
     bool reverse_ordering;
 
     size_t scale;
 
+    // max number of samples to print (0 = print all)
+    int max;
+
   };
 
+  // text output, youngest-to-oldest ordered, with legend, all records, dynamic scale.
+  const print_info_t* default_settings();
 
-  void print_report(outputStream* st, const print_info_t* print_info);
+  // Print report to stream. Leave print_info NULL for default settings.
+  void print_report(outputStream* st, const print_info_t* print_info = NULL);
 
   // Dump both textual and csv style reports to two files, "vitals_<pid>.txt" and "vitals_<pid>.csv".
   // If these files exist, they are overwritten.
   void dump_reports();
+
+  // For printing in thread lists only.
+  const Thread* samplerthread();
 
   // These are counters for the statistics history. Ideally, they would live
   // inside their thematical homes, e.g. thread.cpp or classLoaderDataGraph.cpp,
