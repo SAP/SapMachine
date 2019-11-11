@@ -68,6 +68,11 @@ public class StatHistTest {
         output.shouldContain("--heap--");
         output.shouldContain("--meta--");
 
+        output = executor.execute("VM.vitals max=1");
+        output.shouldContain("--jvm--");
+        output.shouldContain("--heap--");
+        output.shouldContain("--meta--");
+
         output = executor.execute("VM.vitals csv");
         output.shouldContain("heap-comm,heap-used,meta-comm,meta-used");
 
