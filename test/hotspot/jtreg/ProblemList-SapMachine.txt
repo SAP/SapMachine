@@ -80,13 +80,13 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 #
 # Oracle does see these issues as well: https://bugs.openjdk.java.net/browse/JDK-8231169
 # Backport JDK-8212028, JDK-8211037 and see if this helps
-# http://sapjvm:1080/servlet/testresult?testid=208070184
+#
 vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,solaris-sparcv9
-# http://sapjvm:1080/servlet/testresult?testid=208070185
+#
 vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,solaris-sparcv9
-# http://sapjvm:1080/servlet/testresult?testid=206443777
+#
 vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
-# http://sapjvm:1080/servlet/testresult?testid=208070186
+#
 vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
 
 # SapMachine 2019-08-07
@@ -140,9 +140,8 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 # This times out on power platforms. Excluding.
 #
 #
-# SapMachine 2019-07-19 CodeHeap::invalidate is too slow in dbg build
-# SapMachine 2019-09-20 We see it in 11 now, too. Lutz is working on it.
-compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
+# SapMachine CL 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
+#compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)

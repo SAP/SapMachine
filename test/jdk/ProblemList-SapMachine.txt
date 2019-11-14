@@ -104,7 +104,7 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 # https://bugs.openjdk.java.net/browse/JDK-8231495 to track resolution.
 # https://bugs.openjdk.java.net/browse/JDK-8223869 for exclusion request.
 # SapMachine 2019-10-02 Pushed exclusion to jdk/jdk, requested backport to 11.0.6 and 13.0.2
-java/awt/FontMetrics/MaxAdvanceIsMax.java                            8221305,8231495 solaris-all,macosx-all,linux-all
+#java/awt/FontMetrics/MaxAdvanceIsMax.java                            8221305,8231495 solaris-all,macosx-all,linux-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
@@ -127,8 +127,8 @@ javax/swing/JFileChooser/4847375/bug4847375.java                                
 # timeout on ppc in 11 only.
 #
 #
-#
-jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
+# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
+#jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
 #
@@ -140,6 +140,7 @@ jdk/jfr/event/oldobject/TestLargeRootSet.java                                820
 # Issue started occuring in 06/2019 but not related to JDK updates
 #
 #
+# https://bugs.openjdk.java.net/browse/JDK-8229023
 java/awt/print/PrinterJob/SameService.java                                   8229023 linux-s390x
 
 # SapMachine 2019-07-18
@@ -178,7 +179,11 @@ java/awt/FontClass/FontSize1Test.java                                           
 # Seen only on linuxx86_64, ld3357. Maybe a specific issue on that box?
 #
 #
-# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990, got excluded by 8230115. Need to downport it.
+# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990.
+# It got excluded via JDK-8230115.
+# SapMachine 2019-11-12 We decided to close the issue on our side, i.e., not go
+# for the real fix. It's discussed too much.
+# requested downport of the exclude to 11u.
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
 
 # SapMachine 2019-08-29
@@ -189,6 +194,14 @@ sun/tools/jhsdb/JShellHeapDumpTest.java                                      822
 
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
+
+# SapMachine 2019-09-26
+# This test is failing on our new Ubuntu 18.04 systems for ppcle.
+# Currently only affecting 13 and 14
+#
+#
+# Excluded with https://bugs.openjdk.java.net/browse/JDK-8233202
+javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
