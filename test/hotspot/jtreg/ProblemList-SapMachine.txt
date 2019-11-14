@@ -1,0 +1,162 @@
+###############################################################################
+#
+# This is the additional jtreg exclude list for SapMachine hotspot tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+# SAP/SapMachine usage notes:
+#
+# This exclude list should be a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal should be to fix test issues upstream or at least open
+# upstream bugs and get the test excluded via the upstream exclusion lists.
+#
+# We have both internal exclude lists and exclude lists in the SapMachine
+# repository. The internal lists are the master and the public lists in the
+# SapMachine repository will be refreshed regularly, removing comments
+# which reveal internal URLs, names or hostnames.
+#
+# The public SapMachine exclusion lists might contain additional test
+# exclusions, specific to the SapMachine build and test infrastructure. That
+# section needs to be placed at the end of the file.
+#
+###############################################################################
+
+###############################################################################
+# New failures detected after GA or caused by changes pushed after GA of 11.
+
+# SapMachine 2019-01-08
+# RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
+# SapMachine 2019-08-07 Still failing
+#
+compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
+
+# SapMachine 2019-03-11
+# Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
+#
+#
+# SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
+# SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
+# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
+serviceability/dcmd/framework/HelpTest.java                                          windows-all
+
+# SapMachine 2019-04-29
+# java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
+# SapMachine 2019-04-30 Still fails in 11.0.4.
+gc/metaspace/TestCapacityUntilGCWrapAround.java                                      windows-i586
+
+# SapMachine 2019-04-29
+# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
+vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
+
+# SapMachine 2019-04-29
+# Very sporadic on linux/ppc.
+# Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
+# Enable it to find one of the sporadic occurances and paste the link here.
+#serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-06-07
+# Frequent timeouts on several platforms, observed only in 11.
+#
+# Oracle does see these issues as well: https://bugs.openjdk.java.net/browse/JDK-8231169
+# Backport JDK-8212028, JDK-8211037 and see if this helps
+#
+vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,solaris-sparcv9
+#
+vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,solaris-sparcv9
+#
+vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
+#
+vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
+
+# SapMachine 2019-08-07
+# Seems to occur only on ...
+#
+#
+# SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
+# It fails for jdk11 and jdk14 on ..., which is SLES 12.1.
+# It passes for both on ...: SLES 12.3, ...: RHEL 7.2, ...: RHEL 7.3 and ...: Ubuntu 16.4
+runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
+
+###############################################################################
+# New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
+
+# SapMachine 2019-06-28
+# RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr or just timeout. Seen also in 13.
+#
+#
+# SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
+# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
+serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
+
+# SapMachine 2019-07-16
+# 11-only crash at:
+# Klass::method_at_vtable
+# linkResolver::runtime_resolve_virtual_method
+#
+#
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390x,windows-all
+
+###############################################################################
+# New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
+
+# SapMachine 2019-07-17
+# Crashes on s390
+#
+#
+# SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, 13.0.2
+# SapMachine 2019-10-25 New Fix: JDK-8232005. Pushed to jdk/jdk, backports to 11 and 13 pending.
+#vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8232005 linux-s390x
+
+# SapMachine 2019-07-22
+# Timeout. We see this regularly.
+#
+#
+# https://bugs.openjdk.java.net/browse/JDK-8222030
+# SapMachine 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
+#compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-ppc64
+
+# SapMachine 2019-07-15
+# This times out on power platforms. Excluding.
+#
+#
+# SapMachine CL 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
+#compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
+
+###############################################################################
+# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
+
+#############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+
+# SapMachine 2018-10-05
+# This test fails, because we do not have debug symbols available in all tests.
+runtime/NMT/CheckForProperDetailStackTrace.java                                      generic-all
+
+# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
+gc/g1/humongousObjects/TestHumongousClassLoader.java                                 linux-ppc64le,linux-ppc64
+gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                          linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-01-30
+# This test fails for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
+compiler/runtime/cr6891750/Test6891750.java                                          linux-ppc64le,linux-ppc64

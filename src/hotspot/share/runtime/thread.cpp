@@ -106,6 +106,8 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
+// SapMachine 2019-02-20 : stathist
+#include "services/stathist.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -3928,6 +3930,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
+  // SapMachine 2019-02-20 : stathist
+  if (EnableVitals) {
+    StatisticsHistory::initialize();
+  }
+
   BiasedLocking::init();
 
 #if INCLUDE_RTM_OPT
@@ -4351,6 +4358,10 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   p->set_on_thread_list();
 
   _number_of_threads++;
+
+  // SapMachine 2019-02-20 : stathist
+  StatisticsHistory::counters::inc_threads_created(1);
+
   oop threadObj = p->threadObj();
   bool daemon = true;
   // Bootstrapping problem: threadObj can be null for initial
