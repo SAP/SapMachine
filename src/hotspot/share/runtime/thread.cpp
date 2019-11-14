@@ -1743,6 +1743,16 @@ void JavaThread::interrupt() {
 
 bool JavaThread::is_interrupted(bool clear_interrupted) {
   debug_only(check_for_dangling_thread_pointer(this);)
+
+  if (threadObj() == NULL) {
+    // If there is no j.l.Thread then it is impossible to have
+    // been interrupted. We can find NULL during VM initialization
+    // or when a JNI thread is still in the process of attaching.
+    // In such cases this must be the current thread.
+    assert(this == Thread::current(), "invariant");
+    return false;
+  }
+
   bool interrupted = java_lang_Thread::interrupted(threadObj());
 
   // NOTE that since there is no "lock" around the interrupt and
@@ -1761,6 +1771,7 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   // state if we are going to report that we were interrupted; otherwise
   // an interrupt that happens just after we read the field would be lost.
   if (interrupted && clear_interrupted) {
+    assert(this == Thread::current(), "only the current thread can clear");
     java_lang_Thread::set_interrupted(threadObj(), false);
     osthread()->set_interrupted(false);
   }
@@ -4363,7 +4374,7 @@ void JavaThread::invoke_shutdown_hooks() {
 //   + Call before_exit(), prepare for VM exit
 //      > run VM level shutdown hooks (they are registered through JVM_OnExit(),
 //        currently the only user of this mechanism is File.deleteOnExit())
-//      > stop StatSampler, watcher thread, CMS threads,
+//      > stop StatSampler, watcher thread,
 //        post thread end and vm death events to JVMTI,
 //        stop signal thread
 //   + Call JavaThread::exit(), it will:

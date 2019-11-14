@@ -305,9 +305,6 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(bool, TraceCodeBlobStacks, false,                              \
           "Trace stack-walk of codeblobs")                                  \
                                                                             \
-  product(bool, PrintJNIResolving, false,                                   \
-          "Used to implement -v:jni")                                       \
-                                                                            \
   notproduct(bool, PrintRewrites, false,                                    \
           "Print methods that are being rewritten")                         \
                                                                             \
@@ -1973,9 +1970,6 @@ const size_t minimumSymbolTableSize = 1024;
                                                                             \
   experimental(bool, UseCriticalCompilerThreadPriority, false,              \
           "Compiler thread(s) run at critical scheduling priority")         \
-                                                                            \
-  experimental(bool, UseCriticalCMSThreadPriority, false,                   \
-          "ConcurrentMarkSweep thread runs at critical scheduling priority")\
                                                                             \
   develop(intx, NewCodeParameter,      0,                                   \
           "Testing Only: Create a dedicated integer parameter before "      \

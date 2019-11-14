@@ -140,6 +140,7 @@ jdk/jfr/event/oldobject/TestLargeRootSet.java                                820
 # Issue started occuring in 06/2019 but not related to JDK updates
 #
 #
+# https://bugs.openjdk.java.net/browse/JDK-8229023
 java/awt/print/PrinterJob/SameService.java                                   8229023 linux-s390x
 
 # SapMachine 2019-07-18
@@ -178,7 +179,11 @@ java/awt/FontClass/FontSize1Test.java                                           
 # Seen only on linuxx86_64, ... . Maybe a specific issue on that box?
 #
 #
-# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990. It got excluded by 8230115. Backported to 13.0.2, need to do it for 11 still.
+# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990.
+# It got excluded via JDK-8230115.
+# SapMachine 2019-11-12 We decided to close the issue on our side, i.e., not go
+# for the real fix. It's discussed too much.
+# requested downport of the exclude to 11u.
 #jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
 
 # SapMachine 2019-08-29
@@ -189,6 +194,14 @@ java/awt/FontClass/FontSize1Test.java                                           
 
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
+
+# SapMachine 2019-09-26
+# This test is failing on our new Ubuntu 18.04 systems for ppcle.
+# Currently only affecting 13 and 14
+#
+#
+# Excluded with https://bugs.openjdk.java.net/browse/JDK-8233202
+#javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-all
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -279,13 +292,6 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 
 ###############################################################################
 # New failures detected after GA of 13
-
-# SapMachine 2019-09-26
-# This test is failing on our new Ubuntu 18.04 systems for ppcle.
-# Currently only affecting 13 and 14
-#
-#
-javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-ppc64le
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14

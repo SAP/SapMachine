@@ -809,14 +809,11 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, load));
     break;
   case JVMTI_VERBOSE_GC:
-    if (value == 0) {
-      LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(gc));
-    } else {
-      LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
-    }
+    LogConfiguration::configure_stdout(level, true, LOG_TAGS(gc));
     break;
   case JVMTI_VERBOSE_JNI:
-    PrintJNIResolving = value != 0;
+    level = value == 0 ? LogLevel::Off : LogLevel::Debug;
+    LogConfiguration::configure_stdout(level, true, LOG_TAGS(jni, resolve));
     break;
   default:
     return JVMTI_ERROR_ILLEGAL_ARGUMENT;
@@ -3155,7 +3152,7 @@ JvmtiEnv::GetBytecodes(Method* method_oop, jint* bytecode_count_ptr, unsigned ch
   NULL_CHECK(method_oop, JVMTI_ERROR_INVALID_METHODID);
 
   HandleMark hm;
-  methodHandle method(method_oop);
+  methodHandle method(Thread::current(), method_oop);
   jint size = (jint)method->code_size();
   jvmtiError err = allocate(size, bytecodes_ptr);
   if (err != JVMTI_ERROR_NONE) {

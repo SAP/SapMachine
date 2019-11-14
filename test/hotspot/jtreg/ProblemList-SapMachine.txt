@@ -89,6 +89,15 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 #
 #vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
 
+# SapMachine 2019-08-07
+# Seems to occur only on ..., so only excluding it for jdk/jdk which we test on that machine
+#
+#
+# SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
+#
+#
+runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
+
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
 
@@ -131,8 +140,7 @@ compiler/jsr292/ContinuousCallSiteTargetChange.java                          822
 # This times out on power platforms. Excluding.
 #
 #
-#
-#
+# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
 #compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
 
 ###############################################################################
@@ -204,15 +212,6 @@ gc/CriticalNativeArgs.java                                                      
 # Test failed with -XX:+AdjustStackSizeForTLS
 runtime/TLS/testtls.sh                                                               generic-all
 
-# SapMachine 2019-08-07
-# Seems to occur only on ..., so only excluding it for jdk/jdk which we test on that machine
-#
-#
-# SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
-#
-#
-runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
-
 # SapMachine 2019-08-29
 # Some aarch stuff, we don't really care. Do we?
 # Check later on whether it's fixed.
@@ -239,7 +238,9 @@ gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                           
 # This test came new with JDK-8231058. -XX:+VerifyOops doesn't work for linuxppc64 and linux-s390x.
 # Goetz is working on this.
 #
-runtime/CheckUnhandledOops/TestVerifyOops.java#id0                                   linux-s390x,linux-ppc64le,linux-ppc64
+# This should be fixed. Pushed 8231757: [ppc] Fix VerifyOops. Errors show since 8231058.
+#runtime/CheckUnhandledOops/TestVerifyOops.java#id0                                   linux-s390x,linux-ppc64le,linux-ppc64
+#runtime/CheckUnhandledOops/TestVerifyOops.java#id1                                   linux-s390x,linux-ppc64le,linux-ppc64
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
