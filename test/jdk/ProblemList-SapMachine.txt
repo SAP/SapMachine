@@ -98,12 +98,6 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of 11.
 
-# SapMachine 2019-02-16
-# javax.crypto.AEADBadTagException: Tag mismatch!
-# SapMachine 2019-08-29 This test got excluded with JDK-8224991. Backported to 11.0.5, remove this entry after release of 11.0.5.
-#
-#javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                    8212096 generic-all
-
 # SapMachine 2019-07-12
 # Issue with certain font configurations. There is already an exclusion of this test for
 # solaris and mac in the generic exclusion list. Excluding this test for linux now as well.
@@ -130,19 +124,11 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
 
 # SapMachine 2019-06-28
-# Seen in 11, 13, 14. timeouts.
-#
-#
-# Most likely fixed by https://bugs.openjdk.java.net/browse/JDK-8227435.
-# SapMachine 2019-10-02: Fix pushed to JDK14, 13.0.2 and 11.0.6
-#sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java                 8227435 windows-x64
-
-# SapMachine 2019-06-28
 # timeout on ppc in 11 only.
 #
 #
-# SapMachine 2019-09-24 Re-enabled test in jdk/jdk and jdk11u-dev because Lutz is heavily testing.
-jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
+# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
+#jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
 
 # SapMachine 2019-06-28
 #
@@ -154,14 +140,8 @@ jdk/jfr/event/oldobject/TestLargeRootSet.java                                820
 # Issue started occuring in 06/2019 but not related to JDK updates
 #
 #
+# https://bugs.openjdk.java.net/browse/JDK-8229023
 java/awt/print/PrinterJob/SameService.java                                   8229023 linux-s390x
-
-# SapMachine 2019-07-16
-# Exception in thread "main" java.lang.RuntimeException: Test failed for - cpu:getCpuSystemUsage, expected [2], got [2]
-#
-#
-# SapMachine 2019-10-02 Fixed by JDK-8227642 in jdk and JDK13. Should be downported (along with 8228434) to 11.0.6.
-#jdk/internal/platform/docker/TestSystemMetrics.java                          8227642 linux-ppc64le,linux-s390x
 
 # SapMachine 2019-07-18
 # javax.net.ssl.SSLException: The status_request_v2 extension is inconsistent with the expected result: expected = true, actual = false
@@ -169,31 +149,23 @@ java/awt/print/PrinterJob/SameService.java                                   822
 #
 #javax/net/ssl/Stapling/StapleEnableProps.java                                        aix-all
 
-# SapMachine 2019-07-17
-# java.lang.NumberFormatException: For input string: "18446744073709551615"
+# SapMachine 2019-07-19
+# These issues occur in our internal SapMachine test env. Probably infra related on host ... Seen in 11 only.
 #
-#
-# https://bugs.openjdk.java.net/browse/JDK-8228585
-# SapMachine 2019-08-08: Change JDK-8228585 pushed to 11.0.5, 13 and 14.
-#
-# SapMachine 2019-08-08: There seems to be another issue: memory:getMemoryUsage, expected [23040819200], got [23061266432]
-#
-#
-# https://bugs.openjdk.java.net/browse/JDK-8229284
-# SapMachine 2019-09-23: Change JDK-8229284 already pushed to jdk/jdk. Working on backports to jdk13 and 11.
-#jdk/internal/platform/cgroup/TestCgroupMetrics.java                          8229284 linux-all
+#sun/management/jdp/JdpDefaultsTest.java                                              linux-ppc64le
+#sun/management/jdp/JdpJmxRemoteDynamicPortTest.java                                  linux-ppc64le
+#sun/management/jdp/JdpSpecificAddressTest.java                                       linux-ppc64le
+
+# SapMachine 2019-07-19
+# These occur in SapMachine test env on ... and ... Disabling until solution found. Seen in 11 only.
+#java/net/MulticastSocket/Promiscuous.java                                            linux-ppc64le
+#java/net/MulticastSocket/SetLoopbackMode.java                                        linux-ppc64le
+#java/net/MulticastSocket/Test.java                                                   linux-ppc64le,aix-all
+#java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     linux-ppc64le
+#java/nio/channels/DatagramChannel/Promiscuous.java                                   linux-ppc64le
 
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
-
-# SapMachine 2019-07-19
-# java.lang.RuntimeException: Total safepoint time illegal value: 0 ms (MIN = 1; MAX = 9223372036854775807)
-# Occurs in JDK13 since 2019-02.
-# We didn't see this in 11 yet, only 13, 14; but it's broken as well.
-#
-#
-# SapMachine 2019-10-02 Part of jdk/jdk, jdk 13.0.0, jdk 11.0.5
-#sun/management/HotspotRuntimeMBean/GetTotalSafepointTime.java                8228658 linux-s390x
 
 # SapMachine 2019-08-01
 # Appears in 11, 13, 14. In 11 not seen for quite some time, but failures with the same error in the database.
@@ -202,18 +174,37 @@ java/awt/print/PrinterJob/SameService.java                                   822
 #
 java/awt/FontClass/FontSize1Test.java                                                macosx-all
 
+# SapMachine 2019-08-02
+# RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
+# Seen only on linuxx86_64, ... . Maybe a specific issue on that box?
+#
+#
+# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990.
+# It got excluded via JDK-8230115.
+# SapMachine 2019-11-12 We decided to close the issue on our side, i.e., not go
+# for the real fix. It's discussed too much.
+# requested downport of the exclude to 11u.
+#jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
+
+# SapMachine 2019-08-29
+# We see errors in jdk/jdk (14) and recently in 11 as well. So, it must be introduced
+# by some change that had been backported.
+# Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
+#sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
+
+###############################################################################
+# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
+
+# SapMachine 2019-09-26
+# This test is failing on our new Ubuntu 18.04 systems for ppcle.
+# Currently only affecting 13 and 14
+#
+#
+# Excluded with https://bugs.openjdk.java.net/browse/JDK-8233202
+#javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-all
+
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
-
-# SapMachine 2019-02-08
-# Sporadic failure: IllegalStateException: Test FAILED: Unexpected Maximum Pool Size Overflow!
-# SapMachine 2019-06-28 Check whether fixed
-#javax/management/monitor/StartStopTest.java                                          windows-all
-
-# SapMachine 2019-02-08
-# SSLHandshakeException: Received fatal alert: handshake_failure
-# SapMachine GL 2019-06-28 Check whether fixed
-#sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                            linux-x64
 
 # SapMachine 2019-02-08
 # times out.
@@ -228,19 +219,6 @@ javax/security/auth/Subject/DoAs.java                                           
 # RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
 # SapMachine 2019-07-12 Still failing
 java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
-
-# SapMachine 2019-02-08
-# Sporadic: OutOfMemoryError: Compressed class space
-# SapMachine 2019-06-28 Check whether fixed
-#java/lang/management/MemoryMXBean/LowMemoryTest2.sh                                  linux-s390x,windows-all
-
-# SapMachine 2019-02-08
-# Both only failing on a certain box. Do we need to fix the machine?
-# SapMachine 2019-07-12 Enabling both tests again
-# RuntimeException: Expected message not received, Receive timed out
-#java/net/MulticastSocket/Promiscuous.java                                            macosx-all
-# SocketTimeoutException: Receive timed out
-#java/net/MulticastSocket/SetOutgoingIf.java                                          macosx-all
 
 # SapMachine 2019-02-08
 # javax.naming.CommunicationException: DNS error [Root exception is SocketTimeoutException: Receive timed out] ...
@@ -287,28 +265,6 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 # Exluding for now.
 java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
 
-# SapMachine 2019-07-19
-# java.io.IOException: No route to host
-#
-# SapMachine 2019-08-01: adding mac. Oracle excluded this on mac due to 7122846.
-# SapMachine 2019-10-02 8229706 was pushed to jdk/jdk and 13.0.2
-#java/net/MulticastSocket/NoLoopbackPackets.java                              8229706 aix-all,macosx-all
-
-# SapMachine 2019-08-01
-# Asserts in TestShutdownEvent.validateStackTrace().
-#
-#
-# SapMachine 2019-10-02 Fix for 8219082 has been pushed to jdk/jdk and jdk13u (13.0.2)
-#jdk/jfr/event/runtime/TestShutdownEvent.java                                 8219082 linux-all
-
-# SapMachine 2019-08-02
-# RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
-# Seen only on linuxx86_64, ... . Maybe a specific issue on that box?
-#
-#
-# SapMachine 2019-10-02 Excluded by 8230115 and backported to 13.0.2
-#jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
-
 # SapMachine 2019-08-08
 # We see this issue occuring for a long time already in 13 and 14.
 # Another one of these flaky font things??
@@ -327,12 +283,6 @@ java/nio/file/WatchService/LotsOfCloses.java                                    
 # Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8230349
 jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      8230349 macosx-all
 
-# SapMachine 2019-08-29
-# We see errors in jdk/jdk (14) and recently in 11 as well. So, it must be introduced
-# by some change that had been backported.
-# Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
-#sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
-
 # SapMachine 2019-09-09
 # Maybe related to new Socket Impl
 #
@@ -342,19 +292,6 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 
 ###############################################################################
 # New failures detected after GA of 13
-
-# SapMachine 2019-09-26
-# This test is failing on our new Ubuntu 18.04 systems for ppcle.
-# Currently only affecting 13 and 14
-#
-#
-javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-ppc64le
-
-# SapMachine 2019-10-04
-# Seems a certificate got revoked. Opened a JBS bug and adding exclusion here for the time being.
-# https://bugs.openjdk.java.net/browse/JDK-8231887
-# SapMachine 2019-10-10 Fix pushed to jdk/jdk. Requesting all backports.
-#security/infra/java/security/cert/CertPathValidator/certification/ComodoCA.java 8231887 generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
