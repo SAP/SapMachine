@@ -90,12 +90,12 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 #vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
 
 # SapMachine 2019-08-07
-# Seems to occur only on ..., so only excluding it for jdk/jdk which we test on that machine
+# Seems to occur only on ...
 #
 #
 # SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
-#
-#
+# It fails for jdk11 and jdk14 on ..., which is SLES 12.1.
+# It passes for both on ...: SLES 12.3, ...: RHEL 7.2, ...: RHEL 7.3 and ...: Ubuntu 16.4
 runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
 
 ###############################################################################
@@ -132,7 +132,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # Timeout. We see this regularly.
 #
 #
-#
+# https://bugs.openjdk.java.net/browse/JDK-8222030
 # SapMachine 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
 compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-aarch64
 
@@ -174,18 +174,19 @@ gc/shenandoah/TestWithLogLevel.java                                             
 # Excluding for now and opening a bug.
 #
 #
-runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
-runtime/NMT/CommitOverlappingRegions.java                                            aix-all
-runtime/NMT/JcmdDetailDiff.java                                                      aix-all
-runtime/NMT/JcmdSummaryDiff.java                                                     aix-all
-runtime/NMT/PrintNMTStatistics.java                                                  aix-all
-runtime/NMT/ReleaseNoCommit.java                                                     aix-all
-runtime/NMT/SafepointPollingPages.java                                               aix-all
-runtime/NMT/ThreadedVirtualAllocTestType.java                                        aix-all
-runtime/NMT/VirtualAllocAttemptReserveMemoryAt.java                                  aix-all
-runtime/NMT/VirtualAllocCommitMerge.java                                             aix-all
-runtime/NMT/VirtualAllocCommitUncommitRecommit.java                                  aix-all
-runtime/NMT/VirtualAllocTestType.java                                                aix-all
+# should be fixed with 8233219: NMT output on AIX misses some categories
+#runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
+#runtime/NMT/CommitOverlappingRegions.java                                            aix-all
+#runtime/NMT/JcmdDetailDiff.java                                                      aix-all
+#runtime/NMT/JcmdSummaryDiff.java                                                     aix-all
+#runtime/NMT/PrintNMTStatistics.java                                                  aix-all
+#runtime/NMT/ReleaseNoCommit.java                                                     aix-all
+#runtime/NMT/SafepointPollingPages.java                                               aix-all
+#runtime/NMT/ThreadedVirtualAllocTestType.java                                        aix-all
+#runtime/NMT/VirtualAllocAttemptReserveMemoryAt.java                                  aix-all
+#runtime/NMT/VirtualAllocCommitMerge.java                                             aix-all
+#runtime/NMT/VirtualAllocCommitUncommitRecommit.java                                  aix-all
+#runtime/NMT/VirtualAllocTestType.java                                                aix-all
 
 # SapMachine 2019-08-02
 # Exception: Uncommitted too slow
@@ -234,13 +235,13 @@ gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                           
 #
 #containers/docker/TestJcmdWithSideCar.java                                           linux-s390x,linux-ppc64le
 
-# SapMachine 2019-09-27
+# SapMachine 2019-09-27, 2019-11-19
 # This test came new with JDK-8231058. -XX:+VerifyOops doesn't work for linuxppc64 and linux-s390x.
-# Goetz is working on this.
+# We fixed ppc: 8231757: [ppc] Fix VerifyOops. Errors show since 8231058.
+# s390 still failing. Backlog item exists.
 #
-# This should be fixed. Pushed 8231757: [ppc] Fix VerifyOops. Errors show since 8231058.
-#runtime/CheckUnhandledOops/TestVerifyOops.java#id0                                   linux-s390x,linux-ppc64le,linux-ppc64
-#runtime/CheckUnhandledOops/TestVerifyOops.java#id1                                   linux-s390x,linux-ppc64le,linux-ppc64
+runtime/CheckUnhandledOops/TestVerifyOops.java#id0                                   linux-s390x
+runtime/CheckUnhandledOops/TestVerifyOops.java#id1                                   linux-s390x
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

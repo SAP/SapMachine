@@ -85,6 +85,7 @@ bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
 intx   Arguments::_Tier3InvokeNotifyFreqLog     = Tier3InvokeNotifyFreqLog;
 intx   Arguments::_Tier4InvocationThreshold     = Tier4InvocationThreshold;
+size_t Arguments::_SharedBaseAddress            = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
@@ -618,6 +619,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ResizeOldPLAB",                           JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "UseCMSBestFit",                           JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "UseCMSInitiatingOccupancyOnly",           JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(15) },
+  { "GCLockerInvokesConcurrent",     JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(15) },
   { "BindGCTaskThreadsToCPUs",       JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
   { "UseGCTaskAffinity",             JDK_Version::undefined(), JDK_Version::jdk(14), JDK_Version::jdk(16) },
 
@@ -2273,6 +2275,9 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
     Arguments::_Tier3InvokeNotifyFreqLog = Tier3InvokeNotifyFreqLog;
     Arguments::_Tier4InvocationThreshold = Tier4InvocationThreshold;
   }
+
+  // CDS dumping always write the archive to the default value of SharedBaseAddress.
+  Arguments::_SharedBaseAddress = SharedBaseAddress;
 
   // Setup flags for mixed which is the default
   set_mode_flags(_mixed);
@@ -4219,14 +4224,11 @@ jint Arguments::adjust_after_os() {
          FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
       }
     }
-    // UseNUMAInterleaving is set to ON for all collectors and
-    // platforms when UseNUMA is set to ON. NUMA-aware collectors
-    // such as the parallel collector for Linux and Solaris will
-    // interleave old gen and survivor spaces on top of NUMA
-    // allocation policy for the eden space.
-    // Non NUMA-aware collectors such as G1 and Serial-GC on
-    // all platforms and ParallelGC on Windows will interleave all
-    // of the heap spaces across NUMA nodes.
+    // UseNUMAInterleaving is set to ON for all collectors and platforms when
+    // UseNUMA is set to ON. NUMA-aware collectors will interleave old gen and
+    // survivor spaces on top of NUMA allocation policy for the eden space.
+    // Non NUMA-aware collectors will interleave all of the heap spaces across
+    // NUMA nodes.
     if (FLAG_IS_DEFAULT(UseNUMAInterleaving)) {
       FLAG_SET_ERGO(UseNUMAInterleaving, true);
     }
