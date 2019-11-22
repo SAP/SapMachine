@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,23 @@
  * questions.
  */
 
-#include "LWCToolkit.h"
-#include "GeomUtilities.h"
+package providersrc.spi.src;
+import java.util.spi.TimeZoneNameProvider;
+import java.util.Locale;
+import java.util.TimeZone;
 
-#include "sun_awt_CGraphicsConfig.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+public class tznp8013086 extends TimeZoneNameProvider {
+    public String getDisplayName(String ID, boolean daylight, int style,
+            Locale locale) {
+        if (!daylight && style == TimeZone.LONG) {
+            return "tznp8013086";
+        } else {
+            return null;
+        }
+    }
 
-/*
- * Class:     sun_awt_CGraphicsConfig
- * Method:    nativeGetBounds
- * Signature: (I)Ljava/awt/Rectangle;
- */
-JNIEXPORT jobject JNICALL Java_sun_awt_CGraphicsConfig_nativeGetBounds
-(JNIEnv *env, jclass class, jint displayID)
-{
-    jobject jrect = NULL;
-
-JNF_COCOA_ENTER(env);
-
-    CGRect rect = CGDisplayBounds((CGDirectDisplayID)displayID);
-    jrect = CGToJavaRect(env, rect);
-
-JNF_COCOA_EXIT(env);
-
-    return jrect;
+    public Locale[] getAvailableLocales() {
+        Locale[] locales = {Locale.JAPAN};
+        return locales;
+    }
 }

@@ -81,13 +81,13 @@ vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                           
 # Oracle does see these issues as well: https://bugs.openjdk.java.net/browse/JDK-8231169
 # Backport JDK-8212028, JDK-8211037 and see if this helps
 #
-vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,solaris-sparcv9
+#vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,solaris-sparcv9
 #
-vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,solaris-sparcv9
+#vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,solaris-sparcv9
 #
-vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
+#vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
 #
-vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
+#vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
 
 # SapMachine 2019-08-07
 # Seems to occur only on ...
@@ -140,7 +140,7 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 # This times out on power platforms. Excluding.
 #
 #
-# SapMachine CL 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
+# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
 #compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
 
 ###############################################################################

@@ -96,17 +96,6 @@ java/awt/font/Rotate/RotatedTextTest.java                                    821
 java/awt/font/Rotate/RotatedFontMetricsTest.java                                     linux-all
 
 ###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of 11.
-
-# SapMachine 2019-07-12
-# Issue with certain font configurations. There is already an exclusion of this test for
-# solaris and mac in the generic exclusion list. Excluding this test for linux now as well.
-# https://bugs.openjdk.java.net/browse/JDK-8231495 to track resolution.
-# https://bugs.openjdk.java.net/browse/JDK-8223869 for exclusion request.
-# SapMachine 2019-10-02 Pushed exclusion to jdk/jdk, requested backport to 11.0.6 and 13.0.2
-#java/awt/FontMetrics/MaxAdvanceIsMax.java                            8221305,8231495 solaris-all,macosx-all,linux-all
-
-###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
 
 # SapMachine 2019-06-17
@@ -150,14 +139,14 @@ java/awt/print/PrinterJob/SameService.java                                   822
 #javax/net/ssl/Stapling/StapleEnableProps.java                                        aix-all
 
 # SapMachine 2019-07-19
-# These issues occur in our internal SapMachine test env. Probably infra related on host ...
+# These issues occur in our internal SapMachine test env. Probably infra related on host ... Seen in 11 only.
 #
 sun/management/jdp/JdpDefaultsTest.java                                              linux-ppc64le
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java                                  linux-ppc64le
 sun/management/jdp/JdpSpecificAddressTest.java                                       linux-ppc64le
 
 # SapMachine 2019-07-19
-# These occur in SapMachine test env on ... . Disabling until solution found
+# These occur in SapMachine test env on ... and ... . Disabling until solution found. Seen in 11 only.
 java/net/MulticastSocket/Promiscuous.java                                            linux-ppc64le
 java/net/MulticastSocket/SetLoopbackMode.java                                        linux-ppc64le
 java/net/MulticastSocket/Test.java                                                   linux-ppc64le,aix-all
@@ -174,34 +163,14 @@ java/nio/channels/DatagramChannel/Promiscuous.java                              
 # SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
 java/awt/FontClass/FontSize1Test.java                                                macosx-all
 
-# SapMachine 2019-08-02
-# RuntimeException: assertGreaterThanOrEqual: expected 1 >= 2
-# Seen only on linuxx86_64, ld3357. Maybe a specific issue on that box?
-#
-#
-# SapMachine 2019-09-12 We have opened JDK-8229370 and Oracle have JDK-8228990.
-# It got excluded via JDK-8230115.
-# SapMachine 2019-11-12 We decided to close the issue on our side, i.e., not go
-# for the real fix. It's discussed too much.
-# requested downport of the exclude to 11u.
-jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java               8228990,8229370 linuxx86_64
-
 # SapMachine 2019-08-29
 # We see errors in jdk/jdk (14) and recently in 11 as well. So, it must be introduced
 # by some change that had been backported.
 # Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
-sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
+#sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
-
-# SapMachine 2019-09-26
-# This test is failing on our new Ubuntu 18.04 systems for ppcle.
-# Currently only affecting 13 and 14
-#
-#
-# Excluded with https://bugs.openjdk.java.net/browse/JDK-8233202
-javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java                    linux-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
