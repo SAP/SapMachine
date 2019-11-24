@@ -174,6 +174,7 @@ gc/shenandoah/TestWithLogLevel.java                                             
 # Excluding for now and opening a bug.
 #
 #
+# should be fixed with 8233219: NMT output on AIX misses some categories
 runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
 runtime/NMT/CommitOverlappingRegions.java                                            aix-all
 runtime/NMT/JcmdDetailDiff.java                                                      aix-all
