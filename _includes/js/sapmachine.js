@@ -34,6 +34,10 @@ All rights reserved. Confidential and proprietary.
         return a['ordinal'] - b['ordinal']
     }
 
+    function imageTypeComparator(a, b) {
+        return osComparator(a, b)
+    }
+
     function tagComparator(a, b) {
         var re = /(sapmachine)-(((([0-9]+)((\.([0-9]+))*)?)(\+([0-9]+))?)(-([0-9]+))?)(\-((\S)+))?/
 
@@ -104,7 +108,7 @@ All rights reserved. Confidential and proprietary.
         return 0
     }
 
-    function imageTypeComparator(a, b) {
+    function majorsComparator(a, b) {
         var aMajor = a.id
         var bMajor = b.id
 
@@ -162,6 +166,7 @@ All rights reserved. Confidential and proprietary.
     }
 
     function SapMachine() {
+        this._majorSelector = $('#sapmachine_major_select')
         this._imageTypeSelector = $('#sapmachine_imagetype_select')
         this._osSelector = $('#sapmachine_os_select')
         this._versionSelector = $('#sapmachine_version_select')
@@ -181,8 +186,12 @@ All rights reserved. Confidential and proprietary.
         }.bind(this)
 
         this._onUpdateImageTypeAndOS = function onUpdateImageTypeAndOS() {
+            var selectedMajor;
             var selectedImageType;
             var selectedOS;
+
+            if (this._majorSelector.index() !== -1)
+                selectedMajor = this._majorSelector.val()
 
             if (this._imageTypeSelector.index() !== -1)
                 selectedImageType = this._imageTypeSelector.val()
@@ -192,15 +201,18 @@ All rights reserved. Confidential and proprietary.
 
             this._versionSelector.empty()
 
-            for (var i in this._assets[selectedImageType]['releases'].sort(tagComparator)) {
-                var release = this._assets[selectedImageType]['releases'][i]
+            for (var i in this._assets[selectedMajor]['releases'].sort(tagComparator)) {
+                var release = this._assets[selectedMajor]['releases'][i]
 
-                if (release.hasOwnProperty(selectedOS)) {
-                    var optionElement = $('<option></option>')
-                    optionElement.text(release.tag)
-                    optionElement.attr({'value': release[selectedOS]})
-                    optionElement.addClass('download_select_option')
-                    this._versionSelector.append(optionElement)
+                if (release.hasOwnProperty(selectedImageType)) {
+                    var imageType = release[selectedImageType];
+                    if (imageType.hasOwnProperty(selectedOS)) {
+                        var optionElement = $('<option></option>')
+                        optionElement.text(release.tag)
+                        optionElement.attr({'value': release[selectedImageType][selectedOS]})
+                        optionElement.addClass('download_select_option')
+                        this._versionSelector.append(optionElement)
+                    }
                 }
             }
 
@@ -222,49 +234,60 @@ All rights reserved. Confidential and proprietary.
         this._onUpdateData = function onUpdateData() {
             var data = this._data
 
+            this._majorSelector.empty()
             this._imageTypeSelector.empty()
             this._osSelector.empty()
             this._versionSelector.empty()
 
-            for (var i in data.imageTypes.sort(imageTypeComparator)) {
-                if (data.imageTypes[i].lts && !this._ltsCheckbox.is(':checked'))
+            for (var i in data.majors.sort(majorsComparator)) {
+                if (data.majors[i].lts && !this._ltsCheckbox.is(':checked'))
                     continue
 
-                if (data.imageTypes[i].ea && !this._eaCheckbox.is(':checked'))
+                if (data.majors[i].ea && !this._eaCheckbox.is(':checked'))
                     continue
 
-                if ((!data.imageTypes[i].lts && !data.imageTypes[i].ea) && !this._nonLtsCheckbox.is(':checked'))
+                if ((!data.majors[i].lts && !data.majors[i].ea) && !this._nonLtsCheckbox.is(':checked'))
                     continue
 
-                var labelElement = $('<div>' + data.imageTypes[i].label + '</div>')
+                var labelElement = $('<div>' + data.majors[i].label + '</div>')
                 var optionElement = $('<option></option>')
-                optionElement.attr({'value': data.imageTypes[i].id })
+                optionElement.attr({'value': data.majors[i].id })
                 optionElement.addClass('download_select_option')
                 optionElement.append(labelElement)
 
-                if (data.imageTypes[i].lts)
+                if (data.majors[i].lts)
                     optionElement.append($('<div> (Long Term Support)</div>'))
 
-                if (data.imageTypes[i].ea)
+                if (data.majors[i].ea)
                     optionElement.append($('<div> (Pre-Release)</div>'))
 
-                this._imageTypeSelector.append(optionElement)
+                this._majorSelector.append(optionElement)
             }
 
-            var imageTypeSelectorEmpty = (this._imageTypeSelector.has('option').length <= 0)
+            var majorSelectorEmpty = (this._majorSelector.has('option').length <= 0)
 
-            if (imageTypeSelectorEmpty) {
+            if (majorSelectorEmpty) {
                 this._downloadButton.addClass('download_button_disabled')
                 this._copyURLButton.addClass('download_button_disabled')
+                this._imageTypeSelector.addClass('download_select_disabled')
                 this._versionSelector.addClass('download_select_disabled')
                 this._osSelector.addClass('download_select_disabled')
-                this._imageTypeSelector.addClass('download_select_disabled')
+                this._majorSelector.addClass('download_select_disabled')
             } else {
                 this._downloadButton.removeClass('download_button_disabled')
                 this._copyURLButton.removeClass('download_button_disabled')
+                this._imageTypeSelector.removeClass('download_select_disabled')
                 this._versionSelector.removeClass('download_select_disabled')
                 this._osSelector.removeClass('download_select_disabled')
-                this._imageTypeSelector.removeClass('download_select_disabled')
+                this._majorSelector.removeClass('download_select_disabled')
+
+                for (var i in data.imageTypes.sort(imageTypeComparator)) {
+                    var optionElement = $('<option></option>')
+                    optionElement.text(data.imageTypes[i].value)
+                    optionElement.attr({'value': data.imageTypes[i].key })
+                    optionElement.addClass('download_select_option')
+                    this._imageTypeSelector.append(optionElement)
+                }
 
                 for (var i in data.os.sort(osComparator)) {
                     var optionElement = $('<option></option>')
@@ -280,6 +303,10 @@ All rights reserved. Confidential and proprietary.
                 this._onUpdateImageTypeAndOS()
             }
         }.bind(this)
+
+        this._majorSelector.change(function majorSelectorOnChange() {
+            this._onUpdateImageTypeAndOS()
+        }.bind(this))
 
         this._imageTypeSelector.change(function imageTypeSelectorOnChange() {
             this._onUpdateImageTypeAndOS()

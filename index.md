@@ -16,6 +16,9 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 ## Download
 
+<select id="sapmachine_major_select" class="download_select">
+</select>
+
 <select id="sapmachine_imagetype_select" class="download_select">
 </select>
 
