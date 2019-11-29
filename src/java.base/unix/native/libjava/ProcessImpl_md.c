@@ -502,7 +502,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                                        jbyteArray envBlock, jint envc,
                                        jbyteArray dir,
                                        jintArray std_fds,
-                                       jboolean redirectErrorStream)
+                                       jboolean redirectErrorStream,
+                                       /* SapMachine 2018-11-19 */
+                                       jboolean createNewProcessGroupOnSpawn)
 {
     int errnum;
     int resultPid = -1;
@@ -571,6 +573,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
 
     c->redirectErrorStream = redirectErrorStream;
     c->mode = mode;
+
+    /* SapMachine 2018-11-19 */
+    c->createNewProcessGroupOnSpawn = createNewProcessGroupOnSpawn;
 
     resultPid = startChild(env, process, c, phelperpath);
     assert(resultPid != 0);
