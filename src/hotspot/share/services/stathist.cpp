@@ -61,15 +61,15 @@ static volatile size_t g_classes_unloaded = 0;
 static volatile size_t g_threads_created = 0;
 
 void inc_classes_loaded(size_t count) {
-  Atomic::add(count, &g_classes_loaded);
+  Atomic::add(&g_classes_loaded, count);
 }
 
 void inc_classes_unloaded(size_t count) {
-  Atomic::add(count, &g_classes_unloaded);
+  Atomic::add(&g_classes_unloaded, count);
 }
 
 void inc_threads_created(size_t count) {
-  Atomic::add(count, &g_threads_created);
+  Atomic::add(&g_threads_created, count);
 }
 
 } // namespace counters
