@@ -54,8 +54,8 @@ tier1_sapmachine = \
     java/net/Socket/ExceptionText.java \
     jdk/nio/zipfs/TestPosixPerms.java \
     jdk/security/JavaDotSecurity/TestJDKIncludeInExceptions.java \
-    lib/security/cacerts/VerifyCACerts.java \
-    sap/java/lang/CreateNewProcessGroupOnSpawnTest.java
+    sap/java/lang/CreateNewProcessGroupOnSpawnTest.java \
+    sun/security/lib/cacerts/VerifyCACerts.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \

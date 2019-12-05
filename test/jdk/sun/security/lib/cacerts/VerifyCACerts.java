@@ -57,7 +57,7 @@ public class VerifyCACerts {
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "DE:71:94:6D:6C:5B:2A:AE:5C:AC:D1:3E:07:23:B6:43:CB:F7:32:69:32:04:36:9C:B4:11:78:6A:49:9D:C5:AB";
+            = "66:4F:E8:4F:D3:9E:83:09:9F:27:7F:6E:A5:EF:C2:13:C2:1F:CC:22:56:E2:5C:02:1E:9E:DE:39:DF:34:45:48";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
