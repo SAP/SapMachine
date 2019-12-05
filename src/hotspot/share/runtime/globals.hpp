@@ -434,7 +434,8 @@ const size_t minimumSymbolTableSize = 1024;
   diagnostic(bool, LogEvents, true,                                         \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  diagnostic(uintx, LogEventsBufferEntries, 20,                             \
+  /* SapMachine 2019-05-28: more events */                                  \
+  diagnostic(uintx, LogEventsBufferEntries, 75,                             \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
@@ -498,6 +499,26 @@ const size_t minimumSymbolTableSize = 1024;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
+  /* SapMachine 2019-02-20 : vitals */                                      \
+  product(bool, EnableVitals, true,                                         \
+          "Enable sampling of vitals: memory, cpu utilization and various " \
+          "VM core statistics; display via jcmd \"VM.vitals\".")            \
+                                                                            \
+  product(uintx, VitalsSampleInterval, 0,                                   \
+          "Vitals sample rate interval (0=use default sample rate)")        \
+                                                                            \
+  experimental(bool, VitalsLockFreeSampling, false,                         \
+          "When sampling vitals, omit any actions which require locking.")  \
+                                                                            \
+  product(bool, DumpVitalsAtExit, false,                                    \
+          "Dump vitals at VM exit into two files, by default called "       \
+          "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
+          "Use -XX:VitalsFile option to change the file names.")            \
+                                                                            \
+  product(ccstr, VitalsFile, NULL,                                          \
+          "When DumpVitalsAtExit is set, the file name prefix for the "     \
+          "output files (default is sapmachine_vitals_<pid>).")             \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \
@@ -557,7 +578,8 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
-  product(bool, PrintExtendedThreadInfo, false,                             \
+  /* SapMachine 2018-08-29: Enable this per default */                      \
+  product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \
   diagnostic(intx, ScavengeRootsInCode, 2,                                  \
@@ -637,7 +659,8 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, OmitStackTraceInFastThrow, true,                            \
           "Omit backtraces for some 'hot' exceptions in optimized code")    \
                                                                             \
-  manageable(bool, ShowCodeDetailsInExceptionMessages, false,               \
+  /* SapMachine 2019-11-04: Push JDK-8233014 early. */                      \
+  manageable(bool, ShowCodeDetailsInExceptionMessages, true,                \
           "Show exception messages from RuntimeExceptions that contain "    \
           "snippets of the failing code. Disable this to improve privacy.") \
                                                                             \
@@ -1146,8 +1169,9 @@ const size_t minimumSymbolTableSize = 1024;
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
+  /* SapMachine 2018-12-18 Enable this per default. */                      \
   product(bool, ExtensiveErrorReports,                                      \
-          PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
+          PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
           "Error reports are more extensive.")                              \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \
