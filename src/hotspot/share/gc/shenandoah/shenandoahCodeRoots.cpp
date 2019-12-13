@@ -155,7 +155,7 @@ void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
   }
 }
 
-void ShenandoahCodeRoots::prepare_concurrent_unloading() {
+void ShenandoahCodeRoots::arm_nmethods() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   _disarmed_value ++;
   // 0 is reserved for new nmethod
@@ -215,6 +215,7 @@ public:
 
     if (nm->is_unloading()) {
       ShenandoahReentrantLocker locker(nm_data->lock());
+      ShenandoahEvacOOMScope evac_scope;
       unlink(nm);
       return;
     }
@@ -222,7 +223,10 @@ public:
     ShenandoahReentrantLocker locker(nm_data->lock());
 
     // Heal oops and disarm
-    ShenandoahNMethod::heal_nmethod(nm);
+    ShenandoahEvacOOMScope evac_scope;
+    if (_heap->is_evacuation_in_progress()) {
+      ShenandoahNMethod::heal_nmethod(nm);
+    }
     ShenandoahNMethod::disarm_nmethod(nm);
 
     // Clear compiled ICs and exception caches
@@ -258,7 +262,6 @@ public:
   }
 
   virtual void work(uint worker_id) {
-    ShenandoahEvacOOMScope evac_scope;
     ICRefillVerifierMark mark(_verifier);
     _iterator.nmethods_do(&_cl);
   }
