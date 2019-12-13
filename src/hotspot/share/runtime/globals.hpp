@@ -163,10 +163,6 @@ const size_t minimumSymbolTableSize = 1024;
   develop(bool, CleanChunkPoolAsync, true,                                  \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
-  product_pd(bool, ThreadLocalHandshakes,                                   \
-          "Use thread-local polls instead of global poll for safepoints.")  \
-          constraint(ThreadLocalHandshakesConstraintFunc,AfterErgo)         \
-                                                                            \
   diagnostic(uint, HandshakeTimeout, 0,                                     \
           "If nonzero set a timeout in milliseconds for handshakes")        \
                                                                             \
@@ -1513,7 +1509,7 @@ const size_t minimumSymbolTableSize = 1024;
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  product(intx, MaxInlineLevel, 9,                                          \
+  product(intx, MaxInlineLevel, 15,                                         \
           "maximum number of nested calls that are inlined")                \
           range(0, max_jint)                                                \
                                                                             \

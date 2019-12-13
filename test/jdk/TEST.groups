@@ -44,8 +44,7 @@ tier1_part3 = \
     :jdk_svc_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
-    sun/nio/cs/ISO8859x.java \
-    tools/pack200
+    sun/nio/cs/ISO8859x.java
 
 # SapMachine 2019-01-24: Add tests where SAPMachine has different behavior to tier1
 tier1_sapmachine = \
@@ -68,7 +67,6 @@ tier2_part1 = \
 # sun/nio/cs/ISO8859x.java and java/nio/Buffer are in tier1 because of JDK-8132854
 tier2_part2 = \
     :core_tools \
-    -tools/pack200 \
     :jdk_io \
     :jdk_nio \
     -java/nio/Buffer \

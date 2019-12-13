@@ -84,6 +84,7 @@ module java.base {
     exports java.lang.module;
     exports java.lang.ref;
     exports java.lang.reflect;
+    exports java.lang.runtime;
     exports java.math;
     exports java.net;
     exports java.net.spi;
@@ -132,11 +133,15 @@ module java.base {
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
+    exports sun.invoke.util to
+        jdk.compiler;
     exports com.sun.security.ntlm to
         java.security.sasl;
     exports jdk.internal to
+        java.compiler,
         jdk.jfr,
-        jdk.compiler;
+        jdk.compiler,
+        jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -203,11 +208,14 @@ module java.base {
         java.management.rmi,
         jdk.jartool,
         jdk.jfr,
-        jdk.jlink;
+        jdk.jlink,
+        jdk.incubator.jpackage;
     exports jdk.internal.perf to
         java.management,
         jdk.management.agent,
         jdk.internal.jvmstat;
+    exports jdk.internal.platform to
+        jdk.management;
     exports jdk.internal.ref to
         java.desktop;
     exports jdk.internal.reflect to

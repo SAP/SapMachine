@@ -3037,6 +3037,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
 #if INCLUDE_JVMCI
+    } else if (match_option(option, "-XX:-EnableJVMCIProduct")) {
+      if (EnableJVMCIProduct) {
+        jio_fprintf(defaultStream::error_stream(),
+                  "-XX:-EnableJVMCIProduct cannot come after -XX:+EnableJVMCIProduct\n");
+        return JNI_EINVAL;
+      }
     } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
       JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
       // Allow this flag if it has been unlocked.
@@ -4198,20 +4204,6 @@ jint Arguments::apply_ergo() {
     UseOptoBiasInlining = false;
   }
 #endif
-
-#if defined(IA32)
-  // Only server compiler can optimize safepoints well enough.
-  if (!is_server_compilation_mode_vm()) {
-    FLAG_SET_ERGO_IF_DEFAULT(ThreadLocalHandshakes, false);
-  }
-#endif
-
-  // ThreadLocalHandshakesConstraintFunc handles the constraints.
-  if (FLAG_IS_DEFAULT(ThreadLocalHandshakes) || !SafepointMechanism::supports_thread_local_poll()) {
-    log_debug(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
-  } else {
-    log_info(ergo)("ThreadLocalHandshakes %s", ThreadLocalHandshakes ? "enabled." : "disabled.");
-  }
 
   return JNI_OK;
 }
