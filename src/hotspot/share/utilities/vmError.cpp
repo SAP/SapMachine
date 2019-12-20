@@ -43,6 +43,8 @@
 #include "runtime/vm_operations.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+// SapMachine 2019-02-20 : stathist
+#include "services/stathist.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -985,6 +987,12 @@ void VMError::report(outputStream* st, bool _verbose) {
        MemTracker::error_report(st);
      }
 
+  // SapMachine 2019-02-20 : stathist
+  STEP("Vitals")
+     if (_verbose) {
+       StatisticsHistory::print_report(st);
+     }
+
   STEP("printing system")
 
      if (_verbose) {
@@ -1155,6 +1163,10 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Native Memory Tracking")
 
   MemTracker::error_report(st);
+
+  // SapMachine 2019-02-20 : stathist
+  // STEP("Vitals")
+  StatisticsHistory::print_report(st);
 
   // STEP("printing system")
 
