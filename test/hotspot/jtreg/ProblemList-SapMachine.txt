@@ -134,7 +134,7 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 # SapMachine 2019-12-05
 # This test fails on MacOS Catalina, it is fixed with JDK-8234625 but awaiting backport
 # https://bugs.openjdk.java.net/browse/JDK-8234625
-serviceability/sa/ClhsdbCDSCore.java                                          8234625 macosx-all
+#serviceability/sa/ClhsdbCDSCore.java                                          8234625 macosx-all
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
