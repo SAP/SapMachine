@@ -120,14 +120,6 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
 
-# SapMachine 2019-07-17
-# Crashes on s390
-#
-#
-# SapMachine 2019-08-26 Fix: JDK-8229925. Pushed to 11.0.5, 13.0.2
-# SapMachine 2019-10-25 New Fix: JDK-8232005. Pushed to jdk/jdk, backports to 11 and 13 pending.
-#vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java                      8232005 linux-s390x
-
 # SapMachine 2019-07-22
 # Timeout. We see this regularly.
 #
@@ -136,15 +128,13 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # SapMachine 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
 compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-aarch64
 
-# SapMachine 2019-07-15
-# This times out on power platforms. Excluding.
-#
-#
-# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
-#compiler/codecache/OverflowCodeCacheTest.java                                        linux-ppc64le,linux-ppc64,aix-all
-
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
+
+# SapMachine 2019-12-05
+# This test fails on MacOS Catalina, it is fixed with JDK-8234625 but awaiting backport
+# https://bugs.openjdk.java.net/browse/JDK-8234625
+serviceability/sa/ClhsdbCDSCore.java                                          8234625 macosx-all
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -175,18 +165,18 @@ gc/shenandoah/TestWithLogLevel.java                                             
 #
 #
 # should be fixed with 8233219: NMT output on AIX misses some categories
-runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
-runtime/NMT/CommitOverlappingRegions.java                                            aix-all
-runtime/NMT/JcmdDetailDiff.java                                                      aix-all
-runtime/NMT/JcmdSummaryDiff.java                                                     aix-all
-runtime/NMT/PrintNMTStatistics.java                                                  aix-all
-runtime/NMT/ReleaseNoCommit.java                                                     aix-all
-runtime/NMT/SafepointPollingPages.java                                               aix-all
-runtime/NMT/ThreadedVirtualAllocTestType.java                                        aix-all
-runtime/NMT/VirtualAllocAttemptReserveMemoryAt.java                                  aix-all
-runtime/NMT/VirtualAllocCommitMerge.java                                             aix-all
-runtime/NMT/VirtualAllocCommitUncommitRecommit.java                                  aix-all
-runtime/NMT/VirtualAllocTestType.java                                                aix-all
+#runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
+#runtime/NMT/CommitOverlappingRegions.java                                            aix-all
+#runtime/NMT/JcmdDetailDiff.java                                                      aix-all
+#runtime/NMT/JcmdSummaryDiff.java                                                     aix-all
+#runtime/NMT/PrintNMTStatistics.java                                                  aix-all
+#runtime/NMT/ReleaseNoCommit.java                                                     aix-all
+#runtime/NMT/SafepointPollingPages.java                                               aix-all
+#runtime/NMT/ThreadedVirtualAllocTestType.java                                        aix-all
+#runtime/NMT/VirtualAllocAttemptReserveMemoryAt.java                                  aix-all
+#runtime/NMT/VirtualAllocCommitMerge.java                                             aix-all
+#runtime/NMT/VirtualAllocCommitUncommitRecommit.java                                  aix-all
+#runtime/NMT/VirtualAllocTestType.java                                                aix-all
 
 # SapMachine 2019-08-15
 # Exception: Uncommitted too slow
@@ -200,7 +190,7 @@ gc/z/TestUncommit.java                                                          
 compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
 
 ###############################################################################
-# New failures detected after GA of 13
+# New failures detected after GA of 13.0.1
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

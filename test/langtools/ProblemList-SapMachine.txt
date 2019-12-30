@@ -43,7 +43,7 @@
 ###############################################################################
 
 ###############################################################################
-# Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
+# Tests known to be failing in OpenJDK when 11.0.3 was released (4/2019)
 
 # SapMachine 2019-03-07
 # Filed the following bug:
@@ -61,24 +61,8 @@ jdk/jshell/JdiHangingLaunchExecutionControlTest.java                generic-all
 # Seen in 11.0.3 and 11.0.4 very sporadic
 jdk/jshell/CommandCompletionTest.java                               macosx-all
 
-# SapMachine 2019-06-28
-# java.lang.AssertionError: Error too big
-# Seen on 11.0.3/4 and 13 quite sporadic.
-#
-#
-# SapMachine 2019-08-08 Fix for 8227247 pushed to jdk11u-dev. We can probably remove this entry in a few days.
-#tools/sjavac/IdleShutdown.java                             8227247 windows-x64
-
 ###############################################################################
-# Failing new tests, unsupported new features in jdk13
-
-# SapMachine 2019-03-12
-# JavadocTester.java:99: error: unknown tag: Test
-# SapMachine 2019-06-28 Check whether fixed
-#jdk/javadoc/doclet/InheritDocForUserTags/DocTest.java               generic-all
-
-###############################################################################
-# New failures detected after GA of 13
+# New failures detected after GA of 13.0.1
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

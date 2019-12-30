@@ -172,6 +172,17 @@ java/awt/FontClass/FontSize1Test.java                                           
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
 
+# SapMachine 2019-07-17
+# Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
+# There's already an OpenJDK bug open for this: https://bugs.openjdk.java.net/browse/JDK-8223935
+# Exluding for now.
+java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
+
+# SapMachine 2019-11-26
+# This test fails sporadic all over the place ... also in 13, 14.
+#
+security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java    generic-all
+
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
@@ -228,12 +239,6 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 #sun/security/tools/jarsigner/PreserveRawManifestEntryAndDigest                       solaris-sparcv9
 #sun/security/tools/keytool/KeyToolTest.java                                          solaris-sparcv9
 
-# SapMachine 2019-07-17
-# Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
-# There's already an OpenJDK bug open for this: https://bugs.openjdk.java.net/browse/JDK-8223935
-# Exluding for now.
-java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
-
 # SapMachine 2019-08-08
 # We see this issue occuring for a long time already in 13 and 14.
 # Another one of these flaky font things??
@@ -260,7 +265,7 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 #java/net/Socket/asyncClose/Race.java                                                 aix-all
 
 ###############################################################################
-# New failures detected after GA of 13
+# New failures detected after GA of 13.0.1
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
