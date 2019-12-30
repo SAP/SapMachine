@@ -277,7 +277,7 @@ jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      823
 #
 java/nio/channels/DatagramChannel/AfterDisconnect.java                               aix-all
 #
-java/nio/channels/DatagramChannel/ChangingAddress.java                               aix-all
+java/nio/channels/DatagramChannel/ChangingAddress.java                               aix-all,macosx-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
@@ -327,3 +327,8 @@ java/util/Base64/TestEncodingDecodingLength.java                                
 # SapMachine 2019-05-20
 # We have problems with this test in our CI env on linux-x64. Excluding for now.
 java/lang/ProcessHandle/OnExitTest.java                                              linux-x64
+
+# SapMachine 2019-12-30
+# There is an issue due to the german locale setup on our mac test systems
+# related to JDK-8232871 and/or JDK-8232860
+java/util/Locale/LocaleProvidersRun.java                                             macosx-all
