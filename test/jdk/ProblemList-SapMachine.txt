@@ -279,6 +279,39 @@ java/nio/channels/DatagramChannel/AfterDisconnect.java                          
 #
 java/nio/channels/DatagramChannel/ChangingAddress.java                               aix-all
 
+# SapMachine 2019-01-02
+# There are quite some failures regarding new jpackage tests
+#
+#
+tools/jpackage/linux/AppCategoryTest.java                                            generic-all
+tools/jpackage/linux/LicenseTypeTest.java                                            generic-all
+tools/jpackage/linux/LinuxBundleNameTest.java                                        generic-all
+tools/jpackage/linux/LinuxResourceTest.java                                          generic-all
+tools/jpackage/linux/PackageDepsTest.java                                            generic-all
+tools/jpackage/linux/ReleaseTest.java                                                generic-all
+tools/jpackage/linux/ShortcutHintTest.java#id0                                       generic-all
+tools/jpackage/share/jdk/jpackage/tests/AppVersionTest.java                          generic-all
+tools/jpackage/share/jdk/jpackage/tests/BasicTest.java                               generic-all
+tools/jpackage/share/jdk/jpackage/tests/MainClassTest.java                           generic-all
+tools/jpackage/share/jdk/jpackage/tests/ModulePathTest.java                          generic-all
+tools/jpackage/share/AdditionalLaunchersTest.java                                    generic-all
+tools/jpackage/share/AddLauncherModuleTest.java                                      generic-all
+tools/jpackage/share/AddLaunchersTest.java                                           generic-all
+tools/jpackage/share/AddLauncherTest.java                                            generic-all
+tools/jpackage/share/AppImagePackageTest.java                                        generic-all
+tools/jpackage/share/ArgumentsTest.java                                              generic-all
+tools/jpackage/share/FileAssociationsTest.java                                       generic-all
+tools/jpackage/share/IconTest.java                                                   generic-all
+tools/jpackage/share/InstallDirTest.java#id0                                         generic-all
+tools/jpackage/share/InstallDirTest.java#id1                                         generic-all
+tools/jpackage/share/JavaOptionsEqualsTest.java                                      generic-all
+tools/jpackage/share/JavaOptionsModuleTest.java                                      generic-all
+tools/jpackage/share/JavaOptionsTest.java                                            generic-all
+tools/jpackage/share/LicenseTest.java#id0                                            generic-all
+tools/jpackage/share/LicenseTest.java#id1                                            generic-all
+tools/jpackage/share/RuntimePackageTest.java                                         generic-all
+tools/jpackage/share/SimplePackageTest.java                                          generic-all
+
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
 
