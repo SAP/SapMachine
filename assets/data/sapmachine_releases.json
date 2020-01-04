@@ -120,6 +120,15 @@
             "releases": [
                 {
                     "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B4/sapmachine-jre-15-ea.4_linux-x64_bin.tar.gz"
+                    }, 
+                    "tag": "sapmachine-15+4", 
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B4/sapmachine-jdk-15-ea.4_linux-x64_bin.tar.gz"
+                    }
+                }, 
+                {
+                    "jre": {
                         "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B3/sapmachine-jre-15-ea.3_linux-ppc64le_bin.tar.gz", 
                         "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B3/sapmachine-jre-15-ea.3_osx-x64_bin.dmg", 
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B3/sapmachine-jre-15-ea.3_windows-x64_bin.zip", 
