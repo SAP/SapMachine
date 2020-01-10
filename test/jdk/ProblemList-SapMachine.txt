@@ -113,17 +113,14 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
 
 # SapMachine 2019-06-28
-# timeout on ppc in 11 only.
-#
-#
-# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
-#jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
-
-# SapMachine 2019-06-28
-#
 # java.lang.RuntimeException: Could not find root object
 #
-jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
+#
+# Oracle has filed a bug: https://bugs.openjdk.java.net/browse/JDK-8205651
+# Issue got excluded for 14+ with https://bugs.openjdk.java.net/browse/JDK-8232224
+# There is hope that the problem is fixed with JDK-8226511 (JFR event streaming) which is part of 14
+# SapMachine GL 2020-01-08 Exclusion of the test was backported to 11.0.7.
+#jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
 
 # SapMachine 2019-07-15
 # Issue started occuring in 06/2019 but not related to JDK updates
@@ -360,8 +357,3 @@ java/util/Base64/TestEncodingDecodingLength.java                                
 # SapMachine 2019-05-20
 # We have problems with this test in our CI env on linux-x64. Excluding for now.
 java/lang/ProcessHandle/OnExitTest.java                                              linux-x64
-
-# SapMachine 2019-12-30
-# There is an issue due to the german locale setup on our mac test systems
-# related to JDK-8232871 and/or JDK-8232860
-java/util/Locale/LocaleProvidersRun.java                                             macosx-all
