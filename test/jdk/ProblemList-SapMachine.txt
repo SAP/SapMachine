@@ -113,16 +113,13 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
 
 # SapMachine 2019-06-28
-# timeout on ppc in 11 only.
-#
-#
-# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
-#jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
-
-# SapMachine 2019-06-28
-#
 # java.lang.RuntimeException: Could not find root object
 #
+#
+# Oracle has filed a bug: https://bugs.openjdk.java.net/browse/JDK-8205651
+# Issue got excluded for 14+ with https://bugs.openjdk.java.net/browse/JDK-8232224
+# There is hope that the problem is fixed with JDK-8226511 (JFR event streaming) which is part of 14
+# SapMachine 2020-01-08 Exclusion of the test was backported to 11.0.7.
 jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
 
 # SapMachine 2019-07-15
@@ -172,15 +169,15 @@ java/awt/FontClass/FontSize1Test.java                                           
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
 
-# SapMachine CL 2019-07-17
+# SapMachine 2019-07-17
 # Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
 # There's already an OpenJDK bug open for this: https://bugs.openjdk.java.net/browse/JDK-8223935
 # Exluding for now.
 java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
 
-# SapMachine GL 2019-11-26
+# SapMachine 2019-11-26
 # This test fails sporadic all over the place ... also in 13, 14.
-# sapjvm:1080/servlet/testresult?testid=212470551
+#
 security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java    generic-all
 
 ###############################################################################
