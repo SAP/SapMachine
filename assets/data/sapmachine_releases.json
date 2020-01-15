@@ -74,11 +74,15 @@
             "releases": [
                 {
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jre-11.0.6_linux-x64_bin.tar.gz"
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jre-11.0.6_linux-ppc64le_bin.tar.gz", 
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jre-11.0.6_linux-x64_bin.tar.gz", 
+                        "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jre-11.0.6_linux-ppc64_bin.tar.gz"
                     }, 
                     "tag": "sapmachine-11.0.6", 
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jdk-11.0.6_linux-x64_bin.tar.gz"
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jdk-11.0.6_linux-ppc64le_bin.tar.gz", 
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jdk-11.0.6_linux-x64_bin.tar.gz", 
+                        "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.6/sapmachine-jdk-11.0.6_linux-ppc64_bin.tar.gz"
                     }
                 }
             ]
