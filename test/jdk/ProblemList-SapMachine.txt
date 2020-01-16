@@ -113,16 +113,13 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
 
 # SapMachine 2019-06-28
-# timeout on ppc in 11 only.
-#
-#
-# SapMachine 2019-11-07 Test should be silenced by https://bugs.openjdk.java.net/browse/JDK-8231403.
-#jdk/jfr/event/compiler/TestCodeSweeper.java                                          linux-ppc64,linux-ppc64le
-
-# SapMachine 2019-06-28
-#
 # java.lang.RuntimeException: Could not find root object
 #
+#
+# Oracle has filed a bug: https://bugs.openjdk.java.net/browse/JDK-8205651
+# Issue got excluded for 14+ with https://bugs.openjdk.java.net/browse/JDK-8232224
+# There is hope that the problem is fixed with JDK-8226511 (JFR event streaming) which is part of 14
+# SapMachine 2020-01-08 Exclusion of the test was backported to 11.0.7.
 jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
 
 # SapMachine 2019-07-15
