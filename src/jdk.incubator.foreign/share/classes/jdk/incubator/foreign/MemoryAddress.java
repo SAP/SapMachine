@@ -31,7 +31,7 @@ import jdk.internal.foreign.MemoryAddressImpl;
 /**
  * A memory address encodes an offset within a given {@link MemorySegment}. Memory addresses are typically obtained
  * using the {@link MemorySegment#baseAddress()} method; such addresses can then be adjusted as required,
- * using {@link MemoryAddress#offset(long)}.
+ * using {@link MemoryAddress#addOffset(long)}.
  * <p>
  * A memory address is typically used as the first argument in a memory access var handle call, to perform some operation
  * on the underlying memory backing a given memory segment. Since a memory address is always associated with a memory segment,
@@ -53,11 +53,11 @@ import jdk.internal.foreign.MemoryAddressImpl;
  */
 public interface MemoryAddress {
     /**
-     * Creates a new memory address with given offset (in bytes) from current one.
-     * @param l specified offset (in bytes), relative to this address, which should be used to create the new address.
+     * Creates a new memory address with given offset (in bytes), which might be negative, from current one.
+     * @param offset specified offset (in bytes), relative to this address, which should be used to create the new address.
      * @return a new memory address with given offset from current one.
      */
-    MemoryAddress offset(long l);
+    MemoryAddress addOffset(long offset);
 
     /**
      * The offset of this memory address into the underlying segment.
@@ -74,7 +74,13 @@ public interface MemoryAddress {
 
     /**
      * Compares the specified object with this address for equality. Returns {@code true} if and only if the specified
-     * object is also a address, and it is equal to this address.
+     * object is also an address, and it refers to the same memory location as this address.
+     *
+     * @apiNote two addresses might be considered equal despite their associated segments differ. This
+     * can happen, for instance, if the segment associated with one address is a <em>slice</em>
+     * (see {@link MemorySegment#asSlice(long, long)}) of the segment associated with the other address. Moreover,
+     * two addresses might be considered equals despite differences in the temporal bounds associated with their
+     * corresponding segments (this is possible, for example, as a result of calls to {@link MemorySegment#acquire()}).
      *
      * @param that the object to be compared for equality with this address.
      * @return {@code true} if the specified object is equal to this address.
