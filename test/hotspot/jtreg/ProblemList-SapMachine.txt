@@ -222,14 +222,6 @@ gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                           
 #
 #containers/docker/TestJcmdWithSideCar.java                                           linux-s390x,linux-ppc64le
 
-# SapMachine 2019-09-27, 2019-11-19
-# This test came new with JDK-8231058. -XX:+VerifyOops doesn't work for linuxppc64 and linux-s390x.
-# We fixed ppc: 8231757: [ppc] Fix VerifyOops. Errors show since 8231058.
-# s390 still failing. Backlog item exists.
-#
-runtime/CheckUnhandledOops/TestVerifyOops.java#id0                                   linux-s390x
-runtime/CheckUnhandledOops/TestVerifyOops.java#id1                                   linux-s390x
-
 # SapMachine 2020-01-01
 #
 # Graal unit tests have been enabled via https://bugs.openjdk.java.net/browse/JDK-8215728.
