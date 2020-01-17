@@ -1,0 +1,296 @@
+###############################################################################
+#
+# This is the additional jtreg exclude list for SapMachine hotspot tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+# SAP/SapMachine usage notes:
+#
+# This exclude list should be a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal should be to fix test issues upstream or at least open
+# upstream bugs and get the test excluded via the upstream exclusion lists.
+#
+# We have both internal exclude lists and exclude lists in the SapMachine
+# repository. The internal lists are the master and the public lists in the
+# SapMachine repository will be refreshed regularly, removing comments
+# which reveal internal URLs, names or hostnames.
+#
+# The public SapMachine exclusion lists might contain additional test
+# exclusions, specific to the SapMachine build and test infrastructure. That
+# section needs to be placed at the end of the file.
+#
+###############################################################################
+
+###############################################################################
+# New failures detected after GA or caused by changes pushed after GA of 11.
+
+# SapMachine 2019-01-08
+# RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
+# SapMachine 2019-08-07 Still failing
+#
+compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
+
+# SapMachine 2019-03-11
+# Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
+#
+#
+# SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
+# SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
+# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
+serviceability/dcmd/framework/HelpTest.java                                          windows-all
+
+# SapMachine 2019-04-29
+# java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
+# SapMachine 2019-04-30 Still fails in 11.0.4
+gc/metaspace/TestCapacityUntilGCWrapAround.java                                      windows-i586
+
+# SapMachine 2019-04-29
+# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
+vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
+
+# SapMachine 2019-04-29
+# Very sporadic on linux/ppc.
+# Can't attach to the process: ptrace(PTRACE_ATTACH, ..) failed for 4253: No such process
+# Enable it to find one of the sporadic occurances and paste the link here.
+#serviceability/sa/TestJhsdbJstackMixed.java                                          linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-06-07
+# Frequent timeouts on several platforms, observed only in 11.
+#
+# Oracle does see these issues as well: https://bugs.openjdk.java.net/browse/JDK-8231169
+# Backport JDK-8212028, JDK-8211037 and see if this helps
+#
+#vmTestbase/vm/mlvm/cp/stress/classfmt/correctBootstrap/TestDescription.java          linux-x64,solaris-sparcv9
+#
+#vmTestbase/vm/mlvm/cp/stress/classfmt/mh/TestDescription.java                        linux-x64,solaris-sparcv9
+#
+#vmTestbase/vm/mlvm/cp/stress/classfmt/mt/TestDescription.java                        generic-ppc64,linux-ppc64le
+#
+#vmTestbase/vm/mlvm/meth/stress/gc/createLotsOfMHConsts/Test.java                     solaris-sparcv9
+
+# SapMachine 2019-08-07
+# Seems to occur only on ...
+#
+#
+# SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
+# It fails for jdk11 and jdk14 on ..., which is SLES 12.1.
+# It passes for both on ...: SLES 12.3, ...: RHEL 7.2, ...: RHEL 7.3 and ...: Ubuntu 16.4
+runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
+
+###############################################################################
+# New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
+
+# SapMachine 2019-06-28
+# RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr or just timeout. Seen also in 13.
+#
+#
+# SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
+# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
+serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
+
+# SapMachine 2019-07-16
+# 11-only crash at:
+# Klass::method_at_vtable
+# linkResolver::runtime_resolve_virtual_method
+#
+#
+#vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390x,windows-all
+
+###############################################################################
+# New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
+
+# SapMachine 2019-07-22
+# Timeout. We see this regularly.
+#
+#
+# https://bugs.openjdk.java.net/browse/JDK-8222030
+# SapMachine 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
+compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-aarch64
+
+###############################################################################
+# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
+
+# SapMachine 2019-12-05
+# This test fails on MacOS Catalina, it is fixed with JDK-8234625 but awaiting backport
+# https://bugs.openjdk.java.net/browse/JDK-8234625
+#serviceability/sa/ClhsdbCDSCore.java                                          8234625 macosx-all
+
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
+
+# SapMachine 2019-01-08
+# Could not reserve enough space for 131072KB object heap
+#
+# SapMachine 2019-08-29 Still occuring in SapMachine environment
+gc/shenandoah/jvmti/TestHeapDump.java                                                windows-all
+
+# SapMachine 2019-02-08
+# SapMachine 2019-08-29 Fails in SapMachine 13 and 14
+#
+# Failing for Shenandoah and 32g heaps.
+runtime/CompressedOops/UseCompressedOops.java                                        windows-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk13
+
+# SapMachine 2018-12-11
+# Some brand new shenandoah tests are failing.
+#
+# SapMachine 2019-07-25 Still around
+gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
+
+# SapMachine 2019-07-17
+# Excluding for now and opening a bug.
+#
+#
+# should be fixed with 8233219: NMT output on AIX misses some categories
+#runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
+#runtime/NMT/CommitOverlappingRegions.java                                            aix-all
+#runtime/NMT/JcmdDetailDiff.java                                                      aix-all
+#runtime/NMT/JcmdSummaryDiff.java                                                     aix-all
+#runtime/NMT/PrintNMTStatistics.java                                                  aix-all
+#runtime/NMT/ReleaseNoCommit.java                                                     aix-all
+#runtime/NMT/SafepointPollingPages.java                                               aix-all
+#runtime/NMT/ThreadedVirtualAllocTestType.java                                        aix-all
+#runtime/NMT/VirtualAllocAttemptReserveMemoryAt.java                                  aix-all
+#runtime/NMT/VirtualAllocCommitMerge.java                                             aix-all
+#runtime/NMT/VirtualAllocCommitUncommitRecommit.java                                  aix-all
+#runtime/NMT/VirtualAllocTestType.java                                                aix-all
+
+# SapMachine 2019-08-02
+# Exception: Uncommitted too slow
+# In SapMachine, we also see this in 13.
+gc/z/TestUncommit.java                                                               generic-all
+
+# SapMachine 2019-08-29
+# Some aarch stuff, we don't really care. Do we?
+# Check later on whether it's fixed.
+#
+compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk14
+
+# SapMachine 2019-08-02
+# Crash: Shenandoah assert_correct failed; Object klass pointer must go to metaspace
+gc/CriticalNativeArgs.java                                                           generic-all
+
+# SapMachine 2019-08-02
+# Test failed with -XX:+AdjustStackSizeForTLS
+runtime/TLS/testtls.sh                                                               generic-all
+
+# SapMachine 2019-08-29
+# Some aarch stuff, we don't really care. Do we?
+# Check later on whether it's fixed.
+#
+compiler/c2/aarch64/TestVolatilesG1.java                                             linux-aarch64
+#
+gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
+
+# SapMachine 2019-09-09
+# Crash: Error: Shenandoah assert_correct failed; Object klass pointer should not be NULL
+#
+# This is a shenandoah issue. Just adding this entry for reference.
+# Zhengyu has provided us a test patch which I've put into the queue.
+#gc/stress/CriticalNativeStress.java                                                  generic-all
+
+# SapMachine 2019-09-09
+# This test was reactivated on 2019-08-30 with https://bugs.openjdk.java.net/browse/JDK-8228960
+# After that, we see errors again on ... and ... . Opened a Backlog item.
+#
+#
+#containers/docker/TestJcmdWithSideCar.java                                           linux-s390x,linux-ppc64le
+
+# SapMachine 2020-01-01
+#
+# Graal unit tests have been enabled via https://bugs.openjdk.java.net/browse/JDK-8215728.
+# We need to enable this in the test framework, too. Backlog item created.
+#
+compiler/graalunit/ApiDirectivesTest.java                                            generic-all
+compiler/graalunit/ApiTest.java                                                      generic-all
+compiler/graalunit/AsmAarch64Test.java                                               generic-all
+compiler/graalunit/AsmAmd64Test.java                                                 generic-all
+compiler/graalunit/AsmSparcTest.java                                                 generic-all
+compiler/graalunit/CollectionsTest.java                                              generic-all
+compiler/graalunit/CoreAarch64Test.java                                              generic-all
+compiler/graalunit/CoreAmd64Test.java                                                generic-all
+compiler/graalunit/CoreJdk9Test.java                                                 generic-all
+compiler/graalunit/CoreTest.java                                                     generic-all
+compiler/graalunit/DebugTest.java                                                    generic-all
+compiler/graalunit/EATest.java                                                       generic-all
+compiler/graalunit/HotspotAarch64Test.java                                           generic-all
+compiler/graalunit/HotspotAmd64Test.java                                             generic-all
+compiler/graalunit/HotspotJdk9Test.java                                              generic-all
+compiler/graalunit/HotspotLirTest.java                                               generic-all
+compiler/graalunit/HotspotTest.java                                                  generic-all
+compiler/graalunit/JttBackendTest.java                                               generic-all
+compiler/graalunit/JttBytecodeTest.java                                              generic-all
+compiler/graalunit/JttExceptTest.java                                                generic-all
+compiler/graalunit/JttHotpathTest.java                                               generic-all
+compiler/graalunit/JttHotspotTest.java                                               generic-all
+compiler/graalunit/JttJdkTest.java                                                   generic-all
+compiler/graalunit/JttLangALTest.java                                                generic-all
+compiler/graalunit/JttLangMathALTest.java                                            generic-all
+compiler/graalunit/JttLangMathMZTest.java                                            generic-all
+compiler/graalunit/JttLangNZTest.java                                                generic-all
+compiler/graalunit/JttLoopTest.java                                                  generic-all
+compiler/graalunit/JttOptimizeTest.java                                              generic-all
+compiler/graalunit/JttReflectAETest.java                                             generic-all
+compiler/graalunit/JttReflectFieldGetTest.java                                       generic-all
+compiler/graalunit/JttReflectFieldSetTest.java                                       generic-all
+compiler/graalunit/JttReflectGZTest.java                                             generic-all
+compiler/graalunit/JttThreadsTest.java                                               generic-all
+compiler/graalunit/LirJttTest.java                                                   generic-all
+compiler/graalunit/LirTest.java                                                      generic-all
+compiler/graalunit/LoopTest.java                                                     generic-all
+compiler/graalunit/OptionsTest.java                                                  generic-all
+compiler/graalunit/PhasesCommonTest.java                                             generic-all
+compiler/graalunit/Replacements12Test.java                                           generic-all
+compiler/graalunit/Replacements9Test.java                                            generic-all
+compiler/graalunit/ReplacementsTest.java                                             generic-all
+compiler/graalunit/UtilTest.java                                                     generic-all
+
+# SapMachine 2019-01-02
+# This is failing currently on various places after https://bugs.openjdk.java.net/browse/JDK-8234277
+# It is tracked with https://bugs.openjdk.java.net/browse/JDK-8235220
+# We exclude it now until upstream bug is resolved to reduce noise in testing
+serviceability/sa/ClhsdbScanOops.java                                                generic-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk15
+
+###############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+
+# SapMachine 2018-10-05
+# This test fails, because we do not have debug symbols available in all tests.
+runtime/NMT/CheckForProperDetailStackTrace.java                                      generic-all
+
+# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
+gc/g1/humongousObjects/TestHumongousClassLoader.java                                 linux-ppc64le,linux-ppc64
+gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                          linux-ppc64le,linux-ppc64
+
+#SapMachine 2019-07-14 Lately, we see this sporadically...
+#Should be analysed, but we exclude it for now because it's tier1
+runtime/Safepoint/TestAbortVMOnSafepointTimeout.java                                 generic-all
