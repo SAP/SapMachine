@@ -346,10 +346,12 @@
                 }, 
                 {
                     "jre": {
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B32/sapmachine-jre-14-ea.32_linux-ppc64le_bin.tar.gz", 
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B32/sapmachine-jre-14-ea.32_linux-x64_bin.tar.gz"
                     }, 
                     "tag": "sapmachine-14+32", 
                     "jdk": {
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B32/sapmachine-jdk-14-ea.32_linux-ppc64le_bin.tar.gz", 
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-14%2B32/sapmachine-jdk-14-ea.32_linux-x64_bin.tar.gz"
                     }
                 }, 
