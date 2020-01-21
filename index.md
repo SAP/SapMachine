@@ -56,7 +56,6 @@ The latest release for any SapMachine major version can be found at `https://sap
 ## Documentation
 Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
 * [Installation](https://github.com/SAP/SapMachine/wiki/Installation) and [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
-* [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
 
 ## License
