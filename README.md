@@ -17,7 +17,6 @@ Check out the [Download](https://sap.github.io/SapMachine/#download) section on 
 ## Documentation
 Check out our [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
 * [Installation](https://github.com/SAP/SapMachine/wiki/Installation) and [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
-* [Supported Platforms](https://github.com/SAP/SapMachine/wiki/Supported-platforms)
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
 * [SapMachine Development Process](https://github.com/SAP/SapMachine/wiki/SapMachine-Development-Process)
 
