@@ -275,7 +275,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
     T o = RawAccess<>::oop_load(elem_ptr);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (HAS_FWD && cset->is_in((HeapWord *) obj)) {
+      if (HAS_FWD && cset->is_in(obj)) {
         oop fwd = resolve_forwarded_not_null(obj);
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, thread);
