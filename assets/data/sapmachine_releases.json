@@ -120,11 +120,15 @@
             "releases": [
                 {
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jre-15-ea.7_linux-x64_bin.tar.gz"
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jre-15-ea.7_linux-ppc64le_bin.tar.gz", 
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jre-15-ea.7_linux-x64_bin.tar.gz", 
+                        "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jre-15-ea.7_linux-ppc64_bin.tar.gz"
                     }, 
                     "tag": "sapmachine-15+7", 
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jdk-15-ea.7_linux-x64_bin.tar.gz"
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jdk-15-ea.7_linux-ppc64le_bin.tar.gz", 
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jdk-15-ea.7_linux-x64_bin.tar.gz", 
+                        "linux-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B7/sapmachine-jdk-15-ea.7_linux-ppc64_bin.tar.gz"
                     }
                 }, 
                 {
