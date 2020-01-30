@@ -178,7 +178,15 @@ java/awt/font/WindowsIndicFonts.java                                         822
 # SapMachine 2019-11-26
 # This test fails sporadic all over the place ... also in 13, 14.
 #
+#
+# SapMachine 2020-01-15: We get bad OCSP response validity timestamps
+# Test got excluded with https://bugs.openjdk.java.net/browse/JDK-8237869
+# There's a bug to track resolution of the issue with LuxTrust now, which will be handled by Oracle:
+# https://bugs.openjdk.java.net/browse/JDK-8237888
 security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java    generic-all
+
+###############################################################################
+# New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

@@ -52,6 +52,9 @@ hotspot_handshake = \
 hotspot_serviceability = \
   serviceability
 
+hotspot_resourcehogs = \
+  resourcehogs
+
 hotspot_misc = \
   / \
  -applications \
@@ -284,8 +287,7 @@ tier1_serviceability = \
   serviceability/sa \
   -serviceability/sa/ClhsdbScanOops.java \
   -serviceability/sa/TestJmapCore.java \
-  -serviceability/sa/TestJmapCoreMetaspace.java \
-  -serviceability/sa/TestHeapDumpForLargeArray.java
+  -serviceability/sa/TestJmapCoreMetaspace.java
 
 # SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
 #  or which tests downstream-only features.
