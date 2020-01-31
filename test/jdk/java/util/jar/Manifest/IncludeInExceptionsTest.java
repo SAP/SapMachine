@@ -34,10 +34,13 @@ import java.util.jar.JarOutputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
+ * SapMachine 2019-01-18: In SapMachine "jdk.includeInExceptions" contains the
+ * value "jar" by default. So we simply switch the properties for the test VMs.
+ *
  * @test
  * @bug 8216362
- * @run main/othervm -Djdk.includeInExceptions=jar IncludeInExceptionsTest yes
- * @run main/othervm IncludeInExceptionsTest
+ * @run main/othervm IncludeInExceptionsTest yes
+ * @run main/othervm -Djdk.includeInExceptions= IncludeInExceptionsTest
  * @summary Verify that the property jdk.net.includeInExceptions works as expected
  * when an error occurs while reading an invalid Manifest file.
  */
