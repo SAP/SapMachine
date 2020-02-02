@@ -137,6 +137,17 @@ compiler/jsr292/ContinuousCallSiteTargetChange.java                          822
 #serviceability/sa/ClhsdbCDSCore.java                                          8234625 macosx-all
 
 ###############################################################################
+# New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
+
+# SapMachine 2020-01-27
+# Test methods didn't get compiled
+#
+# https://bugs.openjdk.java.net/browse/JDK-8237375
+# SimpleThresholdPolicy misses CounterDecay timestamp initialization
+# Test issue was merely observed in jdk14/zLinux, so only excluding there
+compiler/c2/Test8004741.java                                                         linux-s390x
+
+###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
 # SapMachine 2019-01-08
