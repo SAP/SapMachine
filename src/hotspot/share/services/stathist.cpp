@@ -263,9 +263,10 @@ static void print_column_names(outputStream* st, int widths[], const print_info_
 
   // Leave space for timestamp column
   if (pi->csv == false) {
-    ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
+    st->print("Time");
+    ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN - 4);
   } else {
-    st->put(',');
+    st->print("Time,");
   }
 
   const Column* c = ColumnList::the_list()->first();
@@ -505,7 +506,13 @@ static void print_one_record(outputStream* st, const record_t* record,
   if (record->timestamp == 0) {
     st->print("%*s", TIMESTAMP_LEN, "Now");
   } else {
+    if (pi->csv) {
+      st->print("\"");
+    }
     print_timestamp(st, record->timestamp);
+    if (pi->csv) {
+      st->print("\"");
+    }
   }
 
   if (pi->csv == false) {
