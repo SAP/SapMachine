@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
-#define SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
+/**
+ * @test
+ * @bug 8216472
+ * @summary native call in WindowsSelectorImpl.SubSelector.poll can use
+ *     more stack space than available in a shadow zone, this can cause
+ *     a crash if selector is called from a deep recursive java call
+ * @requires (os.family == "windows")
+ */
 
-#include "oops/compressedOops.inline.hpp"
-#include "memory/heapShared.hpp"
+import java.nio.channels.Selector;
 
-#if INCLUDE_CDS_JAVA_HEAP
+public class StackOverflowTest {
 
-inline oop HeapShared::decode_from_archive(narrowOop v) {
-  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
-  oop result = (oop)(void*)((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
-  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
+    public static void main(String[] args) throws Exception {
+        try (var sel = Selector.open()) {
+            recursiveSelect(sel);
+        } catch (StackOverflowError e) {
+            // ignore SOE from java calls
+        }
+    }
+
+    static void recursiveSelect(Selector sel) throws Exception {
+        sel.selectNow();
+        recursiveSelect(sel);
+    }
 }
-
-#endif
-
-#endif // SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP

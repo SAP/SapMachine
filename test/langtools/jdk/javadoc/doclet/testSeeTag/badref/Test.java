@@ -19,24 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
-#define SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
+package badref;
 
-#include "oops/compressedOops.inline.hpp"
-#include "memory/heapShared.hpp"
-
-#if INCLUDE_CDS_JAVA_HEAP
-
-inline oop HeapShared::decode_from_archive(narrowOop v) {
-  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
-  oop result = (oop)(void*)((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
-  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
-}
-
-#endif
-
-#endif // SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
+/**
+ * @see Object[]
+ * @see Foo<String>
+ */
+public interface Test {}

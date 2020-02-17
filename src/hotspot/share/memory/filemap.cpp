@@ -140,6 +140,8 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   const char *vm_version = VM_Version::internal_vm_info_string();
   const int version_len = (int)strlen(vm_version);
 
+  memset(header_version, 0, JVM_IDENT_MAX);
+
   if (version_len < (JVM_IDENT_MAX-1)) {
     strcpy(header_version, vm_version);
 
@@ -155,6 +157,8 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
     sprintf(&header_version[JVM_IDENT_MAX-9], "%08x", hash);
     header_version[JVM_IDENT_MAX-1] = 0;  // Null terminate.
   }
+
+  assert(header_version[JVM_IDENT_MAX-1] == 0, "must be");
 }
 
 FileMapInfo::FileMapInfo() {
@@ -506,10 +510,61 @@ bool FileMapInfo::init_from_file(int fd) {
     fail_continue("Unable to read the file header.");
     return false;
   }
+
+  if (!Arguments::has_jimage()) {
+    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
+    return false;
+  }
+
+  unsigned int expected_magic = CDS_ARCHIVE_MAGIC; // is_static ? CDS_ARCHIVE_MAGIC : CDS_DYNAMIC_ARCHIVE_MAGIC;
+  if (_header->_magic != expected_magic) {
+    log_info(cds)("_magic expected: 0x%08x", expected_magic);
+    log_info(cds)("         actual: 0x%08x", _header->_magic);
+    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
+    return false;
+  }
+
   if (_header->_version != CURRENT_CDS_ARCHIVE_VERSION) {
+    log_info(cds)("_version expected: %d", CURRENT_CDS_ARCHIVE_VERSION);
+    log_info(cds)("           actual: %d", _header->_version);
     fail_continue("The shared archive file has the wrong version.");
     return false;
   }
+
+  // From downport of "8226406: JVM fails to detect mismatched or corrupt CDS archive"
+  // Not applicable in 11 currently.
+  //if (_header->_header_size != sz) {
+  //  log_info(cds)("_header_size expected: " SIZE_FORMAT, sz);
+  //  log_info(cds)("               actual: " SIZE_FORMAT, _header->_header_size);
+  //  FileMapInfo::fail_continue("The shared archive file has an incorrect header size.");
+  //  return false;
+  // }
+
+  if (_header->_jvm_ident[JVM_IDENT_MAX-1] != 0) {
+    FileMapInfo::fail_continue("JVM version identifier is corrupted.");
+    return false;
+  }
+
+  char header_version[JVM_IDENT_MAX];
+  get_header_version(header_version);
+  if (strncmp(_header->_jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
+    log_info(cds)("_jvm_ident expected: %s", header_version);
+    log_info(cds)("             actual: %s", _header->_jvm_ident);
+    FileMapInfo::fail_continue("The shared archive file was created by a different"
+                  " version or build of HotSpot");
+    return false;
+  }
+
+  if (VerifySharedSpaces) {
+    int expected_crc = _header->compute_crc();
+    if (expected_crc != _header->_crc) {
+      log_info(cds)("_crc expected: %d", expected_crc);
+      log_info(cds)("       actual: %d", _header->_crc);
+      FileMapInfo::fail_continue("Header checksum verification failed.");
+      return false;
+    }
+  }
+
   _file_offset = (long)n;
 
   size_t info_size = _header->_paths_misc_info_size;
@@ -535,6 +590,7 @@ bool FileMapInfo::init_from_file(int fd) {
   }
 
   _file_offset += (long)n;
+
   return true;
 }
 
@@ -854,7 +910,7 @@ address FileMapInfo::decode_start_address(CDSFileMapRegion* spc, bool with_curre
   if (with_current_oop_encoding_mode) {
     return (address)CompressedOops::decode_not_null(offset_of_space(spc));
   } else {
-    return (address)HeapShared::decode_with_archived_oop_encoding_mode(offset_of_space(spc));
+    return (address)HeapShared::decode_from_archive(offset_of_space(spc));
   }
 }
 
@@ -880,7 +936,7 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
     CDSFileMapRegion* si = space_at(i);
     size_t size = si->_used;
     if (size > 0) {
-      address s = start_address_with_current_oop_encoding_mode(si);
+      address s = start_address_as_decoded_with_current_oop_encoding_mode(si);
       address e = s + size;
       if (start > s) {
         start = s;
@@ -972,21 +1028,20 @@ void FileMapInfo::map_heap_regions_impl() {
   HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
 
   CDSFileMapRegion* si = space_at(MetaspaceShared::first_string);
-  address relocated_strings_bottom = start_address_with_archived_oop_encoding_mode(si);
-  if (!is_aligned(relocated_strings_bottom + delta, HeapRegion::GrainBytes)) {
+  address relocated_strings_bottom = start_address_as_decoded_from_archive(si);
+  if (!is_aligned(relocated_strings_bottom, HeapRegion::GrainBytes)) {
     // Align the bottom of the string regions at G1 region boundary. This will avoid
     // the situation where the highest open region and the lowest string region sharing
     // the same G1 region. Otherwise we will fail to map the open regions.
     size_t align = size_t(relocated_strings_bottom) % HeapRegion::GrainBytes;
     delta -= align;
-    assert(is_aligned(relocated_strings_bottom + delta, HeapRegion::GrainBytes), "must be");
-
     log_info(cds)("CDS heap data need to be relocated lower by a further " SIZE_FORMAT
-                  " bytes to be aligned with HeapRegion::GrainBytes", align);
-
+                  " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes", align, delta);
     HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
     _heap_pointers_need_patching = true;
+    relocated_strings_bottom = start_address_as_decoded_from_archive(si);
   }
+  assert(is_aligned(relocated_strings_bottom, HeapRegion::GrainBytes), "must be");
 
   // First, map string regions as closed archive heap regions.
   // GC does not write into the regions.
@@ -1032,7 +1087,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
     si = space_at(i);
     size_t size = si->_used;
     if (size > 0) {
-      HeapWord* start = (HeapWord*)start_address_with_archived_oop_encoding_mode(si);
+      HeapWord* start = (HeapWord*)start_address_as_decoded_from_archive(si);
       regions[region_num] = MemRegion(start, size / HeapWordSize);
       region_num ++;
       log_info(cds)("Trying to map heap data: region[%d] at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
@@ -1243,7 +1298,7 @@ char* FileMapInfo::region_addr(int idx) {
   if (MetaspaceShared::is_heap_region(idx)) {
     assert(DumpSharedSpaces, "The following doesn't work at runtime");
     return si->_used > 0 ?
-          (char*)start_address_with_current_oop_encoding_mode(si) : NULL;
+          (char*)start_address_as_decoded_with_current_oop_encoding_mode(si) : NULL;
   } else {
     return si->_addr._base;
   }
@@ -1260,33 +1315,6 @@ int FileMapHeader::compute_crc() {
 
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
-  if (VerifySharedSpaces && compute_crc() != _crc) {
-    FileMapInfo::fail_continue("Header checksum verification failed.");
-    return false;
-  }
-
-  if (!Arguments::has_jimage()) {
-    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
-    return false;
-  }
-
-  if (_version != CURRENT_CDS_ARCHIVE_VERSION) {
-    FileMapInfo::fail_continue("The shared archive file is the wrong version.");
-    return false;
-  }
-  if (_magic != CDS_ARCHIVE_MAGIC) {
-    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
-    return false;
-  }
-  char header_version[JVM_IDENT_MAX];
-  get_header_version(header_version);
-  if (strncmp(_jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
-    log_info(class, path)("expected: %s", header_version);
-    log_info(class, path)("actual:   %s", _jvm_ident);
-    FileMapInfo::fail_continue("The shared archive file was created by a different"
-                  " version or build of HotSpot");
-    return false;
-  }
   if (_obj_alignment != ObjectAlignmentInBytes) {
     FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
                   " does not equal the current ObjectAlignmentInBytes of " INTX_FORMAT ".",

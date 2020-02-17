@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
-#define SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
-
-#include "oops/compressedOops.inline.hpp"
-#include "memory/heapShared.hpp"
-
-#if INCLUDE_CDS_JAVA_HEAP
-
-inline oop HeapShared::decode_from_archive(narrowOop v) {
-  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
-  oop result = (oop)(void*)((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
-  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
-}
-
-#endif
-
-#endif // SHARE_VM_MEMORY_HEAPSHARED_INLINE_HPP
+public abstract class FooService { }
