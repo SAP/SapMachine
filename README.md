@@ -1,3 +1,5 @@
+[![Github All Releases](https://img.shields.io/github/downloads/sap/sapmachine/total.svg?label=Downloads)](https://sap.github.io/SapMachine/#download) [![DockerPulls](https://img.shields.io/docker/pulls/_/sapmachine?label=Docker%20Pulls)](https://hub.docker.com/_/sapmachine)  
+
 <img align="right" width=350 src="https://sap.github.io/SapMachine/assets/images/logo_circular.svg">
 
 # [](#SapMachine) SapMachine
