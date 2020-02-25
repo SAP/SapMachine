@@ -66,7 +66,7 @@ class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
 
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
-  static const intx Concurrent_Adjust   =  1; // recover from penalties
+  static const intx Concurrent_Adjust   = -1; // recover from penalties
   static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
   static const intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
 
@@ -92,7 +92,7 @@ protected:
   double _last_cycle_end;
 
   size_t _gc_times_learned;
-  size_t _gc_time_penalties;
+  intx _gc_time_penalties;
   TruncatedSeq* _gc_time_history;
 
   // There may be many threads that contend to set this flag
@@ -108,6 +108,8 @@ protected:
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                      RegionData* data, size_t data_size,
                                                      size_t free) = 0;
+
+  void adjust_penalty(intx step);
 
 public:
   ShenandoahHeuristics();
