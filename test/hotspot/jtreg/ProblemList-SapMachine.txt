@@ -161,3 +161,7 @@ gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                     
 # SapMachine 2019-01-30
 # This test fails for some reason on linux-ppc64le and linux-ppc64. Need to investigate.
 compiler/runtime/cr6891750/Test6891750.java                                          linux-ppc64le,linux-ppc64
+
+# SapMachine 2020-02-21
+# This test started to fail lately on Windows in SapMachine CI.
+serviceability/sa/ClhsdbJstackXcompStress.java                                       windows-all
