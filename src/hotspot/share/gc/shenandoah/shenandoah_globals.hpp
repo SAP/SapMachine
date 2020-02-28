@@ -293,9 +293,6 @@
   diagnostic(bool, ShenandoahAllocFailureALot, false,                       \
           "Make lots of artificial allocation failures.")                   \
                                                                             \
-  diagnostic(bool, ShenandoahTerminationTrace, false,                       \
-          "Tracing task termination timings")                               \
-                                                                            \
   diagnostic(bool, ShenandoahAlwaysPreTouch, false,                         \
           "Pre-touch heap memory, overrides global AlwaysPreTouch")         \
                                                                             \
