@@ -285,6 +285,9 @@ java/nio/channels/DatagramChannel/ChangingAddress.java                          
 # There are quite some failures regarding new jpackage tests
 #
 #
+# SapMachine 2020-02-11: Submitted a few fixes. Need to test which items still fail.
+# https://bugs.openjdk.java.net/browse/JDK-8238947
+# https://bugs.openjdk.java.net/browse/JDK-8238953
 tools/jpackage/linux/AppCategoryTest.java                                            generic-all
 tools/jpackage/linux/LicenseTypeTest.java                                            generic-all
 tools/jpackage/linux/LinuxBundleNameTest.java                                        generic-all
@@ -322,6 +325,19 @@ tools/jpackage/share/SimplePackageTest.java                                     
 #
 #
 java/nio/channels/DatagramChannel/Loopback.java                                      linux-x64,linux-s390x
+
+# SapMachine 2020-02-24
+# Several tests fail on linuxs390x and linuxppc64le after JDK-8239450
+# Change caused issues in the multivariant builds (minimal+server)
+# SapMachine 2020-03-02: Temporarily disabled minimal builds on linuxs390x and linuxppc64le
+#com/sun/jdi/cds/CDSFieldWatchpoints.java                                             linux-all
+#com/sun/jdi/cds/CDSBreakpointTest.java                                               linux-all
+#com/sun/jdi/cds/CDSDeleteAllBkptsTest.java                                           linux-all
+
+# SapMachine 2019-02-27
+# Fails in nightly tests since middle of February 2020, cannot be reproduced locally
+#
+lib/testlibrary/OutputAnalyzerTest.java                                              generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

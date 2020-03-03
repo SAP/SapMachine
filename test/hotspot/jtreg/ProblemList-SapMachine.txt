@@ -58,7 +58,10 @@ compiler/rtm/locking/TestRTMSpinLoopCount.java                                  
 # SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
 # SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
 # For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
-serviceability/dcmd/framework/HelpTest.java                                          windows-all
+# SapMachine 2019-11-15: enable test to check current state
+#
+#
+#serviceability/dcmd/framework/HelpTest.java                                          windows-all
 
 # SapMachine 2019-04-29
 # java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
@@ -292,6 +295,12 @@ serviceability/sa/ClhsdbScanOops.java                                           
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
+
+# SapMachine 2020-02-11
+# New test, fails on AIX due to primordial thread issue
+#
+#
+testlibrary_tests/process/TestNativeProcessBuilder.java                              aix-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
