@@ -61,6 +61,8 @@ private:
   ShenandoahHeap* const _heap;
   const ShenandoahPhaseTimings::Phase   _phase;
   ShenandoahPhaseTimings::Phase         _parent_phase;
+  double _start;
+
 public:
   ShenandoahGCPhase(ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahGCPhase();
