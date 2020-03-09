@@ -146,14 +146,9 @@ void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure
 
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase) :
   _heap(ShenandoahHeap::heap()),
-  _phase(phase) {
+  _phase(phase),
+  _worker_phase(phase) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must at safepoint");
-  _heap->phase_timings()->record_workers_start(_phase);
-}
-
-ShenandoahRootProcessor::~ShenandoahRootProcessor() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must at safepoint");
-  _heap->phase_timings()->record_workers_end(_phase);
 }
 
 ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
