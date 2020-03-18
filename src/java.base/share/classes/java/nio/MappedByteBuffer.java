@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,9 +345,10 @@ public abstract class MappedByteBuffer
         if (fd == null) {
             return this;
         }
-        if ((address != 0) && (limit() != 0)) {
+        int lim = limit();
+        if (address != 0 && lim != 0) {
             // check inputs
-            Objects.checkFromIndexSize(index, length, limit());
+            Objects.checkFromIndexSize(index, length, lim);
             if (isSync) {
                 // simply force writeback of associated cache lines
                 Unsafe.getUnsafe().writebackMemory(address + index, length);
