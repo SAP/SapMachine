@@ -86,7 +86,7 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
 }
 
 void ShenandoahHeapRegion::make_regular_allocation() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
 
   switch (_state) {
     case _empty_uncommitted:
@@ -102,7 +102,7 @@ void ShenandoahHeapRegion::make_regular_allocation() {
 }
 
 void ShenandoahHeapRegion::make_regular_bypass() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   assert (_heap->is_full_gc_in_progress() || _heap->is_degenerated_gc_in_progress(),
           "only for full or degen GC");
 
@@ -127,7 +127,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
 }
 
 void ShenandoahHeapRegion::make_humongous_start() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   switch (_state) {
     case _empty_uncommitted:
       do_commit();
@@ -140,7 +140,7 @@ void ShenandoahHeapRegion::make_humongous_start() {
 }
 
 void ShenandoahHeapRegion::make_humongous_start_bypass() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   assert (_heap->is_full_gc_in_progress(), "only for full GC");
 
   switch (_state) {
@@ -156,7 +156,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass() {
 }
 
 void ShenandoahHeapRegion::make_humongous_cont() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   switch (_state) {
     case _empty_uncommitted:
       do_commit();
@@ -169,7 +169,7 @@ void ShenandoahHeapRegion::make_humongous_cont() {
 }
 
 void ShenandoahHeapRegion::make_humongous_cont_bypass() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   assert (_heap->is_full_gc_in_progress(), "only for full GC");
 
   switch (_state) {
@@ -185,7 +185,7 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass() {
 }
 
 void ShenandoahHeapRegion::make_pinned() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   assert(pin_count() > 0, "Should have pins: " SIZE_FORMAT, pin_count());
 
   switch (_state) {
@@ -207,7 +207,7 @@ void ShenandoahHeapRegion::make_pinned() {
 }
 
 void ShenandoahHeapRegion::make_unpinned() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   assert(pin_count() == 0, "Should not have pins: " SIZE_FORMAT, pin_count());
 
   switch (_state) {
@@ -229,7 +229,7 @@ void ShenandoahHeapRegion::make_unpinned() {
 }
 
 void ShenandoahHeapRegion::make_cset() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   switch (_state) {
     case _regular:
       set_state(_cset);
@@ -241,7 +241,7 @@ void ShenandoahHeapRegion::make_cset() {
 }
 
 void ShenandoahHeapRegion::make_trash() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   switch (_state) {
     case _cset:
       // Reclaiming cset regions
@@ -266,7 +266,7 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 }
 
 void ShenandoahHeapRegion::make_empty() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   switch (_state) {
     case _trash:
       set_state(_empty_committed);
@@ -278,7 +278,7 @@ void ShenandoahHeapRegion::make_empty() {
 }
 
 void ShenandoahHeapRegion::make_uncommitted() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   switch (_state) {
     case _empty_committed:
       do_uncommit();
@@ -290,7 +290,7 @@ void ShenandoahHeapRegion::make_uncommitted() {
 }
 
 void ShenandoahHeapRegion::make_committed_bypass() {
-  _heap->assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   assert (_heap->is_full_gc_in_progress(), "only for full GC");
 
   switch (_state) {
@@ -329,7 +329,7 @@ void ShenandoahHeapRegion::reset_alloc_metadata_to_shared() {
 
 void ShenandoahHeapRegion::update_seqnum_last_alloc_mutator() {
   assert(_heap->is_traversal_mode(), "Sanity");
-  _heap->assert_heaplock_or_safepoint();
+  shenandoah_assert_heaplocked_or_safepoint();
   _seqnum_last_alloc_mutator = _alloc_seq_num.value++;
 }
 

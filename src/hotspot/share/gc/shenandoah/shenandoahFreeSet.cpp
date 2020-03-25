@@ -41,7 +41,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
 }
 
 void ShenandoahFreeSet::increase_used(size_t num_bytes) {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   _used += num_bytes;
 
   assert(_used <= _capacity, "must not use more than we have: used: " SIZE_FORMAT
@@ -261,7 +261,7 @@ void ShenandoahFreeSet::adjust_bounds() {
 }
 
 HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
 
   size_t words_size = req.size();
   size_t num = ShenandoahHeapRegion::required_regions(words_size * HeapWordSize);
@@ -374,7 +374,7 @@ void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion *r) {
 
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
-  assert_heaplock_not_owned_by_current_thread();
+  shenandoah_assert_not_heaplocked();
 
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
@@ -406,7 +406,7 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
 }
 
 void ShenandoahFreeSet::clear() {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   clear_internal();
 }
 
@@ -422,7 +422,7 @@ void ShenandoahFreeSet::clear_internal() {
 }
 
 void ShenandoahFreeSet::rebuild() {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   clear();
 
   for (size_t idx = 0; idx < _heap->num_regions(); idx++) {
@@ -463,7 +463,7 @@ void ShenandoahFreeSet::rebuild() {
 }
 
 void ShenandoahFreeSet::log_status() {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
 
   LogTarget(Info, gc, ergo) lt;
   if (lt.is_enabled()) {
@@ -556,7 +556,7 @@ void ShenandoahFreeSet::log_status() {
 }
 
 HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  assert_heaplock_owned_by_current_thread();
+  shenandoah_assert_heaplocked();
   assert_bounds();
 
   if (req.size() > ShenandoahHeapRegion::humongous_threshold_words()) {
@@ -702,14 +702,6 @@ double ShenandoahFreeSet::external_fragmentation() {
 }
 
 #ifdef ASSERT
-void ShenandoahFreeSet::assert_heaplock_owned_by_current_thread() const {
-  _heap->assert_heaplock_owned_by_current_thread();
-}
-
-void ShenandoahFreeSet::assert_heaplock_not_owned_by_current_thread() const {
-  _heap->assert_heaplock_not_owned_by_current_thread();
-}
-
 void ShenandoahFreeSet::assert_bounds() const {
   // Performance invariants. Failing these would not break the free set, but performance
   // would suffer.
