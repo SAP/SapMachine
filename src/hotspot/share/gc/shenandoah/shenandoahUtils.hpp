@@ -61,6 +61,8 @@ private:
   ShenandoahHeap* const _heap;
   const ShenandoahPhaseTimings::Phase   _phase;
   ShenandoahPhaseTimings::Phase         _parent_phase;
+  double _start;
+
 public:
   ShenandoahGCPhase(ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahGCPhase();
@@ -86,16 +88,6 @@ public:
   ~ShenandoahGCPauseMark();
 };
 
-class ShenandoahAllocTrace : public StackObj {
-private:
-  double _start;
-  size_t _size;
-  ShenandoahAllocRequest::Type _alloc_type;
-public:
-  ShenandoahAllocTrace(size_t words_size, ShenandoahAllocRequest::Type alloc_type);
-  ~ShenandoahAllocTrace();
-};
-
 class ShenandoahSafepoint : public AllStatic {
 public:
   // check if Shenandoah GC safepoint is in progress
@@ -108,7 +100,6 @@ public:
     VM_Operation::VMOp_Type type = vm_op->type();
     return type == VM_Operation::VMOp_ShenandoahInitMark ||
            type == VM_Operation::VMOp_ShenandoahFinalMarkStartEvac ||
-           type == VM_Operation::VMOp_ShenandoahFinalEvac ||
            type == VM_Operation::VMOp_ShenandoahInitTraversalGC ||
            type == VM_Operation::VMOp_ShenandoahFinalTraversalGC ||
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||

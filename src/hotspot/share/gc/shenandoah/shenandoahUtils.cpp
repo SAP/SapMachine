@@ -28,7 +28,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shenandoah/shenandoahAllocTracker.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -107,12 +106,11 @@ ShenandoahGCPhase::ShenandoahGCPhase(const ShenandoahPhaseTimings::Phase phase) 
           "Must be set by these threads");
   _parent_phase = _current_phase;
   _current_phase = phase;
-
-  _heap->phase_timings()->record_phase_start(_phase);
+  _start = os::elapsedTime();
 }
 
 ShenandoahGCPhase::~ShenandoahGCPhase() {
-  _heap->phase_timings()->record_phase_end(_phase);
+  _heap->phase_timings()->record_phase_time(_phase, os::elapsedTime() - _start);
   _current_phase = _parent_phase;
 }
 
@@ -134,33 +132,6 @@ bool ShenandoahGCPhase::is_root_work_phase() {
       return true;
     default:
       return false;
-  }
-}
-
-ShenandoahAllocTrace::ShenandoahAllocTrace(size_t words_size, ShenandoahAllocRequest::Type alloc_type) {
-  if (ShenandoahAllocationTrace) {
-    _start = os::elapsedTime();
-    _size = words_size;
-    _alloc_type = alloc_type;
-  } else {
-    _start = 0;
-    _size = 0;
-    _alloc_type = ShenandoahAllocRequest::Type(0);
-  }
-}
-
-ShenandoahAllocTrace::~ShenandoahAllocTrace() {
-  if (ShenandoahAllocationTrace) {
-    double stop = os::elapsedTime();
-    double duration_sec = stop - _start;
-    double duration_us = duration_sec * 1000000;
-    ShenandoahAllocTracker* tracker = ShenandoahHeap::heap()->alloc_tracker();
-    assert(tracker != NULL, "Must be");
-    tracker->record_alloc_latency(_size, _alloc_type, duration_us);
-    if (duration_us > ShenandoahAllocationStallThreshold) {
-      log_warning(gc)("Allocation stall: %.0f us (threshold: " INTX_FORMAT " us)",
-                      duration_us, ShenandoahAllocationStallThreshold);
-    }
   }
 }
 

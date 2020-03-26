@@ -40,8 +40,8 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
-#include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 
 #include "memory/iterator.inline.hpp"
@@ -394,7 +394,6 @@ void ShenandoahConcurrentMark::mark_from_roots() {
   task_queues()->reserve(nworkers);
 
   {
-    ShenandoahTerminationTracker term(ShenandoahPhaseTimings::conc_termination);
     ShenandoahTaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask task(this, &terminator);
     workers->run_task(&task);
@@ -424,10 +423,6 @@ void ShenandoahConcurrentMark::finish_mark_from_roots(bool full_gc) {
     shenandoah_assert_rp_isalive_not_installed();
     ShenandoahIsAliveSelector is_alive;
     ReferenceProcessorIsAliveMutator fix_isalive(_heap->ref_processor(), is_alive.is_alive_closure());
-
-    ShenandoahTerminationTracker termination_tracker(full_gc ?
-                                                     ShenandoahPhaseTimings::full_gc_mark_termination :
-                                                     ShenandoahPhaseTimings::termination);
 
     StrongRootsScope scope(nworkers);
     ShenandoahTaskTerminator terminator(nworkers, task_queues());
@@ -626,11 +621,6 @@ void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {
           ShenandoahPhaseTimings::full_gc_weakrefs_process :
           ShenandoahPhaseTimings::weakrefs_process;
 
-  ShenandoahPhaseTimings::Phase phase_process_termination =
-          full_gc ?
-          ShenandoahPhaseTimings::full_gc_weakrefs_termination :
-          ShenandoahPhaseTimings::weakrefs_termination;
-
   shenandoah_assert_rp_isalive_not_installed();
   ShenandoahIsAliveSelector is_alive;
   ReferenceProcessorIsAliveMutator fix_isalive(rp, is_alive.is_alive_closure());
@@ -657,7 +647,6 @@ void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {
 
   {
     ShenandoahGCPhase phase(phase_process);
-    ShenandoahTerminationTracker phase_term(phase_process_termination);
 
     if (_heap->has_forwarded_objects()) {
       ShenandoahCMKeepAliveUpdateClosure keep_alive(get_queue(serial_worker_id));
@@ -932,7 +921,6 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, jushort* live_data, uint wo
       // No work encountered in current stride, try to terminate.
       // Need to leave the STS here otherwise it might block safepoints.
       ShenandoahSuspendibleThreadSetLeaver stsl(CANCELLABLE && ShenandoahSuspendibleWorkers);
-      ShenandoahTerminationTimingsTracker term_tracker(worker_id);
       ShenandoahTerminatorTerminator tt(heap);
       if (terminator->offer_termination(&tt)) return;
     }

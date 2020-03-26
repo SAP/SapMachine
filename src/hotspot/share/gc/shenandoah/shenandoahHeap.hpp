@@ -38,7 +38,6 @@
 
 class ConcurrentGCTimer;
 class ReferenceProcessor;
-class ShenandoahAllocTracker;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
@@ -376,7 +375,6 @@ public:
   // call the entry method below
   void vmop_entry_init_mark();
   void vmop_entry_final_mark();
-  void vmop_entry_final_evac();
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
   void vmop_entry_init_traversal();
@@ -388,7 +386,6 @@ public:
   // and workers for net VM operation
   void entry_init_mark();
   void entry_final_mark();
-  void entry_final_evac();
   void entry_init_updaterefs();
   void entry_final_updaterefs();
   void entry_init_traversal();
@@ -412,7 +409,6 @@ private:
   // Actual work for the phases
   void op_init_mark();
   void op_final_mark();
-  void op_final_evac();
   void op_init_updaterefs();
   void op_final_updaterefs();
   void op_init_traversal();
@@ -438,6 +434,9 @@ private:
   const char* init_mark_event_message() const;
   const char* final_mark_event_message() const;
   const char* conc_mark_event_message() const;
+  const char* init_traversal_event_message() const;
+  const char* final_traversal_event_message() const;
+  const char* conc_traversal_event_message() const;
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 
 // ---------- GC subsystems
@@ -454,7 +453,6 @@ private:
   ShenandoahPacer*           _pacer;
   ShenandoahVerifier*        _verifier;
 
-  ShenandoahAllocTracker*    _alloc_tracker;
   ShenandoahPhaseTimings*    _phase_timings;
 
   ShenandoahControlThread*   control_thread()          { return _control_thread;    }
@@ -470,7 +468,6 @@ public:
   ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
-  ShenandoahAllocTracker*    alloc_tracker()     const { return _alloc_tracker;     }
 
   ShenandoahVerifier*        verifier();
 

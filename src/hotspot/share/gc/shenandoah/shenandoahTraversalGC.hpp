@@ -68,6 +68,7 @@ private:
   void weak_refs_work_doit();
 
   void fixup_roots();
+  void verify_roots_after_gc();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALGC_HPP

@@ -33,7 +33,6 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
-#include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "jfr/jfr.hpp"
 #include "memory/iterator.hpp"
@@ -48,8 +47,7 @@ ShenandoahSerialRoot::ShenandoahSerialRoot(ShenandoahSerialRoot::OopsDo oops_do,
 
 void ShenandoahSerialRoot::oops_do(OopClosure* cl, uint worker_id) {
   if (_claimed.try_set()) {
-    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-    ShenandoahWorkerTimingsTracker timer(worker_times, _phase, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, worker_id);
     _oops_do(cl);
   }
 }
@@ -81,8 +79,7 @@ ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::Wea
 
 void ShenandoahWeakSerialRoot::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id) {
   if (_claimed.try_set()) {
-    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-    ShenandoahWorkerTimingsTracker timer(worker_times, _phase, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, worker_id);
     _weak_oops_do(is_alive, keep_alive);
   }
 }
@@ -114,15 +111,13 @@ ShenandoahThreadRoots::ShenandoahThreadRoots(bool is_par) : _is_par(is_par) {
 }
 
 void ShenandoahThreadRoots::oops_do(OopClosure* oops_cl, CodeBlobClosure* code_cl, uint worker_id) {
-  ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-  ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::ThreadRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::ThreadRoots, worker_id);
   ResourceMark rm;
   Threads::possibly_parallel_oops_do(_is_par, oops_cl, code_cl);
 }
 
 void ShenandoahThreadRoots::threads_do(ThreadClosure* tc, uint worker_id) {
-  ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-  ShenandoahWorkerTimingsTracker timer(worker_times, ShenandoahPhaseTimings::ThreadRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::ThreadRoots, worker_id);
   ResourceMark rm;
   Threads::possibly_parallel_threads_do(_is_par, tc);
 }
@@ -253,18 +248,4 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
    _serial_weak_roots.weak_oops_do(oops, 0);
    _weak_roots.oops_do<OopClosure>(oops, 0);
    _dedup_roots.oops_do(&always_true, oops, 0);
- }
-
- void ShenandoahHeapIterationRootScanner::strong_roots_do(OopClosure* oops) {
-   assert(Thread::current()->is_VM_thread(), "Only by VM thread");
-   // Must use _claim_none to avoid interfering with concurrent CLDG iteration
-   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
-   MarkingCodeBlobClosure code(oops, !CodeBlobToOopClosure::FixRelocations);
-   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, &code, NULL);
-   ResourceMark rm;
-
-   _serial_roots.oops_do(oops, 0);
-   _vm_roots.oops_do(oops, 0);
-   _cld_roots.always_strong_cld_do(&clds, 0);
-   _thread_roots.threads_do(&tc_cl, 0);
  }
