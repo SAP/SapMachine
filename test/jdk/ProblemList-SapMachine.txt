@@ -160,30 +160,14 @@ java/nio/channels/DatagramChannel/Promiscuous.java                              
 # SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
 java/awt/FontClass/FontSize1Test.java                                                macosx-all
 
-# SapMachine 2019-08-29
-# We see errors in jdk/jdk (14) and recently in 11 as well. So, it must be introduced
-# by some change that had been backported.
-# Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
-#sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
-
 ###############################################################################
 # New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
 
 # SapMachine 2019-07-17
 # Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
-# There's already an OpenJDK bug open for this: https://bugs.openjdk.java.net/browse/JDK-8223935
-# Exluding for now.
+# OpenJDK bug: https://bugs.openjdk.java.net/browse/JDK-8223935
+# SapMachine 2020-03-25 JDK-8223935 has been resolved. Enabling test again. Taking care of backports.
 java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
-
-# SapMachine 2019-11-26
-# This test fails sporadic all over the place ... also in 13, 14.
-#
-#
-# SapMachine 2020-01-15: We get bad OCSP response validity timestamps
-# Test got excluded with https://bugs.openjdk.java.net/browse/JDK-8237869
-# There's a bug to track resolution of the issue with LuxTrust now, which will be handled by Oracle:
-# https://bugs.openjdk.java.net/browse/JDK-8237888
-#security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java    generic-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)

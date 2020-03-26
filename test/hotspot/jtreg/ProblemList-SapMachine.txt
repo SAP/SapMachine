@@ -55,10 +55,14 @@ compiler/rtm/locking/TestRTMSpinLoopCount.java                                  
 # Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
 #
 #
+#
 # SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
 # SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
-# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
-serviceability/dcmd/framework/HelpTest.java                                          windows-all
+# SapMachine 2020-03-03 We will no more analyse the issues with this test. We will just keep it excluded.
+#
+# SapMachine 2020-03-24 Let's see how it goes if we drop this exclusion. It's already commented out in all
+#                       other lists except for 11_hs. If it is very sporadic we might be able to remove this entry from our list.
+#serviceability/dcmd/framework/HelpTest.java                                          windows-all
 
 # SapMachine 2019-04-29
 # java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
@@ -115,7 +119,8 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # linkResolver::runtime_resolve_virtual_method
 #
 #
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390x,windows-all
+# SapMachine 2020-03-24 Disarmed diagnosis patches and made sure test is enabled everywhere. Let's see what happens.
+#vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390x,windows-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
@@ -125,27 +130,19 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 #
 #
 # https://bugs.openjdk.java.net/browse/JDK-8222030
-# SapMachine 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
+# SapMachine 2020-03-12 Fixed by https://bugs.openjdk.java.net/browse/JDK-8234146
+# SapMachine 2020-03-24 Working on 11 and 14 backports
 #compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-ppc64
-
-###############################################################################
-# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
-
-# SapMachine 2019-12-05
-# This test fails on MacOS Catalina, it is fixed with JDK-8234625 but awaiting backport
-# https://bugs.openjdk.java.net/browse/JDK-8234625
-#serviceability/sa/ClhsdbCDSCore.java                                          8234625 macosx-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
 
-# SapMachine 2020-01-27
-# Test methods didn't get compiled
+# SapMachine CL 2019-08-29
+# This pops up on our aarch64 test machine. As it is aarch, we don't really care a lot.
+# But it would probably be nice if it could be fixed or reported as bug to JBS and excluded.
+# SapMachine CL 2020-03-25 Since we test 11u-dev on aarch64 as well, we see the issue there, too.
 #
-# https://bugs.openjdk.java.net/browse/JDK-8237375
-# SimpleThresholdPolicy misses CounterDecay timestamp initialization
-# Test issue was merely observed in jdk14/zLinux, so only excluding there
-#compiler/c2/Test8004741.java                                                         linux-s390x
+compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
