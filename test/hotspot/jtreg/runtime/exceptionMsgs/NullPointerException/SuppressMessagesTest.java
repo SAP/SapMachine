@@ -24,12 +24,13 @@
 
 /**
  * @test
- * @summary Test that the default of flag ShowCodeDetailsInExceptionMessages is 'false',
- *          i.e., make sure the VM does not print the message on default.
+ * @comment SapMachine 2019-11-04: Push JDK-8233014 early.
+ * @summary Test that the default of flag ShowCodeDetailsInExceptionMessages is 'true',
+ *          i.e., make sure the VM does print the message on default.
  * @bug 8218628
  * @library /test/lib
  * @compile -g SuppressMessagesTest.java
- * @run main/othervm SuppressMessagesTest noMessage
+ * @run main/othervm SuppressMessagesTest printMessage
  */
 /**
  * @test
