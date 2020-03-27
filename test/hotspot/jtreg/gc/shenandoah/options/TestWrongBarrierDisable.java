@@ -42,7 +42,6 @@ public class TestWrongBarrierDisable {
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
                 "ShenandoahSATBBarrier",
-                "ShenandoahKeepAliveBarrier",
         };
 
         shouldFailAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
