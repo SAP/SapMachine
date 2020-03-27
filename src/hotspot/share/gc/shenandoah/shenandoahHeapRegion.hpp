@@ -237,7 +237,6 @@ private:
   static PaddedAllocSeqNum _alloc_seq_num;
 
   // Never updated fields
-  ShenandoahHeap* const _heap;
   size_t const _region_number;
   HeapWord* const _bottom;
   HeapWord* const _end;
@@ -267,7 +266,7 @@ private:
   shenandoah_padding(0);
 
 public:
-  ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start, size_t index, bool committed);
+  ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
   static const size_t MIN_NUM_REGIONS = 10;
 
@@ -407,11 +406,7 @@ public:
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
 
-  uint64_t seqnum_last_alloc_mutator()  const {
-    assert(_heap->is_traversal_mode(), "Sanity");
-    return _seqnum_last_alloc_mutator;
-  }
-
+  inline uint64_t seqnum_last_alloc_mutator() const;
   void update_seqnum_last_alloc_mutator();
 
   HeapWord* get_update_watermark() const {
