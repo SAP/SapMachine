@@ -2684,7 +2684,7 @@ void ShenandoahHeap::entry_mark() {
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
 
   const char* msg = conc_mark_event_message();
-  GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) time(msg);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2700,7 +2700,7 @@ void ShenandoahHeap::entry_evac() {
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
 
   static const char* msg = "Concurrent evacuation";
-  GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) time(msg);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2715,7 +2715,7 @@ void ShenandoahHeap::entry_updaterefs() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_update_refs);
 
   static const char* msg = "Concurrent update references";
-  GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) time(msg);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2730,7 +2730,7 @@ void ShenandoahHeap::entry_roots() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_roots);
 
   static const char* msg = "Concurrent roots processing";
-  GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) time(msg);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2758,7 +2758,7 @@ void ShenandoahHeap::entry_reset() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_reset);
 
   static const char* msg = "Concurrent reset";
-  GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) time(msg);
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2772,7 +2772,7 @@ void ShenandoahHeap::entry_reset() {
 void ShenandoahHeap::entry_preclean() {
   if (ShenandoahPreclean && process_references()) {
     static const char* msg = "Concurrent precleaning";
-    GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+    GCTraceTime(Info, gc) time(msg);
     EventMark em("%s", msg);
 
     ShenandoahGCPhase conc_preclean(ShenandoahPhaseTimings::conc_preclean);
@@ -2789,7 +2789,7 @@ void ShenandoahHeap::entry_preclean() {
 
 void ShenandoahHeap::entry_traversal() {
   static const char* msg = conc_traversal_event_message();
-  GCTraceTime(Info, gc) time(msg, NULL, GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) time(msg);
   EventMark em("%s", msg);
 
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
