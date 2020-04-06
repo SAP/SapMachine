@@ -861,7 +861,7 @@ public:
     }
 
     r->set_live_data(live);
-    r->reset_alloc_metadata_to_shared();
+    r->reset_alloc_metadata();
     _live += live;
   }
 
@@ -927,7 +927,7 @@ void ShenandoahMarkCompact::compact_humongous_objects() {
             r->set_top(r->end());
           }
 
-          r->reset_alloc_metadata_to_shared();
+          r->reset_alloc_metadata();
         }
       }
     }
