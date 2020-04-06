@@ -66,7 +66,6 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   _region_data_size(0),
   _degenerated_cycles_in_a_row(0),
   _successful_cycles_in_a_row(0),
-  _bytes_in_cset(0),
   _cycle_start(os::elapsedTime()),
   _last_cycle_end(0),
   _gc_times_learned(0),
@@ -279,12 +278,10 @@ void ShenandoahHeuristics::record_success_full() {
 }
 
 void ShenandoahHeuristics::record_allocation_failure_gc() {
-  _bytes_in_cset = 0;
+  // Do nothing.
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
-  _bytes_in_cset = 0;
-
   // Assume users call System.gc() when external state changes significantly,
   // which forces us to re-learn the GC timings and allocation rates.
   _gc_times_learned = 0;
