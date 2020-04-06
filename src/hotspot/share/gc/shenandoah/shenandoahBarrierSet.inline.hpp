@@ -85,7 +85,7 @@ inline void ShenandoahBarrierSet::satb_enqueue(oop value) {
 }
 
 inline void ShenandoahBarrierSet::storeval_barrier(oop obj) {
-  if (obj != NULL && ShenandoahStoreValEnqueueBarrier) {
+  if (ShenandoahStoreValEnqueueBarrier && obj != NULL && _heap->is_concurrent_mark_in_progress()) {
     enqueue(obj);
   }
 }
@@ -290,7 +290,7 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
   }
   int gc_state = _heap->gc_state();
   if ((gc_state & ShenandoahHeap::MARKING) != 0) {
-    arraycopy_marking(dst, count);
+    arraycopy_marking(src, dst, count);
   } else if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     arraycopy_evacuation(src, count);
   } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {
@@ -299,8 +299,9 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
 }
 
 template <class T>
-void ShenandoahBarrierSet::arraycopy_marking(T* array, size_t count) {
+void ShenandoahBarrierSet::arraycopy_marking(T* src, T* dst, size_t count) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
+  T* array = ShenandoahSATBBarrier ? dst : src;
   if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(array))) {
     arraycopy_work<T, false, false, true>(array, count);
   }
