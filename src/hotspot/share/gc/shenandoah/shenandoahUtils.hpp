@@ -25,6 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP
 
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -39,7 +40,6 @@
 #include "services/memoryService.hpp"
 
 class GCTimer;
-class GCTracer;
 
 class ShenandoahGCSession : public StackObj {
 private:
@@ -51,6 +51,24 @@ private:
 public:
   ShenandoahGCSession(GCCause::Cause cause);
   ~ShenandoahGCSession();
+};
+
+class ShenandoahPausePhase : public GCTraceTimeImplWrapper<LogLevel::Info, LOG_TAGS(gc)> {
+private:
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahPausePhase(const char* title);
+  ~ShenandoahPausePhase();
+};
+
+class ShenandoahConcurrentPhase : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc)> {
+private:
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahConcurrentPhase(const char* title);
+  ~ShenandoahConcurrentPhase();
 };
 
 class ShenandoahGCPhase : public StackObj {
@@ -70,6 +88,15 @@ public:
 
   static bool is_current_phase_valid();
   static bool is_root_work_phase();
+};
+
+class ShenandoahGCSubPhase: public ShenandoahGCPhase {
+private:
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahGCSubPhase(ShenandoahPhaseTimings::Phase phase);
+  ~ShenandoahGCSubPhase();
 };
 
 class ShenandoahGCWorkerPhase : public StackObj {
