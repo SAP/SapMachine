@@ -217,10 +217,14 @@
                 {
                     "tag": "sapmachine-15+18",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jdk-15-ea.18_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jdk-15-ea.18_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jdk-15-ea.18_windows-x64_bin.zip",
+                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jdk-15-ea.18_windows-x64_bin.msi"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jre-15-ea.18_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jre-15-ea.18_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jre-15-ea.18_windows-x64_bin.zip",
+                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B18/sapmachine-jre-15-ea.18_windows-x64_bin.msi"
                     }
                 },
                 {
