@@ -49,6 +49,27 @@ TARGETS += $(BUILD_LIBDT_SOCKET)
 
 ################################################################################
 
+# SapMachine 2018-01-18: Add dt_filesocket implementation
+$(eval $(call SetupJdkLibrary, BUILD_LIBDT_FILESOCKET, \
+    NAME := dt_filesocket, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
+    DISABLED_WARNINGS_clang := format-nonliteral, \
+    EXTRA_HEADER_DIRS := \
+        include \
+        libjdwp/export, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LIBS_solaris := -lnsl -lsocket, \
+    LIBS_windows := $(JKDLIB_LIBS) ws2_32.lib Advapi32.lib, \
+))
+
+$(BUILD_LIBDT_FILESOCKET): $(call FindLib, java.base, java)
+
+# Include file socket transport with JDWP agent to allow for safe local debugging
+TARGETS += $(BUILD_LIBDT_FILESOCKET)
+
+################################################################################
 # JDWP_LOGGING causes log messages to be compiled into the library.
 $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
