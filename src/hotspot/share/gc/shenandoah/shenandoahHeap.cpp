@@ -1651,14 +1651,14 @@ public:
       // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
       // may race against OopStorage::release() calls.
       ShenandoahEvacUpdateOopStorageRootsClosure cl;
-      _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
-      _weak_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl);
+      _vm_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl, worker_id);
+      _weak_roots.oops_do<ShenandoahEvacUpdateOopStorageRootsClosure>(&cl, worker_id);
     }
 
     {
       ShenandoahEvacuateUpdateRootsClosure cl;
       CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
-      _cld_roots.cld_do(&clds);
+      _cld_roots.cld_do(&clds, worker_id);
     }
   }
 };

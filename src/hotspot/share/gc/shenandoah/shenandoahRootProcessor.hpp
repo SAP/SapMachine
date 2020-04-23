@@ -136,7 +136,7 @@ public:
   ShenandoahWeakRoots();
 
   template <typename Closure>
-  void oops_do(Closure* cl, uint worker_id = 0);
+  void oops_do(Closure* cl, uint worker_id);
 };
 
 template <>
@@ -150,7 +150,7 @@ public:
   ShenandoahWeakRoots();
 
   template <typename Closure>
-  void oops_do(Closure* cl, uint worker_id = 0);
+  void oops_do(Closure* cl, uint worker_id);
 
   template <typename IsAliveClosure, typename KeepAliveClosure>
   void weak_oops_do(IsAliveClosure* is_alive, KeepAliveClosure* keep_alive, uint worker_id);
@@ -166,7 +166,7 @@ public:
   ShenandoahVMRoots();
 
   template <typename T>
-  void oops_do(T* cl, uint worker_id = 0);
+  void oops_do(T* cl, uint worker_id);
 };
 
 class ShenandoahThreadRoots {
@@ -205,8 +205,8 @@ public:
   ShenandoahClassLoaderDataRoots();
   ~ShenandoahClassLoaderDataRoots();
 
-  void always_strong_cld_do(CLDClosure* clds, uint worker_id = 0);
-  void cld_do(CLDClosure* clds, uint worker_id = 0);
+  void always_strong_cld_do(CLDClosure* clds, uint worker_id);
+  void cld_do(CLDClosure* clds, uint worker_id);
 };
 
 class ShenandoahRootProcessor : public StackObj {
