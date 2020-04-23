@@ -1626,7 +1626,11 @@ void ShenandoahHeap::op_updaterefs() {
   update_heap_references(true);
 }
 
-void ShenandoahHeap::op_cleanup() {
+void ShenandoahHeap::op_cleanup_early() {
+  free_set()->recycle_trash();
+}
+
+void ShenandoahHeap::op_cleanup_complete() {
   free_set()->recycle_trash();
 }
 
@@ -1779,7 +1783,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         ShenandoahCodeRoots::disarm_nmethods();
       }
 
-      op_cleanup();
+      op_cleanup_early();
 
     case _degenerated_evac:
       // If heuristics thinks we should do the cycle, this flag would be set,
@@ -1842,7 +1846,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         }
       }
 
-      op_cleanup();
+      op_cleanup_complete();
       break;
 
     default:
@@ -2711,17 +2715,30 @@ void ShenandoahHeap::entry_roots() {
   op_roots();
 }
 
-void ShenandoahHeap::entry_cleanup() {
+void ShenandoahHeap::entry_cleanup_early() {
   static const char* msg = "Concurrent cleanup";
   ShenandoahConcurrentPhase gc_phase(msg,  true /* log_heap_usage */);
   EventMark em("%s", msg);
 
-  ShenandoahGCSubPhase phase(ShenandoahPhaseTimings::conc_cleanup);
+  ShenandoahGCSubPhase phase(ShenandoahPhaseTimings::conc_cleanup_early);
 
   // This phase does not use workers, no need for setup
 
   try_inject_alloc_failure();
-  op_cleanup();
+  op_cleanup_early();
+}
+
+void ShenandoahHeap::entry_cleanup_complete() {
+  static const char* msg = "Concurrent cleanup";
+  ShenandoahConcurrentPhase gc_phase(msg,  true /* log_heap_usage */);
+  EventMark em("%s", msg);
+
+  ShenandoahGCSubPhase phase(ShenandoahPhaseTimings::conc_cleanup_complete);
+
+  // This phase does not use workers, no need for setup
+
+  try_inject_alloc_failure();
+  op_cleanup_complete();
 }
 
 void ShenandoahHeap::entry_reset() {
