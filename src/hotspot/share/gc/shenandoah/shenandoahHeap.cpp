@@ -2511,7 +2511,6 @@ void ShenandoahHeap::safepoint_synchronize_end() {
 
 void ShenandoahHeap::vmop_entry_init_mark() {
   TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
-  ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_mark_gross);
 
   try_inject_alloc_failure();
@@ -2521,7 +2520,6 @@ void ShenandoahHeap::vmop_entry_init_mark() {
 
 void ShenandoahHeap::vmop_entry_final_mark() {
   TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
-  ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_mark_gross);
 
   try_inject_alloc_failure();
@@ -2531,7 +2529,6 @@ void ShenandoahHeap::vmop_entry_final_mark() {
 
 void ShenandoahHeap::vmop_entry_init_updaterefs() {
   TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
-  ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_gross);
 
   try_inject_alloc_failure();
@@ -2541,7 +2538,6 @@ void ShenandoahHeap::vmop_entry_init_updaterefs() {
 
 void ShenandoahHeap::vmop_entry_final_updaterefs() {
   TraceCollectorStats tcs(monitoring_support()->stw_collection_counters());
-  ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_gross);
 
   try_inject_alloc_failure();
@@ -2551,7 +2547,6 @@ void ShenandoahHeap::vmop_entry_final_updaterefs() {
 
 void ShenandoahHeap::vmop_entry_full(GCCause::Cause cause) {
   TraceCollectorStats tcs(monitoring_support()->full_stw_collection_counters());
-  ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_gross);
 
   try_inject_alloc_failure();
@@ -2561,7 +2556,6 @@ void ShenandoahHeap::vmop_entry_full(GCCause::Cause cause) {
 
 void ShenandoahHeap::vmop_degenerated(ShenandoahDegenPoint point) {
   TraceCollectorStats tcs(monitoring_support()->full_stw_collection_counters());
-  ShenandoahGCPhase total(ShenandoahPhaseTimings::total_pause_gross);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_gross);
 
   VM_ShenandoahDegeneratedGC degenerated_gc((int)point);
@@ -2573,7 +2567,6 @@ void ShenandoahHeap::entry_init_mark() {
   ShenandoahPausePhase gc_phase(msg);
   EventMark em("%s", msg);
 
-  ShenandoahGCPhase total_phase(ShenandoahPhaseTimings::total_pause);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_mark);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2588,7 +2581,6 @@ void ShenandoahHeap::entry_final_mark() {
   ShenandoahPausePhase gc_phase(msg);
   EventMark em("%s", msg);
 
-  ShenandoahGCPhase total_phase(ShenandoahPhaseTimings::total_pause);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_mark);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2603,7 +2595,6 @@ void ShenandoahHeap::entry_init_updaterefs() {
   ShenandoahPausePhase gc_phase(msg);
   EventMark em("%s", msg);
 
-  ShenandoahGCPhase total_phase(ShenandoahPhaseTimings::total_pause);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs);
 
   // No workers used in this phase, no setup required
@@ -2616,7 +2607,6 @@ void ShenandoahHeap::entry_final_updaterefs() {
   ShenandoahPausePhase gc_phase(msg);
   EventMark em("%s", msg);
 
-  ShenandoahGCPhase total_phase(ShenandoahPhaseTimings::total_pause);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2631,7 +2621,6 @@ void ShenandoahHeap::entry_full(GCCause::Cause cause) {
   ShenandoahPausePhase gc_phase(msg, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
-  ShenandoahGCPhase total_phase(ShenandoahPhaseTimings::total_pause);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc);
 
   ShenandoahWorkerScope scope(workers(),
@@ -2647,7 +2636,6 @@ void ShenandoahHeap::entry_degenerated(int point) {
   ShenandoahPausePhase gc_phase(msg, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
-  ShenandoahGCPhase total_phase(ShenandoahPhaseTimings::total_pause);
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc);
 
   ShenandoahWorkerScope scope(workers(),
