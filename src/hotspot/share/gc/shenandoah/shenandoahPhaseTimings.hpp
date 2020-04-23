@@ -135,10 +135,6 @@ class outputStream;
   f(conc_cleanup,                                   "Concurrent Cleanup")              \
                                                                                        \
   f(conc_uncommit,                                  "Concurrent Uncommit")             \
-                                                                                       \
-  /* Unclassified */                                                                   \
-  f(pause_other,                                    "Pause Other")                     \
-  f(conc_other,                                     "Concurrent Other")                \
   // end
 
 class ShenandoahPhaseTimings : public CHeapObj<mtGC> {
