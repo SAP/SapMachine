@@ -1142,7 +1142,7 @@ public:
   CLDCounterClosure() : _cnt(0), _anon_cnt(0) {}
   void do_cld(ClassLoaderData* cld) {
     _cnt ++;
-    if (cld->is_unsafe_anonymous()) {
+    if (cld->has_class_mirror_holder()) {
       _anon_cnt ++;
     }
   }
