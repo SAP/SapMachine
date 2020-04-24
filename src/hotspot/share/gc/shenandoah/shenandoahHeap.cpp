@@ -1187,7 +1187,7 @@ void ShenandoahHeap::print_tracing_info() const {
     ResourceMark rm;
     LogStream ls(lt);
 
-    phase_timings()->print_on(&ls);
+    phase_timings()->print_global_on(&ls);
 
     ls.cr();
     ls.cr();
