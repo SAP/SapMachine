@@ -175,7 +175,7 @@ public:
 #undef GC_PHASE_DECLARE_ENUM
 
 private:
-  size_t              _max_workers;
+  uint                _max_workers;
   double              _cycle_data[_num_phases];
   HdrSeq              _global_data[_num_phases];
   static const char*  _phase_names[_num_phases];
@@ -193,7 +193,7 @@ private:
   void set_cycle_data(Phase phase, double time);
 
 public:
-  ShenandoahPhaseTimings();
+  ShenandoahPhaseTimings(uint _max_workers);
 
   void record_phase_time(Phase phase, double time);
 
