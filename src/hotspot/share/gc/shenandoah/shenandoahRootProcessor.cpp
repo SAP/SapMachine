@@ -146,24 +146,19 @@ void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure
 
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase) :
   _heap(ShenandoahHeap::heap()),
-  _phase(phase) {
+  _phase(phase),
+  _worker_phase(phase) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must at safepoint");
-  _heap->phase_timings()->record_workers_start(_phase);
-}
-
-ShenandoahRootProcessor::~ShenandoahRootProcessor() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must at safepoint");
-  _heap->phase_timings()->record_workers_end(_phase);
 }
 
 ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
                                                  ShenandoahPhaseTimings::Phase phase,
-                                                 bool include_concurrent_roots,
-                                                 bool include_concurrent_code_roots) :
+                                                 bool stw_roots_processing,
+                                                 bool stw_class_unloading) :
   ShenandoahRootProcessor(phase),
   _thread_roots(n_workers > 1),
-  _include_concurrent_roots(include_concurrent_roots),
-  _include_concurrent_code_roots(include_concurrent_code_roots) {
+  _stw_roots_processing(stw_roots_processing),
+  _stw_class_unloading(stw_class_unloading) {
 }
 
 void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
@@ -176,14 +171,14 @@ void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
 
   _serial_roots.oops_do(oops, worker_id);
   _serial_weak_roots.weak_oops_do(oops, worker_id);
-  if (_include_concurrent_roots) {
-    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+  if (_stw_roots_processing) {
     _vm_roots.oops_do<OopClosure>(oops, worker_id);
-    _cld_roots.cld_do(&clds, worker_id);
     _weak_roots.oops_do<OopClosure>(oops, worker_id);
   }
 
-  if (_include_concurrent_code_roots) {
+  if (_stw_class_unloading) {
+    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
+    _cld_roots.cld_do(&clds, worker_id);
     _code_roots.code_blobs_do(codes_cl, worker_id);
     _thread_roots.oops_do(oops, NULL, worker_id);
   } else {

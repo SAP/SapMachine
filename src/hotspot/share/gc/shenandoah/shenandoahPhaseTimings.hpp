@@ -33,6 +33,7 @@ class ShenandoahCollectorPolicy;
 class outputStream;
 
 #define SHENANDOAH_GC_PAR_PHASE_DO(CNT_PREFIX, DESC_PREFIX, f)                         \
+  f(CNT_PREFIX ## TotalWork,                DESC_PREFIX "<total>")                     \
   f(CNT_PREFIX ## ThreadRoots,              DESC_PREFIX "Thread Roots")                \
   f(CNT_PREFIX ## CodeCacheRoots,           DESC_PREFIX "Code Cache Roots")            \
   f(CNT_PREFIX ## UniverseRoots,            DESC_PREFIX "Universe Roots")              \
@@ -80,8 +81,8 @@ class outputStream;
   f(complete_liveness,                              "  Complete Liveness")             \
   f(retire_tlabs,                                   "  Retire TLABs")                  \
   f(sync_pinned,                                    "  Sync Pinned")                   \
-  f(trash_cset,                                     "  Trash CSet")                    \
-  f(prepare_evac,                                   "  Prepare Evacuation")            \
+  f(choose_cset,                                    "  Choose Collection Set")         \
+  f(final_rebuild_freeset,                          "  Rebuild Free Set")              \
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_GC_PAR_PHASE_DO(evac_,                 "    E: ", f)                      \
                                                                                        \
@@ -96,7 +97,8 @@ class outputStream;
   f(final_update_refs_roots,                        "  Update Roots")                  \
   SHENANDOAH_GC_PAR_PHASE_DO(final_update_,         "    UR: ", f)                     \
   f(final_update_refs_sync_pinned,                  "  Sync Pinned")                   \
-  f(final_update_refs_trash_cset,                   "  Trash CSet")                    \
+  f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
+  f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
                                                                                        \
   f(degen_gc_gross,                                 "Pause Degenerated GC (G)")        \
   f(degen_gc,                                       "Pause Degenerated GC (N)")        \
@@ -169,7 +171,8 @@ public:
 
   enum Phase {
     SHENANDOAH_GC_PHASE_DO(GC_PHASE_DECLARE_ENUM)
-    _num_phases
+    _num_phases,
+    _invalid_phase = _num_phases
   };
 
   enum GCParPhases {

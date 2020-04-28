@@ -395,27 +395,6 @@ public:
 
     verify(r, r->is_cset() == _heap->collection_set()->is_in(r),
            "Transitional: region flags and collection set agree");
-
-    verify(r, r->is_empty() || r->seqnum_first_alloc() != 0,
-           "Non-empty regions should have first seqnum set");
-
-    verify(r, r->is_empty() || (r->seqnum_first_alloc_mutator() != 0 || r->seqnum_first_alloc_gc() != 0),
-           "Non-empty regions should have first seqnum set to either GC or mutator");
-
-    verify(r, r->is_empty() || r->seqnum_last_alloc() != 0,
-           "Non-empty regions should have last seqnum set");
-
-    verify(r, r->is_empty() || (r->seqnum_last_alloc_mutator() != 0 || r->seqnum_last_alloc_gc() != 0),
-           "Non-empty regions should have last seqnum set to either GC or mutator");
-
-    verify(r, r->seqnum_first_alloc() <= r->seqnum_last_alloc(),
-           "First seqnum should not be greater than last timestamp");
-
-    verify(r, r->seqnum_first_alloc_mutator() <= r->seqnum_last_alloc_mutator(),
-           "First mutator seqnum should not be greater than last seqnum");
-
-    verify(r, r->seqnum_first_alloc_gc() <= r->seqnum_last_alloc_gc(),
-           "First GC seqnum should not be greater than last seqnum");
   }
 };
 
@@ -796,27 +775,15 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 }
 
 void ShenandoahVerifier::verify_before_concmark() {
-  if (_heap->has_forwarded_objects()) {
-    verify_at_safepoint(
-            "Before Mark",
-            _verify_forwarded_allow,     // may have forwarded references
-            _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
-            _verify_cset_forwarded,      // allow forwarded references to cset
-            _verify_liveness_disable,    // no reliable liveness data
-            _verify_regions_notrash,     // no trash regions
-            _verify_gcstate_forwarded    // there are forwarded objects
-    );
-  } else {
-    verify_at_safepoint(
-            "Before Mark",
-            _verify_forwarded_none,      // UR should have fixed up
-            _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
-            _verify_cset_none,           // UR should have fixed this
-            _verify_liveness_disable,    // no reliable liveness data
-            _verify_regions_notrash,     // no trash regions
-            _verify_gcstate_stable       // there are no forwarded objects
-    );
-  }
+  verify_at_safepoint(
+          "Before Mark",
+          _verify_forwarded_none,      // UR should have fixed up
+          _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
+          _verify_cset_none,           // UR should have fixed this
+          _verify_liveness_disable,    // no reliable liveness data
+          _verify_regions_notrash,     // no trash regions
+          _verify_gcstate_stable       // there are no forwarded objects
+  );
 }
 
 void ShenandoahVerifier::verify_after_concmark() {

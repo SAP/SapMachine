@@ -252,13 +252,12 @@ private:
   size_t _gclab_allocs;
   size_t _shared_allocs;
 
-  uint64_t _seqnum_first_alloc_mutator;
-  uint64_t _seqnum_first_alloc_gc;
   uint64_t _seqnum_last_alloc_mutator;
-  uint64_t _seqnum_last_alloc_gc;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
+
+  HeapWord* _update_watermark;
 
   // Claim some space at the end to protect next region
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
@@ -401,30 +400,28 @@ public:
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
 
-  uint64_t seqnum_first_alloc() const {
-    if (_seqnum_first_alloc_mutator == 0) return _seqnum_first_alloc_gc;
-    if (_seqnum_first_alloc_gc == 0)      return _seqnum_first_alloc_mutator;
-    return MIN2(_seqnum_first_alloc_mutator, _seqnum_first_alloc_gc);
-  }
-
-  uint64_t seqnum_last_alloc() const {
-    return MAX2(_seqnum_last_alloc_mutator, _seqnum_last_alloc_gc);
-  }
-
-  uint64_t seqnum_first_alloc_mutator() const {
-    return _seqnum_first_alloc_mutator;
-  }
-
   uint64_t seqnum_last_alloc_mutator()  const {
+    assert(_heap->is_traversal_mode(), "Sanity");
     return _seqnum_last_alloc_mutator;
   }
 
-  uint64_t seqnum_first_alloc_gc() const {
-    return _seqnum_first_alloc_gc;
+  void update_seqnum_last_alloc_mutator();
+
+  HeapWord* get_update_watermark() const {
+    // Updates to the update-watermark only happen at safepoints or, when pushing
+    // back the watermark for evacuation regions, under the Shenandoah heap-lock.
+    // Consequently, we should access the field under the same lock. However, since
+    // those updates are only monotonically increasing, possibly reading a stale value
+    // is only conservative - we would not miss to update any fields.
+    HeapWord* watermark = _update_watermark;
+    assert(bottom() <= watermark && watermark <= top(), "within bounds");
+    return watermark;
   }
 
-  uint64_t seqnum_last_alloc_gc()  const {
-    return _seqnum_last_alloc_gc;
+  void set_update_watermark(HeapWord* w) {
+    shenandoah_assert_heaplocked_or_safepoint();
+    assert(bottom() <= w && w <= top(), "within bounds");
+    _update_watermark = w;
   }
 
 private:

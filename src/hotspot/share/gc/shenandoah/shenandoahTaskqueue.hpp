@@ -333,8 +333,7 @@ private:
   ShenandoahHeap* _heap;
 public:
   ShenandoahTerminatorTerminator(ShenandoahHeap* const heap) : _heap(heap) { }
-  // return true, terminates immediately, even if there's remaining work left
-  virtual bool should_exit_termination() { return _heap->cancelled_gc(); }
+  virtual bool should_exit_termination();
 };
 
 class ShenandoahTaskTerminator : public StackObj {
