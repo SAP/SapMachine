@@ -106,6 +106,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case purge_class_unload:
     case purge_weak_par:
     case heap_iteration_roots:
+    case conc_roots:
       return true;
     default:
       return false;

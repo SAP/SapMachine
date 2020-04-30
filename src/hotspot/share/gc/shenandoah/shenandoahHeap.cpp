@@ -2702,6 +2702,7 @@ void ShenandoahHeap::entry_roots() {
   EventMark em("%s", msg);
 
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::conc_roots);
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_roots);
 
   ShenandoahWorkerScope scope(workers(),
                               ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),

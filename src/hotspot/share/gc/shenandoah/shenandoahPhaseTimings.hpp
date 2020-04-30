@@ -90,6 +90,7 @@ class outputStream;
   SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
   f(conc_roots,                                     "Concurrent Roots")                \
+  SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CR: ", f)                       \
   f(conc_cleanup_early,                             "Concurrent Cleanup")              \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
