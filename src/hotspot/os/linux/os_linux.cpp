@@ -1506,8 +1506,15 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
+// Dump a core file, if possible, for debugging.
 void os::die() {
-  ::abort();
+  if (TestUnresponsiveErrorHandler && !CreateCoredumpOnCrash) {
+    // For TimeoutInErrorHandlingTest.java, we just kill the VM
+    // and don't take the time to generate a core file.
+    os::signal_raise(SIGKILL);
+  } else {
+    ::abort();
+  }
 }
 
 
@@ -2264,6 +2271,19 @@ void os::Linux::print_proc_sys_info(outputStream* st) {
 void os::Linux::print_full_memory_info(outputStream* st) {
   st->print("\n/proc/meminfo:\n");
   _print_ascii_file("/proc/meminfo", st);
+  st->cr();
+
+  // some information regarding THPs; for details see
+  // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
+  st->print_cr("/sys/kernel/mm/transparent_hugepage/enabled:");
+  if (!_print_ascii_file("/sys/kernel/mm/transparent_hugepage/enabled", st)) {
+    st->print_cr("  <Not Available>");
+  }
+  st->cr();
+  st->print_cr("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter):");
+  if (!_print_ascii_file("/sys/kernel/mm/transparent_hugepage/defrag", st)) {
+    st->print_cr("  <Not Available>");
+  }
   st->cr();
 }
 
