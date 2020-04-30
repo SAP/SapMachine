@@ -89,7 +89,6 @@ public:
   static ShenandoahPhaseTimings::Phase current_phase() { return _current_phase; }
 
   static bool is_current_phase_valid();
-  static bool is_root_work_phase();
 };
 
 class ShenandoahGCSubPhase: public ShenandoahGCPhase {

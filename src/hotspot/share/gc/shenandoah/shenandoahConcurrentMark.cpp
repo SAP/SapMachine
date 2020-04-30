@@ -336,7 +336,7 @@ private:
 public:
   ShenandoahUpdateThreadRootsTask(bool is_par, ShenandoahPhaseTimings::Phase phase) :
     AbstractGangTask("Shenandoah Update Thread Roots"),
-    _thread_roots(is_par),
+    _thread_roots(phase, is_par),
     _phase(phase),
     _worker_phase(phase) {}
 

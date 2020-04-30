@@ -28,17 +28,22 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "memory/iterator.hpp"
 
 // Perform weak root cleaning at a pause
 template <typename IsAlive, typename KeepAlive>
 class ShenandoahParallelWeakRootsCleaningTask : public AbstractGangTask {
 protected:
+  ShenandoahPhaseTimings::Phase _phase;
   WeakProcessor::Task     _weak_processing_task;
   IsAlive*                _is_alive;
   KeepAlive*              _keep_alive;
 public:
-  ShenandoahParallelWeakRootsCleaningTask(IsAlive* is_alive, KeepAlive* keep_alive, uint num_workers);
+  ShenandoahParallelWeakRootsCleaningTask(ShenandoahPhaseTimings::Phase phase,
+                                          IsAlive* is_alive,
+                                          KeepAlive* keep_alive,
+                                          uint num_workers);
   ~ShenandoahParallelWeakRootsCleaningTask();
 
   void work(uint worker_id);
