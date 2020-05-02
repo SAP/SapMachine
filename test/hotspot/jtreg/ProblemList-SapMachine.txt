@@ -156,6 +156,22 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # We shall file an exclusion and backport this.
 runtime/NMT/HugeArenaTracking.java                                           8241086 windows-i586
 
+# SapMachine 2020-04-09
+# We see some new failures on aarch64, 11u only. They probably aren't new but
+# we just started to run tests for 11u on that platform lately
+#
+#compiler/c2/cr6340864/TestIntVect.java                                               linux-aarch64
+#
+#compiler/c2/cr6340864/TestLongVect.java                                              linux-aarch64
+#
+#compiler/c2/cr6340864/TestShortVect.java                                             linux-aarch64
+
+# SapMachine 2020-04-30
+# This issue popped up lately, probably after April CPU update on linux-ppc64le
+#
+#
+runtime/CompressedOops/CompressedClassPointers.java                                  linux-ppc64le
+
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
@@ -302,13 +318,13 @@ serviceability/sa/ClhsdbScanOops.java                                           
 #
 # compiler/gcbarriers/UnsafeIntrinsicsTest.java                                8241603 macosx-all
 #
-# gc/z/TestAlwaysPreTouch.java                                                 8241603 macosx-all
+#gc/z/TestAlwaysPreTouch.java                                                 8241603 macosx-all
 #
-# gc/z/TestHighUsage.java                                                      8241603 macosx-all
+#gc/z/TestHighUsage.java                                                      8241603 macosx-all
 #
-# gc/z/TestSmallHeap.java                                                      8241603 macosx-all
+#gc/z/TestSmallHeap.java                                                      8241603 macosx-all
 #
-# gc/stress/gcold/TestGCOldWithZ.java                                          8241603 macosx-all
+#gc/stress/gcold/TestGCOldWithZ.java                                          8241603 macosx-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
