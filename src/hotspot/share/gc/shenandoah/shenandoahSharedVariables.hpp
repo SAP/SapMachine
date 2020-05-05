@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP
 
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 
@@ -38,9 +39,9 @@ typedef struct ShenandoahSharedFlag {
     SET = 1
   };
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile ShenandoahSharedValue));
+  shenandoah_padding(0);
   volatile ShenandoahSharedValue value;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   ShenandoahSharedFlag() {
     unset();
@@ -106,9 +107,9 @@ private:
 } ShenandoahSharedFlag;
 
 typedef struct ShenandoahSharedBitmap {
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile ShenandoahSharedValue));
+  shenandoah_padding(0);
   volatile ShenandoahSharedValue value;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   ShenandoahSharedBitmap() {
     clear();
@@ -200,9 +201,9 @@ private:
 
 template<class T>
 struct ShenandoahSharedEnumFlag {
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile ShenandoahSharedValue));
+  shenandoah_padding(0);
   volatile ShenandoahSharedValue value;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   ShenandoahSharedEnumFlag() {
     value = 0;

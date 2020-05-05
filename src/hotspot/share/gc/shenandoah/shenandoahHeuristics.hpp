@@ -74,11 +74,9 @@ protected:
   typedef struct {
     ShenandoahHeapRegion* _region;
     size_t _garbage;
-    uint64_t _seqnum_last_alloc;
   } RegionData;
 
   RegionData* _region_data;
-  size_t _region_data_size;
 
   uint _degenerated_cycles_in_a_row;
   uint _successful_cycles_in_a_row;
@@ -94,11 +92,6 @@ protected:
   ShenandoahSharedFlag _metaspace_oom;
 
   static int compare_by_garbage(RegionData a, RegionData b);
-  static int compare_by_garbage_then_alloc_seq_ascending(RegionData a, RegionData b);
-  static int compare_by_alloc_seq_ascending(RegionData a, RegionData b);
-  static int compare_by_alloc_seq_descending(RegionData a, RegionData b);
-
-  RegionData* get_region_data_cache(size_t num);
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                      RegionData* data, size_t data_size,

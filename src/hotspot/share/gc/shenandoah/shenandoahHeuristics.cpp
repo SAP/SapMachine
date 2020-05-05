@@ -41,29 +41,8 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   else return 0;
 }
 
-int ShenandoahHeuristics::compare_by_garbage_then_alloc_seq_ascending(RegionData a, RegionData b) {
-  int r = compare_by_garbage(a, b);
-  if (r != 0) {
-    return r;
-  }
-  return compare_by_alloc_seq_ascending(a, b);
-}
-
-int ShenandoahHeuristics::compare_by_alloc_seq_ascending(RegionData a, RegionData b) {
-  if (a._seqnum_last_alloc == b._seqnum_last_alloc)
-    return 0;
-  else if (a._seqnum_last_alloc < b._seqnum_last_alloc)
-    return -1;
-  else return 1;
-}
-
-int ShenandoahHeuristics::compare_by_alloc_seq_descending(RegionData a, RegionData b) {
-  return -compare_by_alloc_seq_ascending(a, b);
-}
-
 ShenandoahHeuristics::ShenandoahHeuristics() :
   _region_data(NULL),
-  _region_data_size(0),
   _degenerated_cycles_in_a_row(0),
   _successful_cycles_in_a_row(0),
   _cycle_start(os::elapsedTime()),
@@ -77,26 +56,15 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   if (!ClassUnloadingWithConcurrentMark) {
     FLAG_SET_DEFAULT(ShenandoahUnloadClassesFrequency, 0);
   }
+
+  size_t num_regions = ShenandoahHeap::heap()->num_regions();
+  assert(num_regions > 0, "Sanity");
+
+  _region_data = NEW_C_HEAP_ARRAY(RegionData, num_regions, mtGC);
 }
 
 ShenandoahHeuristics::~ShenandoahHeuristics() {
-  if (_region_data != NULL) {
-    FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
-  }
-}
-
-ShenandoahHeuristics::RegionData* ShenandoahHeuristics::get_region_data_cache(size_t num) {
-  RegionData* res = _region_data;
-  if (res == NULL) {
-    res = NEW_C_HEAP_ARRAY(RegionData, num, mtGC);
-    _region_data = res;
-    _region_data_size = num;
-  } else if (_region_data_size < num) {
-    res = REALLOC_C_HEAP_ARRAY(RegionData, _region_data, num, mtGC);
-    _region_data = res;
-    _region_data_size = num;
-  }
-  return res;
+  FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
 void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set) {
@@ -111,7 +79,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   size_t num_regions = heap->num_regions();
 
-  RegionData* candidates = get_region_data_cache(num_regions);
+  RegionData* candidates = _region_data;
 
   size_t cand_idx = 0;
 
@@ -181,7 +149,6 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-    collection_set->update_region_status();
   }
 
   size_t cset_percent = (total_garbage == 0) ? 0 : (collection_set->garbage() * 100 / total_garbage);

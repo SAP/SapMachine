@@ -59,11 +59,6 @@ public class TestExplicitGC {
                 "Pause Final Mark",
         };
 
-        String[] concTraversal = new String[] {
-                "Pause Init Traversal",
-                "Pause Final Traversal",
-        };
-
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                     "-XX:+UnlockExperimentalVMOptions",
@@ -77,9 +72,6 @@ public class TestExplicitGC {
             }
             for (String p : concNormal) {
                 output.shouldContain(p);
-            }
-            for (String p : concTraversal) {
-                output.shouldNotContain(p);
             }
         }
 
@@ -98,9 +90,6 @@ public class TestExplicitGC {
             for (String p : concNormal) {
                 output.shouldNotContain(p);
             }
-            for (String p : concTraversal) {
-                output.shouldNotContain(p);
-            }
         }
 
         {
@@ -116,30 +105,6 @@ public class TestExplicitGC {
                 output.shouldNotContain(p);
             }
             for (String p : concNormal) {
-                output.shouldContain(p);
-            }
-            for (String p : concTraversal) {
-                output.shouldNotContain(p);
-            }
-        }
-
-        {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xlog:gc",
-                    "-XX:+ExplicitGCInvokesConcurrent",
-                    "-XX:ShenandoahGCMode=traversal",
-                    TestExplicitGC.class.getName(),
-                    "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            for (String p : full) {
-                output.shouldNotContain(p);
-            }
-            for (String p : concNormal) {
-                output.shouldNotContain(p);
-            }
-            for (String p : concTraversal) {
                 output.shouldContain(p);
             }
         }
@@ -157,9 +122,6 @@ public class TestExplicitGC {
                 output.shouldContain(p);
             }
             for (String p : concNormal) {
-                output.shouldNotContain(p);
-            }
-            for (String p : concTraversal) {
                 output.shouldNotContain(p);
             }
         }

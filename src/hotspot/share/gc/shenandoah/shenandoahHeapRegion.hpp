@@ -24,17 +24,18 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
 
-#include "gc/shared/space.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPacer.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "utilities/sizes.hpp"
 
 class VMStructs;
 class ShenandoahHeapRegionStateConstant;
 
-class ShenandoahHeapRegion : public ContiguousSpace {
+class ShenandoahHeapRegion {
   friend class VMStructs;
   friend class ShenandoahHeapRegionStateConstant;
 private:
@@ -220,25 +221,10 @@ private:
   static size_t MaxTLABSizeBytes;
   static size_t MaxTLABSizeWords;
 
-  // Global allocation counter, increased for each allocation under Shenandoah heap lock.
-  // Padded to avoid false sharing with the read-only fields above.
-  struct PaddedAllocSeqNum {
-    DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(uint64_t));
-    uint64_t value;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
-
-    PaddedAllocSeqNum() {
-      // start with 1, reserve 0 for uninitialized value
-      value = 1;
-    }
-  };
-
-  static PaddedAllocSeqNum _alloc_seq_num;
-
   // Never updated fields
-  ShenandoahHeap* _heap;
-  MemRegion _reserved;
-  size_t _region_number;
+  size_t const _index;
+  HeapWord* const _bottom;
+  HeapWord* const _end;
 
   // Rarely updated fields
   HeapWord* _new_top;
@@ -248,22 +234,18 @@ private:
   RegionState _state;
 
   // Frequently updated fields
+  HeapWord* _top;
+
   size_t _tlab_allocs;
   size_t _gclab_allocs;
-  size_t _shared_allocs;
-
-  uint64_t _seqnum_last_alloc_mutator;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
   HeapWord* _update_watermark;
 
-  // Claim some space at the end to protect next region
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
-
 public:
-  ShenandoahHeapRegion(ShenandoahHeap* heap, HeapWord* start, size_t size_words, size_t index, bool committed);
+  ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
   static const size_t MIN_NUM_REGIONS = 10;
 
@@ -345,17 +327,12 @@ public:
     return ShenandoahHeapRegion::MaxTLABSizeWords;
   }
 
-  static uint64_t seqnum_current_alloc() {
-    // Last used seq number
-    return _alloc_seq_num.value - 1;
+  inline size_t index() const {
+    return _index;
   }
-
-  size_t region_number() const;
 
   // Allocation (return NULL if full)
   inline HeapWord* allocate(size_t word_size, ShenandoahAllocRequest::Type type);
-
-  HeapWord* allocate(size_t word_size) shenandoah_not_implemented_return(NULL)
 
   void clear_live_data();
   void set_live_data(size_t s);
@@ -378,48 +355,42 @@ public:
 
   void oop_iterate(OopIterateClosure* cl);
 
-  HeapWord* block_start_const(const void* p) const;
-
-  bool in_collection_set() const;
+  HeapWord* block_start(const void* p) const;
+  size_t block_size(const HeapWord* p) const;
+  bool block_is_obj(const HeapWord* p) const { return p < top(); }
 
   // Find humongous start region that this region belongs to
   ShenandoahHeapRegion* humongous_start_region() const;
 
-  CompactibleSpace* next_compaction_space() const shenandoah_not_implemented_return(NULL);
-  void prepare_for_compaction(CompactPoint* cp)   shenandoah_not_implemented;
-  void adjust_pointers()                          shenandoah_not_implemented;
-  void compact()                                  shenandoah_not_implemented;
+  HeapWord* top() const         { return _top;     }
+  void set_top(HeapWord* v)     { _top = v;        }
 
-  void set_new_top(HeapWord* new_top) { _new_top = new_top; }
-  HeapWord* new_top() const { return _new_top; }
+  HeapWord* new_top() const     { return _new_top; }
+  void set_new_top(HeapWord* v) { _new_top = v;    }
+
+  HeapWord* bottom() const      { return _bottom;  }
+  HeapWord* end() const         { return _end;     }
+
+  size_t capacity() const       { return byte_size(bottom(), end()); }
+  size_t used() const           { return byte_size(bottom(), top()); }
+  size_t free() const           { return byte_size(top(),    end()); }
 
   inline void adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t);
-  void reset_alloc_metadata_to_shared();
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
 
-  uint64_t seqnum_last_alloc_mutator()  const {
-    assert(_heap->is_traversal_mode(), "Sanity");
-    return _seqnum_last_alloc_mutator;
-  }
-
-  void update_seqnum_last_alloc_mutator();
-
   HeapWord* get_update_watermark() const {
-    // Updates to the update-watermark only happen at safepoints or, when pushing
-    // back the watermark for evacuation regions, under the Shenandoah heap-lock.
-    // Consequently, we should access the field under the same lock. However, since
-    // those updates are only monotonically increasing, possibly reading a stale value
-    // is only conservative - we would not miss to update any fields.
+    // Updates to the update-watermark only happen at safepoints.
+    // Since those updates are only monotonically increasing, possibly reading
+    // a stale value is only conservative - we would not miss to update any fields.
     HeapWord* watermark = _update_watermark;
     assert(bottom() <= watermark && watermark <= top(), "within bounds");
     return watermark;
   }
 
   void set_update_watermark(HeapWord* w) {
-    shenandoah_assert_heaplocked_or_safepoint();
     assert(bottom() <= w && w <= top(), "within bounds");
     _update_watermark = w;
   }

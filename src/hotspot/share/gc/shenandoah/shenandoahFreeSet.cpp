@@ -27,7 +27,6 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/orderAccess.hpp"
 
@@ -147,7 +146,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 }
 
 HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
-  assert (!has_no_alloc_capacity(r), "Performance: should avoid full regions on this path: " SIZE_FORMAT, r->region_number());
+  assert (!has_no_alloc_capacity(r), "Performance: should avoid full regions on this path: " SIZE_FORMAT, r->index());
 
   if (_heap->is_concurrent_root_in_progress() &&
       r->is_trash()) {
@@ -178,9 +177,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // Allocation successful, bump stats:
     if (req.is_mutator_alloc()) {
       increase_used(size * HeapWordSize);
-      if (_heap->is_traversal_mode()) {
-        r->update_seqnum_last_alloc_mutator();
-      }
     }
 
     // Record actual allocation size
@@ -188,14 +184,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
     if (req.is_gc_alloc()) {
       r->set_update_watermark(r->top());
-      if (_heap->is_concurrent_traversal_in_progress()) {
-        // Traversal needs to traverse through GC allocs. Adjust TAMS to the new top
-        // so that these allocations appear below TAMS, and thus get traversed.
-        // See top of shenandoahTraversal.cpp for an explanation.
-        _heap->marking_context()->capture_top_at_mark_start(r);
-        _heap->traversal_gc()->traversal_set()->add_region_check_for_duplicates(r);
-        OrderAccess::fence();
-      }
     }
   }
 
@@ -216,7 +204,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       }
     }
 
-    size_t num = r->region_number();
+    size_t num = r->index();
     _collector_free_bitmap.clear_bit(num);
     _mutator_free_bitmap.clear_bit(num);
     // Touched the bounds? Need to update:
@@ -306,7 +294,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     try_recycle_trashed(r);
 
-    assert(i == beg || _heap->get_region(i-1)->region_number() + 1 == r->region_number(), "Should be contiguous");
+    assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
     assert(r->is_empty(), "Should be empty");
 
     if (i == beg) {
@@ -324,9 +312,8 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     }
 
     r->set_top(r->bottom() + used_words);
-    r->reset_alloc_metadata_to_shared();
 
-    _mutator_free_bitmap.clear_bit(r->region_number());
+    _mutator_free_bitmap.clear_bit(r->index());
   }
 
   // While individual regions report their true use, all humongous regions are
@@ -387,7 +374,7 @@ void ShenandoahFreeSet::recycle_trash() {
 }
 
 void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
-  size_t idx = r->region_number();
+  size_t idx = r->index();
 
   assert(_mutator_free_bitmap.at(idx), "Should be in mutator view");
   assert(can_allocate_from(r), "Should not be allocated");

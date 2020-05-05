@@ -39,7 +39,6 @@
  *     - bit 0 set when marking in progress
  *     - bit 1 set when evacuation in progress
  *     - bit 2 set when update refs in progress
- *     - bit 3 set when traversal in progress
  *
  * two variable counters per region, with $max_regions (see above) counters:
  * - sun.gc.shenandoah.regions.region.$i.data
