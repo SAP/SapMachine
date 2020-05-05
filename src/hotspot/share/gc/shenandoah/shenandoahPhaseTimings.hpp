@@ -190,6 +190,7 @@ private:
   Phase worker_par_phase(Phase phase, ParPhase par_phase);
 
   void set_cycle_data(Phase phase, double time);
+  static double uninitialized() { return -1; }
 
 public:
   ShenandoahPhaseTimings(uint max_workers);
