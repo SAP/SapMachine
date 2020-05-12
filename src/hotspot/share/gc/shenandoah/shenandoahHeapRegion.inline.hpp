@@ -88,4 +88,47 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
 #endif
 }
 
+inline HeapWord* ShenandoahHeapRegion::get_update_watermark() const {
+  HeapWord* watermark = Atomic::load_acquire(&_update_watermark);
+  assert(bottom() <= watermark && watermark <= top(), "within bounds");
+  return watermark;
+}
+
+inline void ShenandoahHeapRegion::set_update_watermark(HeapWord* w) {
+  assert(bottom() <= w && w <= top(), "within bounds");
+  Atomic::release_store(&_update_watermark, w);
+}
+
+// Fast version that avoids synchronization, only to be used at safepoints.
+inline void ShenandoahHeapRegion::set_update_watermark_at_safepoint(HeapWord* w) {
+  assert(bottom() <= w && w <= top(), "within bounds");
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  _update_watermark = w;
+}
+
+inline void ShenandoahHeapRegion::clear_live_data() {
+  Atomic::release_store_fence(&_live_data, (size_t)0);
+}
+
+inline size_t ShenandoahHeapRegion::get_live_data_words() const {
+  return Atomic::load_acquire(&_live_data);
+}
+
+inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
+  return get_live_data_words() * HeapWordSize;
+}
+
+inline bool ShenandoahHeapRegion::has_live() const {
+  return get_live_data_words() != 0;
+}
+
+inline size_t ShenandoahHeapRegion::garbage() const {
+  assert(used() >= get_live_data_bytes(),
+         "Live Data must be a subset of used() live: " SIZE_FORMAT " used: " SIZE_FORMAT,
+         get_live_data_bytes(), used());
+
+  size_t result = used() - get_live_data_bytes();
+  return result;
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

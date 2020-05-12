@@ -42,7 +42,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -353,10 +353,10 @@ jint ShenandoahHeap::initialize() {
   // Initialize the rest of GC subsystems
   //
 
-  _liveness_cache = NEW_C_HEAP_ARRAY(jushort*, _max_workers, mtGC);
+  _liveness_cache = NEW_C_HEAP_ARRAY(ShenandoahLiveData*, _max_workers, mtGC);
   for (uint worker = 0; worker < _max_workers; worker++) {
-    _liveness_cache[worker] = NEW_C_HEAP_ARRAY(jushort, _num_regions, mtGC);
-    Copy::fill_to_bytes(_liveness_cache[worker], _num_regions * sizeof(jushort));
+    _liveness_cache[worker] = NEW_C_HEAP_ARRAY(ShenandoahLiveData, _num_regions, mtGC);
+    Copy::fill_to_bytes(_liveness_cache[worker], _num_regions * sizeof(ShenandoahLiveData));
   }
 
   // There should probably be Shenandoah-specific options for these,
@@ -470,7 +470,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _heap = this;
 
   log_info(gc, init)("GC threads: " UINT32_FORMAT " parallel, " UINT32_FORMAT " concurrent", ParallelGCThreads, ConcGCThreads);
-  log_info(gc, init)("Reference processing: %s", ParallelRefProcEnabled ? "parallel" : "serial");
 
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this));
 
@@ -1359,11 +1358,14 @@ public:
   ShenandoahInitMarkUpdateRegionStateClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) {
+    assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
     if (r->is_active()) {
-      r->clear_live_data();
-      _ctx->capture_top_at_mark_start(r);
+      // Check if region needs updating its TAMS. We have updated it already during concurrent
+      // reset, so it is very likely we don't need to do another write here.
+      if (_ctx->top_at_mark_start(r) != r->top()) {
+        _ctx->capture_top_at_mark_start(r);
+      }
     } else {
-      assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
       assert(_ctx->top_at_mark_start(r) == r->top(),
              "Region " SIZE_FORMAT " should already have correct TAMS", r->index());
     }
@@ -1463,7 +1465,7 @@ public:
 
       // Remember limit for updating refs. It's guaranteed that we get no
       // from-space-refs written from here on.
-      r->set_update_watermark(r->top());
+      r->set_update_watermark_at_safepoint(r->top());
     } else {
       assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
       assert(_ctx->top_at_mark_start(r) == r->top(),
@@ -1503,7 +1505,11 @@ void ShenandoahHeap::op_final_mark() {
       assert_pinned_region_status();
     }
 
-    // Force the threads to reacquire their TLABs outside the collection set.
+    // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
+    // This is needed for two reasons. Strong one: new allocations would be with new freeset,
+    // which would be outside the collection set, so no cset writes would happen there.
+    // Weaker one: new allocations would happen past update watermark, and so less work would
+    // be needed for reference updates (would update the large filler instead).
     {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::retire_tlabs);
       make_parsable(true);
@@ -1652,11 +1658,32 @@ void ShenandoahHeap::op_roots() {
   set_concurrent_root_in_progress(false);
 }
 
+class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahMarkingContext* const _ctx;
+public:
+  ShenandoahResetUpdateRegionStateClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
+
+  void heap_region_do(ShenandoahHeapRegion* r) {
+    if (r->is_active()) {
+      // Reset live data and set TAMS optimistically. We would recheck these under the pause
+      // anyway to capture any updates that happened since now.
+      r->clear_live_data();
+      _ctx->capture_top_at_mark_start(r);
+    }
+  }
+
+  bool is_thread_safe() { return true; }
+};
+
 void ShenandoahHeap::op_reset() {
   if (ShenandoahPacing) {
     pacer()->setup_for_reset();
   }
   reset_mark_bitmap();
+
+  ShenandoahResetUpdateRegionStateClosure cl;
+  parallel_heap_region_iterate(&cl);
 }
 
 void ShenandoahHeap::op_preclean() {
@@ -1890,15 +1917,22 @@ void ShenandoahHeap::set_concurrent_root_in_progress(bool in_progress) {
 void ShenandoahHeap::ref_processing_init() {
   assert(_max_workers > 0, "Sanity");
 
+  bool mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
+  bool mt_discovery = _max_workers > 1;
+
   _ref_processor =
     new ReferenceProcessor(&_subject_to_discovery,  // is_subject_to_discovery
-                           ParallelRefProcEnabled,  // MT processing
+                           mt_processing,           // MT processing
                            _max_workers,            // Degree of MT processing
-                           true,                    // MT discovery
+                           mt_discovery,            // MT discovery
                            _max_workers,            // Degree of MT discovery
                            false,                   // Reference discovery is not atomic
                            NULL,                    // No closure, should be installed before use
                            true);                   // Scale worker threads
+
+  log_info(gc, init)("Reference processing: %s discovery, %s processing",
+          mt_discovery ? "parallel" : "serial",
+          mt_processing ? "parallel" : "serial");
 
   shenandoah_assert_rp_isalive_not_installed();
 }
@@ -2278,10 +2312,6 @@ void ShenandoahHeap::op_init_updaterefs() {
 
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_prepare);
-
-    make_parsable(true);
-
-    // Reset iterator.
     _update_refs_iterator.reset();
   }
 
@@ -2873,7 +2903,7 @@ const char* ShenandoahHeap::degen_event_message(ShenandoahDegenPoint point) cons
   }
 }
 
-jushort* ShenandoahHeap::get_liveness_cache(uint worker_id) {
+ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT
   assert(_liveness_cache != NULL, "sanity");
   assert(worker_id < _max_workers, "sanity");
@@ -2887,11 +2917,11 @@ jushort* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
   assert(worker_id < _max_workers, "sanity");
   assert(_liveness_cache != NULL, "sanity");
-  jushort* ld = _liveness_cache[worker_id];
+  ShenandoahLiveData* ld = _liveness_cache[worker_id];
   for (uint i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
-    jushort live = ld[i];
+    ShenandoahLiveData live = ld[i];
     if (live > 0) {
+      ShenandoahHeapRegion* r = get_region(i);
       r->increase_live_data_gc_words(live);
       ld[i] = 0;
     }

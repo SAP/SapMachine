@@ -242,7 +242,7 @@ private:
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
-  HeapWord* _update_watermark;
+  HeapWord* volatile _update_watermark;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -334,7 +334,7 @@ public:
   // Allocation (return NULL if full)
   inline HeapWord* allocate(size_t word_size, ShenandoahAllocRequest::Type type);
 
-  void clear_live_data();
+  inline void clear_live_data();
   void set_live_data(size_t s);
 
   // Increase live data for newly allocated region
@@ -343,13 +343,13 @@ public:
   // Increase live data for region scanned with GC
   inline void increase_live_data_gc_words(size_t s);
 
-  bool has_live() const;
-  size_t get_live_data_bytes() const;
-  size_t get_live_data_words() const;
+  inline bool has_live() const;
+  inline size_t get_live_data_bytes() const;
+  inline size_t get_live_data_words() const;
+
+  inline size_t garbage() const;
 
   void print_on(outputStream* st) const;
-
-  size_t garbage() const;
 
   void recycle();
 
@@ -381,19 +381,9 @@ public:
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
 
-  HeapWord* get_update_watermark() const {
-    // Updates to the update-watermark only happen at safepoints.
-    // Since those updates are only monotonically increasing, possibly reading
-    // a stale value is only conservative - we would not miss to update any fields.
-    HeapWord* watermark = _update_watermark;
-    assert(bottom() <= watermark && watermark <= top(), "within bounds");
-    return watermark;
-  }
-
-  void set_update_watermark(HeapWord* w) {
-    assert(bottom() <= w && w <= top(), "within bounds");
-    _update_watermark = w;
-  }
+  inline HeapWord* get_update_watermark() const;
+  inline void set_update_watermark(HeapWord* w);
+  inline void set_update_watermark_at_safepoint(HeapWord* w);
 
 private:
   void do_commit();
