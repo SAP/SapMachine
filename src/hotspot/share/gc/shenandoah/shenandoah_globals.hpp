@@ -66,6 +66,7 @@
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
           " normal - default concurrent GC (three pass mark-evac-update);"  \
+          " iu - incremental-update concurrent GC (three pass mark-evac-update);"  \
           " passive - stop the world GC only (either degenerated or full)") \
                                                                             \
   experimental(ccstr, ShenandoahGCHeuristics, "adaptive",                   \
@@ -333,9 +334,6 @@
                                                                             \
   diagnostic(bool, ShenandoahSATBBarrier, true,                             \
           "Turn on/off SATB barriers in Shenandoah")                        \
-                                                                            \
-  diagnostic(bool, ShenandoahKeepAliveBarrier, true,                        \
-          "Turn on/off keep alive barriers in Shenandoah")                  \
                                                                             \
   diagnostic(bool, ShenandoahStoreValEnqueueBarrier, false,                 \
           "Turn on/off enqueuing of oops for storeval barriers")            \

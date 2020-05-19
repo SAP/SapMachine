@@ -85,15 +85,8 @@ inline void ShenandoahBarrierSet::satb_enqueue(oop value) {
 }
 
 inline void ShenandoahBarrierSet::storeval_barrier(oop obj) {
-  if (obj != NULL && ShenandoahStoreValEnqueueBarrier) {
+  if (ShenandoahStoreValEnqueueBarrier && obj != NULL && _heap->is_concurrent_mark_in_progress()) {
     enqueue(obj);
-  }
-}
-
-inline void ShenandoahBarrierSet::keep_alive_barrier(oop value) {
-  assert(value != NULL, "checked before");
-  if (ShenandoahKeepAliveBarrier && _heap->is_concurrent_mark_in_progress()) {
-    enqueue(value);
   }
 }
 
@@ -102,7 +95,7 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oo
   const bool on_strong_oop_ref = (decorators & ON_STRONG_OOP_REF) != 0;
   const bool peek              = (decorators & AS_NO_KEEPALIVE) != 0;
   if (!peek && !on_strong_oop_ref) {
-    keep_alive_barrier(value);
+    satb_enqueue(value);
   }
 }
 
@@ -111,7 +104,7 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(oop value) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
   if (!HasDecorator<decorators, ON_STRONG_OOP_REF>::value &&
       !HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
-    keep_alive_barrier(value);
+    satb_enqueue(value);
   }
 }
 
@@ -255,9 +248,9 @@ bool ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy
                                                                                          arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                                                                          size_t length) {
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  bs->arraycopy_pre(arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw),
-                    arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw),
-                    length);
+  bs->arraycopy_barrier(arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw),
+                        arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw),
+                        length);
   return Raw::oop_arraycopy_in_heap(src_obj, src_offset_in_bytes, src_raw, dst_obj, dst_offset_in_bytes, dst_raw, length);
 }
 
@@ -291,46 +284,48 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
 }
 
 template <class T>
-void ShenandoahBarrierSet::arraycopy_pre_work(T* src, T* dst, size_t count) {
-  if (_heap->is_concurrent_mark_in_progress() &&
-      !_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))) {
-    arraycopy_work<T, false, false, true>(dst, count);
+void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
+  if (count == 0) {
+    return;
   }
-
-  if (_heap->has_forwarded_objects()) {
-    arraycopy_update_impl(src, count);
+  int gc_state = _heap->gc_state();
+  if ((gc_state & ShenandoahHeap::MARKING) != 0) {
+    arraycopy_marking(src, dst, count);
+  } else if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+    arraycopy_evacuation(src, count);
+  } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {
+    arraycopy_update(src, count);
   }
-}
-
-void ShenandoahBarrierSet::arraycopy_pre(oop* src, oop* dst, size_t count) {
-  arraycopy_pre_work(src, dst, count);
-}
-
-void ShenandoahBarrierSet::arraycopy_pre(narrowOop* src, narrowOop* dst, size_t count) {
-  arraycopy_pre_work(src, dst, count);
-}
-
-inline bool ShenandoahBarrierSet::skip_bulk_update(HeapWord* dst) {
-  return dst >= _heap->heap_region_containing(dst)->get_update_watermark();
 }
 
 template <class T>
-void ShenandoahBarrierSet::arraycopy_update_impl(T* src, size_t count) {
-  if (skip_bulk_update(reinterpret_cast<HeapWord*>(src))) return;
-  if (_heap->is_evacuation_in_progress()) {
-    ShenandoahEvacOOMScope oom_evac;
-    arraycopy_work<T, true, true, false>(src, count);
-  } else if (_heap->has_forwarded_objects()) {
-    arraycopy_work<T, true, false, false>(src, count);
+void ShenandoahBarrierSet::arraycopy_marking(T* src, T* dst, size_t count) {
+  assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
+  T* array = ShenandoahSATBBarrier ? dst : src;
+  if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(array))) {
+    arraycopy_work<T, false, false, true>(array, count);
   }
 }
 
-void ShenandoahBarrierSet::arraycopy_update(oop* src, size_t count) {
-  arraycopy_update_impl(src, count);
+inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) {
+  return ary < _heap->heap_region_containing(ary)->get_update_watermark();
 }
 
-void ShenandoahBarrierSet::arraycopy_update(narrowOop* src, size_t count) {
-  arraycopy_update_impl(src, count);
+template <class T>
+void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
+  assert(_heap->is_evacuation_in_progress(), "only during evacuation");
+  if (need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
+    ShenandoahEvacOOMScope oom_evac;
+    arraycopy_work<T, true, true, false>(src, count);
+  }
+}
+
+template <class T>
+void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
+  assert(_heap->is_update_refs_in_progress(), "only during update-refs");
+  if (need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
+    arraycopy_work<T, true, false, false>(src, count);
+  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP

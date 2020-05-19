@@ -98,7 +98,7 @@ bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decora
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
-  if (!ShenandoahKeepAliveBarrier) return false;
+  if (!ShenandoahSATBBarrier) return false;
   // Only needed for references
   if (!is_reference_type(type)) return false;
 
@@ -241,7 +241,7 @@ oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_ad
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
-  if (_heap->has_forwarded_objects()) {
+  if (_heap->has_forwarded_objects() || (ShenandoahStoreValEnqueueBarrier && _heap->is_concurrent_mark_in_progress())) {
     clone_barrier(src);
   }
 }

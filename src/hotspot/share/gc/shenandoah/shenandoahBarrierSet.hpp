@@ -67,13 +67,8 @@ public:
 
   bool is_aligned(HeapWord* hw);
 
-  template <class T> void
-  write_ref_array_pre_work(T* src, T* dst, size_t count, bool dest_uninitialized);
-
-  inline void arraycopy_pre(oop* src, oop* dst, size_t count);
-  inline void arraycopy_pre(narrowOop* src, narrowOop* dst, size_t count);
-  inline void arraycopy_update(oop* src, size_t count);
-  inline void arraycopy_update(narrowOop* src, size_t count);
+  template <class T>
+  inline void arraycopy_barrier(T* src, T* dst, size_t count);
   inline void clone_barrier(oop src);
   void clone_barrier_runtime(oop src);
 
@@ -94,7 +89,6 @@ public:
   template <DecoratorSet decorators>
   inline void keep_alive_if_weak(oop value);
   inline void keep_alive_if_weak(DecoratorSet decorators, oop value);
-  inline void keep_alive_barrier(oop value);
 
   inline void enqueue(oop obj);
 
@@ -112,18 +106,25 @@ public:
 
 private:
   template <class T>
-  inline void arraycopy_pre_work(T* src, T* dst, size_t count);
+  inline void arraycopy_marking(T* src, T* dst, size_t count);
+  template <class T>
+  inline void arraycopy_evacuation(T* src, size_t count);
+  template <class T>
+  inline void arraycopy_update(T* src, size_t count);
+
+  inline void clone_marking(oop src);
+  inline void clone_evacuation(oop src);
+  inline void clone_update(oop src);
+
   template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
   inline void arraycopy_work(T* src, size_t count);
-  template <class T>
-  inline void arraycopy_update_impl(T* src, size_t count);
 
   oop load_reference_barrier_impl(oop obj);
 
   template <class T>
   oop load_reference_barrier_native_impl(oop obj, T* load_addr);
 
-  inline bool skip_bulk_update(HeapWord* dst);
+  inline bool need_bulk_update(HeapWord* dst);
 public:
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = ShenandoahBarrierSet>
