@@ -193,7 +193,7 @@ private:
   void set_cycle_data(Phase phase, double time);
 
 public:
-  ShenandoahPhaseTimings(uint _max_workers);
+  ShenandoahPhaseTimings(uint max_workers);
 
   void record_phase_time(Phase phase, double time);
 
