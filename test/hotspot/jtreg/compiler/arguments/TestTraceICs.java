@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_POSIX_VM_SEMAPHORE_POSIX_HPP
-#define OS_POSIX_VM_SEMAPHORE_POSIX_HPP
+/*
+ * @test
+ * @bug 8217447
+ * @summary Test running TraceICs enabled.
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceICs
+ *                   compiler.arguments.TestTraceICs
+ */
 
-#include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
+package compiler.arguments;
 
-#include <semaphore.h>
+public class TestTraceICs {
 
-class PosixSemaphore : public CHeapObj<mtInternal> {
-  sem_t _semaphore;
+    static public void main(String[] args) {
+        System.out.println("Passed");
+    }
+}
 
-  NONCOPYABLE(PosixSemaphore);
-
- public:
-  PosixSemaphore(uint value = 0);
-  ~PosixSemaphore();
-
-  void signal(uint count = 1);
-
-  void wait();
-
-  bool trywait();
-  bool timedwait(struct timespec ts);
-};
-
-typedef PosixSemaphore SemaphoreImpl;
-
-#endif // OS_POSIX_VM_SEMAPHORE_POSIX_HPP
