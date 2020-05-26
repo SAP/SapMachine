@@ -29,6 +29,7 @@
 
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -306,7 +307,7 @@ void ShenandoahConcurrentMark::mark_roots(ShenandoahPhaseTimings::Phase root_pha
 
 void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(root_phase == ShenandoahPhaseTimings::full_gc_roots ||
+  assert(root_phase == ShenandoahPhaseTimings::full_gc_update_roots ||
          root_phase == ShenandoahPhaseTimings::degen_gc_update_roots,
          "Only for these phases");
 
@@ -335,7 +336,7 @@ private:
 public:
   ShenandoahUpdateThreadRootsTask(bool is_par, ShenandoahPhaseTimings::Phase phase) :
     AbstractGangTask("Shenandoah Update Thread Roots"),
-    _thread_roots(is_par),
+    _thread_roots(phase, is_par),
     _phase(phase),
     _worker_phase(phase) {}
 
@@ -402,8 +403,6 @@ void ShenandoahConcurrentMark::concurrent_scan_code_roots(uint worker_id, Refere
 void ShenandoahConcurrentMark::mark_from_roots() {
   WorkGang* workers = _heap->workers();
   uint nworkers = workers->active_workers();
-
-  ShenandoahGCPhase conc_mark_phase(ShenandoahPhaseTimings::conc_mark);
 
   if (_heap->process_references()) {
     ReferenceProcessor* rp = _heap->ref_processor();
@@ -677,16 +676,18 @@ void ShenandoahConcurrentMark::weak_refs_work_doit(bool full_gc) {
 
     if (_heap->has_forwarded_objects()) {
       ShenandoahCMKeepAliveUpdateClosure keep_alive(get_queue(serial_worker_id));
-      rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
-                                        &complete_gc, &executor,
-                                        &pt);
-
+      const ReferenceProcessorStats& stats =
+        rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
+                                          &complete_gc, &executor,
+                                          &pt);
+       _heap->tracer()->report_gc_reference_stats(stats);
     } else {
       ShenandoahCMKeepAliveClosure keep_alive(get_queue(serial_worker_id));
-      rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
-                                        &complete_gc, &executor,
-                                        &pt);
-
+      const ReferenceProcessorStats& stats =
+        rp->process_discovered_references(is_alive.is_alive_closure(), &keep_alive,
+                                          &complete_gc, &executor,
+                                          &pt);
+      _heap->tracer()->report_gc_reference_stats(stats);
     }
 
     pt.print_all_references();

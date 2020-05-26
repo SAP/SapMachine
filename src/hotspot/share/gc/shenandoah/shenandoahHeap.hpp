@@ -394,9 +394,10 @@ public:
   void entry_mark();
   void entry_preclean();
   void entry_roots();
-  void entry_cleanup();
+  void entry_cleanup_early();
   void entry_evac();
   void entry_updaterefs();
+  void entry_cleanup_complete();
   void entry_uncommit(double shrink_before);
 
 private:
@@ -414,10 +415,11 @@ private:
   void op_mark();
   void op_preclean();
   void op_roots();
-  void op_cleanup();
+  void op_cleanup_early();
   void op_conc_evac();
   void op_stw_evac();
   void op_updaterefs();
+  void op_cleanup_complete();
   void op_uncommit(double shrink_before);
 
   // Messages for GC trace events, they have to be immortal for
@@ -478,7 +480,7 @@ public:
   GrowableArray<MemoryPool*> memory_pools();
   MemoryUsage memory_usage();
   GCTracer* tracer();
-  GCTimer* gc_timer() const;
+  ConcurrentGCTimer* gc_timer() const;
 
 // ---------- Reference processing
 //
