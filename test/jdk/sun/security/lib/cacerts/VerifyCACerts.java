@@ -52,12 +52,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 92;
+    private static final int COUNT = 93;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "B1:F9:EA:77:B5:21:84:3D:91:90:DD:53:C9:9E:9C:07:62:08:60:74:1D:75:BD:C7:94:B7:5B:AC:DD:49:2C:34";
+            = "21:0E:0E:3B:0E:5C:2D:C4:4C:92:44:3D:DE:55:0D:1C:40:D6:A6:AC:6E:B6:60:C6:3C:22:86:5E:5E:05:3D:50";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -127,6 +127,8 @@ public class VerifyCACerts {
                     "B4:78:B8:12:25:0D:F8:78:63:5C:2A:A7:EC:7D:15:5E:AA:62:5E:E8:29:16:E2:CD:29:43:61:88:6C:D1:FB:D4");
             put("geotrustuniversalca [jdk]",
                     "A0:45:9B:9F:63:B2:25:59:F5:FA:5D:4C:6D:B3:F9:F7:2F:F1:93:42:03:35:78:F0:73:BF:1D:1B:46:CB:B9:12");
+            put("sapglobalrootca [jdk]",
+                    "56:53:9C:1E:7B:5E:D5:58:2B:79:68:00:61:CB:F2:14:86:A8:50:22:6B:2F:CF:30:B5:B1:52:A7:20:E1:34:DE");
             put("thawteprimaryrootca [jdk]",
                     "8D:72:2F:81:A9:C1:13:C0:79:1D:F1:36:A2:96:6D:B2:6C:95:0A:97:1D:B4:6B:41:99:F4:EA:54:B7:8B:FB:9F");
             put("thawteprimaryrootcag2 [jdk]",
