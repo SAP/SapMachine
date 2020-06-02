@@ -1638,7 +1638,7 @@ public:
     AbstractGangTask("Shenandoah Evacuate/Update Concurrent Roots Task"),
     _vm_roots(phase),
     _weak_roots(phase),
-    _cld_roots(phase) {}
+    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()) {}
 
   void work(uint worker_id) {
     ShenandoahEvacOOMScope oom;
