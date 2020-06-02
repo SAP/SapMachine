@@ -226,19 +226,23 @@ void ShenandoahRootScanner<ITR>::roots_do(uint worker_id, OopClosure* oops, CLDC
   assert(!ShenandoahSafepoint::is_at_shenandoah_safepoint() ||
          !ShenandoahHeap::heap()->unload_classes(),
           "Expect class unloading when Shenandoah cycle is running");
-  ResourceMark rm;
-
-  _serial_roots.oops_do(oops, worker_id);
-  _vm_roots.oops_do(oops, worker_id);
-
   assert(clds != NULL, "Only possible with CLD closure");
-  _cld_roots.cld_do(clds, worker_id);
-
-  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
-  _thread_roots.threads_do(&tc_cl, worker_id);
 
   AlwaysTrueClosure always_true;
+  ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
+
+  ResourceMark rm;
+
+  // Process serial-claiming roots first
+  _serial_roots.oops_do(oops, worker_id);
+
+  // Process light-weight/limited parallel roots then
+  _vm_roots.oops_do(oops, worker_id);
   _dedup_roots.oops_do(&always_true, oops, worker_id);
+
+  // Process heavy-weight/fully parallel roots the last
+  _cld_roots.cld_do(clds, worker_id);
+  _thread_roots.threads_do(&tc_cl, worker_id);
 }
 
 template <typename ITR>
@@ -247,8 +251,13 @@ void ShenandoahRootScanner<ITR>::strong_roots_do(uint worker_id, OopClosure* oop
   ShenandoahParallelOopsDoThreadClosure tc_cl(oops, code, tc);
   ResourceMark rm;
 
+  // Process serial-claiming roots first
   _serial_roots.oops_do(oops, worker_id);
+
+  // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(oops, worker_id);
+
+  // Process heavy-weight/fully parallel roots the last
   _cld_roots.always_strong_cld_do(clds, worker_id);
   _thread_roots.threads_do(&tc_cl, worker_id);
 }
@@ -263,16 +272,20 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
+  // Process serial-claiming roots first
   _serial_roots.oops_do(keep_alive, worker_id);
-  _vm_roots.oops_do(keep_alive, worker_id);
+  _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
 
+  // Process light-weight/limited parallel roots then
+  _vm_roots.oops_do(keep_alive, worker_id);
+  _weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
+  _dedup_roots.oops_do(is_alive, keep_alive, worker_id);
+
+  // Process heavy-weight/fully parallel roots the last
   _cld_roots.cld_do(&clds, worker_id);
   _code_roots.code_blobs_do(codes_cl, worker_id);
   _thread_roots.oops_do(keep_alive, NULL, worker_id);
 
-  _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
-  _weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
-  _dedup_roots.oops_do(is_alive, keep_alive, worker_id);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_INLINE_HPP
