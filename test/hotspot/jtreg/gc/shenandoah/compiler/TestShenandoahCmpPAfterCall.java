@@ -23,59 +23,58 @@
 
 /**
  * @test
- * @bug 8237837 8244721
- * @summary  Shenandoah: assert(mem == __null) failed: only one safepoint
+ * @bug 8244663
+ * @summary Shenandoah: C2 assertion fails in Matcher::collect_null_checks
  * @key gc
  * @requires vm.flavor == "server"
  * @requires vm.gc.Shenandoah & !vm.graal.enabled
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xcomp -XX:CompileOnly=BarrierInInfiniteLoop::test1
- *                   -XX:CompileOnly=BarrierInInfiniteLoop::test2 -XX:CompileOnly=BarrierInInfiniteLoop::test3 -XX:CompileCommand=quiet BarrierInInfiniteLoop
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,TestShenandoahCmpPAfterCall::not_inlined TestShenandoahCmpPAfterCall
  *
  */
 
-public class BarrierInInfiniteLoop {
+public class TestShenandoahCmpPAfterCall {
     private static Object field1 = new Object();
     private static Object field2 = new Object();
-    private static int field3;
+    private static Object o3;
+    private static volatile int barrier;
 
     public static void main(String[] args) {
-        test1(false);
-        test2(false, false);
-        test3(false);
-    }
-
-    private static void test1(boolean flag) {
-        if (flag) {
-            for (;;) {
-                field1 = field2;
-            }
+        for (int i = 0; i < 20_000; i++) {
+            test();
         }
     }
 
-    private static void test2(boolean flag1, boolean flag2) {
-        if (flag1) {
-            for (;;) {
-                for (;;) {
-                    if (flag2) {
-                        break;
-                    }
-                    field1 = field2;
-                }
+    private static void test() {
+        Object o1 = null;
+        Object o2 = field2;
+        try {
+            not_inlined();
+            o1 = field1;
+            if (o1 == o2) {
+
             }
+        } catch (Exception1 ex1) {
+            o1 = field1;
+            if (o1 == o2) {
+
+            }
+        }
+        barrier = 42;
+        if (o1 == o2) {
+
         }
     }
 
-    private static void test3(boolean flag) {
-        if (flag) {
-            for (;;) {
-                for (;;) {
-                    field3 = 42;
-                    if (field1 == field2) {
-                        break;
-                    }
-                }
-            }
+    static int count = 0;
+    private static void not_inlined() throws Exception1 {
+        count++;
+        if ((count % 100) == 0) {
+            throw new Exception1();
         }
+    }
+
+    private static class Exception1 extends Exception {
     }
 }

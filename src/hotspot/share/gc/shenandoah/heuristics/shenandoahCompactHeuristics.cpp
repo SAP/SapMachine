@@ -92,15 +92,3 @@ void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(Shenando
     }
   }
 }
-
-const char* ShenandoahCompactHeuristics::name() {
-  return "compact";
-}
-
-bool ShenandoahCompactHeuristics::is_diagnostic() {
-  return false;
-}
-
-bool ShenandoahCompactHeuristics::is_experimental() {
-  return false;
-}

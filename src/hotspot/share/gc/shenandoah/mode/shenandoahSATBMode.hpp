@@ -21,19 +21,20 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPASSIVEMODE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHPASSIVEMODE_HPP
+#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHSATBMODE_HPP
+#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHSATBMODE_HPP
 
-#include "gc/shenandoah/shenandoahNormalMode.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-class ShenandoahPassiveMode : public ShenandoahNormalMode {
+class ShenandoahHeuristics;
+
+class ShenandoahSATBMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
   virtual ShenandoahHeuristics* initialize_heuristics() const;
-
-  virtual const char* name()     { return "Passive"; }
-  virtual bool is_diagnostic()   { return true; }
+  virtual const char* name()     { return "Snapshot-At-The-Beginning (SATB)"; }
+  virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return false; }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHNORMALMODE_HPP
+#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHSATBMODE_HPP

@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
-#include "gc/shenandoah/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -42,11 +42,9 @@ public:
 
   virtual bool should_start_gc() const;
 
-  virtual const char* name();
-
-  virtual bool is_diagnostic();
-
-  virtual bool is_experimental();
+  virtual const char* name()     { return "Adaptive"; }
+  virtual bool is_diagnostic()   { return false; }
+  virtual bool is_experimental() { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

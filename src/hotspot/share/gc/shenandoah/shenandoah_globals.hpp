@@ -62,10 +62,10 @@
           "This also caps the maximum TLAB size.")                          \
           range(1, 100)                                                     \
                                                                             \
-  experimental(ccstr, ShenandoahGCMode, "normal",                           \
+  experimental(ccstr, ShenandoahGCMode, "satb",                             \
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
-          " normal - default concurrent GC (three pass mark-evac-update);"  \
+          " satb - snapshot-at-the-beginning concurrent GC (three pass mark-evac-update);"  \
           " iu - incremental-update concurrent GC (three pass mark-evac-update);"  \
           " passive - stop the world GC only (either degenerated or full)") \
                                                                             \
@@ -299,9 +299,6 @@
   diagnostic(bool, ShenandoahAllocFailureALot, false,                       \
           "Testing: make lots of artificial allocation failures.")          \
                                                                             \
-  diagnostic(bool, ShenandoahAlwaysPreTouch, false,                         \
-          "Pre-touch heap memory, overrides global AlwaysPreTouch.")        \
-                                                                            \
   experimental(intx, ShenandoahMarkScanPrefetch, 32,                        \
           "How many objects to prefetch ahead when traversing mark bitmaps."\
           "Set to 0 to disable prefetching.")                               \
@@ -346,9 +343,6 @@
                                                                             \
   diagnostic(bool, ShenandoahLoadRefBarrier, true,                          \
           "Turn on/off load-reference barriers in Shenandoah")              \
-                                                                            \
-  diagnostic(bool, ShenandoahConcurrentScanCodeRoots, true,                 \
-          "Scan code roots concurrently, instead of during a pause")        \
                                                                             \
   diagnostic(uintx, ShenandoahCodeRootsStyle, 2,                            \
           "Use this style to scan the code cache roots:"                    \

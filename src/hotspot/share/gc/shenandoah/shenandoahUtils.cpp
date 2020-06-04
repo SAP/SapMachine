@@ -30,8 +30,8 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahGCPhase::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
