@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 
 /*
  * In normal concurrent cycle, we have to pace the application to let GC finish.
@@ -239,7 +240,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   }
 
   // Threads that are attaching should not block at all: they are not
-  // fully initialized yet. Calling sleep() on them would be awkward.
+  // fully initialized yet. Blocking them would be awkward.
   // This is probably the path that allocates the thread oop itself.
   // Forcefully claim without waiting.
   if (JavaThread::current()->is_attaching_via_jni()) {
@@ -264,7 +265,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     }
     cur = MAX2<size_t>(1, cur);
 
-    JavaThread::current()->sleep(cur);
+    wait(cur);
 
     double end = os::elapsedTime();
     total = (size_t)((end - start) * 1000);
@@ -287,6 +288,20 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
       break;
     }
   }
+}
+
+void ShenandoahPacer::wait(size_t time_ms) {
+  // Perform timed wait. It works like like sleep(), except without modifying
+  // the thread interruptible status. MonitorLocker also checks for safepoints.
+  assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
+  assert(time_ms <= LONG_MAX, "Sanity");
+  MonitorLocker locker(_wait_monitor);
+  _wait_monitor->wait((long)time_ms);
+}
+
+void ShenandoahPacer::notify_waiters() {
+  MonitorLocker locker(_wait_monitor);
+  _wait_monitor->notify_all();
 }
 
 void ShenandoahPacer::print_on(outputStream* out) const {
