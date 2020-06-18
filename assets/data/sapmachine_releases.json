@@ -17,6 +17,12 @@
             "label": "SapMachine 15",
             "lts": false,
             "ea": true
+        },
+        {
+            "id": "16",
+            "label": "SapMachine 16",
+            "lts": false,
+            "ea": true
         }
     ],
     "imageTypes": [
@@ -64,6 +70,19 @@
         }
     ],
     "assets": {
+        "16": {
+            "releases": [
+                {
+                    "tag": "sapmachine-16+1",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B1/sapmachine-jdk-16-ea.1_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B1/sapmachine-jre-16-ea.1_linux-x64_bin.tar.gz"
+                    }
+                }
+            ]
+        },
         "15": {
             "releases": [
                 {
