@@ -356,3 +356,6 @@ gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                     
 #SapMachine 2019-07-14 Lately, we see this sporadically...
 #Should be analysed, but we exclude it for now because it's tier1
 runtime/Safepoint/TestAbortVMOnSafepointTimeout.java                                 generic-all
+
+# SapMachine 2020-06-18 This test fails on our macOS machines due to the SAP specific DNS
+serviceability/jvmti/8036666/GetObjectLockCount.java                                 macosx-all
