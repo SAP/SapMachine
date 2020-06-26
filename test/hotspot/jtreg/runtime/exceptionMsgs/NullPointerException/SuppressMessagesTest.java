@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,8 @@
 
 /**
  * @test
- * @comment SapMachine 2019-11-04: Push JDK-8233014 early.
  * @summary Test that the default of flag ShowCodeDetailsInExceptionMessages is 'true',
- *          i.e., make sure the VM does print the message on default.
+ *          i.e., make sure the VM does print the message by default.
  * @bug 8218628
  * @library /test/lib
  * @compile -g SuppressMessagesTest.java
