@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +22,40 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8131029 8160127 8159935 8168615
- * @summary Test that fail-over works for fail-over ExecutionControl generators.
- * @modules jdk.jshell/jdk.jshell.execution
- *          jdk.jshell/jdk.jshell.spi
- * @build KullaTesting ExecutionControlTestBase
- * @run testng FailOverExecutionControlTest
- */
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+package org.graalvm.compiler.core.test;
 
-@Test
-public class FailOverExecutionControlTest extends ExecutionControlTestBase {
+import org.junit.Test;
 
-    @BeforeMethod
-    @Override
-    public void setUp() {
-        setUp(builder -> builder.executionEngine("failover:0(expectedFailureNonExistent1), 1(expectedFailureNonExistent2), "
-                + standardSpecs()));
+// See https://bugs.openjdk.java.net/browse/JDK-8247832
+public class VolatileReadEliminateWrongMemoryStateTest extends GraalCompilerTest {
+
+    private static volatile int volatileField;
+    private static int field;
+
+    @SuppressWarnings("unused")
+    public static int testMethod() {
+        field = 0;
+        int v = volatileField;
+        field += 1;
+        v = volatileField;
+        field += 1;
+        return field;
     }
 
+    @Test
+    public void test1() {
+        test("testMethod");
+    }
+
+    public static void testMethod2(Object obj) {
+        synchronized (obj) {
+            volatileField++;
+        }
+    }
+
+    @Test
+    public void test2() {
+        test("testMethod2", new Object());
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,41 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8131029 8160127 8159935 8168615
- * @summary Test that fail-over works for fail-over ExecutionControl generators.
- * @modules jdk.jshell/jdk.jshell.execution
- *          jdk.jshell/jdk.jshell.spi
- * @build KullaTesting ExecutionControlTestBase
- * @run testng FailOverExecutionControlTest
+ * @bug 8247824
+ * @summary CTW: C2 (Shenandoah) compilation fails with SEGV in SBC2Support::pin_and_expand
+ * @requires vm.flavor == "server"
+ * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:+UseShenandoahGC -XX:LoopMaxUnroll=0 TestShenandoahLRBInOuterStripMinedLoop
+ *
  */
 
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+import java.util.Arrays;
 
-@Test
-public class FailOverExecutionControlTest extends ExecutionControlTestBase {
-
-    @BeforeMethod
-    @Override
-    public void setUp() {
-        setUp(builder -> builder.executionEngine("failover:0(expectedFailureNonExistent1), 1(expectedFailureNonExistent2), "
-                + standardSpecs()));
+public class TestShenandoahLRBInOuterStripMinedLoop {
+    public static void main(String[] args) {
+        A[] array = new A[4000];
+        Arrays.fill(array, new A());
+        for (int i = 0; i < 20_0000; i++) {
+            test(array);
+        }
     }
 
+    private static int test(A[] array) {
+        A a = null;
+        int v = 1;
+        A b = null;
+        for (int i = 0; i < 2000; i++) {
+            a = array[i];
+            b = array[2*i];
+            v *= 2;
+        }
+        return a.f + b.f + v;
+    }
+
+    private static class A {
+        public int f;
+    }
 }
