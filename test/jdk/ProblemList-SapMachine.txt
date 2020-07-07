@@ -110,17 +110,9 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 # java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
 # Seen in 11, 13, 14.
 #
+# SapMachine 2020-06-22
+# We give up on fixing this. We keep the test excldued.
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
-
-# SapMachine 2019-06-28
-# java.lang.RuntimeException: Could not find root object
-#
-#
-# Oracle has filed a bug: https://bugs.openjdk.java.net/browse/JDK-8205651
-# Issue got excluded for 14+ with https://bugs.openjdk.java.net/browse/JDK-8232224
-# There is hope that the problem is fixed with JDK-8226511 (JFR event streaming) which is part of 14
-# SapMachine 2020-01-08 Exclusion of the test was backported to 11.0.7.
-#jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
 
 # SapMachine 2019-07-15
 # Issue started occuring in 06/2019 but not related to JDK updates
@@ -163,15 +155,6 @@ java/awt/print/PrinterJob/SameService.java                                   822
 java/awt/FontClass/FontSize1Test.java                                                macosx-all
 
 ###############################################################################
-# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
-
-# SapMachine 2019-07-17
-# Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
-# OpenJDK bug: https://bugs.openjdk.java.net/browse/JDK-8223935
-# SapMachine 2020-03-25 JDK-8223935 has been resolved. Enabling test again. Taking care of backports.
-#java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
-
-###############################################################################
 # New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
 
 # SapMachine 2020-04-23
@@ -182,6 +165,10 @@ security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java
 
 ###############################################################################
 # New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
+
+# SapMachine 2020-07-06
+# certificate revoked
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java        generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
