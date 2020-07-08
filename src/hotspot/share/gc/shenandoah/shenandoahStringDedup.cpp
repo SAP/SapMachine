@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -28,9 +28,9 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahStrDedupQueue.hpp"
-#include "gc/shenandoah/shenandoahTimingTracker.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/thread.hpp"
 
@@ -71,24 +71,19 @@ void ShenandoahStringDedup::deduplicate(oop java_string) {
   StringDedupTable::deduplicate(java_string, &dummy);
 }
 
-void ShenandoahStringDedup::parallel_oops_do(BoolObjectClosure* is_alive, OopClosure* cl, uint worker_id) {
+void ShenandoahStringDedup::parallel_oops_do(ShenandoahPhaseTimings::Phase phase,
+        BoolObjectClosure* is_alive, OopClosure* cl, uint worker_id) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_enabled(), "String deduplication not enabled");
 
   StringDedupUnlinkOrOopsDoClosure sd_cl(is_alive, cl);
-  if (ShenandoahGCPhase::is_root_work_phase()) {
-    ShenandoahWorkerTimings* worker_times = ShenandoahHeap::heap()->phase_timings()->worker_times();
-    {
-      ShenandoahWorkerTimingsTracker x(worker_times, ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
-      StringDedupQueue::unlink_or_oops_do(&sd_cl);
-    }
-
-    {
-      ShenandoahWorkerTimingsTracker x(worker_times, ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
-      StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
-    }
-  } else {
+  {
+    ShenandoahWorkerTimingsTracker x(phase, ShenandoahPhaseTimings::StringDedupQueueRoots, worker_id);
     StringDedupQueue::unlink_or_oops_do(&sd_cl);
+  }
+
+  {
+    ShenandoahWorkerTimingsTracker x(phase, ShenandoahPhaseTimings::StringDedupTableRoots, worker_id);
     StringDedupTable::unlink_or_oops_do(&sd_cl, worker_id);
   }
 }
@@ -101,18 +96,6 @@ void ShenandoahStringDedup::oops_do_slow(OopClosure* cl) {
   StringDedupQueue::unlink_or_oops_do(&sd_cl);
   StringDedupTable::unlink_or_oops_do(&sd_cl, 0);
 }
-
-class ShenandoahIsMarkedNextClosure : public BoolObjectClosure {
-private:
-  ShenandoahMarkingContext* const _mark_context;
-
-public:
-  ShenandoahIsMarkedNextClosure() : _mark_context(ShenandoahHeap::heap()->marking_context()) { }
-
-  bool do_object_b(oop obj) {
-    return _mark_context->is_marked(obj);
-  }
-};
 
 //
 // Task for parallel unlink_or_oops_do() operation on the deduplication queue

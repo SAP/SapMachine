@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -28,13 +28,12 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
-#include "gc/shenandoah/shenandoahTraversalGC.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
@@ -48,6 +47,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _degen_point(ShenandoahHeap::_degenerated_outside_cycle),
   _allocs_seen(0) {
 
+  reset_gc_id();
   create_and_start(ShenandoahCriticalControlThreadPriority ? CriticalPriority : NearMaxPriority);
   _periodic_task.enroll();
   _periodic_satb_flush_task.enroll();
@@ -69,10 +69,8 @@ void ShenandoahPeriodicSATBFlushTask::task() {
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  GCMode default_mode = heap->is_traversal_mode() ?
-                           concurrent_traversal : concurrent_normal;
-  GCCause::Cause default_cause = heap->is_traversal_mode() ?
-                           GCCause::_shenandoah_traversal_gc : GCCause::_shenandoah_concurrent_gc;
+  GCMode default_mode = concurrent_normal;
+  GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
   int sleep = ShenandoahControlIntervalMin;
 
   double last_shrink_time = os::elapsedTime();
@@ -175,7 +173,13 @@ void ShenandoahControlThread::run_service() {
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
+      // GC is starting, bump the internal ID
+      update_gc_id();
+
       heap->reset_bytes_allocated_since_gc_start();
+
+      // Use default constructor to snapshot the Metaspace state before GC.
+      metaspace::MetaspaceSizesSnapshot meta_sizes;
 
       // If GC was requested, we are sampling the counters even without actual triggers
       // from allocation machinery. This captures GC phases more accurately.
@@ -186,28 +190,21 @@ void ShenandoahControlThread::run_service() {
         ShenandoahHeapLocker locker(heap->lock());
         heap->free_set()->log_status();
       }
-    }
 
-    switch (mode) {
-      case none:
-        break;
-      case concurrent_traversal:
-        service_concurrent_traversal_cycle(cause);
-        break;
-      case concurrent_normal:
-        service_concurrent_normal_cycle(cause);
-        break;
-      case stw_degenerated:
-        service_stw_degenerated_cycle(cause, degen_point);
-        break;
-      case stw_full:
-        service_stw_full_cycle(cause);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+      switch (mode) {
+        case concurrent_normal:
+          service_concurrent_normal_cycle(cause);
+          break;
+        case stw_degenerated:
+          service_stw_degenerated_cycle(cause, degen_point);
+          break;
+        case stw_full:
+          service_stw_full_cycle(cause);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
 
-    if (gc_requested) {
       // If this was the requested GC cycle, notify waiters about it
       if (explicit_gc_requested || implicit_gc_requested) {
         notify_gc_waiters();
@@ -243,6 +240,25 @@ void ShenandoahControlThread::run_service() {
         heuristics->clear_metaspace_oom();
       }
 
+      // Commit worker statistics to cycle data
+      heap->phase_timings()->flush_par_workers_to_cycle();
+
+      // Print GC stats for current cycle
+      {
+        LogTarget(Info, gc, stats) lt;
+        if (lt.is_enabled()) {
+          ResourceMark rm;
+          LogStream ls(lt);
+          heap->phase_timings()->print_cycle_on(&ls);
+        }
+      }
+
+      // Commit statistics to globals
+      heap->phase_timings()->flush_cycle_to_global();
+
+      // Print Metaspace change following GC (if logging is enabled).
+      MetaspaceUtils::print_metaspace_change(meta_sizes);
+
       // GC is over, we are at idle now
       if (ShenandoahPacing) {
         heap->pacer()->setup_for_idle();
@@ -263,6 +279,7 @@ void ShenandoahControlThread::run_service() {
                              current :
                              current - (ShenandoahUncommitDelay / 1000.0);
       service_uncommit(shrink_before);
+      heap->phase_timings()->flush_cycle_to_global();
       last_shrink_time = current;
     }
 
@@ -284,50 +301,24 @@ void ShenandoahControlThread::run_service() {
   }
 }
 
-void ShenandoahControlThread::service_concurrent_traversal_cycle(GCCause::Cause cause) {
-  GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-  // Reset for upcoming cycle
-  heap->entry_reset();
-
-  heap->vmop_entry_init_traversal();
-
-  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_traversal)) return;
-
-  heap->entry_traversal();
-  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_traversal)) return;
-
-  heap->vmop_entry_final_traversal();
-
-  heap->entry_cleanup();
-
-  heap->heuristics()->record_success_concurrent();
-  heap->shenandoah_policy()->record_success_concurrent();
-}
-
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
   // Normal cycle goes via all concurrent phases. If allocation failure (af) happens during
   // any of the concurrent phases, it first degrades to Degenerated GC and completes GC there.
   // If second allocation failure happens during Degenerated GC cycle (for example, when GC
   // tries to evac something and no memory is available), cycle degrades to Full GC.
   //
-  // There are also two shortcuts through the normal cycle: a) immediate garbage shortcut, when
+  // There are also a shortcut through the normal cycle: immediate garbage shortcut, when
   // heuristics says there are no regions to compact, and all the collection comes from immediately
-  // reclaimable regions; b) coalesced UR shortcut, when heuristics decides to coalesce UR with the
-  // mark from the next cycle.
+  // reclaimable regions.
   //
   // ................................................................................................
   //
   //                                    (immediate garbage shortcut)                Concurrent GC
   //                             /-------------------------------------------\
-  //                             |                       (coalesced UR)      v
-  //                             |                  /----------------------->o
-  //                             |                  |                        |
-  //                             |                  |                        v
+  //                             |                                           |
+  //                             |                                           |
+  //                             |                                           |
+  //                             |                                           v
   // [START] ----> Conc Mark ----o----> Conc Evac --o--> Conc Update-Refs ---o----> [END]
   //                   |                    |                 |              ^
   //                   | (af)               | (af)            | (af)         |
@@ -376,7 +367,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
   // the space. This would be the last action if there is nothing to evacuate.
-  heap->entry_cleanup();
+  heap->entry_cleanup_early();
 
   {
     ShenandoahHeapLocker locker(heap->lock());
@@ -391,22 +382,15 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     heap->entry_evac();
     if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_evac)) return;
 
-    // Perform update-refs phase, if required. This phase can be skipped if heuristics
-    // decides to piggy-back the update-refs on the next marking cycle. On either path,
-    // we need to turn off evacuation: either in init-update-refs, or in final-evac.
-    if (heap->heuristics()->should_start_update_refs()) {
-      heap->vmop_entry_init_updaterefs();
-      heap->entry_updaterefs();
-      if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
+    // Perform update-refs phase.
+    heap->vmop_entry_init_updaterefs();
+    heap->entry_updaterefs();
+    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_updaterefs)) return;
 
-      heap->vmop_entry_final_updaterefs();
+    heap->vmop_entry_final_updaterefs();
 
-      // Update references freed up collection set, kick the cleanup to reclaim the space.
-      heap->entry_cleanup();
-
-    } else {
-      heap->vmop_entry_final_evac();
-    }
+    // Update references freed up collection set, kick the cleanup to reclaim the space.
+    heap->entry_cleanup_complete();
   }
 
   // Cycle is complete
@@ -503,23 +487,34 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
-  _requested_gc_cause = cause;
-  _gc_requested.set();
+  // Make sure we have at least one complete GC cycle before unblocking
+  // from the explicit GC request.
+  //
+  // This is especially important for weak references cleanup and/or native
+  // resources (e.g. DirectByteBuffers) machinery: when explicit GC request
+  // comes very late in the already running cycle, it would miss lots of new
+  // opportunities for cleanup that were made available before the caller
+  // requested the GC.
+  size_t required_gc_id = get_gc_id() + 1;
+
   MonitorLocker ml(&_gc_waiters_lock);
-  while (_gc_requested.is_set()) {
+  while (get_gc_id() < required_gc_id) {
+    _gc_requested.set();
+    _requested_gc_cause = cause;
     ml.wait();
   }
 }
 
-void ShenandoahControlThread::handle_alloc_failure(size_t words) {
+void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(current()->is_Java_thread(), "expect Java thread here");
 
   if (try_set_alloc_failure_gc()) {
     // Only report the first allocation failure
-    log_info(gc)("Failed to allocate " SIZE_FORMAT "%s",
-                 byte_size_in_proper_unit(words * HeapWordSize), proper_unit_for_byte_size(words * HeapWordSize));
+    log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
+                 req.type_string(),
+                 byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
 
     // Now that alloc failure GC is scheduled, we can abort everything else
     heap->cancel_gc(GCCause::_allocation_failure);
@@ -599,6 +594,18 @@ void ShenandoahControlThread::pacing_notify_alloc(size_t words) {
 
 void ShenandoahControlThread::set_forced_counters_update(bool value) {
   _force_counters_update.set_cond(value);
+}
+
+void ShenandoahControlThread::reset_gc_id() {
+  Atomic::store(&_gc_id, (size_t)0);
+}
+
+void ShenandoahControlThread::update_gc_id() {
+  Atomic::inc(&_gc_id);
+}
+
+size_t ShenandoahControlThread::get_gc_id() {
+  return Atomic::load(&_gc_id);
 }
 
 void ShenandoahControlThread::print() const {

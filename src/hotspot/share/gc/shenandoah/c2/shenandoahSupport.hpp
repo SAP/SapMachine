@@ -53,13 +53,12 @@ private:
   static Node* dom_mem(Node* mem, Node* ctrl, int alias, Node*& mem_ctrl, PhaseIdealLoop* phase);
   static Node* no_branches(Node* c, Node* dom, bool allow_one_proj, PhaseIdealLoop* phase);
   static bool is_heap_state_test(Node* iff, int mask);
-  static bool try_common_gc_state_load(Node *n, PhaseIdealLoop *phase);
   static bool has_safepoint_between(Node* start, Node* stop, PhaseIdealLoop *phase);
   static Node* find_bottom_mem(Node* ctrl, PhaseIdealLoop* phase);
   static void follow_barrier_uses(Node* n, Node* ctrl, Unique_Node_List& uses, PhaseIdealLoop* phase);
   static void test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase);
-  static void test_heap_stable(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
-                               PhaseIdealLoop* phase);
+  static void test_heap_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
+                              PhaseIdealLoop* phase, int flags);
   static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase);
   static Node* clone_null_check(Node*& c, Node* val, Node* unc_ctrl, PhaseIdealLoop* phase);
   static void fix_null_check(Node* unc, Node* unc_ctrl, Node* new_unc_ctrl, Unique_Node_List& uses,
@@ -231,10 +230,6 @@ public:
     ValueIn
   };
 
-  enum Strength {
-    NONE, STRONG
-  };
-
 private:
   bool _native;
 
@@ -257,7 +252,7 @@ public:
   virtual uint hash() const;
   virtual bool cmp( const Node &n ) const;
 
-  Strength get_barrier_strength();
+  bool is_redundant();
   CallStaticJavaNode* pin_and_expand_null_check(PhaseIterGVN& igvn);
 
 private:

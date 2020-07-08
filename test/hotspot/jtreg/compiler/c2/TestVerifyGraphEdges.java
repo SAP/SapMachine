@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -18,20 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMODE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHMODE_HPP
+/*
+ * @test
+ * @bug 8238811
+ * @requires vm.debug == true & vm.flavor == "server"
+ * @summary Run with -Xcomp to test -XX:+VerifyGraphEdges in debug builds.
+ *
+ * @run main/othervm -Xbatch -Xcomp -XX:+VerifyGraphEdges compiler.c2.TestVerifyGraphEdges
+ */
+package compiler.c2;
 
-#include "memory/allocation.hpp"
-
-class ShenandoahHeuristics;
-
-class ShenandoahMode : public CHeapObj<mtGC> {
-public:
-  virtual void initialize_flags() const = 0;
-  virtual ShenandoahHeuristics* initialize_heuristics() const = 0;
-};
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHMODE_HPP
+public class TestVerifyGraphEdges {
+    public static void main(String[] args) {
+    }
+}

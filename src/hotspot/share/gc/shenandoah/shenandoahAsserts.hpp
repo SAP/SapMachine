@@ -68,71 +68,84 @@ public:
 
   static void assert_locked_or_shenandoah_safepoint(Mutex* lock, const char* file, int line);
 
+  static void assert_heaplocked(const char* file, int line);
+  static void assert_not_heaplocked(const char* file, int line);
+  static void assert_heaplocked_or_safepoint(const char* file, int line);
+
 #ifdef ASSERT
 #define shenandoah_assert_in_heap(interior_loc, obj) \
-                    ShenandoahAsserts::assert_in_heap(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_in_heap(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_in_correct_region(interior_loc, obj) \
-                    ShenandoahAsserts::assert_in_correct_region(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_in_correct_region(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_correct_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_correct(interior_loc, obj, __FILE__, __LINE__);
+  if (condition)    ShenandoahAsserts::assert_correct(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_correct_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_correct(interior_loc, obj, __FILE__, __LINE__);
+  if (!(exception)) ShenandoahAsserts::assert_correct(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_correct(interior_loc, obj) \
-                    ShenandoahAsserts::assert_correct(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_correct(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_forwarded_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_forwarded(interior_loc, obj, __FILE__, __LINE__);
+  if (condition)    ShenandoahAsserts::assert_forwarded(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_forwarded_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_forwarded(interior_loc, obj, __FILE__, __LINE__);
+  if (!(exception)) ShenandoahAsserts::assert_forwarded(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_forwarded(interior_loc, obj) \
-                    ShenandoahAsserts::assert_forwarded(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_forwarded(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_not_forwarded_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_not_forwarded(interior_loc, obj, __FILE__, __LINE__);
+  if (condition)    ShenandoahAsserts::assert_not_forwarded(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_not_forwarded_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_not_forwarded(interior_loc, obj, __FILE__, __LINE__);
+  if (!(exception)) ShenandoahAsserts::assert_not_forwarded(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_not_forwarded(interior_loc, obj) \
-                    ShenandoahAsserts::assert_not_forwarded(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_not_forwarded(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_marked_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_marked(interior_loc, obj, __FILE__, __LINE__);
+  if (condition)    ShenandoahAsserts::assert_marked(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_marked_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_marked(interior_loc, obj, __FILE__, __LINE__);
+  if (!(exception)) ShenandoahAsserts::assert_marked(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_marked(interior_loc, obj) \
-                    ShenandoahAsserts::assert_marked(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_marked(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_in_cset_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_in_cset(interior_loc, obj, __FILE__, __LINE__);
+  if (condition)    ShenandoahAsserts::assert_in_cset(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_in_cset_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_in_cset(interior_loc, obj, __FILE__, __LINE__);
+  if (!(exception)) ShenandoahAsserts::assert_in_cset(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_in_cset(interior_loc, obj) \
-                    ShenandoahAsserts::assert_in_cset(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_in_cset(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_not_in_cset_if(interior_loc, obj, condition) \
-  if (condition)    ShenandoahAsserts::assert_not_in_cset(interior_loc, obj, __FILE__, __LINE__);
+  if (condition)    ShenandoahAsserts::assert_not_in_cset(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_not_in_cset_except(interior_loc, obj, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_not_in_cset(interior_loc, obj, __FILE__, __LINE__);
+  if (!(exception)) ShenandoahAsserts::assert_not_in_cset(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_not_in_cset(interior_loc, obj) \
-                    ShenandoahAsserts::assert_not_in_cset(interior_loc, obj, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_not_in_cset(interior_loc, obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_not_in_cset_loc_if(interior_loc, condition) \
-  if (condition)    ShenandoahAsserts::assert_not_in_cset_loc(interior_loc, __FILE__, __LINE__);
+  if (condition)    ShenandoahAsserts::assert_not_in_cset_loc(interior_loc, __FILE__, __LINE__)
 #define shenandoah_assert_not_in_cset_loc_except(interior_loc, exception) \
-  if (!(exception)) ShenandoahAsserts::assert_not_in_cset_loc(interior_loc, __FILE__, __LINE__);
+  if (!(exception)) ShenandoahAsserts::assert_not_in_cset_loc(interior_loc, __FILE__, __LINE__)
 #define shenandoah_assert_not_in_cset_loc(interior_loc) \
-                    ShenandoahAsserts::assert_not_in_cset_loc(interior_loc, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_not_in_cset_loc(interior_loc, __FILE__, __LINE__)
 
 #define shenandoah_assert_rp_isalive_installed() \
-                    ShenandoahAsserts::assert_rp_isalive_installed(__FILE__, __LINE__);
+                    ShenandoahAsserts::assert_rp_isalive_installed(__FILE__, __LINE__)
 #define shenandoah_assert_rp_isalive_not_installed() \
-                    ShenandoahAsserts::assert_rp_isalive_not_installed(__FILE__, __LINE__);
+                    ShenandoahAsserts::assert_rp_isalive_not_installed(__FILE__, __LINE__)
 
 #define shenandoah_assert_safepoint() \
-                    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at Shenandoah Safepoints");
+                    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at Shenandoah Safepoints")
 
 #define shenandoah_assert_locked_or_safepoint(lock) \
-                    ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(lock, __FILE__, __LINE__);
+                    ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(lock, __FILE__, __LINE__)
+
+#define shenandoah_assert_heaplocked() \
+                    ShenandoahAsserts::assert_heaplocked(__FILE__, __LINE__)
+
+#define shenandoah_assert_not_heaplocked() \
+                    ShenandoahAsserts::assert_not_heaplocked(__FILE__, __LINE__)
+
+#define shenandoah_assert_heaplocked_or_safepoint() \
+                    ShenandoahAsserts::assert_heaplocked_or_safepoint(__FILE__, __LINE__)
 #else
 #define shenandoah_assert_in_heap(interior_loc, obj)
 #define shenandoah_assert_in_correct_region(interior_loc, obj)
@@ -170,6 +183,10 @@ public:
 
 #define shenandoah_assert_safepoint()
 #define shenandoah_assert_locked_or_safepoint(lock)
+
+#define shenandoah_assert_heaplocked()
+#define shenandoah_assert_not_heaplocked()
+#define shenandoah_assert_heaplocked_or_safepoint()
 
 #endif
 

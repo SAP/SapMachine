@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP
 
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 
@@ -38,9 +39,9 @@ typedef struct ShenandoahSharedFlag {
     SET = 1
   };
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile ShenandoahSharedValue));
+  shenandoah_padding(0);
   volatile ShenandoahSharedValue value;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   ShenandoahSharedFlag() {
     unset();
@@ -106,9 +107,9 @@ private:
 } ShenandoahSharedFlag;
 
 typedef struct ShenandoahSharedBitmap {
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile ShenandoahSharedValue));
+  shenandoah_padding(0);
   volatile ShenandoahSharedValue value;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   ShenandoahSharedBitmap() {
     clear();
@@ -200,9 +201,9 @@ private:
 
 template<class T>
 struct ShenandoahSharedEnumFlag {
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile ShenandoahSharedValue));
+  shenandoah_padding(0);
   volatile ShenandoahSharedValue value;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   ShenandoahSharedEnumFlag() {
     value = 0;
@@ -242,5 +243,39 @@ private:
   bool operator<=(ShenandoahSharedEnumFlag& other) { fatal("Use get() instead"); return false; }
 
 };
+
+typedef struct ShenandoahSharedSemaphore {
+  shenandoah_padding(0);
+  volatile ShenandoahSharedValue value;
+  shenandoah_padding(1);
+
+  static uint max_tokens() {
+    return sizeof(ShenandoahSharedValue) * CHAR_MAX;
+  }
+
+  ShenandoahSharedSemaphore(uint tokens) {
+    assert(tokens <= max_tokens(), "sanity");
+    Atomic::release_store_fence(&value, (ShenandoahSharedValue)tokens);
+  }
+
+  bool try_acquire() {
+    while (true) {
+      ShenandoahSharedValue ov = Atomic::load_acquire(&value);
+      if (ov == 0) {
+        return false;
+      }
+      ShenandoahSharedValue nv = ov - 1;
+      if (Atomic::cmpxchg(&value, ov, nv) == ov) {
+        // successfully set
+        return true;
+      }
+    }
+  }
+
+  void claim_all() {
+    Atomic::release_store_fence(&value, (ShenandoahSharedValue)0);
+  }
+
+} ShenandoahSharedSemaphore;
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSHAREDVARIABLES_HPP

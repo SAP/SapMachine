@@ -26,7 +26,8 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
@@ -40,13 +41,6 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics() : ShenandoahHeuristic
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUncommitDelay,        1000);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGuaranteedGCInterval, 30000);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGarbageThreshold,     10);
-
-  // Final configuration checks
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahLoadRefBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahSATBBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahKeepAliveBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
 }
 
 bool ShenandoahCompactHeuristics::should_start_gc() const {
@@ -97,16 +91,4 @@ void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(Shenando
       cset->add_region(r);
     }
   }
-}
-
-const char* ShenandoahCompactHeuristics::name() {
-  return "compact";
-}
-
-bool ShenandoahCompactHeuristics::is_diagnostic() {
-  return false;
-}
-
-bool ShenandoahCompactHeuristics::is_experimental() {
-  return false;
 }

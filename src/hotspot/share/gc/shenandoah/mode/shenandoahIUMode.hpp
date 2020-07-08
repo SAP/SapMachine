@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -21,28 +22,21 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
+#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
+#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
 
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
-#include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include "memory/allocation.hpp"
-#include "utilities/ostream.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-class ShenandoahAllocTracker : public CHeapObj<mtGC> {
-private:
-  BinaryMagnitudeSeq _alloc_size[ShenandoahAllocRequest::_ALLOC_LIMIT];
-  BinaryMagnitudeSeq _alloc_latency[ShenandoahAllocRequest::_ALLOC_LIMIT];
+class ShenandoahHeuristics;
 
+class ShenandoahIUMode : public ShenandoahMode {
 public:
-  void record_alloc_latency(size_t words_size,
-                            ShenandoahAllocRequest::Type _alloc_type,
-                            double latency_us) {
-    _alloc_size[_alloc_type].add(words_size);
-    _alloc_latency[_alloc_type].add((size_t)latency_us);
-  }
+  virtual void initialize_flags() const;
+  virtual ShenandoahHeuristics* initialize_heuristics() const;
 
-  void print_on(outputStream* out) const;
+  virtual const char* name()     { return "Incremental-Update (IU)"; }
+  virtual bool is_diagnostic()   { return false; }
+  virtual bool is_experimental() { return true; }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHALLOCTRACKER_HPP
+#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP

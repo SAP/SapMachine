@@ -45,7 +45,6 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
-  FLAG_SET_DEFAULT(ShenandoahKeepAliveBarrier,       false);
   FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
@@ -132,7 +131,6 @@ void ShenandoahArguments::initialize() {
   if (ShenandoahVerifyOptoBarriers &&
           (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)            ||
            !FLAG_IS_DEFAULT(ShenandoahLoadRefBarrier)         ||
-           !FLAG_IS_DEFAULT(ShenandoahKeepAliveBarrier)       ||
            !FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier) ||
            !FLAG_IS_DEFAULT(ShenandoahCASBarrier)             ||
            !FLAG_IS_DEFAULT(ShenandoahCloneBarrier)
@@ -145,24 +143,9 @@ void ShenandoahArguments::initialize() {
 #endif // ASSERT
 #endif // COMPILER2
 
-  if (AlwaysPreTouch) {
-    // Shenandoah handles pre-touch on its own. It does not let the
-    // generic storage code to do the pre-touch before Shenandoah has
-    // a chance to do it on its own.
-    FLAG_SET_DEFAULT(AlwaysPreTouch, false);
-    FLAG_SET_DEFAULT(ShenandoahAlwaysPreTouch, true);
-  }
-
   // Record more information about previous cycles for improved debugging pleasure
   if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
     FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
-  }
-
-  if (ShenandoahAlwaysPreTouch) {
-    if (!FLAG_IS_DEFAULT(ShenandoahUncommit)) {
-      warning("AlwaysPreTouch is enabled, disabling ShenandoahUncommit");
-    }
-    FLAG_SET_DEFAULT(ShenandoahUncommit, false);
   }
 
   if ((InitialHeapSize == MaxHeapSize) && ShenandoahUncommit) {
@@ -191,25 +174,6 @@ void ShenandoahArguments::initialize() {
   if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
-
-  // Shenandoah needs more C2 nodes to compile some methods with lots of barriers.
-  // NodeLimitFudgeFactor needs to stay the same relative to MaxNodeLimit.
-#ifdef COMPILER2
-  if (FLAG_IS_DEFAULT(MaxNodeLimit)) {
-    FLAG_SET_DEFAULT(MaxNodeLimit, MaxNodeLimit * 3);
-    FLAG_SET_DEFAULT(NodeLimitFudgeFactor, NodeLimitFudgeFactor * 3);
-  }
-#endif
-
-  // Make sure safepoint deadlocks are failing predictably. This sets up VM to report
-  // fatal error after 10 seconds of wait for safepoint syncronization (not the VM
-  // operation itself). There is no good reason why Shenandoah would spend that
-  // much time synchronizing.
-#ifdef ASSERT
-  FLAG_SET_DEFAULT(SafepointTimeout, true);
-  FLAG_SET_DEFAULT(SafepointTimeoutDelay, 10000);
-  FLAG_SET_DEFAULT(AbortVMOnSafepointTimeout, true);
-#endif
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {

@@ -55,10 +55,14 @@ compiler/rtm/locking/TestRTMSpinLoopCount.java                                  
 # Fails with timeout or "Could not find any processes matching : 'HelpTest$Process'"
 #
 #
+#
 # SapMachine 2019-07-15 Still seen in 11 - 14, rarely on others than windows.
 # SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
-# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
-serviceability/dcmd/framework/HelpTest.java                                          windows-all
+# SapMachine 2020-03-03 We will no more analyse the issues with this test. We will just keep it excluded.
+#
+# SapMachine 2020-03-24 Let's see how it goes if we drop this exclusion. It's already commented out in all
+#                       other lists except for 11_hs. If it is very sporadic we might be able to remove this entry from our list.
+#serviceability/dcmd/framework/HelpTest.java                                          windows-all
 
 # SapMachine 2019-04-29
 # java.lang.IllegalStateException: WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC due to contention with another thread
@@ -115,37 +119,37 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # linkResolver::runtime_resolve_virtual_method
 #
 #
+# SapMachine 2020-03-24 Disarmed diagnosis patches and made sure test is enabled everywhere. Let's see what happens.
 #vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390x,windows-all
 
 ###############################################################################
-# New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
+# New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
 
-# SapMachine 2019-07-22
-# Timeout. We see this regularly.
+# SapMachine 2020-03-25
+# This test fails ever since it was introduced and backported on Windows 32bit
+#
+# https://bugs.openjdk.java.net/browse/JDK-8241086
+# SapMachine 2020-05-06: Issue was resolved and test will no longe rurn on 32 bit, Backport to 11 still tbd.
+runtime/NMT/HugeArenaTracking.java                                           8241086 windows-i586
+
+# SapMachine 2020-04-09
+# We see some new failures on aarch64, 11u only. They probably aren't new but
+# we just started to run tests for 11u on that platform lately
+#
+#compiler/c2/cr6340864/TestIntVect.java                                               linux-aarch64
+#
+#compiler/c2/cr6340864/TestLongVect.java                                              linux-aarch64
+#
+#compiler/c2/cr6340864/TestShortVect.java                                             linux-aarch64
+#
+#compiler/codegen/TestCharVect2.java                                                  linux-aarch64
+
+# SapMachine 2020-04-30
+# This issue popped up lately, probably after April CPU update on linux-ppc64le
 #
 #
-# https://bugs.openjdk.java.net/browse/JDK-8222030
-# SapMachine 2019-10-09 Reenable the test on all platforms (besides aarch) to see where it still occurs
-compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-aarch64
-
-###############################################################################
-# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
-
-# SapMachine 2019-12-05
-# This test fails on MacOS Catalina, it is fixed with JDK-8234625 but awaiting backport
-# https://bugs.openjdk.java.net/browse/JDK-8234625
-#serviceability/sa/ClhsdbCDSCore.java                                          8234625 macosx-all
-
-###############################################################################
-# New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
-
-# SapMachine 2020-01-27
-# Test methods didn't get compiled
-#
-# https://bugs.openjdk.java.net/browse/JDK-8237375
-# SimpleThresholdPolicy misses CounterDecay timestamp initialization
-# Test issue was merely observed in jdk14/zLinux, so only excluding there
-compiler/c2/Test8004741.java                                                         linux-s390x
+# SapMachine 2020-05-12: Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8244847
+runtime/CompressedOops/CompressedClassPointers.java                                  linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -171,34 +175,10 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 # SapMachine 2019-07-25 Still around
 gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
 
-# SapMachine 2019-07-17
-# Excluding for now and opening a bug.
-#
-#
-# should be fixed with 8233219: NMT output on AIX misses some categories
-#runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
-#runtime/NMT/CommitOverlappingRegions.java                                            aix-all
-#runtime/NMT/JcmdDetailDiff.java                                                      aix-all
-#runtime/NMT/JcmdSummaryDiff.java                                                     aix-all
-#runtime/NMT/PrintNMTStatistics.java                                                  aix-all
-#runtime/NMT/ReleaseNoCommit.java                                                     aix-all
-#runtime/NMT/SafepointPollingPages.java                                               aix-all
-#runtime/NMT/ThreadedVirtualAllocTestType.java                                        aix-all
-#runtime/NMT/VirtualAllocAttemptReserveMemoryAt.java                                  aix-all
-#runtime/NMT/VirtualAllocCommitMerge.java                                             aix-all
-#runtime/NMT/VirtualAllocCommitUncommitRecommit.java                                  aix-all
-#runtime/NMT/VirtualAllocTestType.java                                                aix-all
-
 # SapMachine 2019-08-02
 # Exception: Uncommitted too slow
 # In SapMachine, we also see this in 13.
 gc/z/TestUncommit.java                                                               generic-all
-
-# SapMachine 2019-08-29
-# Some aarch stuff, we don't really care. Do we?
-# Check later on whether it's fixed.
-#
-compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                          linux-aarch64
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
@@ -219,25 +199,12 @@ compiler/c2/aarch64/TestVolatilesG1.java                                        
 #
 gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
 
-# SapMachine 2019-09-09
-# Crash: Error: Shenandoah assert_correct failed; Object klass pointer should not be NULL
-#
-# This is a shenandoah issue. Just adding this entry for reference.
-# Zhengyu has provided us a test patch which I've put into the queue.
-#gc/stress/CriticalNativeStress.java                                                  generic-all
-
-# SapMachine 2019-09-09
-# This test was reactivated on 2019-08-30 with https://bugs.openjdk.java.net/browse/JDK-8228960
-# After that, we see errors again on ... and ... . Opened a Backlog item.
-#
-#
-#containers/docker/TestJcmdWithSideCar.java                                           linux-s390x,linux-ppc64le
-
 # SapMachine 2020-01-01
 #
 # Graal unit tests have been enabled via https://bugs.openjdk.java.net/browse/JDK-8215728.
 # We need to enable this in the test framework, too. Backlog item created.
 #
+# SapMachine 2020-03-31 We decided not to run these.
 compiler/graalunit/ApiDirectivesTest.java                                            generic-all
 compiler/graalunit/ApiTest.java                                                      generic-all
 compiler/graalunit/AsmAarch64Test.java                                               generic-all
@@ -286,6 +253,7 @@ compiler/graalunit/UtilTest.java                                                
 # This is failing currently on various places after https://bugs.openjdk.java.net/browse/JDK-8234277
 # It is tracked with https://bugs.openjdk.java.net/browse/JDK-8235220
 # We exclude it now until upstream bug is resolved to reduce noise in testing
+# SapMachine 2020-07-07 Re-enabling test in 15+, because JDK-8235220 is fixed in 15
 serviceability/sa/ClhsdbScanOops.java                                                generic-all
 
 ###############################################################################

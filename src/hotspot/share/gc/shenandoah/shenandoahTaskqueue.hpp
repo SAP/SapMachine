@@ -25,6 +25,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #include "gc/shared/owstTaskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
@@ -270,9 +271,9 @@ typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 template <class T, MEMFLAGS F>
 class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, F> {
 private:
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile jint));
+  shenandoah_padding(0);
   volatile jint     _claimed_index;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  shenandoah_padding(1);
 
   debug_only(uint   _reserved;  )
 
@@ -333,8 +334,7 @@ private:
   ShenandoahHeap* _heap;
 public:
   ShenandoahTerminatorTerminator(ShenandoahHeap* const heap) : _heap(heap) { }
-  // return true, terminates immediately, even if there's remaining work left
-  virtual bool should_exit_termination() { return _heap->cancelled_gc(); }
+  virtual bool should_exit_termination();
 };
 
 class ShenandoahTaskTerminator : public StackObj {

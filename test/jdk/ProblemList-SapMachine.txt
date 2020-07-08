@@ -110,17 +110,9 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 # java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
 # Seen in 11, 13, 14.
 #
+# SapMachine 2020-06-22
+# We give up on fixing this. We keep the test excldued.
 javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
-
-# SapMachine 2019-06-28
-# java.lang.RuntimeException: Could not find root object
-#
-#
-# Oracle has filed a bug: https://bugs.openjdk.java.net/browse/JDK-8205651
-# Issue got excluded for 14+ with https://bugs.openjdk.java.net/browse/JDK-8232224
-# There is hope that the problem is fixed with JDK-8226511 (JFR event streaming) which is part of 14
-# SapMachine 2020-01-08 Exclusion of the test was backported to 11.0.7.
-#jdk/jfr/event/oldobject/TestLargeRootSet.java                                8205651 generic-all
 
 # SapMachine 2019-07-15
 # Issue started occuring in 06/2019 but not related to JDK updates
@@ -138,12 +130,14 @@ java/awt/print/PrinterJob/SameService.java                                   822
 # SapMachine 2019-07-19
 # These issues occur in our internal SapMachine test env. Probably infra related on host ... Seen in 11 only.
 #
+# SapMachine 2020-03-26 Enabling these tests in 11u to see whether the issue still occurs
 #sun/management/jdp/JdpDefaultsTest.java                                              linux-ppc64le
 #sun/management/jdp/JdpJmxRemoteDynamicPortTest.java                                  linux-ppc64le
 #sun/management/jdp/JdpSpecificAddressTest.java                                       linux-ppc64le
 
 # SapMachine 2019-07-19
 # These occur in SapMachine test env on ... and ... . Disabling until solution found. Seen in 11 only.
+# SapMachine 2020-03-26 Enabling these tests in 11u to see whether the issue still occurs
 #java/net/MulticastSocket/Promiscuous.java                                            linux-ppc64le
 #java/net/MulticastSocket/SetLoopbackMode.java                                        linux-ppc64le
 #java/net/MulticastSocket/Test.java                                                   linux-ppc64le,aix-all
@@ -160,30 +154,21 @@ java/awt/print/PrinterJob/SameService.java                                   822
 # SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
 java/awt/FontClass/FontSize1Test.java                                                darwinintel
 
-# SapMachine 2019-08-29
-# We see errors in jdk/jdk (14) and recently in 11 as well. So, it must be introduced
-# by some change that had been backported.
-# Excluding this test because Oracle already opened a JBS item and seems to be workin on it.
-#sun/tools/jhsdb/JShellHeapDumpTest.java                                      8228625 generic-all
+###############################################################################
+# New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
+
+# SapMachine 2020-04-23
+# fails in nightly tests since 23.4.2020, seems to be a revocation
+#
+# https://bugs.openjdk.java.net/browse/JDK-8243543
+security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java 8243543 generic-all
 
 ###############################################################################
-# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
+# New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
 
-# SapMachine 2019-07-17
-# Occurring since about 2019-05. Seems to have to do with a missing font in the Windows installation.
-# There's already an OpenJDK bug open for this: https://bugs.openjdk.java.net/browse/JDK-8223935
-# Exluding for now.
-java/awt/font/WindowsIndicFonts.java                                         8223935 windows-all
-
-# SapMachine 2019-11-26
-# This test fails sporadic all over the place ... also in 13, 14.
-#
-#
-# SapMachine 2020-01-15: We get bad OCSP response validity timestamps
-# Test got excluded with https://bugs.openjdk.java.net/browse/JDK-8237869
-# There's a bug to track resolution of the issue with LuxTrust now, which will be handled by Oracle:
-# https://bugs.openjdk.java.net/browse/JDK-8237888
-security/infra/java/security/cert/CertPathValidator/certification/LuxTrustCA.java    generic-all
+# SapMachine 2020-07-06
+# certificate revoked
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java        generic-all
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)

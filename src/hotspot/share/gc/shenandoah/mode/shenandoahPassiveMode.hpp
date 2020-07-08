@@ -21,17 +21,19 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALMODE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALMODE_HPP
+#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
+#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP
 
-#include "gc/shenandoah/shenandoahMode.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-class ShenandoahHeuristics;
-
-class ShenandoahTraversalMode : public ShenandoahMode {
+class ShenandoahPassiveMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
   virtual ShenandoahHeuristics* initialize_heuristics() const;
+
+  virtual const char* name()     { return "Passive"; }
+  virtual bool is_diagnostic()   { return true; }
+  virtual bool is_experimental() { return false; }
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHTRAVERSALMODE_HPP
+#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP

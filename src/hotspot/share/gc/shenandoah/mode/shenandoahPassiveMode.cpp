@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
@@ -43,7 +43,6 @@ void ShenandoahPassiveMode::initialize_flags() const {
   // Disable known barriers by default.
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahKeepAliveBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStoreValEnqueueBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
