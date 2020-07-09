@@ -123,38 +123,14 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java  linux-s390x,windows-all
 
 ###############################################################################
-# New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
-
-# SapMachine 2019-07-22
-# Timeout. We see this regularly.
-#
-#
-# https://bugs.openjdk.java.net/browse/JDK-8222030
-# SapMachine 2020-03-12 Fixed by https://bugs.openjdk.java.net/browse/JDK-8234146
-# SapMachine 2020-03-24 Working on 11 and 14 backports
-#compiler/jsr292/ContinuousCallSiteTargetChange.java                          8222030 linux-aarch64
-
-###############################################################################
-# New failures detected after GA of 11.0.5 (e.g. seen only in jdk11u-dev after branching 11.0.5 to jdk11u)
-
-# SapMachine 2019-08-29
-# This pops up on our aarch64 test machine. As it is aarch, we don't really care a lot.
-# But it would probably be nice if it could be fixed or reported as bug to JBS and excluded.
-# SapMachine 2020-03-25 Since we test 11u-dev on aarch64 as well, we see the issue there, too.
-#
-# https://bugs.openjdk.java.net/browse/JDK-8241586
-# SapMachine CL 2020-03-27 Fix pushed to head, working on backports
-#compiler/cpuflags/TestAESIntrinsicsOnUnsupportedConfig.java                  8241586 linux-aarch64
-
-###############################################################################
 # New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
 
 # SapMachine 2020-03-25
 # This test fails ever since it was introduced and backported on Windows 32bit
 #
 # https://bugs.openjdk.java.net/browse/JDK-8241086
-# We shall file an exclusion and backport this.
-runtime/NMT/HugeArenaTracking.java                                           8241086 windows-i586
+# SapMachine 2020-05-06 Issue was resolved and test will no longer run on 32 bit. Backport to 11 still tbd.
+#runtime/NMT/HugeArenaTracking.java                                           8241086 windows-i586
 
 # SapMachine 2020-04-09
 # We see some new failures on aarch64, 11u only. They probably aren't new but
@@ -165,12 +141,15 @@ runtime/NMT/HugeArenaTracking.java                                           824
 #compiler/c2/cr6340864/TestLongVect.java                                              linux-aarch64
 #
 #compiler/c2/cr6340864/TestShortVect.java                                             linux-aarch64
+#
+#compiler/codegen/TestCharVect2.java                                                  linux-aarch64
 
 # SapMachine 2020-04-30
 # This issue popped up lately, probably after April CPU update on linux-ppc64le
 #
 #
-runtime/CompressedOops/CompressedClassPointers.java                                  linux-ppc64le
+# SapMachine 2020-05-12: Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8244847
+runtime/CompressedOops/CompressedClassPointers.java                          8244847 linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -196,24 +175,6 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 # SapMachine 2019-07-25 Still around
 gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
 
-# SapMachine 2019-07-17
-# Excluding for now and opening a bug.
-#
-#
-# should be fixed with 8233219: NMT output on AIX misses some categories
-#runtime/NMT/CheckForProperDetailStackTrace.java                                      aix-all
-#runtime/NMT/CommitOverlappingRegions.java                                            aix-all
-#runtime/NMT/JcmdDetailDiff.java                                                      aix-all
-#runtime/NMT/JcmdSummaryDiff.java                                                     aix-all
-#runtime/NMT/PrintNMTStatistics.java                                                  aix-all
-#runtime/NMT/ReleaseNoCommit.java                                                     aix-all
-#runtime/NMT/SafepointPollingPages.java                                               aix-all
-#runtime/NMT/ThreadedVirtualAllocTestType.java                                        aix-all
-#runtime/NMT/VirtualAllocAttemptReserveMemoryAt.java                                  aix-all
-#runtime/NMT/VirtualAllocCommitMerge.java                                             aix-all
-#runtime/NMT/VirtualAllocCommitUncommitRecommit.java                                  aix-all
-#runtime/NMT/VirtualAllocTestType.java                                                aix-all
-
 # SapMachine 2019-08-02
 # Exception: Uncommitted too slow
 # In SapMachine, we also see this in 13.
@@ -238,93 +199,12 @@ compiler/c2/aarch64/TestVolatilesG1.java                                        
 #
 gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
 
-# SapMachine 2019-09-09
-# Crash: Error: Shenandoah assert_correct failed; Object klass pointer should not be NULL
-#
-# This is a shenandoah issue. Just adding this entry for reference.
-# Zhengyu has provided us a test patch which I've put into the queue.
-#gc/stress/CriticalNativeStress.java                                                  generic-all
-
-# SapMachine 2019-09-09
-# This test was reactivated on 2019-08-30 with https://bugs.openjdk.java.net/browse/JDK-8228960
-# After that, we see errors again on ... and ... . Opened a Backlog item.
-#
-#
-#containers/docker/TestJcmdWithSideCar.java                                           linux-s390x,linux-ppc64le
-
-# SapMachine 2020-01-01
-#
-# Graal unit tests have been enabled via https://bugs.openjdk.java.net/browse/JDK-8215728.
-# We need to enable this in the test framework, too. Backlog item created.
-#
-# SapMachine GL 2020-03-31 We decided not to run these. Arno excludes them in the test setup of the testframework.
-#compiler/graalunit/ApiDirectivesTest.java                                            generic-all
-#compiler/graalunit/ApiTest.java                                                      generic-all
-#compiler/graalunit/AsmAarch64Test.java                                               generic-all
-#compiler/graalunit/AsmAmd64Test.java                                                 generic-all
-#compiler/graalunit/AsmSparcTest.java                                                 generic-all
-#compiler/graalunit/CollectionsTest.java                                              generic-all
-#compiler/graalunit/CoreAarch64Test.java                                              generic-all
-#compiler/graalunit/CoreAmd64Test.java                                                generic-all
-#compiler/graalunit/CoreJdk9Test.java                                                 generic-all
-#compiler/graalunit/CoreTest.java                                                     generic-all
-#compiler/graalunit/DebugTest.java                                                    generic-all
-#compiler/graalunit/EATest.java                                                       generic-all
-#compiler/graalunit/GraphTest.java                                                    generic-all
-#compiler/graalunit/HotspotAarch64Test.java                                           generic-all
-#compiler/graalunit/HotspotAmd64Test.java                                             generic-all
-#compiler/graalunit/HotspotJdk9Test.java                                              generic-all
-#compiler/graalunit/HotspotLirTest.java                                               generic-all
-#compiler/graalunit/HotspotTest.java                                                  generic-all
-#compiler/graalunit/JttBackendTest.java                                               generic-all
-#compiler/graalunit/JttBytecodeTest.java                                              generic-all
-#compiler/graalunit/JttExceptTest.java                                                generic-all
-#compiler/graalunit/JttHotpathTest.java                                               generic-all
-#compiler/graalunit/JttHotspotTest.java                                               generic-all
-#compiler/graalunit/JttJdkTest.java                                                   generic-all
-#compiler/graalunit/JttLangALTest.java                                                generic-all
-#compiler/graalunit/JttLangMathALTest.java                                            generic-all
-#compiler/graalunit/JttLangMathMZTest.java                                            generic-all
-#compiler/graalunit/JttLangNZTest.java                                                generic-all
-#compiler/graalunit/JttLoopTest.java                                                  generic-all
-#compiler/graalunit/JttOptimizeTest.java                                              generic-all
-#compiler/graalunit/JttReflectAETest.java                                             generic-all
-#compiler/graalunit/JttReflectFieldGetTest.java                                       generic-all
-#compiler/graalunit/JttReflectFieldSetTest.java                                       generic-all
-#compiler/graalunit/JttReflectGZTest.java                                             generic-all
-#compiler/graalunit/JttThreadsTest.java                                               generic-all
-#compiler/graalunit/LirJttTest.java                                                   generic-all
-#compiler/graalunit/LirTest.java                                                      generic-all
-#compiler/graalunit/LoopTest.java                                                     generic-all
-#compiler/graalunit/NodesTest.java                                                    generic-all
-#compiler/graalunit/OptionsTest.java                                                  generic-all
-#compiler/graalunit/PhasesCommonTest.java                                             generic-all
-#compiler/graalunit/Replacements12Test.java                                           generic-all
-#compiler/graalunit/Replacements9Test.java                                            generic-all
-#compiler/graalunit/ReplacementsTest.java                                             generic-all
-#compiler/graalunit/UtilTest.java                                                     generic-all
-
 # SapMachine 2019-01-02
 # This is failing currently on various places after https://bugs.openjdk.java.net/browse/JDK-8234277
 # It is tracked with https://bugs.openjdk.java.net/browse/JDK-8235220
 # We exclude it now until upstream bug is resolved to reduce noise in testing
-serviceability/sa/ClhsdbScanOops.java                                                generic-all
-
-# SapMachine 2020-03-26
-# These errors only occur on our new virtualized Mac instance.
-# Opened a bug for the zgc folks
-# https://bugs.openjdk.java.net/browse/JDK-8241603
-#
-#
-# compiler/gcbarriers/UnsafeIntrinsicsTest.java                                8241603 macosx-all
-#
-#gc/z/TestAlwaysPreTouch.java                                                 8241603 macosx-all
-#
-#gc/z/TestHighUsage.java                                                      8241603 macosx-all
-#
-#gc/z/TestSmallHeap.java                                                      8241603 macosx-all
-#
-#gc/stress/gcold/TestGCOldWithZ.java                                          8241603 macosx-all
+# SapMachine 2020-07-07 Re-enabling test in 15+, because JDK-8235220 is fixed in 15
+#serviceability/sa/ClhsdbScanOops.java                                        8235220 generic-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
@@ -339,8 +219,8 @@ testlibrary_tests/process/TestNativeProcessBuilder.java                         
 # Some (new?) Docker issues popped up
 #
 #
-# remove linux-ppc64le exclusion to get more tracing; issue shows up after  8231111
-containers/docker/TestMemoryAwareness.java                                           linux-s390x
+# SapMachine 2020-07-07 Issue showed up after 8231111. Several fixes were made in the meantime. Hence removing exclusion now.
+#containers/docker/TestMemoryAwareness.java                                           linux-s390x,linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
