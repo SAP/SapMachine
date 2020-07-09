@@ -129,7 +129,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # This test fails ever since it was introduced and backported on Windows 32bit
 #
 # https://bugs.openjdk.java.net/browse/JDK-8241086
-# SapMachine 2020-05-06: Issue was resolved and test will no longe rurn on 32 bit, Backport to 11 still tbd.
+# SapMachine 2020-05-06 Issue was resolved and test will no longer run on 32 bit. Backport to 11 still tbd.
 runtime/NMT/HugeArenaTracking.java                                           8241086 windows-i586
 
 # SapMachine 2020-04-09
@@ -149,7 +149,7 @@ runtime/NMT/HugeArenaTracking.java                                           824
 #
 #
 # SapMachine 2020-05-12: Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8244847
-runtime/CompressedOops/CompressedClassPointers.java                                  linux-ppc64le
+runtime/CompressedOops/CompressedClassPointers.java                          8244847 linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -199,62 +199,12 @@ compiler/c2/aarch64/TestVolatilesG1.java                                        
 #
 gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
 
-# SapMachine 2020-01-01
-#
-# Graal unit tests have been enabled via https://bugs.openjdk.java.net/browse/JDK-8215728.
-# We need to enable this in the test framework, too. Backlog item created.
-#
-# SapMachine 2020-03-31 We decided not to run these.
-compiler/graalunit/ApiDirectivesTest.java                                            generic-all
-compiler/graalunit/ApiTest.java                                                      generic-all
-compiler/graalunit/AsmAarch64Test.java                                               generic-all
-compiler/graalunit/AsmAmd64Test.java                                                 generic-all
-compiler/graalunit/AsmSparcTest.java                                                 generic-all
-compiler/graalunit/CollectionsTest.java                                              generic-all
-compiler/graalunit/CoreAarch64Test.java                                              generic-all
-compiler/graalunit/CoreAmd64Test.java                                                generic-all
-compiler/graalunit/CoreJdk9Test.java                                                 generic-all
-compiler/graalunit/CoreTest.java                                                     generic-all
-compiler/graalunit/DebugTest.java                                                    generic-all
-compiler/graalunit/EATest.java                                                       generic-all
-compiler/graalunit/HotspotAarch64Test.java                                           generic-all
-compiler/graalunit/HotspotAmd64Test.java                                             generic-all
-compiler/graalunit/HotspotJdk9Test.java                                              generic-all
-compiler/graalunit/HotspotLirTest.java                                               generic-all
-compiler/graalunit/HotspotTest.java                                                  generic-all
-compiler/graalunit/JttBackendTest.java                                               generic-all
-compiler/graalunit/JttBytecodeTest.java                                              generic-all
-compiler/graalunit/JttExceptTest.java                                                generic-all
-compiler/graalunit/JttHotpathTest.java                                               generic-all
-compiler/graalunit/JttHotspotTest.java                                               generic-all
-compiler/graalunit/JttJdkTest.java                                                   generic-all
-compiler/graalunit/JttLangALTest.java                                                generic-all
-compiler/graalunit/JttLangMathALTest.java                                            generic-all
-compiler/graalunit/JttLangMathMZTest.java                                            generic-all
-compiler/graalunit/JttLangNZTest.java                                                generic-all
-compiler/graalunit/JttLoopTest.java                                                  generic-all
-compiler/graalunit/JttOptimizeTest.java                                              generic-all
-compiler/graalunit/JttReflectAETest.java                                             generic-all
-compiler/graalunit/JttReflectFieldGetTest.java                                       generic-all
-compiler/graalunit/JttReflectFieldSetTest.java                                       generic-all
-compiler/graalunit/JttReflectGZTest.java                                             generic-all
-compiler/graalunit/JttThreadsTest.java                                               generic-all
-compiler/graalunit/LirJttTest.java                                                   generic-all
-compiler/graalunit/LirTest.java                                                      generic-all
-compiler/graalunit/LoopTest.java                                                     generic-all
-compiler/graalunit/OptionsTest.java                                                  generic-all
-compiler/graalunit/PhasesCommonTest.java                                             generic-all
-compiler/graalunit/Replacements12Test.java                                           generic-all
-compiler/graalunit/Replacements9Test.java                                            generic-all
-compiler/graalunit/ReplacementsTest.java                                             generic-all
-compiler/graalunit/UtilTest.java                                                     generic-all
-
 # SapMachine 2019-01-02
 # This is failing currently on various places after https://bugs.openjdk.java.net/browse/JDK-8234277
 # It is tracked with https://bugs.openjdk.java.net/browse/JDK-8235220
 # We exclude it now until upstream bug is resolved to reduce noise in testing
 # SapMachine 2020-07-07 Re-enabling test in 15+, because JDK-8235220 is fixed in 15
-serviceability/sa/ClhsdbScanOops.java                                                generic-all
+serviceability/sa/ClhsdbScanOops.java                                        8235220 generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
