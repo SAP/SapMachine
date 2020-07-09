@@ -116,7 +116,6 @@ public class ToolSimpleTest extends ReplToolTesting {
         );
     }
 
-    // SapMachine 2019-11-04: Push JDK-8233014 early.
     @Test
     public void testChainedThrow() {
         test(
