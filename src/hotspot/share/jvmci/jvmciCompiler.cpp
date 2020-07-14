@@ -135,7 +135,7 @@ bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
 }
 
 // Compilation entry point for methods
-void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
+void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   ShouldNotReachHere();
 }
 
@@ -146,6 +146,6 @@ void JVMCICompiler::print_timers() {
 
 // Print compilation timers and statistics
 void JVMCICompiler::print_compilation_timers() {
-  TRACE_jvmci_1("JVMCICompiler::print_timers");
+  JVMCI_event_1("JVMCICompiler::print_timers");
   tty->print_cr("       JVMCI code install time:        %6.3f s",    _codeInstallTimer.seconds());
 }

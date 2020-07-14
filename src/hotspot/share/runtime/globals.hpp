@@ -559,6 +559,10 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
+  diagnostic(intx, RepeatCompilation, 0,                                    \
+          "Repeat compilation without installing code (number of times)")   \
+          range(0, max_jint)                                                 \
+                                                                            \
   /* SapMachine 2018-08-29: Enable this per default */                      \
   product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \

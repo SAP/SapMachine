@@ -376,3 +376,8 @@ java/util/Base64/TestEncodingDecodingLength.java                                
 # SapMachine 2019-05-20
 # We have problems with this test in our CI env on linux-x64. Excluding for now.
 java/lang/ProcessHandle/OnExitTest.java                                              linux-x64
+
+# SapMachine 2020-07-14
+# We see this test failing on our linux boxes
+# https://bugs.openjdk.java.net/browse/JDK-8249079
+java/lang/invoke/lambda/LambdaFileEncodingSerialization.java                 8249079 linux-all
