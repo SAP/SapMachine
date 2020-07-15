@@ -129,7 +129,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # This test fails ever since it was introduced and backported on Windows 32bit
 #
 # https://bugs.openjdk.java.net/browse/JDK-8241086
-# SapMachine 2020-05-06: Issue was resolved and test will no longe rurn on 32 bit, Backport to 11 still tbd.
+# SapMachine 2020-05-06 Issue was resolved and test will no longer run on 32 bit. Backport to 11 still tbd.
 runtime/NMT/HugeArenaTracking.java                                           8241086 windows-i586
 
 # SapMachine 2020-04-09

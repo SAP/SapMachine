@@ -167,8 +167,12 @@ security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java
 # New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
 
 # SapMachine 2020-07-06
-# certificate revoked
-security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java        generic-all
+# certificate revoked, see https://bugs.openjdk.java.net/browse/JDK-8248899
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
+
+# SapMachine 2020-07-10
+# certificate issue, see https://bugs.openjdk.java.net/browse/JDK-8249176
+security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java 8249176 generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
