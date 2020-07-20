@@ -185,10 +185,14 @@
                 {
                     "tag": "sapmachine-15+32",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jdk-15-ea.32_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jdk-15-ea.32_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jdk-15-ea.32_windows-x64_bin.zip",
+                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jdk-15-ea.32_windows-x64_bin.msi"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jre-15-ea.32_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jre-15-ea.32_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jre-15-ea.32_windows-x64_bin.zip",
+                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-15%2B32/sapmachine-jre-15-ea.32_windows-x64_bin.msi"
                     }
                 },
                 {
@@ -666,10 +670,12 @@
                 {
                     "tag": "sapmachine-16+6",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B6/sapmachine-jdk-16-ea.6_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B6/sapmachine-jdk-16-ea.6_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B6/sapmachine-jdk-16-ea.6_windows-x64_bin.zip"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B6/sapmachine-jre-16-ea.6_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B6/sapmachine-jre-16-ea.6_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B6/sapmachine-jre-16-ea.6_windows-x64_bin.zip"
                     }
                 },
                 {
