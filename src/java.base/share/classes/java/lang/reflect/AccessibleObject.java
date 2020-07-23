@@ -177,10 +177,16 @@ public class AccessibleObject implements AnnotatedElement {
      * to the caller's module. </p>
      *
      * <p> This method cannot be used to enable {@linkplain Field#set <em>write</em>}
-     * access to a final field declared in a {@linkplain Class#isHidden() hidden class},
-     * since such fields are not modifiable.  The {@code accessible} flag when
-     * {@code true} suppresses Java language access control checks to only
-     * enable {@linkplain Field#get <em>read</em>} access to such fields.
+     * access to a <em>non-modifiable</em> final field.  The following fields
+     * are non-modifiable:
+     * <ul>
+     * <li>static final fields declared in any class or interface</li>
+     * <li>final fields declared in a {@linkplain Class#isHidden() hidden class}</li>
+     * <li>final fields declared in a {@linkplain Class#isRecord() record}</li>
+     * </ul>
+     * <p> The {@code accessible} flag when {@code true} suppresses Java language access
+     * control checks to only enable {@linkplain Field#get <em>read</em>} access to
+     * these non-modifiable final fields.
      *
      * <p> If there is a security manager, its
      * {@code checkPermission} method is first called with a
@@ -434,7 +440,7 @@ public class AccessibleObject implements AnnotatedElement {
      * <p> This method returns {@code true} if the {@code accessible} flag
      * is set to {@code true}, i.e. the checks for Java language access control
      * are suppressed, or if the caller can access the member as
-     * specified in <cite>The Java&trade; Language Specification</cite>,
+     * specified in <cite>The Java Language Specification</cite>,
      * with the variation noted in the class description. </p>
      *
      * @param obj an instance object of the declaring class of this reflected

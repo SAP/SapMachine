@@ -566,6 +566,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
+java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 
 ############################################################################
 
@@ -585,6 +586,7 @@ javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 822733
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/File/GetXSpace.java                                     6501010,8249703 windows-all,macosx-all
 
 ############################################################################
 
@@ -592,6 +594,8 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
+
+java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
 sun/management/jdp/JdpDefaultsTest.java                         8241865 macosx-all
 sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
@@ -627,6 +631,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
+
+sun/nio/ch/TestMaxCachedBufferSize.java                         8212812 macosx-all
 
 ############################################################################
 
@@ -879,8 +885,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
-java/util/ServiceLoader/ReloadTest.java                     8242935 generic-all
-
 ############################################################################
 
 # jdk_instrument
@@ -910,9 +914,17 @@ javax/script/Test7.java                                         8239361 generic-
 
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
+jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 
 ############################################################################
 
 # jdk_internal
+
+############################################################################
+
+# jdk_jpackage
+
+tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 generic-all
+tools/jpackage/share/EmptyFolderPackageTest.java                    8249201 macosx-all
 
 ############################################################################

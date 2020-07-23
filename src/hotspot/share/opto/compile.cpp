@@ -1013,6 +1013,7 @@ void Compile::Init(int aliaslevel) {
   register_library_intrinsics();
 #ifdef ASSERT
   _type_verify_symmetry = true;
+  _phase_optimize_finished = false;
 #endif
 }
 
@@ -1806,7 +1807,17 @@ void Compile::remove_opaque4_nodes(PhaseIterGVN &igvn) {
   for (int i = opaque4_count(); i > 0; i--) {
     Node* opaq = opaque4_node(i-1);
     assert(opaq->Opcode() == Op_Opaque4, "Opaque4 only");
+    // With Opaque4 nodes, the expectation is that the test of input 1
+    // is always equal to the constant value of input 2. So we can
+    // remove the Opaque4 and replace it by input 2. In debug builds,
+    // leave the non constant test in instead to sanity check that it
+    // never fails (if it does, that subgraph was constructed so, at
+    // runtime, a Halt node is executed).
+#ifdef ASSERT
+    igvn.replace_node(opaq, opaq->in(1));
+#else
     igvn.replace_node(opaq, opaq->in(2));
+#endif
   }
   assert(opaque4_count() == 0, "should be empty");
 }
@@ -2249,6 +2260,7 @@ void Compile::Optimize() {
  }
 
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
+ DEBUG_ONLY(set_phase_optimize_finished();)
 }
 
 //---------------------------- Bitwise operation packing optimization ---------------------------
