@@ -566,6 +566,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
+java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 
 ############################################################################
 
@@ -585,6 +586,7 @@ javax/management/remote/mandatory/connection/MultiThreadDeadLockTest.java 822733
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/File/GetXSpace.java                                     6501010,8249703 windows-all,macosx-all
 
 ############################################################################
 
@@ -882,8 +884,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 ############################################################################
 
 # jdk_util
-
-java/util/ServiceLoader/ReloadTest.java                     8242935 generic-all
 
 ############################################################################
 
