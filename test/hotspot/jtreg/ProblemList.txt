@@ -43,14 +43,9 @@
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/codecache/jmx/PoolsIndependenceTest.java 8167015 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
-compiler/codegen/Test6896617.java 8193479 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
-compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
-compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
-
-compiler/c2/Test6852078.java 8194310 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
@@ -102,6 +97,7 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8224150 generic-all
+serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 
 #############################################################################
 
@@ -127,6 +123,7 @@ vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestD
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses021/TestDescription.java 8065773 generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023/TestDescription.java 8065773 generic-all
+vmTestbase/nsk/jdi/stress/serial/mixed002/TestDescription.java 8246493 generic-all
 
 vmTestbase/nsk/jdb/eval/eval001/eval001.java 8221503 generic-all
 
@@ -142,7 +139,7 @@ vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.ja
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
 
-vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8208243,8192647 generic-all
+vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all

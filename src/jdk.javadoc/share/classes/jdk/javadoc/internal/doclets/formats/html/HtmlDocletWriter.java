@@ -431,7 +431,7 @@ public class HtmlDocletWriter {
         Content htmlComment = contents.newPage;
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
-        Head head = new Head(path, configuration.docletVersion, configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))
@@ -1677,7 +1677,7 @@ public class HtmlDocletWriter {
 
     /**
      * According to
-     * <cite>The Java&trade; Language Specification</cite>,
+     * <cite>The Java Language Specification</cite>,
      * all the outer classes and static nested classes are core classes.
      */
     public boolean isCoreClass(TypeElement typeElement) {

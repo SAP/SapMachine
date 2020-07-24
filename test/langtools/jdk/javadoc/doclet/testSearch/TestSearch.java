@@ -58,11 +58,11 @@ public class TestSearch extends JavadocTester {
         checkSearchOutput("UnnamedPkgClass.html", true, true);
         checkJqueryAndImageFiles(true);
         checkSearchJS();
-        checkFiles(false,
-                "tag-search-index.js");
         checkFiles(true,
-                "package-search-index.js",
                 "member-search-index.js",
+                "module-search-index.js",
+                "package-search-index.js",
+                "tag-search-index.js",
                 "type-search-index.js");
     }
 
@@ -83,6 +83,7 @@ public class TestSearch extends JavadocTester {
         checkAllPkgsAllClasses();
         checkFiles(true,
                 "member-search-index.js",
+                "module-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
                 "type-search-index.js");
@@ -248,11 +249,11 @@ public class TestSearch extends JavadocTester {
         checkJavaFXOutput();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
-        checkFiles(false,
-                "tag-search-index.js");
         checkFiles(true,
                 "member-search-index.js",
+                "module-search-index.js",
                 "package-search-index.js",
+                "tag-search-index.js",
                 "type-search-index.js");
     }
 
@@ -726,14 +727,16 @@ public class TestSearch extends JavadocTester {
                             return ui.item.l + slash;
                         } else if (ui.item.category === catPackages && ui.item.m) {
                             return ui.item.m + slash;
-                        } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {
-                            $.each(packageSearchIndex, function(index, item) {
-                                if (item.m && ui.item.p == item.l) {
-                                    urlPrefix = item.m + slash;
-                                }
-                            });
-                            return urlPrefix;
-                        } else {
+                        } else if (ui.item.category === catTypes || ui.item.category === catMembers) {
+                            if (ui.item.m) {
+                                urlPrefix = ui.item.m + slash;
+                            } else {
+                                $.each(packageSearchIndex, function(index, item) {
+                                    if (item.m && ui.item.p === item.l) {
+                                        urlPrefix = item.m + slash;
+                                    }
+                                });
+                            }
                             return urlPrefix;
                         }
                         return urlPrefix;
