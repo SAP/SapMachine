@@ -175,6 +175,9 @@ security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.jav
 security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java 8249176 generic-all
 
 ###############################################################################
+# New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
+
+###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
 # SapMachine 2018-10-05

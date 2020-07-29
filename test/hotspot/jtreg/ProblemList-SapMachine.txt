@@ -151,6 +151,9 @@ compiler/codegen/TestCharVect2.java                                             
 # SapMachine 2020-05-12: Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8244847
 runtime/CompressedOops/CompressedClassPointers.java                          8244847 linux-ppc64le
 
+###############################################################################
+# New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
+
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 

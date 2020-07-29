@@ -33,6 +33,7 @@
 
 #include "childproc.h"
 
+const char * const *parentPathv;
 
 ssize_t
 restartableWrite(int fd, const void *buf, size_t count)
@@ -324,6 +325,13 @@ childProcess(void *arg)
         if (setpgid(0, 0) != 0) {
             goto WhyCantJohnnyExec;
         }
+    }
+
+    if (p->sendAlivePing) {
+        /* Child shall signal aliveness to parent at the very first
+         * moment. */
+        int code = CHILD_IS_ALIVE;
+        restartableWrite(fail_pipe_fd, &code, sizeof(code));
     }
 
     /* Close the parent sides of the pipes.
