@@ -317,6 +317,9 @@ const size_t minimumSymbolTableSize = 1024;
   product(bool, CriticalJNINatives, true,                                   \
           "Check for critical JNI entry points")                            \
                                                                             \
+  product(bool, UseLegacyJNINameEscaping, false,                            \
+          "Use the original JNI name escaping scheme")                      \
+                                                                            \
   notproduct(bool, StressCriticalJNINatives, false,                         \
           "Exercise register saving code in critical natives")              \
                                                                             \
