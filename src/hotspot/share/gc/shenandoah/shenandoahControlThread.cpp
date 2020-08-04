@@ -53,6 +53,9 @@ ShenandoahControlThread::ShenandoahControlThread() :
   create_and_start(ShenandoahCriticalControlThreadPriority ? CriticalPriority : NearMaxPriority);
   _periodic_task.enroll();
   _periodic_satb_flush_task.enroll();
+  if (ShenandoahPacing) {
+    _periodic_pacer_notify_task.enroll();
+  }
 }
 
 ShenandoahControlThread::~ShenandoahControlThread() {
@@ -66,6 +69,11 @@ void ShenandoahPeriodicTask::task() {
 
 void ShenandoahPeriodicSATBFlushTask::task() {
   ShenandoahHeap::heap()->force_satb_flush_all_threads();
+}
+
+void ShenandoahPeriodicPacerNotify::task() {
+  assert(ShenandoahPacing, "Should not be here otherwise");
+  ShenandoahHeap::heap()->pacer()->notify_waiters();
 }
 
 void ShenandoahControlThread::run_service() {
@@ -244,6 +252,9 @@ void ShenandoahControlThread::run_service() {
 
       // Commit worker statistics to cycle data
       heap->phase_timings()->flush_par_workers_to_cycle();
+      if (ShenandoahPacing) {
+        heap->pacer()->flush_stats_to_cycle();
+      }
 
       // Print GC stats for current cycle
       {
@@ -252,6 +263,9 @@ void ShenandoahControlThread::run_service() {
           ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
+          if (ShenandoahPacing) {
+            heap->pacer()->print_cycle_on(&ls);
+          }
         }
       }
 
