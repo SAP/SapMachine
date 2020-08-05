@@ -26,7 +26,7 @@
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
- *      8223499 8225392 8232019 8234245 8233223 8225068 8225069
+ *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -52,12 +52,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 92;
+    private static final int COUNT = 93;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "8F:AF:ED:F3:9C:D5:42:C6:67:C3:6F:C1:B5:63:CC:FA:9B:5C:EE:C4:30:3F:91:3B:5B:6D:ED:FE:A9:B5:41:6B";
+            = "C8:8A:8F:B5:A1:53:8F:BD:63:0C:98:98:58:45:32:1D:9B:26:79:7D:25:0F:EA:A7:C3:B1:B7:6A:7F:D9:D0:1F";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -247,6 +247,8 @@ public class VerifyCACerts {
                     "18:CE:6C:FE:7B:F1:4E:60:B2:E3:47:B8:DF:E8:68:CB:31:D0:2E:BB:3A:DA:27:15:69:F5:03:43:B4:6D:B3:A4");
             put("amazonrootca4 [jdk]",
                     "E3:5D:28:41:9E:D0:20:25:CF:A6:90:38:CD:62:39:62:45:8D:A5:C6:95:FB:DE:A3:C2:2B:0B:FB:25:89:70:92");
+            put("entrustrootcag4 [jdk]",
+                    "DB:35:17:D1:F6:73:2A:2D:5A:B9:7C:53:3E:C7:07:79:EE:32:70:A6:2F:B4:AC:42:38:37:24:60:E6:F0:1E:88");
         }
     };
 
