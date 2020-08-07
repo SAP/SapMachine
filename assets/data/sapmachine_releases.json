@@ -225,6 +225,15 @@
                     }
                 },
                 {
+                    "tag": "sapmachine-16+10",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B10/sapmachine-jdk-16-ea.10_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B10/sapmachine-jre-16-ea.10_linux-x64_bin.tar.gz"
+                    }
+                },
+                {
                     "tag": "sapmachine-16+1",
                     "jdk": {
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B1/sapmachine-jdk-16-ea.1_linux-x64_bin.tar.gz",
