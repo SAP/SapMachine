@@ -148,6 +148,7 @@ private:
 
 public:
   ShenandoahWeakRoots();
+  ~ShenandoahWeakRoots();
 
   template <typename Closure>
   void oops_do(Closure* cl, uint worker_id);
