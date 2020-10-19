@@ -275,9 +275,13 @@ static void print_column_names(outputStream* st, int widths[], const print_info_
     if (pi->csv == false) {
       st->print("%-*s ", widths[c->index()], c->name());
     } else { // csv mode
-      // csv: use comma as delimiter, don't pad, and precede name with header if there is one.
+      // csv: use comma as delimiter, don't pad, and precede name with category/header
+      //  (limited to 4 chars).
+      if (c->category() != NULL) {
+        st->print("%.4s-", c->category());
+      }
       if (c->header() != NULL) {
-        st->print("%s-", c->header());
+        st->print("%.4s-", c->header());
       }
       st->print("%s,", c->name());
     }
