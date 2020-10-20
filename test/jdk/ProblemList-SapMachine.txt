@@ -152,7 +152,7 @@ java/awt/print/PrinterJob/SameService.java                                   822
 #
 #
 # SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
-java/awt/FontClass/FontSize1Test.java                                                darwinintel
+java/awt/FontClass/FontSize1Test.java                                                macosx-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
@@ -167,8 +167,19 @@ security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java
 # New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
 
 # SapMachine 2020-07-06
-# certificate revoked
-security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java        generic-all
+# certificate revoked, see https://bugs.openjdk.java.net/browse/JDK-8248899
+security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
+
+# SapMachine 2020-07-10
+# certificate issue, see https://bugs.openjdk.java.net/browse/JDK-8249176
+security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java 8249176 generic-all
+
+###############################################################################
+# New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
+
+# SapMachine 2020-09-04
+# This times out on AIX machines. don't fix, AIX is off-topic.  Seen in 11.0.8 and 16.
+java/awt/FontClass/DrawStringWithInfiniteXform.java                                   aix-all
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -325,8 +336,55 @@ lib/testlibrary/OutputAnalyzerTest.java                                         
 javax/net/ssl/ServerName/SSLEngineExplorerWithSrv.java                       8227651 linux-s390x, aix-all
 javax/net/ssl/ServerName/SSLEngineExplorerWithCli.java                       8227651 linux-s390x
 
+# SapMachine 2020-09-17
+# Seen only on this one machine -- machine issue?
+# *** glibc detected *** /bin/java: double free or corruption
+javax/sound/sampled/Clip/ClipIsRunningAfterStop.java                                 linux-ppc64
+
+# SapMachine 2020-09-17
+# RuntimeException: '/net/usr.work': 13570272264192 != 13570272198656
+java/io/File/GetXSpace.java                                                          generic-all
+
+# SapMachine 2020-09-17
+# Sporadic timeout on ls3876.  Exclude only here
+java/net/Socket/AsyncShutdown.java                                                   linux-ppc64
+
+# SapMachine 2020-09-17
+# WARNING: Using incubator modules: jdk.incubator.foreign
+# Exclude, retry once foreign is no more incubator.
+java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java    linux-ppc64,linux-ppc64le
+
+# SapMachine 2020-09-17
+# IllegalArgumentException: IPv6 socket cannot join IPv4 multicast group
+# many aix machines
+# Added macosx-all to the tests that are in the original exclude list.
+java/net/MulticastSocket/B6427403.java                                               aix-all
+java/net/MulticastSocket/NoLoopbackPackets.java                                      aix-all,macosx-all
+java/net/MulticastSocket/Promiscuous.java                                            aix-all
+java/net/MulticastSocket/SetLoopbackMode.java                                        aix-all,macosx-all
+java/net/MulticastSocket/Test.java                                                   aix-all,macosx-all
+
+# SapMachine 2020-09-17
+# Exception: ERROR: IsModifiableClass failed.
+# I'd assume this test should not be run on mac.
+java/lang/instrument/IsModifiableClassAgent.java                                     macosx-all
+
+# SapMachine 2020-09-17
+# SocketException: Cannot allocate memory
+# Seen a lot on mac, also 7, 11 ...
+java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     macosx-all
+
 ###############################################################################
 # Failing new tests, unsupported new features in jdk16
+
+# SapMachine 2020-08-07
+# These tests fail on our PPC machines that have a stacksize bigger than 4k. Test will
+# fail on all machines that do no GC before the first output.
+# https://bugs.openjdk.java.net/browse/JDK-8248691
+sun/tools/jstat/jstatLineCounts1.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
+sun/tools/jstat/jstatLineCounts2.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
+sun/tools/jstat/jstatLineCounts3.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
+sun/tools/jstat/jstatLineCounts4.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
