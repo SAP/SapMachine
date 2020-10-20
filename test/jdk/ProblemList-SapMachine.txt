@@ -177,6 +177,10 @@ security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA
 ###############################################################################
 # New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
 
+# SapMachine 2020-09-04
+# This times out on AIX machines. don't fix, AIX is off-topic.  Seen in 11.0.8 and 16.
+java/awt/FontClass/DrawStringWithInfiniteXform.java                                   aix-all
+
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
