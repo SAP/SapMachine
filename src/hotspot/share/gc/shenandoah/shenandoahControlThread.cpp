@@ -50,9 +50,12 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _allocs_seen(0) {
 
   reset_gc_id();
-  create_and_start(ShenandoahCriticalControlThreadPriority ? CriticalPriority : NearMaxPriority);
+  create_and_start();
   _periodic_task.enroll();
   _periodic_satb_flush_task.enroll();
+  if (ShenandoahPacing) {
+    _periodic_pacer_notify_task.enroll();
+  }
 }
 
 ShenandoahControlThread::~ShenandoahControlThread() {
@@ -66,6 +69,11 @@ void ShenandoahPeriodicTask::task() {
 
 void ShenandoahPeriodicSATBFlushTask::task() {
   ShenandoahHeap::heap()->force_satb_flush_all_threads();
+}
+
+void ShenandoahPeriodicPacerNotify::task() {
+  assert(ShenandoahPacing, "Should not be here otherwise");
+  ShenandoahHeap::heap()->pacer()->notify_waiters();
 }
 
 void ShenandoahControlThread::run_service() {
@@ -166,8 +174,8 @@ void ShenandoahControlThread::run_service() {
     }
 
     // Blow all soft references on this cycle, if handling allocation failure,
-    // or we are requested to do so unconditionally.
-    if (alloc_failure_pending || ShenandoahAlwaysClearSoftRefs) {
+    // either implicit or explicit GC request,  or we are requested to do so unconditionally.
+    if (alloc_failure_pending || implicit_gc_requested || explicit_gc_requested || ShenandoahAlwaysClearSoftRefs) {
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
     }
 
@@ -244,6 +252,9 @@ void ShenandoahControlThread::run_service() {
 
       // Commit worker statistics to cycle data
       heap->phase_timings()->flush_par_workers_to_cycle();
+      if (ShenandoahPacing) {
+        heap->pacer()->flush_stats_to_cycle();
+      }
 
       // Print GC stats for current cycle
       {
@@ -252,6 +263,9 @@ void ShenandoahControlThread::run_service() {
           ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
+          if (ShenandoahPacing) {
+            heap->pacer()->print_cycle_on(&ls);
+          }
         }
       }
 
@@ -407,6 +421,12 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     heap->entry_cleanup_complete();
+  } else {
+    // Concurrent weak/strong root flags are unset concurrently. We depend on updateref GC safepoints
+    // to ensure the changes are visible to all mutators before gc cycle is completed.
+    // In case of no evacuation, updateref GC safepoints are skipped. Therefore, we will need
+    // to perform thread handshake to ensure their consistences.
+    heap->entry_rendezvous_roots();
   }
 
   // Cycle is complete

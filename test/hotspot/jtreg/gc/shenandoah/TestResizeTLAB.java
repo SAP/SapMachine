@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,177 +23,178 @@
  */
 
 /*
- * @test TestAllocObjects
- * @summary Acceptance tests: collector can withstand allocation
+ * @test TestResizeTLAB
+ * @key randomness
+ * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
+ * @library /test/lib
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
  *      -XX:+ShenandoahDegeneratedGC -XX:+ShenandoahVerify
- *      TestAllocObjects
+ *      -XX:+ShenandoahVerify
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
+ *      -XX:+ShenandoahDegeneratedGC -XX:+ShenandoahVerify
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
  *      -XX:-ShenandoahDegeneratedGC -XX:+ShenandoahVerify
- *      TestAllocObjects
+ *      -XX:+ShenandoahVerify
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC
- *      TestAllocObjects
+ *      -XX:-ShenandoahDegeneratedGC -XX:+ShenandoahVerify
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
  */
 
 /*
- * @test TestAllocObjects
- * @summary Acceptance tests: collector can withstand allocation
+ * @test TestResizeTLAB
+ * @key randomness
+ * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
+ * @library /test/lib
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
- *      TestAllocObjects
+ *      -XX:+ShenandoahVerify
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
- *
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
  */
 
 /*
- * @test TestAllocObjects
- * @summary Acceptance tests: collector can withstand allocation
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @test TestResizeTLAB
+ * @key randomness
+ * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
  *      -XX:+ShenandoahVerify
- *      TestAllocObjects
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
  */
 
 /*
- * @test TestAllocObjects
- * @summary Acceptance tests: collector can withstand allocation
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
- */
-
-/*
- * @test TestAllocObjects
- * @summary Acceptance tests: collector can withstand allocation
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
- */
-
-/*
- * @test TestAllocObjects
- * @summary Acceptance tests: collector can withstand allocation
+ * @test TestResizeTLAB
+ * @key randomness
+ * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
  * @requires vm.gc.Shenandoah
+ * @library /test/lib
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
- *      TestAllocObjects
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
+ *      -XX:+ShenandoahVerify
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestAllocObjects
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
  */
 
 /*
- * @test TestAllocObjects
- * @summary Acceptance tests: collector can withstand allocation
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @test TestResizeTLAB
+ * @key randomness
+ * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+ShenandoahVerify
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
+ */
+
+/*
+ * @test TestResizeTLAB
+ * @key randomness
+ * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahVerify
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
+ */
+
+/*
+ * @test TestResizeTLAB
+ * @key randomness
+ * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
  *      -XX:+ShenandoahVerify
- *      TestAllocObjects
+ *      -XX:+ResizeTLAB
+ *      TestResizeTLAB
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
+ *      -XX:+ShenandoahVerify
+ *      -XX:-ResizeTLAB
+ *      TestResizeTLAB
  */
 
-public class TestAllocObjects {
+import java.util.Random;
+import jdk.test.lib.Utils;
+
+public class TestResizeTLAB {
 
     static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation
 
     static volatile Object sink;
 
     public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 16;
+        final int min = 0;
+        final int max = 384 * 1024;
+        long count = TARGET_MB * 1024 * 1024 / (16 + 4 * (min + (max - min) / 2));
+
+        Random r = Utils.getRandomInstance();
         for (long c = 0; c < count; c++) {
-            sink = new Object();
+            sink = new int[min + r.nextInt(max - min)];
         }
     }
 

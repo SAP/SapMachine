@@ -76,6 +76,14 @@ ShenandoahWeakRoots<CONCURRENT>::ShenandoahWeakRoots() :
   _string_table_roots(OopStorageSet::string_table_weak(), ShenandoahPhaseTimings::StringTableRoots),
   _resolved_method_table_roots(OopStorageSet::resolved_method_table_weak(), ShenandoahPhaseTimings::ResolvedMethodTableRoots),
   _vm_roots(OopStorageSet::vm_weak(), ShenandoahPhaseTimings::VMWeakRoots) {
+  StringTable::reset_dead_counter();
+  ResolvedMethodTable::reset_dead_counter();
+}
+
+template <bool CONCURRENT>
+ShenandoahWeakRoots<CONCURRENT>::~ShenandoahWeakRoots() {
+  StringTable::finish_dead_counter();
+  ResolvedMethodTable::finish_dead_counter();
 }
 
 template <bool CONCURRENT>
