@@ -531,6 +531,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "CriticalJNINatives",                  JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -4195,7 +4196,23 @@ jint Arguments::apply_ergo() {
   if (!UseBiasedLocking) {
     UseOptoBiasInlining = false;
   }
-#endif
+
+  if (!EnableVectorSupport) {
+    if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
+      warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
+    }
+    FLAG_SET_DEFAULT(EnableVectorReboxing, false);
+
+    if (!FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing) && EnableVectorAggressiveReboxing) {
+      if (!EnableVectorReboxing) {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorReboxing is turned off.");
+      } else {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorSupport is turned off.");
+      }
+    }
+    FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
+  }
+#endif // COMPILER2
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnPrimitiveWrappers)) {
     if (DiagnoseSyncOnPrimitiveWrappers == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, primitivewrappers)) {
