@@ -25,10 +25,13 @@
 
 #include "precompiled.hpp"
 
+#include "precompiled.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "services/stathist_internals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 #include <fcntl.h>
 #include <string.h>
@@ -195,6 +198,9 @@ static Column* g_col_system_swap = NULL;
 static Column* g_col_system_pages_swapped_in = NULL;
 static Column* g_col_system_pages_swapped_out = NULL;
 
+static Column* g_col_system_num_procs = NULL;
+static Column* g_col_system_num_threads = NULL;
+
 static Column* g_col_system_num_procs_running = NULL;
 static Column* g_col_system_num_procs_blocked = NULL;
 
@@ -247,8 +253,11 @@ bool platform_columns_initialize() {
 
   g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out");
 
-  g_col_system_num_procs_running = new PlainValueColumn("system", NULL, "pr", "Number of tasks running");
-  g_col_system_num_procs_blocked = new PlainValueColumn("system", NULL, "pb", "Number of tasks blocked");
+  g_col_system_num_procs = new PlainValueColumn("system", NULL, "p", "Number of processes");
+  g_col_system_num_threads = new PlainValueColumn("system", NULL, "t", "Number of threads");
+
+  g_col_system_num_procs_running = new PlainValueColumn("system", NULL, "pr", "Number of processes running");
+  g_col_system_num_procs_blocked = new PlainValueColumn("system", NULL, "pb", "Number of processes blocked");
 
   g_col_system_cpu_user =     new CPUTimeColumn("system", "cpu", "us", "Global cpu user time");
   g_col_system_cpu_system =   new CPUTimeColumn("system", "cpu", "sy", "Global cpu system time");
@@ -299,6 +308,15 @@ static void set_value_in_record(Column* col, record_t* record, value_t val) {
     int index = col->index();
     record->values[index] = val;
   }
+}
+
+// Helper function, returns true if string is a numerical id
+static bool is_numerical_id(const char* s) {
+  const char* p = s;
+  while(*p >= '0' && *p <= '9') {
+    p ++;
+  }
+  return *p == '\0' ? true : false;
 }
 
 void sample_platform_values(record_t* record) {
@@ -387,6 +405,38 @@ void sample_platform_values(record_t* record) {
     }
   }
 
+  // Number of processes: iterate over /proc/<pid> and count.
+  // Number of threads: read "num_threads" from /proc/<pid>/stat
+  {
+    DIR* d = ::opendir("/proc");
+    if (d != NULL) {
+      value_t v_p = 0;
+      value_t v_t = 0;
+      struct dirent* en = NULL;
+      do {
+        en = ::readdir(d);
+        if (en != NULL) {
+          if (is_numerical_id(en->d_name)) {
+            v_p ++;
+            char tmp[128];
+            jio_snprintf(tmp, sizeof(tmp), "/proc/%s/stat", en->d_name);
+            if (bf.read(tmp)) {
+              const char* text = bf.text();
+              // See man proc(5)
+              // (20) num_threads  %ld
+              long num_threads = 0;
+              ::sscanf(text, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads);
+              v_t += num_threads;
+            }
+          }
+        }
+      } while(en != NULL);
+      ::closedir(d);
+      set_value_in_record(g_col_system_num_procs, record, v_p);
+      set_value_in_record(g_col_system_num_threads, record, v_t);
+    }
+  }
+
   if (bf.read("/proc/self/io")) {
     set_value_in_record(g_col_process_io_bytes_read, record,
         bf.parsed_prefixed_value("rchar:"));
@@ -399,7 +449,6 @@ void sample_platform_values(record_t* record) {
     // See man proc(5)
     // (14) utime  %lu
     // (15) stime  %lu
-
     long unsigned cpu_utime = 0;
     long unsigned cpu_stime = 0;
     ::sscanf(text, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &cpu_utime, &cpu_stime);
