@@ -24,8 +24,6 @@
  */
 
 #include "precompiled.hpp"
-
-#include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "services/stathist_internals.hpp"
