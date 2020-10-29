@@ -495,10 +495,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_indexOfIU:
   case vmIntrinsics::_indexOfIUL:
   case vmIntrinsics::_indexOfU_char:
-  // SapMachine 2020-10-22: Seems like this intrinsic causes problems on ppc64/ppc64le
-  // https://ci.sapmachine.io/view/Pull%20Request%20Validation%20Builds%20/job/build-16-pr-validation-linux_ppc64le/44/console
-  // https://ci.sapmachine.io/view/Pull%20Request%20Validation%20Builds%20/job/build-16-pr-validation-linux_ppc64/45/console
-  // case vmIntrinsics::_indexOfL_char:
+  case vmIntrinsics::_indexOfL_char:
   case vmIntrinsics::_toBytesStringU:
   case vmIntrinsics::_getCharsStringU:
   case vmIntrinsics::_getCharStringU:
@@ -629,6 +626,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
+  case vmIntrinsics::_sha3_implCompress:
   case vmIntrinsics::_digestBase_implCompressMB:
   case vmIntrinsics::_multiplyToLen:
   case vmIntrinsics::_squareToLen:
