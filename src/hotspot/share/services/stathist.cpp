@@ -1183,6 +1183,7 @@ void sample_jvm_values(record_t* record, bool avoid_locking) {
   const size_t codecache_committed = CodeCache::capacity();
   set_value_in_record(g_col_codecache_committed, record, codecache_committed);
 
+#if INCLUDE_NMT
   // NMT
   if (!avoid_locking) {
     size_t malloc_footprint = 0;
@@ -1192,6 +1193,7 @@ void sample_jvm_values(record_t* record, bool avoid_locking) {
     }
     set_value_in_record(g_col_nmt_malloc, record, malloc_footprint);
   }
+#endif
 
   // Java threads
   set_value_in_record(g_col_number_of_java_threads, record, Threads::number_of_threads());
