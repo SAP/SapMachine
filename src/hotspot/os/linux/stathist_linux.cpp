@@ -191,6 +191,7 @@ public:
 //static Column* g_col_system_memtotal = NULL;
 static Column* g_col_system_memfree = NULL;
 static Column* g_col_system_memavail = NULL;
+static Column* g_col_system_memcommitted_ratio = NULL;
 static Column* g_col_system_swap = NULL;
 
 static Column* g_col_system_pages_swapped_in = NULL;
@@ -239,12 +240,14 @@ bool platform_columns_initialize() {
     }
   }
 
-  if (have_avail) {
-    g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping (>=3.14)");
+  // To save horizontal space, we print either avail or free
+  if (have_avail) { //  (>=3.14)
+    g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
   } else {
     g_col_system_memfree = new MemorySizeColumn("system", NULL, "free", "Unused memory");
   }
 
+  g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
   g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
 
   g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in");
@@ -340,6 +343,13 @@ void sample_platform_values(record_t* record) {
       set_value_in_record(g_col_system_swap, record, swap_total - swap_free);
     }
 
+    // Calc committed ratio. Values > 100% indicate overcommitment.
+    value_t commitlimit = bf.parsed_prefixed_value("CommitLimit:", scale);
+    value_t committed = bf.parsed_prefixed_value("Committed_AS:", scale);
+    if (commitlimit != INVALID_VALUE && commitlimit != 0 && committed != INVALID_VALUE) {
+      value_t ratio = (committed * 100) / commitlimit;
+      set_value_in_record(g_col_system_memcommitted_ratio, record, ratio);
+    }
   }
 
   if (bf.read("/proc/vmstat")) {
