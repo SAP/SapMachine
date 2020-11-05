@@ -376,8 +376,8 @@ jobs:
           "$HOME/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
           .
           -i *.jtr
-          -i hs_err*
-          -i replay*
+          -i */hs_err*.log
+          -i */replay*.log
         continue-on-error: true
 
       - name: Persist test results
@@ -666,8 +666,8 @@ jobs:
           "$HOME/linux-x86${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
           .
           -i *.jtr
-          -i hs_err*
-          -i replay*
+          -i */hs_err*.log
+          -i */replay*.log
         continue-on-error: true
 
       - name: Persist test results
@@ -986,8 +986,8 @@ jobs:
           "$HOME/windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
           .
           -i *.jtr
-          -i hs_err*
-          -i replay*
+          -i */hs_err*.log
+          -i */replay*.log
         continue-on-error: true
 
       - name: Persist test results
@@ -1271,8 +1271,8 @@ jobs:
           "$HOME/macos-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
           .
           -i *.jtr
-          -i hs_err*
-          -i replay*
+          -i */hs_err*.log
+          -i */replay*.log
         continue-on-error: true
 
       - name: Persist test results
