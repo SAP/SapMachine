@@ -202,10 +202,12 @@
                 {
                     "tag": "sapmachine-16+23",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B23/sapmachine-jdk-16-ea.23_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B23/sapmachine-jdk-16-ea.23_linux-x64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B23/sapmachine-jdk-16-eabeta.23_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B23/sapmachine-jre-16-ea.23_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B23/sapmachine-jre-16-ea.23_linux-x64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B23/sapmachine-jre-16-eabeta.23_linux-aarch64_bin.tar.gz"
                     }
                 },
                 {
