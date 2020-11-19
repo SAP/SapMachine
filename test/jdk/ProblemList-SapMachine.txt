@@ -182,6 +182,16 @@ security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA
 java/awt/FontClass/DrawStringWithInfiniteXform.java                                   aix-all
 
 ###############################################################################
+# New failures detected after GA of 11.0.9 (e.g. seen only in jdk11u-dev after branching 11.0.9 to jdk11u)
+
+# SapMachine 2019-02-08
+# javax.naming.CommunicationException: DNS error [Root exception is SocketTimeoutException: Receive timed out] ...
+# Mac is in the central exclude list.
+#
+# SapMachine 2020-11-17 Will be addressed via https://bugs.openjdk.java.net/browse/JDK-8256427
+com/sun/jndi/dns/ConfigTests/PortUnreachable.java                    7164518,8256427 macosx-all,aix-ppc64
+
+###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
 # SapMachine 2018-10-05
