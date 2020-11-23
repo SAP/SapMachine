@@ -1341,10 +1341,8 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     blk_labels[i].init();
   }
 
-  // ------------------
   // Now fill in the code buffer
   Node *delay_slot = NULL;
-
   for (uint i = 0; i < nblocks; i++) {
     Block* block = C->cfg()->get_block(i);
     _block = block;
@@ -1601,9 +1599,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         node_offsets[n->_idx] = cb->insts_size();
       }
 #endif
+      assert(!C->failing(), "Should not reach here if failing.");
 
       // "Normal" instruction case
-      DEBUG_ONLY( uint instr_offset = cb->insts_size(); )
+      DEBUG_ONLY(uint instr_offset = cb->insts_size());
       n->emit(*cb, C->regalloc());
       current_offset  = cb->insts_size();
 
@@ -1788,8 +1787,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       // be sure to tag this tty output with the compile ID.
       if (xtty != NULL) {
         xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
-                   C->is_osr_compilation()    ? " compile_kind='osr'" :
-                   "");
+                   C->is_osr_compilation() ? " compile_kind='osr'" : "");
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
