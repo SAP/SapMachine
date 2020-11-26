@@ -679,6 +679,11 @@ class ZipFile implements ZipConstants, Closeable {
         e.size = CENLEN(cen, pos);
         e.csize = CENSIZ(cen, pos);
         e.method = CENHOW(cen, pos);
+        if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
+            // read all bits in this field, including sym link attributes
+            e.extraAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
+        }
+
         if (elen != 0) {
             int start = pos + CENHDR + nlen;
             e.setExtra0(Arrays.copyOfRange(cen, start, start + elen), true, false);
@@ -1134,6 +1139,15 @@ class ZipFile implements ZipConstants, Closeable {
                 public Stream<String> entryNameStream(ZipFile zip) {
                     return zip.entryNameStream();
                 }
+                @Override
+                public int getExtraAttributes(ZipEntry ze) {
+                    return ze.extraAttributes;
+                }
+                @Override
+                public void setExtraAttributes(ZipEntry ze, int extraAttrs) {
+                    ze.extraAttributes = extraAttrs;
+                }
+
              }
         );
         JLA = jdk.internal.misc.SharedSecrets.getJavaLangAccess();

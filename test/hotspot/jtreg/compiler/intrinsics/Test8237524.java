@@ -27,7 +27,9 @@
  * @bug 8237524
  * @summary String.compareTo() may return incorrect result in this case
  *
- * @run main/othervm compiler.intrinsics.Test8237524
+ * @modules java.base/java.lang:open
+ *
+ * @run main/othervm -XX:+CompactStrings compiler.intrinsics.Test8237524
  */
 
 package compiler.intrinsics;
