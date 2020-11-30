@@ -199,11 +199,6 @@ javax/security/auth/Subject/DoAs.java                                           
 java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
 
 # SapMachine 2019-02-08
-# javax.naming.CommunicationException: DNS error [Root exception is SocketTimeoutException: Receive timed out] ...
-# Mac is in the central exclude list.
-com/sun/jndi/dns/ConfigTests/PortUnreachable.java                            7164518 macosx-all,aix-ppc64
-
-# SapMachine 2019-02-08
 # assertEquals: expected -1 to equal 53332
 tools/jlink/JLinkReproducibleTest.java                                               aix-ppc64
 

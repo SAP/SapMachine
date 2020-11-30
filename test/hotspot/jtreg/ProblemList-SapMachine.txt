@@ -230,9 +230,8 @@ serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                     
 # Failing new tests, unsupported new features in jdk16
 
 # SapMachine 2020-10-05
-# This test fails daily on several x86_64 and aarch64 machines in our CI.
-# Exclude it until test https://bugs.openjdk.java.net/browse/JDK-8251994 is fixed.
-compiler/vectorization/TestComplexAddrExpr.java                                      generic-x64,generic-aarch64
+# This test consumes a lot of resourcess - exlcude it on all platforms to avoid issues with out of memory.
+vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java          generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
