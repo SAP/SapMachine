@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -933,6 +934,16 @@ JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
   return event;
 }
 
+JvmtiDeferredEvent JvmtiDeferredEvent::class_unload_event(const char* name) {
+  JvmtiDeferredEvent event = JvmtiDeferredEvent(TYPE_CLASS_UNLOAD);
+  // Need to make a copy of the name since we don't know how long
+  // the event poster will keep it around after we enqueue the
+  // deferred event and return. strdup() failure is handled in
+  // the post() routine below.
+  event._event_data.class_unload.name = os::strdup(name);
+  return event;
+}
+
 void JvmtiDeferredEvent::post() {
   assert(Thread::current()->is_service_thread(),
          "Service thread must post enqueued events");
@@ -964,10 +975,28 @@ void JvmtiDeferredEvent::post() {
       }
       break;
     }
+    case TYPE_CLASS_UNLOAD: {
+      JvmtiExport::post_class_unload_internal(
+        // if strdup failed give the event a default name
+        (_event_data.class_unload.name == NULL)
+          ? "unknown_class" : _event_data.class_unload.name);
+      if (_event_data.class_unload.name != NULL) {
+        // release our copy
+        os::free((void *)_event_data.class_unload.name);
+      }
+      break;
+    }
     default:
       ShouldNotReachHere();
   }
 }
+
+void JvmtiDeferredEvent::post_compiled_method_load_event(JvmtiEnv* env) {
+  assert(_type == TYPE_COMPILED_METHOD_LOAD, "only user of this method");
+  nmethod* nm = _event_data.compiled_method_load;
+  JvmtiExport::post_compiled_method_load(env, nm);
+}
+
 
 // Keep the nmethod for compiled_method_load from being unloaded.
 void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
@@ -981,20 +1010,22 @@ void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
 void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
   if (cf != NULL && _type == TYPE_COMPILED_METHOD_LOAD) {
     cf->do_code_blob(_event_data.compiled_method_load);
-  }  // May add UNLOAD event but it doesn't work yet.
+  }
 }
 
-JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_tail = NULL;
-JvmtiDeferredEventQueue::QueueNode* JvmtiDeferredEventQueue::_queue_head = NULL;
 
 bool JvmtiDeferredEventQueue::has_events() {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
-  return _queue_head != NULL;
+  // We save the queued events before the live phase and post them when it starts.
+  // This code could skip saving the events on the queue before the live
+  // phase and ignore them, but this would change how we do things now.
+  // Starting the service thread earlier causes this to be called before the live phase begins.
+  // The events on the queue should all be posted after the live phase so this is an
+  // ok check.  Before the live phase, DynamicCodeGenerated events are posted directly.
+  // If we add other types of events to the deferred queue, this could get ugly.
+  return JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE  && _queue_head != NULL;
 }
 
-void JvmtiDeferredEventQueue::enqueue(const JvmtiDeferredEvent& event) {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
-
+void JvmtiDeferredEventQueue::enqueue(JvmtiDeferredEvent event) {
   // Events get added to the end of the queue (and are pulled off the front).
   QueueNode* node = new QueueNode(event);
   if (_queue_tail == NULL) {
@@ -1005,14 +1036,11 @@ void JvmtiDeferredEventQueue::enqueue(const JvmtiDeferredEvent& event) {
     _queue_tail = node;
   }
 
-  Service_lock->notify_all();
   assert((_queue_head == NULL) == (_queue_tail == NULL),
          "Inconsistent queue markers");
 }
 
 JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
-  assert(Service_lock->owned_by_self(), "Must own Service_lock");
-
   assert(_queue_head != NULL, "Nothing to dequeue");
 
   if (_queue_head == NULL) {
@@ -1032,6 +1060,14 @@ JvmtiDeferredEvent JvmtiDeferredEventQueue::dequeue() {
   JvmtiDeferredEvent event = node->event();
   delete node;
   return event;
+}
+
+void JvmtiDeferredEventQueue::post(JvmtiEnv* env) {
+  // Post and destroy queue nodes
+  while (_queue_head != NULL) {
+     JvmtiDeferredEvent event = dequeue();
+     event.post_compiled_method_load_event(env);
+  }
 }
 
 void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {

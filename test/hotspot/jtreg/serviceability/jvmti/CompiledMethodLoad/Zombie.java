@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_LEAKPROFILER_CHAINS_EDGEUTILS_HPP
-#define SHARE_VM_LEAKPROFILER_CHAINS_EDGEUTILS_HPP
+/**
+ * @test
+ * @bug 8212159
+ * @summary Generate compiled method load events without crashing
+ * @run main/othervm/native -agentlib:CompiledZombie -Xcomp -XX:ReservedCodeCacheSize=20m Zombie
+ **/
 
-#include "memory/allocation.hpp"
+ // The stress test that made this fail was -jar SwingSet2.jar from demos (without DISPLAY set so it exits)
 
-class Edge;
-class Symbol;
-
-class EdgeUtils : public AllStatic {
- public:
-  static const size_t leak_context = 100;
-  static const size_t root_context = 100;
-  static const size_t max_ref_chain_depth = leak_context + root_context;
-
-  static bool is_leak_edge(const Edge& edge);
-  static const Edge* root(const Edge& edge);
-  static const Edge* ancestor(const Edge& edge, size_t distance);
-
-  static bool is_array_element(const Edge& edge);
-  static int array_index(const Edge& edge);
-  static int array_size(const Edge& edge);
-
-  static const Symbol* field_name(const Edge& edge, jshort* modifiers);
-
-};
-
-#endif // SHARE_VM_LEAKPROFILER_CHAINS_EDGEUTILS_HPP
+public class Zombie {
+    public static void main(java.lang.String[] unused) {
+        // There are plenty of compiled methods with -Xcomp even without doing much.
+        System.out.println("Test passes if it doesn't crash while posting compiled method events.");
+    }
+}
