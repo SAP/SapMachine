@@ -480,7 +480,8 @@ jobs:
       - name: Unpack build JDK
         run: |
           mkdir -p "${HOME}/jdk-linux-x64/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin"
-          tar -xf "${HOME}/jdk-linux-x64/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin.tar.gz" -C "${HOME}/jdk-linux-x64/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin"
+          # SapMachine 2020-12-03: Adapt bundle names
+          tar -xf "${HOME}/jdk-linux-x64/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin.tar.gz" -C "${HOME}/jdk-linux-x64/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin"
 
       - name: Find root of build JDK image dir
         run: |
