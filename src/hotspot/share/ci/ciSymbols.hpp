@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,22 @@
  *
  */
 
-#ifndef SHARE_OOPS_ARRAYOOP_INLINE_HPP
-#define SHARE_OOPS_ARRAYOOP_INLINE_HPP
+#ifndef SHARE_CI_CISYMBOLS_HPP
+#define SHARE_CI_CISYMBOLS_HPP
 
-#include "oops/access.inline.hpp"
-#include "oops/arrayOop.hpp"
+#include "ci/ciObjectFactory.hpp"
+#include "ci/ciSymbol.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "oops/symbol.hpp"
 
-void* arrayOopDesc::base(BasicType type) const {
-  return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + base_offset_in_bytes(type));
-}
+class ciSymbols {
+ public:
+#define CI_SYMBOL_DECLARE(name, ignore_def) \
+  static ciSymbol* name() { return ciObjectFactory::vm_symbol_at(VM_SYMBOL_ENUM_NAME(name)); }
 
-#endif // SHARE_OOPS_ARRAYOOP_INLINE_HPP
+  VM_SYMBOLS_DO(CI_SYMBOL_DECLARE, CI_SYMBOL_DECLARE)
+#undef CI_SYMBOL_DECLARE
+
+};
+
+#endif // SHARE_CI_CISYMBOLS_HPP
