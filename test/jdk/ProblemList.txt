@@ -646,6 +646,9 @@ java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
+java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
+java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
+
 ############################################################################
 
 # jdk_sctp
@@ -806,6 +809,8 @@ com/sun/jdi/NashornPopFrameTest.java                            8225620 generic-
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
+com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-x64
+
 ############################################################################
 
 # jdk_time
@@ -824,6 +829,10 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-ppc64,linux-ppc64le
 
+sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
+sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259 windows-all
+sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
+
 
 ############################################################################
 
@@ -837,7 +846,6 @@ javax/script/Test7.java                                         8239361 generic-
 
 # jdk_jfr
 
-jdk/jfr/api/recording/event/TestReEnableName.java               8256482 windows-all
 jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990,8229370    generic-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209    generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
