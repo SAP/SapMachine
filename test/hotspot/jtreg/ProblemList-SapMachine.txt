@@ -142,7 +142,8 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #
 #
 # SapMachine 2020-05-12: Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8244847
-runtime/CompressedOops/CompressedClassPointers.java                          8244847 linux-ppc64le
+# fixed upstream, needs backport
+#runtime/CompressedOops/CompressedClassPointers.java                          8244847 linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -232,6 +233,9 @@ serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                     
 # SapMachine 2020-10-05
 # This test consumes a lot of resourcess - exlcude it on all platforms to avoid issues with out of memory.
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java          generic-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk17
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
