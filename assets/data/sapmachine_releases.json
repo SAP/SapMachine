@@ -187,6 +187,15 @@
                     }
                 },
                 {
+                    "tag": "sapmachine-16+31",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B31/sapmachine-jdk-16-ea.31_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B31/sapmachine-jre-16-ea.31_linux-x64_bin.tar.gz"
+                    }
+                },
+                {
                     "tag": "sapmachine-16+30",
                     "jdk": {
                         "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-16%2B30/sapmachine-jdk-16-ea.30_linux-ppc64le_bin.tar.gz",
@@ -682,6 +691,15 @@
         },
         "17": {
             "releases": [
+                {
+                    "tag": "sapmachine-17+4",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17%2B4/sapmachine-jdk-17-ea.4_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17%2B4/sapmachine-jre-17-ea.4_linux-x64_bin.tar.gz"
+                    }
+                },
                 {
                     "tag": "sapmachine-17+3",
                     "jdk": {
