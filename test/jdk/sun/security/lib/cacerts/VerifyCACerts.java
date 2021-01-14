@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Map;
 
 public class VerifyCACerts {
@@ -59,6 +60,9 @@ public class VerifyCACerts {
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
             = "7A:F5:8D:FB:9B:E2:4D:83:28:14:05:5E:8E:B1:36:B8:AA:0B:C7:AE:B5:9D:A5:C2:BD:46:3F:EB:DB:1B:E6:B9";
+
+    // Hex formatter to upper case with ":" delimiter
+    private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -281,7 +285,7 @@ public class VerifyCACerts {
         md = MessageDigest.getInstance("SHA-256");
 
         byte[] data = Files.readAllBytes(Path.of(CACERTS));
-        String checksum = toHexString(md.digest(data));
+        String checksum = HEX.formatHex(md.digest(data));
         if (!checksum.equals(CHECKSUM)) {
             atLeastOneFailed = true;
             System.err.println("ERROR: wrong checksum\n" + checksum);
@@ -370,18 +374,7 @@ public class VerifyCACerts {
         }
         System.out.println("Checking fingerprint of " + alias);
         byte[] digest = md.digest(cert.getEncoded());
-        return fingerprint.equals(toHexString(digest));
+        return fingerprint.equals(HEX.formatHex(digest));
     }
 
-    private static String toHexString(byte[] block) {
-        StringBuilder buf = new StringBuilder();
-        int len = block.length;
-        for (int i = 0; i < len; i++) {
-            buf.append(String.format("%02X", block[i]));
-            if (i < len - 1) {
-                buf.append(":");
-            }
-        }
-        return buf.toString();
-    }
 }
