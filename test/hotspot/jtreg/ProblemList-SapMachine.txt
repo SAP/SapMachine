@@ -142,6 +142,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #
 #
 # SapMachine 2020-05-12: Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8244847
+# fixed upstream, needs backport
 runtime/CompressedOops/CompressedClassPointers.java                          8244847 linux-ppc64le
 
 ###############################################################################
@@ -225,6 +226,9 @@ runtime/logging/loadLibraryTest/LoadLibraryTest.java                            
 # agent library failed to init: FieldAccessWatch
 # Failed to set capabilities, error: 98
 serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                          aix-all
+
+###############################################################################
+# New failures detected after GA or caused by changes pushed after GA of 15.
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

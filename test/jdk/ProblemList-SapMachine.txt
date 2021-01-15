@@ -135,15 +135,6 @@ java/awt/print/PrinterJob/SameService.java                                   822
 #sun/management/jdp/JdpJmxRemoteDynamicPortTest.java                                  linux-ppc64le
 #sun/management/jdp/JdpSpecificAddressTest.java                                       linux-ppc64le
 
-# SapMachine 2019-07-19
-# These occur in SapMachine test env on ... and ... . Disabling until solution found. Seen in 11 only.
-# SapMachine 2020-03-26 Enabling these tests in 11u to see whether the issue still occurs
-#java/net/MulticastSocket/Promiscuous.java                                            linux-ppc64le
-#java/net/MulticastSocket/SetLoopbackMode.java                                        linux-ppc64le
-#java/net/MulticastSocket/Test.java                                                   linux-ppc64le,aix-all
-#java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     linux-ppc64le
-#java/nio/channels/DatagramChannel/Promiscuous.java                                   linux-ppc64le
-
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
 
@@ -172,14 +163,30 @@ security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.jav
 
 # SapMachine 2020-07-10
 # certificate issue, see https://bugs.openjdk.java.net/browse/JDK-8249176
-security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java 8249176 generic-all
+#security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java 8249176 generic-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
 
 # SapMachine 2020-09-04
 # This times out on AIX machines. don't fix, AIX is off-topic.  Seen in 11.0.8 and 16.
-java/awt/FontClass/DrawStringWithInfiniteXform.java                                   aix-all
+#
+java/awt/FontClass/DrawStringWithInfiniteXform.java                                  aix-all
+
+###############################################################################
+# New failures detected after GA of 11.0.9 (e.g. seen only in jdk11u-dev after branching 11.0.9 to jdk11u)
+
+# SapMachine 2020-09-17
+# SocketException: Cannot allocate memory
+#
+# Seen a lot on mac, also 7, 11 ...
+java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     macosx-all
+
+# SapMachine 2020-12-30
+# Fails after https://bugs.openjdk.java.net/browse/JDK-8243488 on Mac
+# should be fixed by https://bugs.openjdk.java.net/browse/JDK-8239355 (to be backported)
+#
+#java/net/DatagramSocket/SetGetSendBufferSize.java                            8239355 macosx-all
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -197,11 +204,6 @@ javax/security/auth/Subject/DoAs.java                                           
 # RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
 # SapMachine 2019-07-12 Still failing
 java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
-
-# SapMachine 2019-02-08
-# javax.naming.CommunicationException: DNS error [Root exception is SocketTimeoutException: Receive timed out] ...
-# Mac is in the central exclude list.
-com/sun/jndi/dns/ConfigTests/PortUnreachable.java                            7164518 macosx-all,aix-ppc64
 
 # SapMachine 2019-02-08
 # assertEquals: expected -1 to equal 53332
@@ -368,11 +370,6 @@ java/net/MulticastSocket/Test.java                                              
 # Exception: ERROR: IsModifiableClass failed.
 # I'd assume this test should not be run on mac.
 java/lang/instrument/IsModifiableClassAgent.java                                     macosx-all
-
-# SapMachine 2020-09-17
-# SocketException: Cannot allocate memory
-# Seen a lot on mac, also 7, 11 ...
-java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     macosx-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
