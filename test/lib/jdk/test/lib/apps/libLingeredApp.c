@@ -21,25 +21,14 @@
  * questions.
  */
 
+#include <jni.h>
+
 /*
- * @test
- * @bug 7162488
- * @summary VM should print unrecognized -XX option
- * @library /test/lib
- * @run driver TestUnrecognizedVmOption
+ * Class:     jdk_test_lib_apps_LingeredApp
+ * Method:    crashMe
+ * Signature: ()V
  */
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
-public class TestUnrecognizedVmOption {
-    static final String OPTION="this_is_not_an_option";
-
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-showversion", "-XX:" + OPTION);
-        new OutputAnalyzer(pb.start())
-            .shouldNotHaveExitValue(0)
-            .shouldContain("Unrecognized VM option")
-            .shouldContain(OPTION);
-    }
+JNIEXPORT void JNICALL
+Java_jdk_test_lib_apps_LingeredApp_crashMe(JNIEnv *env, jclass klass) {
+  *((volatile int*)(1)) = 1;
 }

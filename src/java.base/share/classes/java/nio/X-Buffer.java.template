@@ -452,15 +452,23 @@ public abstract class $Type$Buffer
      */
     public int read(CharBuffer target) throws IOException {
         // Determine the number of bytes n that can be transferred
-        int targetRemaining = target.remaining();
         int limit = limit();
-        int remaining = limit - position();
-        if (remaining == 0)
+        int pos = position();
+        int remaining = limit - pos;
+        assert remaining >= 0;
+        if (remaining <= 0) // include equality condition when remaining == 0
             return -1;
+
+        int targetRemaining = target.remaining();
+        assert targetRemaining >= 0;
+        if (targetRemaining <= 0) // include condition targetRemaining == 0
+            return 0;
+
         int n = Math.min(remaining, targetRemaining);
+
         // Set source limit to prevent target overflow
         if (targetRemaining < remaining)
-            limit(position() + n);
+            limit(pos + n);
         try {
             if (n > 0)
                 target.put(this);
@@ -951,9 +959,13 @@ public abstract class $Type$Buffer
             throw new ReadOnlyBufferException();
 
         int srcPos = src.position();
-        int n = src.limit() - srcPos;
+        int srcLim = src.limit();
+        int srcRem = (srcPos <= srcLim ? srcLim - srcPos : 0);
         int pos = position();
-        if (n > limit() - pos)
+        int lim = limit();
+        int rem = (pos <= lim ? lim - pos : 0);
+
+        if (srcRem > rem)
             throw new BufferOverflowException();
 
         Object srcBase = src.base();
@@ -969,7 +981,7 @@ public abstract class $Type$Buffer
 
             long srcAddr = src.address + ((long)srcPos << $LG_BYTES_PER_VALUE$);
             long addr = address + ((long)pos << $LG_BYTES_PER_VALUE$);
-            long len = (long)n << $LG_BYTES_PER_VALUE$;
+            long len = (long)srcRem << $LG_BYTES_PER_VALUE$;
 
 #if[!byte]
             if (this.order() == src.order()) {
@@ -1000,12 +1012,12 @@ public abstract class $Type$Buffer
             }
 #end[!byte]
 
-            position(pos + n);
-            src.position(srcPos + n);
+            position(pos + srcRem);
+            src.position(srcPos + srcRem);
 #if[char]
         } else { // src.isAddressable() == false
             assert StringCharBuffer.class.isInstance(src);
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < srcRem; i++)
                 put(src.get());
         }
 #end[char]
