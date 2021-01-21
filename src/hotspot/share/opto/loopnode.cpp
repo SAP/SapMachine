@@ -1105,7 +1105,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
     if (has_skeleton) {
       assert(expect_skeleton == 1 || expect_skeleton == -1, "unexpected skeleton node");
-      assert(outer->outcnt() == 2, "only phis");
+      assert(outer->outcnt() == 2, "only control nodes");
     } else {
       assert(expect_skeleton == 0 || expect_skeleton == -1, "no skeleton node?");
       uint phis = 0;
@@ -1733,7 +1733,28 @@ const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(0)) == Type::TOP)
     return Type::TOP;
 
+  // Until expansion, the loop end condition is not set so this should not constant fold.
+  if (is_expanded(phase)) {
+    return IfNode::Value(phase);
+  }
+
   return TypeTuple::IFBOTH;
+}
+
+bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
+  // The outer strip mined loop head only has Phi uses after expansion
+  if (phase->is_IterGVN()) {
+    Node* backedge = proj_out_or_null(true);
+    if (backedge != NULL) {
+      Node* head = backedge->unique_ctrl_out();
+      if (head != NULL && head->is_OuterStripMinedLoop()) {
+        if (head->find_out_with(Op_Phi) != NULL) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -4210,17 +4231,26 @@ Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
           }
         } else {
           Node *sctrl = has_ctrl(s) ? get_ctrl(s) : s->in(0);
-          const TypePtr* adr_type = s->adr_type();
-          if (s->is_ArrayCopy()) {
-            // Copy to known instance needs destination type to test for aliasing
-            const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
-            if (dest_type != TypeOopPtr::BOTTOM) {
-              adr_type = dest_type;
-            }
-          }
           assert(sctrl != NULL || !s->is_reachable_from_root(), "must have control");
-          if (sctrl != NULL && !sctrl->is_top() && C->can_alias(adr_type, load_alias_idx) && is_dominator(early, sctrl)) {
-            LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+          if (sctrl != NULL && !sctrl->is_top() && is_dominator(early, sctrl)) {
+            const TypePtr* adr_type = s->adr_type();
+            if (s->is_ArrayCopy()) {
+              // Copy to known instance needs destination type to test for aliasing
+              const TypePtr* dest_type = s->as_ArrayCopy()->_dest_type;
+              if (dest_type != TypeOopPtr::BOTTOM) {
+                adr_type = dest_type;
+              }
+            }
+            if (C->can_alias(adr_type, load_alias_idx)) {
+              LCA = dom_lca_for_get_late_ctrl(LCA, sctrl, n);
+            } else if (s->is_CFG()) {
+              for (DUIterator_Fast imax, i = s->fast_outs(imax); i < imax; i++) {
+                Node* s1 = s->fast_out(i);
+                if (_igvn.type(s1) == Type::MEMORY) {
+                  worklist.push(s1);
+                }
+              }
+            }
           }
         }
       }
