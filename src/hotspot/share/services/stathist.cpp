@@ -32,6 +32,7 @@
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "services/stathist.hpp"

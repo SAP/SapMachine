@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "services/stathist_internals.hpp"
