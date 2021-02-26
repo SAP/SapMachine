@@ -161,10 +161,6 @@ security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java
 # certificate revoked, see https://bugs.openjdk.java.net/browse/JDK-8248899
 security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
 
-# SapMachine 2020-07-10
-# certificate issue, see https://bugs.openjdk.java.net/browse/JDK-8249176
-#security/infra/java/security/cert/CertPathValidator/certification/GlobalSignR6CA.java 8249176 generic-all
-
 ###############################################################################
 # New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
 
@@ -182,11 +178,23 @@ java/awt/FontClass/DrawStringWithInfiniteXform.java                             
 # Seen a lot on mac, also 7, 11 ...
 java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     macosx-all
 
-# SapMachine 2020-12-30
-# Fails after https://bugs.openjdk.java.net/browse/JDK-8243488 on Mac
-# should be fixed by https://bugs.openjdk.java.net/browse/JDK-8239355 (to be backported)
+###############################################################################
+# New failures detected after GA of 11.0.10 (e.g. seen only in jdk11u-dev after branching 11.0.10 to jdk11u)
+
+# SapMachine 2021-02-16
+# sun.security.pkcs11.wrapper.PKCS11Exception: CKR_ATTRIBUTE_READ_ONLY
+# Test fails on several Linux distributions with some packaged nss libs.
 #
-java/net/DatagramSocket/SetGetSendBufferSize.java                            8239355 macosx-all
+#
+# https://bugs.openjdk.java.net/browse/JDK-8232153
+sun/security/pkcs11/Secmod/AddTrustedCert.java                               8232153 linux-aarch64,linux-ppc64le
+
+# SapMachine 2021-02-24
+# Test sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java that was introduced
+# with https://bugs.openjdk.java.net/browse/JDK-8257545 fails on one machine.
+# Probably some issue with OS configuration/libnss. We simply exclude it.
+#
+sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java                                 linux-s390x
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
