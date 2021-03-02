@@ -35,6 +35,11 @@
 #include "runtime/java.hpp"
 
 void ShenandoahIUMode::initialize_flags() const {
+  if (FLAG_IS_CMDLINE(ClassUnloadingWithConcurrentMark) && ClassUnloading) {
+    log_warning(gc)("Shenandoah I-U mode sets -XX:-ClassUnloadingWithConcurrentMark; see JDK-8261341 for details");
+  }
+  FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
+
   if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
     FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
