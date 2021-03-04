@@ -30,6 +30,8 @@
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "code/codeCache.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
 #include "runtime/nonJavaThread.hpp"
