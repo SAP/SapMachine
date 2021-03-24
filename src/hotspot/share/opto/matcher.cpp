@@ -2405,9 +2405,9 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(2, n->in(3));
       n->del_req(3);
       break;
+    }
     default:
       break;
-    }
   }
 }
 
