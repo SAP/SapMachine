@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class JarInputStream extends ZipInputStream {
             man.read(new ByteArrayInputStream(bytes));
             closeEntry();
             if (doVerify) {
-                jv = new JarVerifier(bytes);
+                jv = new JarVerifier(e.getName(), bytes);
                 mev = new ManifestEntryVerifier(man);
             }
             return (JarEntry)super.getNextEntry();
