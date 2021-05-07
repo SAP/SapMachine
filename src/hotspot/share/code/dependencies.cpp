@@ -1527,7 +1527,7 @@ bool ClassHierarchyWalker::witnessed_reabstraction_in_supers(Klass* k) {
           return false;
         }
       }
-      assert(false, "root method not found");
+      // Miranda.
       return true;
     }
     return false;
