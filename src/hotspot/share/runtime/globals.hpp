@@ -1169,9 +1169,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, CollectIndexSetStatistics, false,                        \
           "Collect information about IndexSets")                            \
                                                                             \
-  develop(bool, UseLoopSafepoints, true,                                    \
-          "Generate Safepoint nodes in every loop")                         \
-                                                                            \
   develop(intx, FastAllocateSizeLimit, 128*K,                               \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
