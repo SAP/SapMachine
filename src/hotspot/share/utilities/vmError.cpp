@@ -1834,3 +1834,13 @@ void VMError::controlled_crash(int how) {
   ShouldNotReachHere();
 }
 #endif // !ASSERT
+
+// SapMachine 2021-05-21: A wrapper for VMError::print_stack(..), public, for printing stacks
+//  to tty on CrashOnOutOfMemoryError
+void VMError::print_stack(outputStream* st) {
+  Thread* t = Thread::current_or_null_safe();
+  char buf[1024];
+  if (t != NULL && t->is_Java_thread()) {
+    VMError::print_stack_trace(st, (JavaThread*) t, buf, sizeof(buf), false);
+  }
+}

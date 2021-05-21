@@ -2913,6 +2913,11 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_THREADS,
         os::native_thread_creation_failed_msg());
     }
+
+    // SapMachine 2021-05-21: All ...OnOutOfMemoryError switches should work for
+    //  thread creation failures too.
+    report_java_out_of_memory(os::native_thread_creation_failed_msg());
+
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               os::native_thread_creation_failed_msg());
   }

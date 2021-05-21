@@ -361,6 +361,8 @@ void report_java_out_of_memory(const char* message) {
 
     if (CrashOnOutOfMemoryError) {
       tty->print_cr("Aborting due to java.lang.OutOfMemoryError: %s", message);
+      // SapMachine 2021-05-21: Print stack to stdout.
+      VMError::print_stack(tty);
       report_fatal(OOM_JAVA_HEAP_FATAL, __FILE__, __LINE__, "OutOfMemory encountered: %s", message);
     }
 

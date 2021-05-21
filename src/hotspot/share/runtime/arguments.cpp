@@ -3144,6 +3144,17 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION(ShowRegistersOnAssert);
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
+  // SapMachine 2021-05-21:
+  // - ExitVMOnOutOfMemory is an alias for CrashOnOutOfMemoryError
+  // - if either one of those is specified, and Crash dumps have not been explicitly disabled,
+  //   turn dumps off (we don't want cores on OOM)
+  if (ExitVMOnOutOfMemoryError && !CrashOnOutOfMemoryError) {
+    FLAG_SET_ERGO(CrashOnOutOfMemoryError, true);
+  }
+  if (CrashOnOutOfMemoryError && CreateCoredumpOnCrash && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+    FLAG_SET_ERGO(CreateCoredumpOnCrash, false);
+  }
+
   return JNI_OK;
 }
 

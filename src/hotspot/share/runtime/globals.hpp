@@ -865,9 +865,15 @@ const intx ObjectAlignmentInBytes = 8;
           "JVM exits on the first occurrence of an out-of-memory error "    \
           "thrown from JVM")                                                \
                                                                             \
+  /* SapMachine 2021-05-21: Changed comment (we do not core on OOM) */      \
   product(bool, CrashOnOutOfMemoryError, false,                             \
-          "JVM aborts, producing an error log and core/mini dump, on the "  \
+          "JVM aborts, producing an error log, on the "                     \
           "first occurrence of an out-of-memory error thrown from JVM")     \
+                                                                            \
+  /* SapMachine 2021-05-21: Support ExitVMOnOutOfMemory to keep */          \
+  /*  command line parity with SAPJVM */                                    \
+  product(bool, ExitVMOnOutOfMemoryError, false,                            \
+          "Alias for CrashOnOutOfMemoryError")                              \
                                                                             \
   /* tracing */                                                             \
                                                                             \
