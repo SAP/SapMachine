@@ -433,7 +433,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, LogEvents, true, DIAGNOSTIC,                                \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  product(uintx, LogEventsBufferEntries, 20, DIAGNOSTIC,                    \
+  /* SapMachine 2019-05-28: more events */                                  \
+  product(uintx, LogEventsBufferEntries, 75, DIAGNOSTIC,                    \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
@@ -495,6 +496,26 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
+                                                                            \
+  /* SapMachine 2019-02-20 : vitals */                                      \
+  product(bool, EnableVitals, true, DIAGNOSTIC,                             \
+          "Enable sampling of vitals: memory, cpu utilization and various " \
+          "VM core statistics; display via jcmd \"VM.vitals\".")            \
+                                                                            \
+  product(uintx, VitalsSampleInterval, 0, DIAGNOSTIC,                       \
+          "Vitals sample rate interval (0=use default sample rate)")        \
+                                                                            \
+  product(bool, VitalsLockFreeSampling, false, EXPERIMENTAL,                \
+          "When sampling vitals, omit any actions which require locking.")  \
+                                                                            \
+  product(bool, DumpVitalsAtExit, false, DIAGNOSTIC,                        \
+          "Dump vitals at VM exit into two files, by default called "       \
+          "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
+          "Use -XX:VitalsFile option to change the file names.")            \
+                                                                            \
+  product(ccstr, VitalsFile, NULL, DIAGNOSTIC,                              \
+          "When DumpVitalsAtExit is set, the file name prefix for the "     \
+          "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
@@ -561,7 +582,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Repeat compilation without installing code (number of times)")   \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, PrintExtendedThreadInfo, false,                             \
+  /* SapMachine 2018-08-29: Enable this per default */                      \
+  product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \
   product(intx, ScavengeRootsInCode, 2, DIAGNOSTIC,                         \
@@ -1087,8 +1109,9 @@ const intx ObjectAlignmentInBytes = 8;
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
+  /* SapMachine 2018-12-18 Enable this per default. */                      \
   product(bool, ExtensiveErrorReports,                                      \
-          PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
+          PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
           "Error reports are more extensive.")                              \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \
