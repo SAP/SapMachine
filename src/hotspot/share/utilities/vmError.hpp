@@ -184,7 +184,7 @@ public:
   // Needed when printing signal handlers.
   NOT_WINDOWS(static const void* crash_handler_address;)
 
-  // SapMachine 2021-05-21: A wrapper for VMError::print_stack(..), public, for printing stacks
+  // SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks
   //  to tty on CrashOnOutOfMemoryError
   static void print_stack(outputStream* st);
 
