@@ -407,7 +407,7 @@ class Thread: public ThreadShadow {
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
 
-  ObjectMonitor* _current_pending_monitor;      // ObjectMonitor this thread
+  ObjectMonitor* volatile _current_pending_monitor; // ObjectMonitor this thread
                                                 // is waiting to lock
   bool _current_pending_monitor_is_from_java;   // locking is from Java code
   JvmtiRawMonitor* _current_pending_raw_monitor; // JvmtiRawMonitor this thread
@@ -415,7 +415,7 @@ class Thread: public ThreadShadow {
 
 
   // ObjectMonitor on which this thread called Object.wait()
-  ObjectMonitor* _current_waiting_monitor;
+  ObjectMonitor* volatile _current_waiting_monitor;
 
 #ifdef ASSERT
  private:
@@ -620,10 +620,13 @@ class Thread: public ThreadShadow {
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
-    return _current_pending_monitor;
+    // Use Atomic::load() to prevent data race between concurrent modification and
+    // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
+    // Especially, reloading pointer from thread after NULL check must be prevented.
+    return Atomic::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
-    _current_pending_monitor = monitor;
+    Atomic::store(&_current_pending_monitor, monitor);
   }
   void set_current_pending_monitor_is_from_java(bool from_java) {
     _current_pending_monitor_is_from_java = from_java;
@@ -634,10 +637,11 @@ class Thread: public ThreadShadow {
 
   // For tracking the ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* current_waiting_monitor() {
-    return _current_waiting_monitor;
+    // See the comment in current_pending_monitor() above.
+    return Atomic::load(&_current_waiting_monitor);
   }
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
-    _current_waiting_monitor = monitor;
+    Atomic::store(&_current_waiting_monitor, monitor);
   }
 
   // For tracking the Jvmti raw monitor the thread is pending on.
