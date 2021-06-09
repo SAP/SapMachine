@@ -367,6 +367,8 @@ void report_java_out_of_memory(const char* message) {
     }
 
     if (ExitOnOutOfMemoryError) {
+      // SapMachine 2021-05-21: Print stack to stdout.
+      VMError::print_stack(tty);
       tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
       os::exit(3);
     }

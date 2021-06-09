@@ -3146,8 +3146,8 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
 
   // SapMachine 2021-05-21:
   // - ExitVMOnOutOfMemory is an alias for CrashOnOutOfMemoryError
-  // - if either one of those is specified, and Crash dumps have not been explicitly enabled,
-  //   turn dumps off (we don't want cores on OOM)
+  // - if either one of these two is active and Crash dumps had not been explicitly enabled,
+  //   we turn dumps off (we generally don't want cores on OOM)
   if (ExitVMOnOutOfMemoryError && !CrashOnOutOfMemoryError) {
     FLAG_SET_ERGO(CrashOnOutOfMemoryError, true);
   }

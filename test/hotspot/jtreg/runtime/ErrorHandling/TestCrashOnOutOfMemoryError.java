@@ -52,9 +52,8 @@ public class TestCrashOnOutOfMemoryError {
             }
         }
         // else this is the main test
-        // SapMachine 2021-05-21: omit -CreateCoreDumpOnCrash; SapMachine should explicitly switch off cores for OOM errors.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
-                 "-Xmx128m", TestCrashOnOutOfMemoryError.class.getName(),"throwOOME");
+                 "-XX:-CreateCoredumpOnCrash", "-Xmx128m", TestCrashOnOutOfMemoryError.class.getName(),"throwOOME");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         int exitValue = output.getExitValue();
         if (0 == exitValue) {
@@ -93,12 +92,6 @@ public class TestCrashOnOutOfMemoryError {
         if (hs_err_file == null) {
             throw new Error("Did not find hs-err file in output.\n");
         }
-
-        // SapMachine 2021-05-21: On SapMachine, CrashOnOutOfMemoryError should not write cores.
-        output.shouldContain("CreateCoredumpOnCrash turned off, no core file dumped");
-        // SapMachine 2021-05-21: On SapMachine, a stack should have been written to stdout
-        output.shouldContain("Java frames:");
-
 
         /*
          * Check if hs_err files exist or not
