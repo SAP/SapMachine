@@ -59,6 +59,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
+// SapMachine 2021-05-21
+#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -357,6 +361,12 @@ void report_java_out_of_memory(const char* message) {
         (OnOutOfMemoryError && OnOutOfMemoryError[0]) ||
         CrashOnOutOfMemoryError || ExitOnOutOfMemoryError) {
       VMError::print_stack(tty);
+    }
+
+    // SapMachine 2021-05-21: If we crash due to CrashOnOutOfMemoryError, deactivate
+    //  cores unless they had been explicitly enabled.
+    if (CrashOnOutOfMemoryError && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+      FLAG_SET_ERGO(CreateCoredumpOnCrash, false);
     }
 
     // create heap dump before OnOutOfMemoryError commands are executed
