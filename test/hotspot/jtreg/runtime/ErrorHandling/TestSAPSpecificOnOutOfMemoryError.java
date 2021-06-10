@@ -71,7 +71,6 @@ public class TestSAPSpecificOnOutOfMemoryError {
         final String yes_core_1 = "Core dump will be written.";     // If limit > 0
         final String yes_core_2 = "Core dumps have been disabled."; // if limit == 0. For the purpose of this test this is still okay
         final String summary_from_hs_err = "S U M M A R Y";
-        final String rlimit_from_hs_err = "rlimit (soft/hard)";
 
         // CrashOnOutOfMemoryError, without cores explicitly enabled:
         // - thread stack
@@ -146,7 +145,6 @@ public class TestSAPSpecificOnOutOfMemoryError {
             output.shouldContain(a_fatal_error);
             output.shouldContain(no_core);
             output.shouldContain(summary_from_hs_err);
-            output.shouldContain(rlimit_from_hs_err);
 
             output.shouldNotContain(terminating_due);
             output.shouldNotContain(yes_core_1);
