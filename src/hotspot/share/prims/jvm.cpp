@@ -2918,7 +2918,6 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_THREADS,
         os::native_thread_creation_failed_msg());
     }
-
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               os::native_thread_creation_failed_msg());
   }
