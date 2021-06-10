@@ -350,25 +350,17 @@ void report_java_out_of_memory(const char* message) {
   // the error.
   if (Atomic::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
 
-    // SapMachine 2021-05-21: On SapMachine, in contrast to upstream OpenJDK, this
-    //  function gets invoked for OOMs resulting from Thread resource exhaustion as
-    //  well as for the "normal" Heap/Metaspace exhaustion. However, in that case we
-    //  do not handle HeapDumpOnOutOfMemoryError since heap dumps may take a long time
-    //  and are probably not as useful.
-    // (Note: the strstr is a bit tacky here but keeps the patch small.)
-    const bool is_thread_exhaustion =
-        ::strstr(message, "unable to create native thread") != NULL;
-
-    // SapMachine 2021-05-21: Print stack to stdout
-    if ((HeapDumpOnOutOfMemoryError && !is_thread_exhaustion) ||
+    // SapMachine 2021-05-21: If any one of the xxxOnOutOfMemoryError is specified,
+    //  print stack to stdout. Do this before any subsequent handling - this is the
+    //  most important information.
+    if ((HeapDumpOnOutOfMemoryError) ||
         (OnOutOfMemoryError && OnOutOfMemoryError[0]) ||
         CrashOnOutOfMemoryError || ExitOnOutOfMemoryError) {
-      // SapMachine 2021-05-21: Print stack to stdout
       VMError::print_stack(tty);
     }
 
     // create heap dump before OnOutOfMemoryError commands are executed
-    if (HeapDumpOnOutOfMemoryError && !is_thread_exhaustion) {
+    if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
       HeapDumper::dump_heap_from_oome();
     }

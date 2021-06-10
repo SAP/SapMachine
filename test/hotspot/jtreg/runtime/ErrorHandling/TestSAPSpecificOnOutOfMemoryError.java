@@ -70,6 +70,8 @@ public class TestSAPSpecificOnOutOfMemoryError {
         final String no_core = "CreateCoredumpOnCrash turned off, no core file dumped";
         final String yes_core_1 = "Core dump will be written.";     // If limit > 0
         final String yes_core_2 = "Core dumps have been disabled."; // if limit == 0. For the purpose of this test this is still okay
+        final String summary_from_hs_err = "S U M M A R Y";
+        final String rlimit_from_hs_err = "rlimit (soft/hard)";
 
         // CrashOnOutOfMemoryError, without cores explicitly enabled:
         // - thread stack
@@ -132,6 +134,23 @@ public class TestSAPSpecificOnOutOfMemoryError {
             output.shouldNotContain(yes_core_1);
             output.shouldNotContain(yes_core_2);
             output.shouldNotContain(no_core);
+        }
+
+        // Test that giving ErrorFileToStdout in combination with CrashOnOutOfMemoryError will
+        //  print the hs-err file - including the limits, which may be important here - to stdout
+        {
+            OutputAnalyzer output = run_test("-XX:+CrashOnOutOfMemoryError", "-XX:+ErrorFileToStdout");
+
+            output.shouldContain(aborting_due);
+            output.shouldContain(java_frames);
+            output.shouldContain(a_fatal_error);
+            output.shouldContain(no_core);
+            output.shouldContain(summary_from_hs_err);
+            output.shouldContain(rlimit_from_hs_err);
+
+            output.shouldNotContain(terminating_due);
+            output.shouldNotContain(yes_core_1);
+            output.shouldNotContain(yes_core_2);
         }
 
         // HeapDumpOnOutOfMemoryError should:
