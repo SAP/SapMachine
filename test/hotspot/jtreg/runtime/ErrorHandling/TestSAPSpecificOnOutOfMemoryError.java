@@ -59,12 +59,8 @@ public class TestSAPSpecificOnOutOfMemoryError {
         if (args.length == 1) {
             // This should guarantee to throw:
             // java.lang.OutOfMemoryError: Requested array size exceeds VM limit
-            try {
-                Object[] oa = new Object[Integer.MAX_VALUE];
-                throw new Error("OOME not triggered");
-            } catch (OutOfMemoryError err) {
-                throw new Error("OOME didn't abort JVM!");
-            }
+            Object[] oa = new Object[Integer.MAX_VALUE];
+            return;
         }
 
         final String aborting_due = "Aborting due to java.lang.OutOfMemoryError";
@@ -138,5 +134,20 @@ public class TestSAPSpecificOnOutOfMemoryError {
             output.shouldNotContain(no_core);
         }
 
+        // HeapDumpOnOutOfMemoryError should:
+        // - print thread stack
+        // - The VM should just run on. OOM will bubble up and end the program.
+        {
+            OutputAnalyzer output = run_test("-XX:+HeapDumpOnOutOfMemoryError");
+
+            output.shouldContain(java_frames);
+
+            output.shouldNotContain(terminating_due);
+            output.shouldNotContain(aborting_due);
+            output.shouldNotContain(a_fatal_error);
+            output.shouldNotContain(yes_core_1);
+            output.shouldNotContain(yes_core_2);
+            output.shouldNotContain(no_core);
+        }
     }
 }
