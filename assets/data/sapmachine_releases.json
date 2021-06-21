@@ -17,6 +17,12 @@
             "label": "SapMachine 17",
             "lts": false,
             "ea": true
+        },
+        {
+            "id": "18",
+            "label": "SapMachine 18",
+            "lts": false,
+            "ea": true
         }
     ],
     "imageTypes": [
@@ -64,6 +70,19 @@
         }
     ],
     "assets": {
+        "18": {
+            "releases": [
+                {
+                    "tag": "sapmachine-18+1",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B1/sapmachine-jdk-18-ea.1_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B1/sapmachine-jre-18-ea.1_linux-x64_bin.tar.gz"
+                    }
+                }
+            ]
+        },
         "17": {
             "releases": [
                 {
