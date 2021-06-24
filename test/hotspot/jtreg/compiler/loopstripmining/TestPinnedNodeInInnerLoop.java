@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,39 @@
  * questions.
  */
 
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Set;
+/**
+ * @test
+ * @bug 8268672
+ * @summary C2: assert(!loop->is_member(u_loop)) failed: can be in outer loop or out of both loops only
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestPinnedNodeInInnerLoop TestPinnedNodeInInnerLoop
+ *
+ */
 
-import jdk.javadoc.doclet.Doclet;
-import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.doclet.DocletEnvironment;
+public class TestPinnedNodeInInnerLoop {
+    boolean b;
+    double d;
+    int iArr[];
 
-public class X {
-    public static boolean run(DocletEnvironment root) {
-        System.out.println("X.start");
-        return true;
+    public static void main(String[] args) {
+        TestPinnedNodeInInnerLoop t = new TestPinnedNodeInInnerLoop();
+        for (int i = 0; i < 10; i++) {
+            t.test();
+        }
     }
-    public Set<Doclet.Option> getSupportedOptions() {
-        return Collections.emptySet();
-    }
 
-    public void init(Locale locale, Reporter reporter) {
-        return;
+    void test() {
+        int e = 4, f = -51874, g = 7, h = 0;
+
+        for (; f < 3; ++f) {
+        }
+        while (++g < 2) {
+            if (b) {
+                d = h;
+            } else {
+                iArr[g] = e;
+            }
+        }
+        System.out.println(g);
     }
 }
