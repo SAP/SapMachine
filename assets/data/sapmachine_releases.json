@@ -75,10 +75,12 @@
                 {
                     "tag": "sapmachine-18+3",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B3/sapmachine-jdk-18-ea.3_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B3/sapmachine-jdk-18-ea.3_linux-x64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B3/sapmachine-jdk-18-eabeta.3_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B3/sapmachine-jre-18-ea.3_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B3/sapmachine-jre-18-ea.3_linux-x64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B3/sapmachine-jre-18-eabeta.3_linux-aarch64_bin.tar.gz"
                     }
                 },
                 {
@@ -282,7 +284,8 @@
                     "tag": "sapmachine-17+28",
                     "jdk": {
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17%2B28/sapmachine-jdk-17-ea.28_linux-x64_bin.tar.gz",
-                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17%2B28/sapmachine-jdk-17-ea.28_macos-aarch64_bin.tar.gz"
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17%2B28/sapmachine-jdk-17-ea.28_macos-aarch64_bin.tar.gz",
+                        "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17%2B28/sapmachine-jdk-17-ea.28_macos-x64_bin.tar.gz"
                     },
                     "jre": {
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17%2B28/sapmachine-jre-17-ea.28_linux-x64_bin.tar.gz",
