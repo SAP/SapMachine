@@ -58,6 +58,8 @@
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitalsDCmd.hpp"
 
 
 static void loadAgentModule(TRAPS) {
@@ -144,6 +146,10 @@ void DCmdRegistrant::register_dcmds(){
 #if INCLUDE_CDS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
 #endif // INCLUDE_CDS
+
+  // SapMachine 2019-02-20 : vitals
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sapmachine_vitals::VitalsDCmd>(full_export, true, false));
+
 }
 
 #ifndef HAVE_EXTRA_DCMD

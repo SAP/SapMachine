@@ -416,6 +416,11 @@ tier1_serviceability = \
 
 # SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
 #  or which tests downstream-only features.
+tier1_sapmachine = \
+  runtime/Vitals
+
+# SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
+#  or which tests downstream-only features.
 tier1 = \
   :tier1_sapmachine \
   :tier1_common \
