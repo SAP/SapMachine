@@ -497,26 +497,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
-  /* SapMachine 2019-02-20 : vitals */                                      \
-  product(bool, EnableVitals, true, DIAGNOSTIC,                             \
-          "Enable sampling of vitals: memory, cpu utilization and various " \
-          "VM core statistics; display via jcmd \"VM.vitals\".")            \
-                                                                            \
-  product(uintx, VitalsSampleInterval, 0, DIAGNOSTIC,                       \
-          "Vitals sample rate interval (0=use default sample rate)")        \
-                                                                            \
-  product(bool, VitalsLockFreeSampling, false, EXPERIMENTAL,                \
-          "When sampling vitals, omit any actions which require locking.")  \
-                                                                            \
-  product(bool, DumpVitalsAtExit, false, DIAGNOSTIC,                        \
-          "Dump vitals at VM exit into two files, by default called "       \
-          "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
-          "Use -XX:VitalsFile option to change the file names.")            \
-                                                                            \
-  product(ccstr, VitalsFile, NULL, DIAGNOSTIC,                              \
-          "When DumpVitalsAtExit is set, the file name prefix for the "     \
-          "output files (default is sapmachine_vitals_<pid>).")             \
-                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \

@@ -75,8 +75,6 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
-// SapMachine 2019-09-01: vitals.
-#include "services/stathist.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -348,11 +346,6 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  // SapMachine 2019-09-01: vitals.
-  if (DumpVitalsAtExit) {
-    StatisticsHistory::dump_reports();
-  }
-
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -397,11 +390,6 @@ void print_statistics() {
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
-  }
-
-  // SapMachine 2019-09-01: vitals.
-  if (DumpVitalsAtExit) {
-    StatisticsHistory::dump_reports();
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
