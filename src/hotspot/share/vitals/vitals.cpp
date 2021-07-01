@@ -40,6 +40,7 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
+#include "services/mallocTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -1090,6 +1091,7 @@ static value_t get_bytes_malloced_by_jvm_via_sapjvm_mallstat() {
   return result;
 }
 
+#if INCLUDE_NMT
 static value_t get_bytes_malloced_by_jvm_via_nmt() {
   value_t result = INVALID_VALUE;
   if (MemTracker::tracking_level() != NMT_off) {
@@ -1098,6 +1100,7 @@ static value_t get_bytes_malloced_by_jvm_via_nmt() {
   }
   return result;
 }
+#endif // INCLUDE_NMT
 
 void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
