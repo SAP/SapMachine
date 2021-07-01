@@ -62,7 +62,7 @@ jdk/jshell/JdiHangingLaunchExecutionControlTest.java                generic-all
 jdk/jshell/CommandCompletionTest.java                               macosx-all
 
 ###############################################################################
-# Failing new tests, unsupported new features in jdk17
+# Failing new tests, unsupported new features in jdk18
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
@@ -81,7 +81,7 @@ jdk/jshell/JdiHangingLaunchExecutionControlTest.java                macosx-all
 jdk/jshell/JdiHangingListenExecutionControlTest.java                macosx-all
 jdk/jshell/JdiLaunchingExecutionControlTest.java                    macosx-all
 jdk/jshell/JdiListeningExecutionControlTest.java                    macosx-all
-jdk/jshell/ToolBasicTest.java                                       macosx-all
+jdk/jshell/ToolBasicTest.java                               8265357 macosx-all
 jdk/jshell/ToolRetainTest.java                                      windows-all
 jdk/jshell/ToolSimpleTest.java                                      macosx-all
 jdk/jshell/ToolTabCommandTest.java                                  windows-all,macosx-all
@@ -89,5 +89,4 @@ jdk/jshell/UserJdiUserRemoteTest.java                       8173079 linux-all,ma
 tools/javac/lambda/lambdaExecution/LambdaTranslationTest1.java      macosx-all
 tools/javac/lambda/lambdaExecution/LambdaTranslationTest2.java      macosx-all
 tools/javac/lambdaShapes/org/openjdk/tests/javac/FDTest.java        macosx-all
-tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                macosx-all
 tools/jdeps/modules/GenOpenModule.java                              windows-all
