@@ -98,13 +98,6 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
 
-# SapMachine 2019-06-17
-# java.lang.Exception: Failed for font java.awt.Font[family=Dialog,name=MS Gothic,style=bold,size=30]
-#
-#
-# SapMachine 2019-10-09 I believe this is caused by outdated libfreetype versions and hence fixed by using configure option --with-freetype=bundled everywhere
-#java/awt/font/Outline/OutlineInvarianceTest.java                                     linux-s390x
-
 # SapMachine 2019-06-28
 #
 # java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
@@ -121,20 +114,6 @@ javax/swing/JFileChooser/4847375/bug4847375.java                                
 # https://bugs.openjdk.java.net/browse/JDK-8229023
 java/awt/print/PrinterJob/SameService.java                                   8229023 linux-s390x
 
-# SapMachine 2019-07-18
-# javax.net.ssl.SSLException: The status_request_v2 extension is inconsistent with the expected result: expected = true, actual = false
-# we see this sporadically on rs6000_64 - why? Adding this entry but commented out, for reference.
-#
-#javax/net/ssl/Stapling/StapleEnableProps.java                                        aix-all
-
-# SapMachine 2019-07-19
-# These issues occur in our internal SapMachine test env. Probably infra related on host ... Seen in 11 only.
-#
-# SapMachine 2020-03-26 Enabling these tests in 11u to see whether the issue still occurs
-#sun/management/jdp/JdpDefaultsTest.java                                              linux-ppc64le
-#sun/management/jdp/JdpJmxRemoteDynamicPortTest.java                                  linux-ppc64le
-#sun/management/jdp/JdpSpecificAddressTest.java                                       linux-ppc64le
-
 ###############################################################################
 # New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
 
@@ -144,22 +123,6 @@ java/awt/print/PrinterJob/SameService.java                                   822
 #
 # SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
 java/awt/FontClass/FontSize1Test.java                                                macosx-all
-
-###############################################################################
-# New failures detected after GA of 11.0.6 (e.g. seen only in jdk11u-dev after branching 11.0.6 to jdk11u)
-
-# SapMachine 2020-04-23
-# fails in nightly tests since 23.4.2020, seems to be a revocation
-#
-# https://bugs.openjdk.java.net/browse/JDK-8243543
-security/infra/java/security/cert/CertPathValidator/certification/BuypassCA.java 8243543 generic-all
-
-###############################################################################
-# New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
-
-# SapMachine 2020-07-06
-# certificate revoked, see https://bugs.openjdk.java.net/browse/JDK-8248899
-security/infra/java/security/cert/CertPathValidator/certification/QuoVadisCA.java 8248899 generic-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
@@ -195,6 +158,9 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java                               823
 # Probably some issue with OS configuration/libnss. We simply exclude it.
 #
 sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java                                 linux-s390x
+
+###############################################################################
+# New failures detected after GA of 11.0.11 (e.g. seen only in jdk11u-dev after branching 11.0.11 to jdk11u)
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
