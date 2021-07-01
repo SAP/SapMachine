@@ -31,8 +31,8 @@
 #include "unittest.hpp"
 #include "vitals/vitals.hpp"
 
-//#define LOG(s) tty->print_raw(s);
-#define LOG(s)
+#define LOG(s) tty->print_raw(s);
+//#define LOG(s)
 
 TEST_VM(vitals, report_with_explicit_default_settings) {
   char tmp[64*K];
