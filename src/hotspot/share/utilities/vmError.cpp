@@ -43,6 +43,8 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+// SapMachine 2019-02-20 : stathist
+#include "services/stathist.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -995,6 +997,12 @@ void VMError::report(outputStream* st, bool _verbose) {
        MemTracker::error_report(st);
      }
 
+  // SapMachine 2019-02-20 : stathist
+  STEP("Vitals")
+     if (_verbose) {
+       StatisticsHistory::print_report(st);
+     }
+
   STEP("printing system")
 
      if (_verbose) {
@@ -1165,6 +1173,10 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Native Memory Tracking")
 
   MemTracker::error_report(st);
+
+  // SapMachine 2019-02-20 : stathist
+  // STEP("Vitals")
+  StatisticsHistory::print_report(st);
 
   // STEP("printing system")
 
@@ -1843,3 +1855,12 @@ void VMError::controlled_crash(int how) {
 }
 #endif // !PRODUCT
 
+// SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks
+//  to tty on CrashOnOutOfMemoryError
+void VMError::print_stack(outputStream* st) {
+  Thread* t = Thread::current_or_null_safe();
+  char buf[1024];
+  if (t != NULL && t->is_Java_thread()) {
+    VMError::print_stack_trace(st, (JavaThread*) t, buf, sizeof(buf), false);
+  }
+}
