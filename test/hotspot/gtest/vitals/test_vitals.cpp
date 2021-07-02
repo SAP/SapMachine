@@ -31,8 +31,8 @@
 #include "unittest.hpp"
 #include "vitals/vitals.hpp"
 
-#define LOG(s) tty->print_raw(s);
-//#define LOG(s)
+//#define LOG(s) tty->print_raw(s);
+#define LOG(s)
 
 TEST_VM(vitals, report_with_explicit_default_settings) {
   char tmp[64*K];
@@ -43,7 +43,7 @@ TEST_VM(vitals, report_with_explicit_default_settings) {
   sapmachine_vitals::print_report(&ss, &info);
   LOG(tmp);
   if (EnableVitals) {
-    ASSERT_NE(::strstr(tmp, "-system--"), (char*)NULL);
+    ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)NULL);
   }
 }
 
@@ -53,7 +53,7 @@ TEST_VM(vitals, report_with_implicit_default_settings) {
   sapmachine_vitals::print_report(&ss, NULL);
   LOG(tmp);
   if (EnableVitals) {
-    ASSERT_NE(::strstr(tmp, "-system--"), (char*)NULL);
+    ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)NULL);
   }
 }
 
@@ -68,7 +68,7 @@ TEST_VM(vitals, report_with_nownow) {
     ss.reset();
     sapmachine_vitals::print_report(&ss, NULL);
     if (EnableVitals) {
-      ASSERT_NE(::strstr(tmp, "-system--"), (char*)NULL);
+      ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)NULL);
     }
   }
 }
