@@ -131,8 +131,6 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
-// SapMachine 2019-02-20 : vitals
-#include "vitals/vitals.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -150,6 +148,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
 
 // Initialization after module runtime initialization
 void universe_post_module_init();  // must happen after call_initPhase2
@@ -3038,11 +3039,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
-  // SapMachine 2019-02-20 : vitals
-  if (EnableVitals) {
-    sapmachine_vitals::initialize();
-  }
-
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
 
@@ -3056,6 +3052,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
+
+  // SapMachine 2019-02-20 : vitals
+  if (EnableVitals) {
+    sapmachine_vitals::initialize();
+  }
 
   BiasedLocking::init();
 
@@ -3504,6 +3505,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   _number_of_threads++;
 
+  // SapMachine 2019-02-20 : vitals
+  sapmachine_vitals::counters::inc_threads_created(1);
+
   oop threadObj = p->threadObj();
   bool daemon = true;
   // Bootstrapping problem: threadObj can be null for initial
@@ -3526,9 +3530,6 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Make new thread known to active EscapeBarrier
   EscapeBarrier::thread_added(p);
-
-  // SapMachine 2019-02-20 : vitals
-  sapmachine_vitals::counters::inc_threads_created(1);
 
 }
 

@@ -157,9 +157,9 @@ int printf_helper(outputStream* st, const char *fmt, ...) {
   va_end(args);
   // jio_vsnprintf guarantees -1 on truncation, and always zero termination if buffersize > 0.
   assert(len != -1, "Truncation. Increase bufsize.");
-  if (len == -1) {
-    len = sizeof(buf) - 1;
-    buf[sizeof(buf) - 1] = '\0';
+  if (len == -1) { // Handle in release too: just print a clear marker
+    jio_snprintf(buf, sizeof(buf), "!TRUNC!");
+    len = ::strlen(buf);
   }
   if (st != NULL) {
     st->print_raw(buf);
@@ -181,14 +181,16 @@ static void print_timestamp(outputStream* st, time_t t) {
 }
 
 
-////// class ColumnWidths : a helper class for pre-calculating column widths to make a table align nicely /////
-
+////// ColumnWidths : a helper class for pre-calculating column widths to make a table align nicely.
+// Keeps an array of ints, dynamically sized (since each platform has a different number of columns),
+// and offers methods of auto-sizeing them to fit given samples (via dry-printing).
 class ColumnWidths {
   int* _widths;
 public:
 
   ColumnWidths() {
-    // allocate array and init with the minimum required widths (which equal the column names)
+    // Allocate array; initialize with the minimum required column widths (which is the
+    // size required to print the column header fully)
     _widths = NEW_C_HEAP_ARRAY(int, ColumnList::the_list()->num_columns(), mtInternal);
     const Column* c = ColumnList::the_list()->first();
     while (c != NULL) {
@@ -197,8 +199,8 @@ public:
     }
   }
 
-  // given a sample (and an optional preceeding sample for delta values),
-  //   update widths to accomodate sample values (uses dry-printing)
+  // given a sample (and an optional preceding sample for delta values),
+  //   update widths to accommodate sample values (uses dry-printing)
   void update_from_sample(const Sample* sample, const Sample* last_sample, const print_info_t* pi) {
     const Column* c = ColumnList::the_list()->first();
     while (c != NULL) {
@@ -223,7 +225,7 @@ public:
   }
 };
 
-////// class ColumnList methods ////
+////// ColumnList: a singleton class holding all information about all columns
 
 ColumnList* ColumnList::_the_list = NULL;
 
@@ -1139,7 +1141,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   // otherwise.
   value_t bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_sapjvm_mallstat();
 #if INCLUDE_NMT
-  if (bytes_malloced_by_jvm == INVALID_VALUE && avoid_locking == false) {
+  if (bytes_malloced_by_jvm == INVALID_VALUE && !avoid_locking) {
     bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_nmt();
   }
 #endif

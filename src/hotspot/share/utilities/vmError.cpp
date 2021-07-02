@@ -60,11 +60,12 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/macros.hpp"
-// SapMachine 2019-02-20 : vitals
-#include "vitals/vitals.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
 
 #ifndef PRODUCT
 #include <signal.h>

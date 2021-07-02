@@ -60,8 +60,6 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
-// SapMachine 2019-09-01: vitals.
-#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -81,8 +79,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-// SapMachine 2019-09-01: vitals.
-#include "vitals/vitals.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -96,6 +92,10 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+
+// SapMachine 2019-09-01: vitals.
+#include "runtime/globals.hpp"
+#include "vitals/vitals.hpp"
 
 GrowableArray<Method*>* collected_profiled_methods;
 

@@ -29,10 +29,10 @@
 
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
+
 // SapMachine 2019-09-01: vitals.
 #include "runtime/globals.hpp"
-#include "runtime/atomic.hpp"
-// SapMachine 2019-09-01: vitals.
 #include "vitals/vitals.hpp"
 
 inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {

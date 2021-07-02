@@ -165,6 +165,8 @@ namespace sapmachine_vitals {
     {}
   };
 
+  ////// ColumnList: a singleton class holding all information about all columns
+
   class ColumnList: public CHeapObj<mtInternal> {
 
     Column* _first, *_last;
