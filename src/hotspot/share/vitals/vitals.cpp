@@ -159,7 +159,7 @@ int printf_helper(outputStream* st, const char *fmt, ...) {
   assert(len != -1, "Truncation. Increase bufsize.");
   if (len == -1) { // Handle in release too: just print a clear marker
     jio_snprintf(buf, sizeof(buf), "!TRUNC!");
-    len = ::strlen(buf);
+    len = (int)::strlen(buf);
   }
   if (st != NULL) {
     st->print_raw(buf);
