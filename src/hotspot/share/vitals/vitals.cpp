@@ -156,9 +156,9 @@ int printf_helper(outputStream* st, const char *fmt, ...) {
   len = jio_vsnprintf(buf, sizeof(buf), fmt, args);
   va_end(args);
   // jio_vsnprintf guarantees -1 on truncation, and always zero termination if buffersize > 0.
-  assert(len != -1, "Truncation. Increase bufsize.");
-  if (len == -1) { // Handle in release too: just print a clear marker
-    jio_snprintf(buf, sizeof(buf), "!TRUNC!");
+  assert(len >= 0, "Error, possible truncation. Increase bufsize?");
+  if (len < 0) { // Handle in release too: just print a clear marker
+    jio_snprintf(buf, sizeof(buf), "!ERR!");
     len = (int)::strlen(buf);
   }
   if (st != NULL) {
@@ -797,6 +797,22 @@ class SampleTables: public CHeapObj<mtInternal> {
     st->cr();
   }
 
+  // Helper, print a time span given in seconds-
+  static void print_time_span(outputStream* st, int secs) {
+    const int mins = secs / 60;
+    const int hrs = secs / (60 * 60);
+    const int days = secs / (60 * 60 * 24);
+    if (days > 1) {
+      st->print_cr("Last %d days:", days);
+    } else if (hrs > 1) {
+      st->print_cr("Last %d hours:", hrs);
+    } else if (mins > 1) {
+      st->print_cr("Last %d minutes:", mins);
+    } else {
+      st->print_cr("Last %d seconds:", secs);
+    }
+  }
+
 public:
 
   SampleTables()
@@ -844,17 +860,17 @@ public:
     }
     st->cr();
 
-    st->print_raw_cr("Last 60 minutes:");
+    print_time_span(st, VitalsSampleInterval * short_term_num_samples);
     print_headers(st, &widths, pi);
     print_table(&_short_term_table, st, &widths, pi);
     st->cr();
 
-    st->print_raw_cr("Last 24 hours:");
+    print_time_span(st, VitalsSampleInterval * mid_term_interval_ratio * mid_term_num_samples);
     print_headers(st, &widths, pi);
     print_table(&_mid_term_table, st, &widths, pi);
     st->cr();
 
-    st->print_raw_cr("Last 10 days");
+    print_time_span(st, VitalsSampleInterval * long_term_interval_ratio * long_term_num_samples);
     print_headers(st, &widths, pi);
     print_table(&_long_term_table, st, &widths, pi);
     st->cr();

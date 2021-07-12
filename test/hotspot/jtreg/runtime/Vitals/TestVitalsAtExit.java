@@ -69,7 +69,7 @@ public class TestVitalsAtExit {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.stdoutShouldNotBeEmpty();
-        output.shouldContain("--system--");
+        output.shouldContain("--jvm--");
     }
 
     static void testDump() throws Exception {
