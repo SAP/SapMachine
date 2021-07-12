@@ -321,11 +321,6 @@ tier1_runtime = \
  -:tier1_runtime_appcds_exclude \
  -runtime/signal
 
-# SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
-#  or which tests downstream-only features.
-tier1_sapmachine = \
-  serviceability/dcmd/vm/StatHistTest.java
-
 hotspot_cds = \
   runtime/cds/ \
   runtime/CompressedOops/
@@ -441,6 +436,11 @@ tier1_serviceability = \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
+
+# SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
+#  or which tests downstream-only features.
+tier1_sapmachine = \
+  runtime/Vitals
 
 # SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
 #  or which tests downstream-only features.

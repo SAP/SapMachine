@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +27,17 @@
 #include "precompiled.hpp"
 
 #include "runtime/os.hpp"
-#include "services/stathist_internals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "vitals/vitals_internals.hpp"
 
-namespace StatisticsHistory {
+namespace sapmachine_vitals {
 
 bool platform_columns_initialize() {
   return true;
 }
 
-void sample_platform_values(record_t* record) {
+void sample_platform_values(Sample* record) {
 }
 
-} // namespace StatisticsHistory
+} // namespace sapmachine_vitals
