@@ -576,7 +576,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
       if (thread != NULL && thread->threadObj() != NULL) {
         ResourceMark rm(THREAD);
         jio_fprintf(defaultStream::error_stream(),
-        "in thread \"%s\" ", thread->get_thread_name());
+        "in thread \"%s\" ", thread->name());
       }
       if (ex->is_a(vmClasses::Throwable_klass())) {
         JavaValue result(T_VOID);
@@ -976,7 +976,7 @@ JNI_ENTRY(jobject, jni_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
   HOTSPOT_JNI_NEWOBJECTA_ENTRY(env, clazz, (uintptr_t) methodID);
 
   jobject obj = NULL;
-  DT_RETURN_MARK(NewObjectA, jobject, (const jobject)obj);
+  DT_RETURN_MARK(NewObjectA, jobject, (const jobject&)obj);
 
   instanceOop i = InstanceKlass::allocate_instance(JNIHandles::resolve_non_null(clazz), CHECK_NULL);
   obj = JNIHandles::make_local(THREAD, i);
