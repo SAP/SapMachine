@@ -74,8 +74,6 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
-// SapMachine 2019-09-01: vitals.
-#include "services/stathist.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -93,6 +91,10 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+
+// SapMachine 2019-09-01: vitals.
+#include "runtime/globals.hpp"
+#include "vitals/vitals.hpp"
 
 GrowableArray<Method*>* collected_profiled_methods;
 
@@ -345,7 +347,10 @@ void print_statistics() {
 
   // SapMachine 2019-09-01: vitals.
   if (DumpVitalsAtExit) {
-    StatisticsHistory::dump_reports();
+    sapmachine_vitals::dump_reports();
+  }
+  if (PrintVitalsAtExit) {
+    sapmachine_vitals::print_report(tty);
   }
 
   ThreadsSMRSupport::log_statistics();
@@ -393,7 +398,10 @@ void print_statistics() {
 
   // SapMachine 2019-09-01: vitals.
   if (DumpVitalsAtExit) {
-    StatisticsHistory::dump_reports();
+    sapmachine_vitals::dump_reports();
+  }
+  if (PrintVitalsAtExit) {
+    sapmachine_vitals::print_report(tty);
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {

@@ -53,8 +53,6 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-// SapMachine 2019-02-20 : stathist
-#include "services/stathist.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -68,6 +66,9 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
+
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
 
 #ifndef PRODUCT
 #include <signal.h>
@@ -1048,10 +1049,13 @@ void VMError::report(outputStream* st, bool _verbose) {
        MemTracker::error_report(st);
      }
 
-  // SapMachine 2019-02-20 : stathist
+  // SapMachine 2019-02-20 : vitals
   STEP("Vitals")
      if (_verbose) {
-       StatisticsHistory::print_report(st);
+       sapmachine_vitals::print_info_t info;
+       sapmachine_vitals::default_settings(&info);
+       info.sample_now = true; // About the only place where we do this apart from explicitly setting the "now" parm on jcmd
+       sapmachine_vitals::print_report(st);
      }
 
   STEP("printing system")
@@ -1232,9 +1236,12 @@ void VMError::print_vm_info(outputStream* st) {
 
   MemTracker::error_report(st);
 
-  // SapMachine 2019-02-20 : stathist
+  // SapMachine 2019-02-20 : vitals
   // STEP("Vitals")
-  StatisticsHistory::print_report(st);
+  sapmachine_vitals::print_info_t info;
+  sapmachine_vitals::default_settings(&info);
+  info.sample_now = false;
+  sapmachine_vitals::print_report(st);
 
   // STEP("printing system")
 

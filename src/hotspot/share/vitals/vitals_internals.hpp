@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +24,38 @@
  *
  */
 
-#ifndef HOTSPOT_SHARE_SERVICES_STATHIST_INTERNALS_HPP
-#define HOTSPOT_SHARE_SERVICES_STATHIST_INTERNALS_HPP
+#ifndef HOTSPOT_SHARE_VITALS_VITALS_INTERNALS_HPP
+#define HOTSPOT_SHARE_VITALS_VITALS_INTERNALS_HPP
 
 #include "memory/allocation.hpp"
-#include "services/stathist.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "vitals/vitals.hpp"
 
-namespace StatisticsHistory {
+
+
+namespace sapmachine_vitals {
 
   typedef uint64_t value_t;
 #define INVALID_VALUE   ((value_t)UINT64_MAX)
 
-  struct record_t {
-    time_t timestamp;
-    value_t values[1]; // var sized
+  class Sample {
+    DEBUG_ONLY(int _num;)
+    time_t _timestamp;
+    value_t _values[1]; // var sized
+  public:
+    static int num_values();
+    static size_t size_in_bytes();
+    static Sample* allocate();
+
+    void reset();
+    void set_value(int index, value_t v);
+    void set_timestamp(time_t t);
+    DEBUG_ONLY(void set_num(int n);)
+
+    value_t value(int index) const;
+    time_t timestamp() const    { return _timestamp; }
+    DEBUG_ONLY(int num() const  { return _num; })
   };
 
   class ColumnList;
@@ -49,6 +67,7 @@ namespace StatisticsHistory {
     const char* const _header; // optional. May be NULL.
     const char* const _name;
     const char* const _description;
+    const bool _delta;
 
     // The following members are fixed by ColumnList when the Column is added to it.
     Column* _next;  // next column in table
@@ -56,13 +75,16 @@ namespace StatisticsHistory {
     int _idx_cat;   // position in category
     int _idx_hdr;   // position under its header (if any, 0 otherwise)
 
+    int do_print(outputStream* os, value_t value, value_t last_value,
+                 int last_value_age, const print_info_t* pi) const;
+
   protected:
 
-    Column(const char* category, const char* header, const char* name, const char* description);
+    Column(const char* category, const char* header, const char* name, const char* description, bool delta);
 
     // Child classes implement this.
     // output stream can be NULL; in that case, method shall return number of characters it would have printed.
-    virtual int do_print(outputStream* os, value_t value,
+    virtual int do_print0(outputStream* os, value_t value,
         value_t last_value, int last_value_age, const print_info_t* pi) const = 0;
 
   public:
@@ -86,57 +108,64 @@ namespace StatisticsHistory {
 
     const Column* next () const       { return _next; }
 
-    virtual bool is_memory_size() const { return false; }
-    virtual bool is_delta() const { return false; }
-
+    virtual bool is_delta() const         { return _delta; }
+    virtual bool is_memory_size() const   { return false; }
 
   };
 
   // Some standard column types
 
   class PlainValueColumn: public Column {
-    int do_print(outputStream* os, value_t value, value_t last_value,
+    int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
     PlainValueColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+      : Column(category, header, name, description, false)
     {}
   };
 
   class DeltaValueColumn: public Column {
     const bool _show_only_positive;
-    int do_print(outputStream* os, value_t value, value_t last_value,
+    int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
     // only_positive: only positive deltas are shown, negative deltas are supressed
     DeltaValueColumn(const char* category, const char* header, const char* name, const char* description,
         bool show_only_positive = true)
-      : Column(category, header, name, description)
+      : Column(category, header, name, description, true)
       , _show_only_positive(show_only_positive)
     {}
-    bool is_delta() const { return true; }
   };
 
   class MemorySizeColumn: public Column {
-    int do_print(outputStream* os, value_t value, value_t last_value,
+    int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
     MemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+      : Column(category, header, name, description, false)
     {}
     bool is_memory_size() const { return true; }
   };
 
   class DeltaMemorySizeColumn: public Column {
-    int do_print(outputStream* os, value_t value, value_t last_value,
+    int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
     DeltaMemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+      : Column(category, header, name, description, false)
     {}
-    bool is_memory_size() const { return true; }
-    bool is_delta() const { return true; }
   };
+
+  class TimeStampColumn: public Column {
+    int do_print0(outputStream* os, value_t value, value_t last_value,
+        int last_value_age, const print_info_t* pi) const;
+  public:
+    TimeStampColumn(const char* category, const char* header, const char* name, const char* description)
+      : Column(category, header, name, description, false)
+    {}
+  };
+
+  ////// ColumnList: a singleton class holding all information about all columns
 
   class ColumnList: public CHeapObj<mtInternal> {
 
@@ -171,9 +200,9 @@ namespace StatisticsHistory {
   // Implemented by platform specific
   bool platform_columns_initialize();
 
-  void sample_platform_values(record_t* record);
-  void sample_jvm_values(record_t* record, bool avoid_locking);
+  void sample_platform_values(Sample* sample);
+  void sample_jvm_values(Sample* sample, bool avoid_locking);
 
-}; // namespace StatisticsHistory
+}; // namespace sapmachine_vitals
 
-#endif /* HOTSPOT_SHARE_SERVICES_STATHIST_INTERNALS_HPP */
+#endif /* HOTSPOT_SHARE_VITALS_VITALS_INTERNALS_HPP */

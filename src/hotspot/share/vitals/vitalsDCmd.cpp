@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +24,17 @@
  *
  */
 
-#include "precompiled.hpp"
 
+#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
-#include "services/stathist.hpp"
-#include "services/stathistDCmd.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "vitals/vitals.hpp"
+#include "vitals/vitalsDCmd.hpp"
 
-namespace StatisticsHistory {
+namespace sapmachine_vitals {
 
-StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
+VitalsDCmd::VitalsDCmd(outputStream* output, bool heap)
   : DCmdWithParser(output, heap),
     _scale("scale", "Memory usage in which to scale. Valid values are: k, m, g (fixed scale) "
            "or \"dynamic\" for a dynamically chosen scale.",
@@ -42,19 +43,19 @@ StatHistDCmd::StatHistDCmd(outputStream* output, bool heap)
     _no_legend("no-legend", "Omit legend.", "BOOLEAN", false, "false"),
     _reverse("reverse", "Reverse printing order.", "BOOLEAN", false, "false"),
     _raw("raw", "Print raw values.", "BOOLEAN", false, "false"),
-    _max("max", "Limit printing to max items.", "INT", false)
+    _sample_now("now", "Sample now values", "BOOLEAN", false, "false")
 {
   _dcmdparser.add_dcmd_option(&_scale);
+  _dcmdparser.add_dcmd_option(&_csv);
   _dcmdparser.add_dcmd_option(&_no_legend);
   _dcmdparser.add_dcmd_option(&_reverse);
   _dcmdparser.add_dcmd_option(&_raw);
-  _dcmdparser.add_dcmd_option(&_csv);
-  _dcmdparser.add_dcmd_option(&_max);
+  _dcmdparser.add_dcmd_option(&_sample_now);
 }
 
-int StatHistDCmd::num_arguments() {
+int VitalsDCmd::num_arguments() {
   ResourceMark rm;
-  StatHistDCmd* dcmd = new StatHistDCmd(NULL, false);
+  VitalsDCmd* dcmd = new VitalsDCmd(NULL, false);
   if (dcmd != NULL) {
     DCmdMark mark(dcmd);
     return dcmd->_dcmdparser.num_arguments();
@@ -80,19 +81,20 @@ static bool scale_from_name(const char* scale, size_t* out) {
   return true;
 }
 
-void StatHistDCmd::execute(DCmdSource source, TRAPS) {
-  print_info_t pi;
-  if (!scale_from_name(_scale.value(), &(pi.scale))) {
+void VitalsDCmd::execute(DCmdSource source, TRAPS) {
+  sapmachine_vitals::print_info_t info;
+  sapmachine_vitals::default_settings(&info);
+  if (!scale_from_name(_scale.value(), &(info.scale))) {
     output()->print_cr("Invalid scale: \"%s\".", _scale.value());
     return;
   }
-  pi.raw = _raw.value();
-  pi.csv = _csv.value();
-  pi.no_legend = _no_legend.value();
-  pi.reverse_ordering = _reverse.value();
-  pi.max = _max.value();
+  info.csv = _csv.value();
+  info.no_legend = _no_legend.value();
+  info.reverse_ordering = _reverse.value();
+  info.raw = _raw.value();
+  info.sample_now = _sample_now.value();
 
-  StatisticsHistory::print_report(output(), &pi);
+  sapmachine_vitals::print_report(output(), &info);
 }
 
-}; // namespace StatisticsHistory
+}; // namespace sapmachine_vitals
