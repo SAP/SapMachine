@@ -116,8 +116,6 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
-// SapMachine 2019-02-20 : stathist
-#include "services/stathist.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -146,6 +144,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
 
 // Initialization after module runtime initialization
 void universe_post_module_init();  // must happen after call_initPhase2
@@ -3775,9 +3776,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
-  // SapMachine 2019-02-20 : stathist
+  // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
-    StatisticsHistory::initialize();
+    sapmachine_vitals::initialize();
   }
 
   BiasedLocking::init();
@@ -4221,8 +4222,8 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   _number_of_threads++;
 
-  // SapMachine 2019-02-20 : stathist
-  StatisticsHistory::counters::inc_threads_created(1);
+  // SapMachine 2019-02-20 : vitals
+  sapmachine_vitals::counters::inc_threads_created(1);
 
   oop threadObj = p->threadObj();
   bool daemon = true;
@@ -4246,6 +4247,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Make new thread known to active EscapeBarrier
   EscapeBarrier::thread_added(p);
+
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
@@ -4508,10 +4510,10 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   Universe::heap()->gc_threads_do(&cl);
   cl.do_thread(WatcherThread::watcher_thread());
 
-  // SapMachine 2019-11-07 : stathist
-  const Thread* stathist_sampler_thread = StatisticsHistory::samplerthread();
-  if (stathist_sampler_thread != NULL) {
-    stathist_sampler_thread->print_on(st);
+  // SapMachine 2019-11-07 : vitals
+  const Thread* vitals_sampler_thread = sapmachine_vitals::samplerthread();
+  if (vitals_sampler_thread != NULL) {
+    vitals_sampler_thread->print_on(st);
     st->cr();
   }
 
@@ -4567,8 +4569,9 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->print_cr("Other Threads:");
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
-  // SapMachine 2019-11-07 : stathist
-  print_on_error(const_cast<Thread*>(StatisticsHistory::samplerthread()),
+
+  // SapMachine 2019-11-07 : vitals
+  print_on_error(const_cast<Thread*>(sapmachine_vitals::samplerthread()),
                  st, current, buf, buflen, &found_current);
 
   if (Universe::heap() != NULL) {

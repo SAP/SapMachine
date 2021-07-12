@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +24,15 @@
  *
  */
 
-#ifndef HOTSPOT_SHARE_SERVICES_STATHIST_HPP
-#define HOTSPOT_SHARE_SERVICES_STATHIST_HPP
+#ifndef HOTSPOT_SHARE_VITALS_VITALS_HPP
+#define HOTSPOT_SHARE_VITALS_VITALS_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
+class Thread;
 
-namespace StatisticsHistory {
+namespace sapmachine_vitals {
 
   bool initialize();
   void cleanup();
@@ -45,13 +47,13 @@ namespace StatisticsHistory {
 
     size_t scale;
 
-    // max number of samples to print (0 = print all)
-    int max;
+    // if true, sample and print the current values too. If false,
+    // just print the sample tables.
+    bool sample_now;
 
   };
 
-  // text output, youngest-to-oldest ordered, with legend, all records, dynamic scale.
-  const print_info_t* default_settings();
+  void default_settings(print_info_t* out);
 
   // Print report to stream. Leave print_info NULL for default settings.
   void print_report(outputStream* st, const print_info_t* print_info = NULL);
@@ -63,11 +65,6 @@ namespace StatisticsHistory {
   // For printing in thread lists only.
   const Thread* samplerthread();
 
-  // These are counters for the statistics history. Ideally, they would live
-  // inside their thematical homes, e.g. thread.cpp or classLoaderDataGraph.cpp,
-  // however since this is unlikely ever to be brought upstream we keep this separate
-  // to easy maintenance.
-
   namespace counters {
     void inc_classes_loaded(size_t count);
     void inc_classes_unloaded(size_t count);
@@ -76,4 +73,4 @@ namespace StatisticsHistory {
 
 };
 
-#endif /* HOTSPOT_SHARE_SERVICES_STATHIST_HPP */
+#endif /* HOTSPOT_SHARE_VITALS_VITALS_HPP */

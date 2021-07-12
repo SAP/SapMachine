@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +27,13 @@
 #include "precompiled.hpp"
 
 #include "runtime/os.hpp"
-#include "services/stathist_internals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "vitals/vitals_internals.hpp"
 
 #include <psapi.h>
 
-namespace StatisticsHistory {
+namespace sapmachine_vitals {
 
 static Column* g_col_system_memoryload = NULL;
 static Column* g_col_system_avail_phys = NULL;
@@ -59,29 +60,29 @@ bool platform_columns_initialize() {
   return true;
 }
 
-static void set_value_in_record(Column* col, record_t* record, value_t val) {
+static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
   if (col != NULL) {
     int index = col->index();
-    record->values[index] = val;
+    sample->set_value(index, val);
   }
 }
 
-void sample_platform_values(record_t* record) {
+void sample_platform_values(Sample* sample) {
 
   MEMORYSTATUSEX mse;
   mse.dwLength = sizeof(mse);
   if (::GlobalMemoryStatusEx(&mse)) {
-    set_value_in_record(g_col_system_memoryload, record, mse.dwMemoryLoad);
-    set_value_in_record(g_col_system_avail_phys, record, mse.ullAvailPhys);
+    set_value_in_sample(g_col_system_memoryload, sample, mse.dwMemoryLoad);
+    set_value_in_sample(g_col_system_avail_phys, sample, mse.ullAvailPhys);
   }
 
   PROCESS_MEMORY_COUNTERS cnt;
   cnt.cb = sizeof(cnt);
   if (::GetProcessMemoryInfo(::GetCurrentProcess(), &cnt, sizeof(cnt))) {
-    set_value_in_record(g_col_process_working_set_size, record, cnt.WorkingSetSize);
-    set_value_in_record(g_col_process_commit_charge, record, cnt.PagefileUsage);
+    set_value_in_sample(g_col_process_working_set_size, sample, cnt.WorkingSetSize);
+    set_value_in_sample(g_col_process_commit_charge, sample, cnt.PagefileUsage);
   }
 
 }
 
-} // namespace StatisticsHistory
+} // namespace sapmachine_vitals
