@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +24,24 @@
  *
  */
 
-#ifndef HOTSPOT_SHARE_SERVICES_STATHIST_INTERNALS_HPP
-#define HOTSPOT_SHARE_SERVICES_STATHIST_INTERNALS_HPP
+
+#ifndef HOTSPOT_SHARE_VITALS_VITALSDCMD_HPP
+#define HOTSPOT_SHARE_VITALS_VITALSDCMD_HPP
 
 #include "services/diagnosticCommand.hpp"
 
-namespace StatisticsHistory {
+namespace sapmachine_vitals {
 
-class StatHistDCmd : public DCmdWithParser {
+class VitalsDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _scale;
   DCmdArgument<bool> _csv;
   DCmdArgument<bool> _no_legend;
   DCmdArgument<bool> _reverse;
   DCmdArgument<bool> _raw;
-  DCmdArgument<jlong> _max;
+  DCmdArgument<bool> _sample_now;
 public:
-  StatHistDCmd(outputStream* output, bool heap);
+  VitalsDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.vitals";
   }
@@ -58,6 +60,7 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-}; // namespace StatisticsHistory
+}; // namespace sapmachine_vitals
 
-#endif /* HOTSPOT_SHARE_SERVICES_STATHIST_INTERNALS_HPP */
+#endif /* HOTSPOT_SHARE_VITALS_VITALSDCMD_HPP */
+
