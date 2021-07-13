@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,38 +25,37 @@
  */
 
 #include "precompiled.hpp"
-
+#include "jvm.h"
 
 #include "gc/shared/collectedHeap.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "code/codeCache.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
-#include "services/stathist.hpp"
-#include "services/stathist_internals.hpp"
+#include "services/mallocTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-
+#include "vitals/vitals.hpp"
+#include "vitals/vitals_internals.hpp"
 
 #include <locale.h>
 #include <time.h>
 
 
-// Define this switch to limit sampling to those values which can be obtained without locking.
-#undef NEVER_LOCK_WHEN_SAMPLING
+static Mutex* g_vitals_lock = NULL;
 
-namespace StatisticsHistory {
+namespace sapmachine_vitals {
 
 namespace counters {
 
-// These are counters for the statistics history. Ideally, they would live
-// inside their thematical homes, e.g. thread.cpp or classLoaderDataGraph.cpp,
-// however since this is unlikely ever to be brought upstream we keep them separate
-// from central coding to ease maintenance.
 static volatile size_t g_classes_loaded = 0;
 static volatile size_t g_classes_unloaded = 0;
 static volatile size_t g_threads_created = 0;
@@ -74,11 +74,6 @@ void inc_threads_created(size_t count) {
 
 } // namespace counters
 
-// context for printing
-struct print_context_t {
-  int records_printed;
-};
-
 // helper function for the missing outputStream::put(int c, int repeat)
 static void ostream_put_n(outputStream* st, int c, int repeat) {
   for (int i = 0; i < repeat; i ++) {
@@ -86,9 +81,47 @@ static void ostream_put_n(outputStream* st, int c, int repeat) {
   }
 }
 
-static size_t record_size_in_bytes() {
-  const int num_columns = ColumnList::the_list()->num_columns();
-  return sizeof(record_t) + sizeof(value_t) * (num_columns - 1);
+/////// class Sample /////
+
+int Sample::num_values() { return ColumnList::the_list()->num_columns(); }
+
+size_t Sample::size_in_bytes() {
+  assert(num_values() > 0, "not yet initialized");
+  return sizeof(Sample) + sizeof(value_t) * (num_values() - 1); // -1 since Sample::values is size 1 to shut up compilers about zero length arrays
+}
+
+Sample* Sample::allocate() {
+  Sample* s = (Sample*) NEW_C_HEAP_ARRAY(char, size_in_bytes(), mtInternal);
+  s->reset();
+  return s;
+}
+
+void Sample::reset() {
+  for (int i = 0; i < num_values(); i ++) {
+    set_value(i, INVALID_VALUE);
+  }
+  DEBUG_ONLY(_num = -1;)
+  _timestamp = 0;
+}
+
+void Sample::set_value(int index, value_t v) {
+  assert(index >= 0 && index < num_values(), "invalid index");
+  _values[index] = v;
+}
+
+void Sample::set_timestamp(time_t t) {
+  _timestamp = t;
+}
+
+#ifdef ASSERT
+void Sample::set_num(int n) {
+  _num = n;
+}
+#endif
+
+value_t Sample::value(int index) const {
+  assert(index >= 0 && index < num_values(), "invalid index");
+  return _values[index];
 }
 
 static void print_text_with_dashes(outputStream* st, const char* text, int width) {
@@ -108,19 +141,24 @@ static void print_text_with_dashes(outputStream* st, const char* text, int width
 }
 
 // Helper function for printing:
-// Print to ostream, but only if ostream is given. In any case return number ofcat_process = 10,
+// Print to ostream, but only if ostream is given. In any case return number of
 // characters printed (or which would have been printed).
 static
 ATTRIBUTE_PRINTF(2, 3)
 int printf_helper(outputStream* st, const char *fmt, ...) {
   // We only print numbers, so a small buffer is fine.
-  char buf[64];
+  char buf[128];
   va_list args;
   int len = 0;
   va_start(args, fmt);
   len = jio_vsnprintf(buf, sizeof(buf), fmt, args);
   va_end(args);
-  assert((size_t)len < sizeof(buf), "Truncation. Increase bufsize.");
+  // jio_vsnprintf guarantees -1 on truncation, and always zero termination if buffersize > 0.
+  assert(len >= 0, "Error, possible truncation. Increase bufsize?");
+  if (len < 0) { // Handle in release too: just print a clear marker
+    jio_snprintf(buf, sizeof(buf), "!ERR!");
+    len = (int)::strlen(buf);
+  }
   if (st != NULL) {
     st->print_raw(buf);
   }
@@ -140,7 +178,52 @@ static void print_timestamp(outputStream* st, time_t t) {
   }
 }
 
-////// class ColumnList methods ////
+
+////// ColumnWidths : a helper class for pre-calculating column widths to make a table align nicely.
+// Keeps an array of ints, dynamically sized (since each platform has a different number of columns),
+// and offers methods of auto-sizeing them to fit given samples (via dry-printing).
+class ColumnWidths {
+  int* _widths;
+public:
+
+  ColumnWidths() {
+    // Allocate array; initialize with the minimum required column widths (which is the
+    // size required to print the column header fully)
+    _widths = NEW_C_HEAP_ARRAY(int, ColumnList::the_list()->num_columns(), mtInternal);
+    const Column* c = ColumnList::the_list()->first();
+    while (c != NULL) {
+      _widths[c->index()] = (int)::strlen(c->name());
+      c = c->next();
+    }
+  }
+
+  // given a sample (and an optional preceding sample for delta values),
+  //   update widths to accommodate sample values (uses dry-printing)
+  void update_from_sample(const Sample* sample, const Sample* last_sample, const print_info_t* pi) {
+    const Column* c = ColumnList::the_list()->first();
+    while (c != NULL) {
+      const int idx = c->index();
+      const value_t v = sample->value(idx);
+      value_t v2 = INVALID_VALUE;
+      int age = -1;
+      if (last_sample != NULL) {
+        v2 = last_sample->value(idx);
+        age = sample->timestamp() - last_sample->timestamp();
+      }
+      int needed = c->calc_print_size(v, v2, age, pi);
+      if (_widths[idx] < needed) {
+        _widths[idx] = needed;
+      }
+      c = c->next();
+    }
+  }
+
+  int at(int index) const {
+    return _widths[index];
+  }
+};
+
+////// ColumnList: a singleton class holding all information about all columns
 
 ColumnList* ColumnList::_the_list = NULL;
 
@@ -175,28 +258,7 @@ void ColumnList::add_column(Column* c) {
 
 ////////////////////
 
-// At various places we need a scratch buffer of ints with one element per column; since
-// after initialization the number of columns is fixed, we pre-create this.
-static int* g_widths = NULL;
-
-bool initialize_widths_buffer() {
-  assert(ColumnList::the_list() != NULL && g_widths == NULL, "Initialization order problem.");
-  g_widths = (int*)os::malloc(sizeof(int) * ColumnList::the_list()->num_columns(), mtInternal);
-  return g_widths != NULL;
-}
-
-// pre-allocated space for a single record used to take current values when printing via dcmd.
-static record_t* g_record_now = NULL;
-
-bool initialize_space_for_now_record() {
-  assert(ColumnList::the_list() != NULL && g_record_now == NULL, "Initialization order problem.");
-  g_record_now = (record_t*) os::malloc(record_size_in_bytes(), mtInternal);
-  return g_record_now != NULL;
-}
-
-////////////////////
-
-static void print_category_line(outputStream* st, int widths[], const print_info_t* pi) {
+static void print_category_line(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
 
   assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
@@ -215,7 +277,7 @@ static void print_category_line(outputStream* st, int widths[], const print_info
       }
       width = 0;
     }
-    width += widths[c->index()];
+    width += widths->at(c->index());
     width += 1; // divider between columns
     last_category_text = c->category();
     c = c->next();
@@ -224,7 +286,7 @@ static void print_category_line(outputStream* st, int widths[], const print_info
   st->cr();
 }
 
-static void print_header_line(outputStream* st, int widths[], const print_info_t* pi) {
+static void print_header_line(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
 
   assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
@@ -248,7 +310,7 @@ static void print_header_line(outputStream* st, int widths[], const print_info_t
       }
       width = 0;
     }
-    width += widths[c->index()];
+    width += widths->at(c->index());
     width += 1; // divider between columns
     last_header_text = c->header();
     c = c->next();
@@ -259,21 +321,20 @@ static void print_header_line(outputStream* st, int widths[], const print_info_t
   st->cr();
 }
 
-static void print_column_names(outputStream* st, int widths[], const print_info_t* pi) {
+static void print_column_names(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
 
   // Leave space for timestamp column
   if (pi->csv == false) {
-    st->print("Time");
-    ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN - 4);
+    ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
   } else {
-    st->print("Time,");
+    st->put(',');
   }
 
   const Column* c = ColumnList::the_list()->first();
   const Column* previous = NULL;
   while (c != NULL) {
     if (pi->csv == false) {
-      st->print("%-*s ", widths[c->index()], c->name());
+      st->print("%-*s ", widths->at(c->index()), c->name());
     } else { // csv mode
       // csv: use comma as delimiter, don't pad, and precede name with category/header
       //  (limited to 4 chars).
@@ -309,11 +370,6 @@ static void print_legend(outputStream* st, const print_info_t* pi) {
       jio_snprintf(buf, sizeof(buf), "%s", c->name());
     }
     st->print("%*s: %s", min_width_column_label, buf, c->description());
-
-    // If memory units are not dynamic (otion scale), print out the unit as well.
-    if (c->is_memory_size() && pi->scale != 0) {
-      st->print_raw(" [mem]");
-    }
 
     // If column is a delta value, indicate so
     if (c->is_delta()) {
@@ -416,11 +472,12 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
 
 ///////// class Column and childs ///////////
 
-Column::Column(const char* category, const char* header, const char* name, const char* description)
+Column::Column(const char* category, const char* header, const char* name, const char* description, bool delta)
   : _category(category),
     _header(header), // may be NULL
     _name(name),
     _description(description),
+    _delta(delta),
     _next(NULL), _idx(-1),
     _idx_cat(-1), _idx_hdr(-1)
 {
@@ -429,11 +486,6 @@ Column::Column(const char* category, const char* header, const char* name, const
 
 void Column::print_value(outputStream* st, value_t value, value_t last_value,
     int last_value_age, int min_width, const print_info_t* pi) const {
-
-  if (pi->raw) {
-    printf_helper(st, UINT64_FORMAT, value);
-    return;
-  }
 
   // We print all values right aligned.
   int needed = calc_print_size(value, last_value, last_value_age, pi);
@@ -457,17 +509,33 @@ int Column::calc_print_size(value_t value, value_t last_value,
   return do_print(NULL, value, last_value, last_value_age, pi);
 }
 
-int PlainValueColumn::do_print(outputStream* st, value_t value,
-    value_t last_value, int last_value_age, const print_info_t* pi) const
-{
-  int l = 0;
-  if (value != INVALID_VALUE) {
-    l = printf_helper(st, UINT64_FORMAT, value);
+int Column::do_print(outputStream* st, value_t value, value_t last_value,
+                     int last_value_age, const print_info_t* pi) const {
+  if (value == INVALID_VALUE) {
+    if (pi->raw) {
+      if (st != NULL) {
+        return printf_helper(st, "%s", "?");
+      }
+      return 1;
+    } else {
+      return 0;
+    }
+  } else {
+    if (pi->raw) {
+      return printf_helper(st, UINT64_FORMAT, value);
+    } else {
+      return do_print0(st, value, last_value, last_value_age, pi);
+    }
   }
-  return l;
 }
 
-int DeltaValueColumn::do_print(outputStream* st, value_t value,
+int PlainValueColumn::do_print0(outputStream* st, value_t value,
+    value_t last_value, int last_value_age, const print_info_t* pi) const
+{
+  return printf_helper(st, UINT64_FORMAT, value);
+}
+
+int DeltaValueColumn::do_print0(outputStream* st, value_t value,
     value_t last_value, int last_value_age, const print_info_t* pi) const {
   if (_show_only_positive && last_value > value) {
     // we assume the underlying value to be monotonically raising, and that
@@ -475,49 +543,45 @@ int DeltaValueColumn::do_print(outputStream* st, value_t value,
     // we do not want to show
     return 0;
   }
-  int l = 0;
-  if (value != INVALID_VALUE && last_value != INVALID_VALUE) {
-    l = printf_helper(st, INT64_FORMAT, (int64_t)(value - last_value));
+  if (last_value != INVALID_VALUE) {
+    return printf_helper(st, INT64_FORMAT, (int64_t)(value - last_value));
   }
-  return l;
+  return 0;
 }
 
-int MemorySizeColumn::do_print(outputStream* st, value_t value,
+int MemorySizeColumn::do_print0(outputStream* st, value_t value,
     value_t last_value, int last_value_age, const print_info_t* pi) const {
-  int l = 0;
-  if (value != INVALID_VALUE) {
-    l = print_memory_size(st, value, pi->scale);
-  }
-  return l;
+  return print_memory_size(st, value, pi->scale);
 }
 
-int DeltaMemorySizeColumn::do_print(outputStream* st, value_t value,
+int DeltaMemorySizeColumn::do_print0(outputStream* st, value_t value,
     value_t last_value, int last_value_age, const print_info_t* pi) const {
-  int l = 0;
-  if (value != INVALID_VALUE && last_value != INVALID_VALUE) {
-    l = print_memory_size(st, value - last_value, pi->scale);
+  if (last_value != INVALID_VALUE) {
+    return print_memory_size(st, value - last_value, pi->scale);
   }
-  return l;
+  return 0;
 }
 
-////////////// Record printing ///////////////////////////
+////////////// sample printing ///////////////////////////
 
-// Print one record.
-static void print_one_record(outputStream* st, const record_t* record,
-    const record_t* last_record, const int widths[], const print_info_t* pi) {
+// Print one sample.
+static void print_one_sample(outputStream* st, const Sample* sample,
+    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi) {
 
   // Print timestamp and divider
-  if (record->timestamp == 0) {
+  if (sample->timestamp() == 0) {
     st->print("%*s", TIMESTAMP_LEN, "Now");
   } else {
-    if (pi->csv) {
-      st->print("\"");
-    }
-    print_timestamp(st, record->timestamp);
-    if (pi->csv) {
-      st->print("\"");
-    }
+    print_timestamp(st, sample->timestamp());
   }
+
+  // For analysis, print sample numbers
+#ifdef ASSERT
+  if (pi->raw) {
+    st->print(",%d,%d", sample->num(),
+              last_sample != NULL ? last_sample->num() : -1);
+  }
+#endif
 
   if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_DIVIDER_LEN);
@@ -528,14 +592,14 @@ static void print_one_record(outputStream* st, const record_t* record,
   const Column* c = ColumnList::the_list()->first();
   while (c != NULL) {
     const int idx = c->index();
-    const value_t v = record->values[idx];
+    const value_t v = sample->value(idx);
     value_t v2 = INVALID_VALUE;
     int age = -1;
-    if (last_record != NULL) {
-      v2 = last_record->values[idx];
-      age = record->timestamp - last_record->timestamp;
+    if (last_sample != NULL) {
+      v2 = last_sample->value(idx);
+      age = sample->timestamp() - last_sample->timestamp();
     }
-    const int min_width = widths[idx];
+    const int min_width = widths->at(idx);
     c->print_value(st, v, v2, age, min_width, pi);
     st->put(pi->csv ? ',' : ' ');
     c = c->next();
@@ -543,439 +607,323 @@ static void print_one_record(outputStream* st, const record_t* record,
   st->cr();
 }
 
-// For each value in record, update the width in the widths array if it is smaller than
-// the value printing width
-static void update_widths_from_one_record(const record_t* record, const record_t* last_record, int widths[],
-    const print_info_t* pi) {
-  const Column* c = ColumnList::the_list()->first();
-  while (c != NULL) {
-    const int idx = c->index();
-    const value_t v = record->values[idx];
-    value_t v2 = INVALID_VALUE;
-    int age = -1;
-    if (last_record != NULL) {
-      v2 = last_record->values[idx];
-      age = record->timestamp - last_record->timestamp;
-    }
-    int needed = c->calc_print_size(v, v2, age, pi);
-    if (widths[idx] < needed) {
-      widths[idx] = needed;
-    }
-    c = c->next();
-  }
-}
+////////////// Class SampleTable /////////////////////////
 
-////////////// Class RecordTable /////////////////////////
+// A fixed sized fifo buffer of n samples
+class SampleTable : public CHeapObj<mtInternal> {
 
-class RecordTable : public CHeapObj<mtInternal> {
-
-  const int _num_records;
-
-  record_t* _records;
-
-  // _pos: index of next slot to write to. If we did not yet wrap,
-  //  this position is invalid, otherwise this is the position of the oldest slot.
-  //
-  // Valid ranges: not yet wrapped:    [0 .. _pos)
-  //               wrapped:            [_pos ... (_num_records-1 -> 0) ... _pos)
-  int _pos;
+  const int _num_entries;
+  int _head;      // Index of the last sample written; -1 if none have been written yet
   bool _did_wrap;
+  Sample* _samples;
 
-  RecordTable* const _follower;
-  const int _follower_ratio;
-  int _follower_countdown;
-
-  #ifdef ASSERT
-    bool valid_pos(int pos) const           { return pos >= 0 && pos < _num_records; }
-    bool valid_pos_or_null(int pos) const   { return pos == -1 || valid_pos(pos); }
-  #endif
-
-  // Returns the position of the last slot we wrote to.
-  // -1 if this table is empty.
-  int youngest_pos() const {
-    int pos = _pos - 1;
-    if (pos == -1) {
-      if (_did_wrap) {
-        pos = _num_records - 1;
-      }
-    }
-    return pos;
+#ifdef ASSERT
+  void verify() const {
+    assert(_samples != NULL, "sanity");
+    assert(_head >= 0 && _head < _num_entries, "sanity");
   }
+#endif
 
-  // Returns the position of the oldest slot we wrote to.
-  // -1 if this table is empty.
-  int oldest_pos() const {
-    if (_did_wrap) {
-      return _pos;
-    } else {
-      return _pos > 0 ? 0 : -1;
-    }
+  const size_t sample_offset_in_bytes(int idx) const {
+    assert(idx >= 0 && idx <= _num_entries, "invalid index: %d", idx);
+    return Sample::size_in_bytes() * idx;
   }
-
-  // Return the position following pos.
-  //  Input position must be a valid position.
-  //  Returns -1 if there is no following slot.
-  int following_pos(int pos) const {
-    assert(valid_pos(pos), "Sanity");
-    int p2 = pos + 1;
-    if (_did_wrap) {
-      if (p2 == _num_records) {
-        p2 = 0;
-      }
-    }
-    if (p2 == _pos) {
-      p2 = -1;
-    }
-    assert(valid_pos_or_null(p2), "Sanity");
-    return p2;
-  }
-
-  int preceeding_pos(int pos) const {
-    assert(valid_pos(pos), "Sanity");
-    int p2 = pos - 1;
-    if (p2 == -1) {
-      if (_did_wrap) {
-        p2 = _num_records - 1;
-      }
-    } else if (p2 == _pos) {
-      assert(_did_wrap, "Sanity");
-      p2 = -1;
-    }
-    assert(valid_pos_or_null(p2), "Sanity");
-    return p2;
-  }
-
-  record_t* at(int pos) const {
-    assert(valid_pos(pos), "Sanity");
-    return (record_t*) ((address)_records + (record_size_in_bytes() * pos));
-  }
-
-  // May return NULL
-  const record_t* preceeding(int pos) const {
-    int p2 = preceeding_pos(pos);
-    if (p2 != -1) {
-      return at(p2);
-    }
-    return NULL;
-  }
-
-  class ConstIterator {
-    const RecordTable* const _rt;
-    const bool _reverse;
-    int _p;
-    const int _max_steps;
-    int _step;
-
-    void move_to_oldest() {
-      _p = _rt->oldest_pos();
-    }
-
-    void move_to_youngest() {
-      _p = _rt->youngest_pos();
-    }
-
-    void step_forward() { _p = _rt->following_pos(_p); }
-    void step_back()    { _p = _rt->preceeding_pos(_p); }
-
-  public:
-
-    ConstIterator(const RecordTable* rt, bool reverse = false)
-      : _rt(rt), _reverse(reverse), _p(-1),
-        _max_steps(rt->size()), _step(0)
-    {
-      if (_reverse) {
-        move_to_oldest();
-      } else {
-        move_to_youngest();
-      }
-    }
-
-    bool valid() const { return _p != -1; }
-
-    void step() {
-      if (valid()) {
-        if (_reverse) {
-          step_forward();
-        } else {
-          step_back();
-        }
-        // Safety.
-        _step ++;
-        if (_step > _max_steps) {
-          _p = -1;
-        }
-      }
-    }
-
-    const record_t* get() const {
-      assert(valid(), "Sanity");
-      return _rt->at(_p);
-    }
-
-    // Returns the record directly preceding, age-wise, the current
-    // record. This has nothing to do with iteratore
-    // May return NULL
-    const record_t* get_preceeding() const {
-      return _rt->preceeding(_p);
-    }
-
-  }; // end ConstReverseIterator
-
-
-  void add_record(const record_t* record) {
-    ::memcpy(current_record(), record, record_size_in_bytes());
-    finish_current_record();
-  }
-
-  // This "dry-prints" all records just to calculate the maximum print width, per column, needed to
-  // display the values.
-  void update_widths_from_all_records(int widths[], const print_info_t* pi) const {
-
-    // reset widths - note: minimum width is the length of the name of the column.
-    const Column* c = ColumnList::the_list()->first();
-    while (c != NULL) {
-      widths[c->index()] = (int)::strlen(c->name());
-      c = c->next();
-    }
-
-    ConstIterator it(this);
-    while(it.valid()) {
-      const record_t* record = it.get();
-      const record_t* previous_record = it.get_preceeding();
-      update_widths_from_one_record(record, previous_record, widths, pi);
-      it.step();
-    }
-  }
-
-  // Print all records.
-  void print_all_records(outputStream* st, const int widths[], const print_info_t* pi, print_context_t* pc) const {
-    ConstIterator it(this, pi->reverse_ordering);
-    while(it.valid() && (pi->max == 0 || pc->records_printed < pi->max)) {
-      const record_t* record = it.get();
-      const record_t* previous_record = it.get_preceeding();
-      print_one_record(st, record, previous_record, widths, pi);
-      it.step();
-      pc->records_printed ++;
-    }
-  }
-
-  bool is_empty() const {
-    return _pos == 0 && _did_wrap == false;
-  }
+  const Sample* sample_at(int index) const  { return (Sample*)((uint8_t*)_samples + sample_offset_in_bytes(index)); }
+  Sample* sample_at(int index)              { return (Sample*)((uint8_t*)_samples + sample_offset_in_bytes(index)); }
 
 public:
 
-  RecordTable(int num_records, RecordTable* follower = NULL, int follower_ratio = -1)
-    : _num_records(num_records),
-      _records(NULL), _pos(0), _did_wrap(false),
-      _follower(follower), _follower_ratio(follower_ratio),
-      _follower_countdown(0)
-  {}
-
-  bool initialize() {
-    _records = (record_t*) os::malloc(record_size_in_bytes() * _num_records, mtInternal);
-    return _records != NULL;
+  SampleTable(int num_entries)
+    : _num_entries(num_entries),
+      _head(-1),
+      _did_wrap(false),
+      _samples(NULL)
+  {
+    _samples = (Sample*) NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes() * _num_entries, mtInternal);
+#ifdef ASSERT
+    for (int i = 0; i < _num_entries; i ++) {
+      sample_at(i)->reset();
+    }
+#endif
   }
 
-  // returns the pointer to the current, unfinished record.
-  record_t* current_record() {
-    return at(_pos);
-  }
+  bool is_empty() const { return _head == -1; }
 
-  // Returns max. number of entries size of this record table.
-  int size() const { return _num_records; }
-
-  // finish the current record: advances the write position in the FIFO buffer by one.
-  // Should that cause a record to fall out of the FIFO end, it propagates the record to
-  // the follower table if needed.
-  void finish_current_record() {
-    _pos ++;
-    if (_pos == _num_records) {
-      _pos = 0;
+  void add_sample(const Sample* sample) {
+    assert_lock_strong(g_vitals_lock);
+    // Advance head
+    _head ++;
+    if (_head == _num_entries) {
       _did_wrap = true;
+      _head = 0;
     }
-    if (_did_wrap) {
-      // propagate old record if needed.
-      if (_follower != NULL && _follower_countdown == 0) {
-        _follower->add_record(current_record());
-        _follower_countdown = _follower_ratio; // reset countdown.
-      }
-      _follower_countdown --; // count down.
-    }
+    // Copy sample
+    ::memcpy(sample_at(_head), sample, Sample::size_in_bytes());
+    DEBUG_ONLY(verify());
   }
 
-  void print_table(outputStream* st, const print_info_t* pi, print_context_t* pc) const {
+  // Given a valid sample index, return the previous index or -1 if this is the oldest sample.
+  int get_previous_index(int idx) const {
+    assert(idx >= 0 && idx <= _num_entries, "index oob: %d", idx);
+    assert(_did_wrap == true || idx <= _head, "index invalid: %d", idx);
+    int prev = idx - 1;
+    if (prev == -1 && _did_wrap) {
+      prev = _num_entries - 1;
+    }
+    if (prev == _head) {
+      prev = -1;
+    }
+    return prev;
+  }
 
-    if (is_empty()) {
-      st->print_cr("(no records)");
+  class Closure {
+   public:
+    virtual void do_sample(const Sample* sample, const Sample* previous_sample) = 0;
+  };
+
+  void call_closure_for_sample_at(Closure* closure, int idx) const {
+    const Sample* sample = sample_at(idx);
+    int idx2 = get_previous_index(idx);
+    const Sample* previous_sample = idx2 == -1 ? NULL : sample_at(idx2);
+    closure->do_sample(sample, previous_sample);
+  }
+
+  void walk_table_locked(Closure* closure, bool youngest_to_oldest = true) const {
+    assert_lock_strong(g_vitals_lock);
+
+    if (_head == -1) {
       return;
     }
 
-    const record_t* const youngest_in_table = preceeding(_pos);
+    DEBUG_ONLY(verify();)
 
-    // Before actually printing, lets calculate the printing widths
-    // (if now-values are given, they are part of the table too, so include them in the widths calculation)
-    update_widths_from_all_records(g_widths, pi);
-
-    // Print headers (not in csv mode)
-    if (pi->csv == false) {
-      print_category_line(st, g_widths, pi);
-      print_header_line(st, g_widths, pi);
+    if (youngest_to_oldest) { // youngest to oldest
+      for (int pos = _head; pos >= 0; pos--) {
+        call_closure_for_sample_at(closure, pos);
+      }
+      if (_did_wrap) {
+        for (int pos = _num_entries - 1; pos > _head; pos--) {
+          call_closure_for_sample_at(closure, pos);
+        }
+      }
+    } else { // oldest to youngest
+      if (_did_wrap) {
+        for (int pos = _head + 1; pos < _num_entries; pos ++) {
+          call_closure_for_sample_at(closure, pos);
+        }
+      }
+      for (int pos = 0; pos <= _head; pos ++) {
+        call_closure_for_sample_at(closure, pos);
+      }
     }
-    print_column_names(st, g_widths, pi);
-    st->cr();
+  }
 
-    // Now print the actual values. We preceede the table values with the now value
-    //  (if printing order is youngest-to-oldest) or write it last (if printing order is oldest-to-youngest).
-    print_all_records(st, g_widths, pi, pc);
+};
 
+class MeasureColumnWidthsClosure : public SampleTable::Closure {
+  const print_info_t* const _pi;
+  ColumnWidths* const _widths;
+
+public:
+  MeasureColumnWidthsClosure(const print_info_t* pi, ColumnWidths* widths) :
+    _pi(pi), _widths(widths) {}
+
+  void do_sample(const Sample* sample, const Sample* previous_sample) {
+    _widths->update_from_sample(sample, previous_sample, _pi);
   }
 };
 
-class RecordTables: public CHeapObj<mtInternal> {
+class PrintSamplesClosure : public SampleTable::Closure {
+  outputStream* const _st;
+  const print_info_t* const _pi;
+  const ColumnWidths* const _widths;
+
+public:
+
+  PrintSamplesClosure(outputStream* st, const print_info_t* pi, const ColumnWidths* widths) :
+    _st(st), _pi(pi), _widths(widths) {}
+
+  void do_sample(const Sample* sample, const Sample* previous_sample) {
+    print_one_sample(_st, sample, previous_sample, _widths, _pi);
+  }
+};
+
+// sampleTables is a combination of three tables: a short term table, a mid term table, a long term table.
+// It takes care to feed new samples into these tables at the appropriate intervals.
+class SampleTables: public CHeapObj<mtInternal> {
+
+  // Note that sample intervals are bound to VitalsSampleInterval switch. Changing that changes the
+  // clock for all tables.
 
   // short term: 10 seconds per sample, 360 samples or 60 minutes total
   static const int short_term_interval_default = 10;
   static const int short_term_num_samples = 360;
 
-  // mid term: 10 minutes per sample (aka 60 short term samples), 144 samples or 24 hours in total
+  SampleTable _short_term_table;
+
+  // Downsample tables:
+
+  // mid term: 10 minutes per sample (600 seconds or 60 short term samples), 144 samples or 24 hours in total
   static const int mid_term_interval_ratio = 60;
   static const int mid_term_num_samples = 144;
 
-  // long term history: 2 hour intervals (aka 8 mid term samples), 120 samples or 10 days in total
-  static const int long_term_interval_ratio = 8;
+  // long term history: 2 hour intervals (7200 seconds or 720 short term samples), 120 samples or 10 days in total
+  static const int long_term_interval_ratio = 720;
   static const int long_term_num_samples = 120;
 
+  SampleTable _mid_term_table;
+  SampleTable _long_term_table;
 
-  int _short_term_interval;
+  int _count;
 
-  RecordTable* _short_term_table;
-  RecordTable* _mid_term_table;
-  RecordTable* _long_term_table;
-
-  static RecordTables* _the_tables;
-
-  // Call this after column list has been initialized.
-  bool initialize(int short_term_interval) {
-
-    // Calculate intervals
-    _short_term_interval = short_term_interval;
-
-    // Initialize tables, oldest first (since it has no follower)
-    _long_term_table = new RecordTable(long_term_num_samples);
-    if (_long_term_table == NULL || !_long_term_table->initialize()) {
-      return false;
+  static void print_table(const SampleTable* table, outputStream* st,
+                          const ColumnWidths* widths, const print_info_t* pi) {
+    if (table->is_empty()) {
+      st->print_cr("(no samples)");
+      return;
     }
-    _mid_term_table = new RecordTable(mid_term_num_samples,
-      _long_term_table, long_term_interval_ratio);
-    if (_mid_term_table == NULL || !_mid_term_table->initialize()) {
-      return false;
-    }
-    _short_term_table = new RecordTable(short_term_num_samples,
-        _mid_term_table, mid_term_interval_ratio);
-    if (_short_term_table == NULL || !_short_term_table->initialize()) {
-      return false;
-    }
+    PrintSamplesClosure prclos(st, pi, widths);
+    table->walk_table_locked(&prclos, !pi->reverse_ordering);
+  }
 
-    return true;
+  static void print_headers(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
+    if (pi->csv == false) {
+      print_category_line(st, widths, pi);
+      print_header_line(st, widths, pi);
+    }
+    print_column_names(st, widths, pi);
+    st->cr();
+  }
 
+  // Helper, print a time span given in seconds-
+  static void print_time_span(outputStream* st, int secs) {
+    const int mins = secs / 60;
+    const int hrs = secs / (60 * 60);
+    const int days = secs / (60 * 60 * 24);
+    if (days > 1) {
+      st->print_cr("Last %d days:", days);
+    } else if (hrs > 1) {
+      st->print_cr("Last %d hours:", hrs);
+    } else if (mins > 1) {
+      st->print_cr("Last %d minutes:", mins);
+    } else {
+      st->print_cr("Last %d seconds:", secs);
+    }
   }
 
 public:
 
-  static RecordTables* the_tables() { return _the_tables; }
+  SampleTables()
+    : _short_term_table(short_term_num_samples),
+      _mid_term_table(mid_term_num_samples),
+      _long_term_table(long_term_num_samples),
+      _count(0)
+  {}
 
-  // Call this after column list has been initialized.
-  static bool initialize() {
-
-    _the_tables = new RecordTables();
-    if (_the_tables == NULL) {
-      return false;
+  void add_sample(const Sample* sample) {
+    MutexLockerEx ml(g_vitals_lock, Mutex::_no_safepoint_check_flag);
+    _short_term_table.add_sample(sample);
+    // Feed downsample tables too, but increment first, so the down-sample tables
+    // are only fed after an initial sample interval has passed. This prevents
+    // filling them up immediately which can be confusing to readers.
+    _count++;
+    if ((_count % mid_term_interval_ratio) == 0) {
+      _mid_term_table.add_sample(sample);
     }
-
-    const int short_term_interval = VitalsSampleInterval != 0 ?
-        VitalsSampleInterval : short_term_interval_default;
-    return _the_tables->initialize(short_term_interval);
-
+    if ((_count % long_term_interval_ratio) == 0) {
+      _long_term_table.add_sample(sample);
+    }
   }
 
-  void print_all(outputStream* st, const print_info_t* pi) const {
+  void print_all(outputStream* st, const print_info_t* pi, const Sample* sample_now) const {
 
-    print_context_t pc;
-    pc.records_printed = 0;
+    MutexLockerEx ml(g_vitals_lock, Mutex::_no_safepoint_check_flag);
 
-    if (pi->max == 0 || pc.records_printed < pi->max) {
-      st->print_cr("Short Term Values:");
-      // At the start of the short term table we print the current (now) values. The intent is to be able
-      // to see very short term developments (e.g. a spike in heap usage in the last n seconds)
-      _short_term_table->print_table(st, pi, &pc);
-      st->cr();
+    // Pre-calc column widths needed to display all tables and values nicely aligned
+    ColumnWidths widths;
+
+    MeasureColumnWidthsClosure mcwclos(pi, &widths);
+    _short_term_table.walk_table_locked(&mcwclos);
+    _mid_term_table.walk_table_locked(&mcwclos);
+    _long_term_table.walk_table_locked(&mcwclos);
+    if (sample_now != NULL) {
+      widths.update_from_sample(sample_now, NULL, pi);
     }
 
-    if (pi->max == 0 || pc.records_printed < pi->max) {
-      st->print_cr("Mid Term Values:");
-      _mid_term_table->print_table(st, pi, &pc);
-      st->cr();
+    // Now print
+    if (sample_now != NULL) {
+      st->print_cr("Now:");
+      print_headers(st, &widths, pi);
+      print_one_sample(st, sample_now, NULL, &widths, pi);
     }
+    st->cr();
 
-    if (pi->max == 0 || pc.records_printed < pi->max) {
-      st->print_cr("Long Term Values:");
-      _long_term_table->print_table(st, pi, &pc);
-      st->cr();
-    }
+    print_time_span(st, VitalsSampleInterval * short_term_num_samples);
+    print_headers(st, &widths, pi);
+    print_table(&_short_term_table, st, &widths, pi);
+    st->cr();
 
-  }
+    print_time_span(st, VitalsSampleInterval * mid_term_interval_ratio * mid_term_num_samples);
+    print_headers(st, &widths, pi);
+    print_table(&_mid_term_table, st, &widths, pi);
+    st->cr();
 
-  RecordTable* first_table() const {
-    return _short_term_table;
-  }
+    print_time_span(st, VitalsSampleInterval * long_term_interval_ratio * long_term_num_samples);
+    print_headers(st, &widths, pi);
+    print_table(&_long_term_table, st, &widths, pi);
+    st->cr();
 
-  int short_term_interval() const {
-    return _short_term_interval;
+    st->cr();
+
   }
 
 };
 
-RecordTables* RecordTables::_the_tables = NULL;
+static SampleTables* g_all_tables = NULL;
 
-static void sample_values(record_t* record, bool avoid_locking) {
+/////////////// SAMPLING //////////////////////
 
-  // reset all values to be invalid.
-  const ColumnList* clist = ColumnList::the_list();
-  for (int colno = 0; colno < clist->num_columns(); colno ++) {
-    record->values[colno] = INVALID_VALUE;
-  }
-
-  // sample...
-  sample_jvm_values(record, avoid_locking);
-  sample_platform_values(record);
+// Samples all values, but leaves timestamp unchanged
+static void sample_values(Sample* sample, bool avoid_locking) {
+  sample_jvm_values(sample, avoid_locking);
+  sample_platform_values(sample);
 }
 
 class SamplerThread: public NamedThread {
 
+  Sample* _sample;
   bool _stop;
+  int _samples_taken;
+  int _jump_cooldown;
+
+  static int get_sample_interval_ms() {
+    return (int)VitalsSampleInterval * 1000;
+  }
 
   void take_sample() {
 
-    const ColumnList* clist = ColumnList::the_list();
-    RecordTable* record_table = RecordTables::the_tables()->first_table();
-    record_t* record = record_table->current_record();
+    _sample->reset();
 
-    ::time(&record->timestamp);
-
-    sample_values(record, VitalsLockFreeSampling);
-
-    // After sampling, finish record.
-    record_table->finish_current_record();
+    time_t t;
+    ::time(&t);
+    _sample->set_timestamp(t);
+    DEBUG_ONLY(_sample->set_num(_samples_taken);)
+    _samples_taken ++;
+    sample_values(_sample, VitalsLockFreeSampling);
+    g_all_tables->add_sample(_sample);
 
   }
 
 public:
 
   SamplerThread()
-    : NamedThread()
-    , _stop(false)
+    : NamedThread(),
+      _sample(NULL),
+      _stop(false),
+      _samples_taken(0),
+      _jump_cooldown(0)
   {
+    _sample = Sample::allocate();
     this->set_name("vitals sampler thread");
   }
 
@@ -983,7 +931,7 @@ public:
     record_stack_base_and_size();
     for (;;) {
       take_sample();
-      os::sleep(this, RecordTables::the_tables()->short_term_interval() * 1000, false);
+      os::sleep(this, get_sample_interval_ms() * 1000, false);
       if (_stop) {
         break;
       }
@@ -1010,6 +958,7 @@ static bool initialize_sampler_thread() {
 }
 
 
+///////////////////////////////////////
 /////// JVM-specific columns //////////
 
 static Column* g_col_heap_committed = NULL;
@@ -1081,6 +1030,13 @@ static bool add_jvm_columns() {
   g_col_size_thread_stacks = new MemorySizeColumn("jvm",
       "jthr", "st", "Total reserved size of java thread stacks");
 
+// Not in 11
+//  g_col_number_of_clds = new PlainValueColumn("jvm",
+//      "cldg", "num", "Classloader Data");
+//
+//  g_col_number_of_anon_clds = new PlainValueColumn("jvm",
+//      "cldg", "anon", "Anonymous CLD");
+
   g_col_number_of_classes = new PlainValueColumn("jvm",
       "cls", "num", "Classes (instance + array)");
 
@@ -1097,11 +1053,11 @@ static bool add_jvm_columns() {
 ////////// class ValueSampler and childs /////////////////
 
 template <typename T>
-static void set_value_in_record(const Column* col, record_t* r, T t) {
+static void set_value_in_sample(const Column* col, Sample* sample, T t) {
   if (col != NULL) {
     int idx = col->index();
     assert(ColumnList::the_list()->is_valid_column_index(idx), "Invalid column index");
-    r->values[idx] = (value_t)t;
+    sample->set_value(idx, (value_t)t);
   }
 }
 
@@ -1115,10 +1071,10 @@ public:
   size_t get() const { return _l; }
 };
 
-static size_t accumulate_thread_stack_size() {
-#if defined(LINUX) || defined(__APPLE__)
+static uint64_t accumulate_thread_stack_size() {
+#if defined(LINUX)
   // Do not iterate thread list and query stack size until 8212173 is completely solved. It is solved
-  // for BSD and Linux; on the other platforms, one runs a miniscule but real risk of triggering
+  // for Linux (possibly BSD); on the other platforms, one runs a miniscule but real risk of triggering
   // the assert in Thread::stack_size().
   size_t l = 0;
   AddStackSizeThreadClosure tc;
@@ -1126,13 +1082,47 @@ static size_t accumulate_thread_stack_size() {
     MutexLocker ml(Threads_lock);
     Threads::threads_do(&tc);
   }
-  return tc.get();
+  return (uint64_t)tc.get();
 #else
   return INVALID_VALUE;
 #endif
 }
 
-void sample_jvm_values(record_t* record, bool avoid_locking) {
+// Count CLDs
+// Not in 11
+//class CLDCounterClosure: public CLDClosure {
+//public:
+//  int _cnt;
+//  int _anon_cnt;
+//  CLDCounterClosure() : _cnt(0), _anon_cnt(0) {}
+//  void do_cld(ClassLoaderData* cld) {
+//    _cnt ++;
+//    if (cld->has_class_mirror_holder()) {
+//      _anon_cnt ++;
+//    }
+//  }
+//};
+
+static value_t get_bytes_malloced_by_jvm_via_sapjvm_mallstat() {
+  value_t result = INVALID_VALUE;
+  // SAPJVM plug in mallstat entry here.
+  return result;
+}
+
+#if INCLUDE_NMT
+static value_t get_bytes_malloced_by_jvm_via_nmt() {
+  value_t result = INVALID_VALUE;
+  if (MemTracker::tracking_level() != NMT_off) {
+    MutexLocker locker(MemTracker::query_lock());
+    result = MallocMemorySummary::as_snapshot()->total();
+  }
+  return result;
+}
+#endif // INCLUDE_NMT
+
+void sample_jvm_values(Sample* sample, bool avoid_locking) {
+
+  // Note: if avoid_locking=true, skip values which need JVM-side locking.
 
   // Heap
   if (!avoid_locking) {
@@ -1144,55 +1134,67 @@ void sample_jvm_values(record_t* record, bool avoid_locking) {
       heap_cap = Universe::heap()->capacity();
       heap_used = Universe::heap()->used();
     }
-    set_value_in_record(g_col_heap_committed, record, heap_cap);
-    set_value_in_record(g_col_heap_used, record, heap_used);
+    set_value_in_sample(g_col_heap_committed, sample, heap_cap);
+    set_value_in_sample(g_col_heap_used, sample, heap_used);
   }
 
   // Metaspace
-  set_value_in_record(g_col_metaspace_committed, record, MetaspaceUtils::committed_bytes());
-  set_value_in_record(g_col_metaspace_used, record, MetaspaceUtils::used_bytes());
+  set_value_in_sample(g_col_metaspace_committed, sample, MetaspaceUtils::committed_bytes());
+  set_value_in_sample(g_col_metaspace_used, sample, MetaspaceUtils::used_bytes());
 
   if (Metaspace::using_class_space()) {
-    set_value_in_record(g_col_classspace_committed, record, MetaspaceUtils::committed_bytes(Metaspace::ClassType));
-    set_value_in_record(g_col_classspace_used, record, MetaspaceUtils::used_bytes(Metaspace::ClassType));
+    set_value_in_sample(g_col_classspace_committed, sample, MetaspaceUtils::committed_bytes(Metaspace::ClassType));
+    set_value_in_sample(g_col_classspace_used, sample, MetaspaceUtils::used_bytes(Metaspace::ClassType));
   }
 
-  set_value_in_record(g_col_metaspace_cap_until_gc, record, MetaspaceGC::capacity_until_GC());
+  set_value_in_sample(g_col_metaspace_cap_until_gc, sample, MetaspaceGC::capacity_until_GC());
 
   // Code cache
   const size_t codecache_committed = CodeCache::capacity();
-  set_value_in_record(g_col_codecache_committed, record, codecache_committed);
+  set_value_in_sample(g_col_codecache_committed, sample, codecache_committed);
 
+  // bytes malloced by JVM. Prefer sapjvm mallstat if available (less overhead, always-on). Fall back to NMT
+  // otherwise.
+  value_t bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_sapjvm_mallstat();
 #if INCLUDE_NMT
-  // NMT
-  if (!avoid_locking) {
-    size_t malloc_footprint = 0;
-    if (MemTracker::tracking_level() != NMT_off) {
-      MutexLocker locker(MemTracker::query_lock());
-      malloc_footprint = MallocMemorySummary::as_snapshot()->total();
-    }
-    set_value_in_record(g_col_nmt_malloc, record, malloc_footprint);
+  if (bytes_malloced_by_jvm == INVALID_VALUE && !avoid_locking) {
+    bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_nmt();
   }
 #endif
+  set_value_in_sample(g_col_nmt_malloc, sample, bytes_malloced_by_jvm);
 
   // Java threads
-  set_value_in_record(g_col_number_of_java_threads, record, Threads::number_of_threads());
-  set_value_in_record(g_col_number_of_java_threads_non_demon, record, Threads::number_of_non_daemon_threads());
-  set_value_in_record(g_col_number_of_java_threads_created, record, counters::g_threads_created);
+  set_value_in_sample(g_col_number_of_java_threads, sample, Threads::number_of_threads());
+  set_value_in_sample(g_col_number_of_java_threads_non_demon, sample, Threads::number_of_non_daemon_threads());
+  set_value_in_sample(g_col_number_of_java_threads_created, sample, counters::g_threads_created);
 
   // Java thread stack size
   if (!avoid_locking) {
-    set_value_in_record(g_col_size_thread_stacks, record, accumulate_thread_stack_size());
+    set_value_in_sample(g_col_size_thread_stacks, sample, accumulate_thread_stack_size());
   }
 
+  // CLDG
+// (not in 11)
+//  if (!avoid_locking) {
+//    CLDCounterClosure cl;
+//    {
+//      MutexLocker lck(ClassLoaderDataGraph_lock);
+//      ClassLoaderDataGraph::cld_do(&cl);
+//    }
+//    set_value_in_sample(g_col_number_of_clds, sample, cl._cnt);
+//    set_value_in_sample(g_col_number_of_anon_clds, sample, cl._anon_cnt);
+//  }
+
   // Classes
-  set_value_in_record(g_col_number_of_classes, record,
+  set_value_in_sample(g_col_number_of_classes, sample,
       ClassLoaderDataGraph::num_instance_classes() + ClassLoaderDataGraph::num_array_classes());
-  set_value_in_record(g_col_number_of_class_loads, record, counters::g_classes_loaded);
-  set_value_in_record(g_col_number_of_class_unloads, record, counters::g_classes_unloaded);
+  set_value_in_sample(g_col_number_of_class_loads, sample, counters::g_classes_loaded);
+  set_value_in_sample(g_col_number_of_class_unloads, sample, counters::g_classes_unloaded);
 }
 
 bool initialize() {
+
+  g_vitals_lock = new Mutex(Mutex::leaf, "Vitals Lock", true, Mutex::_safepoint_check_never);
 
   if (!ColumnList::initialize()) {
     return false;
@@ -1209,15 +1211,8 @@ bool initialize() {
 
   // -- Now the number of columns is known (and fixed). --
 
-  if (!initialize_widths_buffer()) {
-    return false;
-  }
-
-  if (!initialize_space_for_now_record()) {
-    return false;
-  }
-
-  if (!RecordTables::initialize()) {
+  g_all_tables = new SampleTables();
+  if (!g_all_tables) {
     return false;
   }
 
@@ -1235,19 +1230,16 @@ void cleanup() {
   }
 }
 
-const print_info_t* default_settings() {
-  static const print_info_t x = {
-      false, // raw
-      false, // csv
-      false, // omit_legend
-      false, // reverse_ordering;
-      0,     // scale
-      0      // max
-  };
-  return &x;
+void default_settings(print_info_t* out) {
+  out->raw = false;
+  out->csv = false;
+  out->no_legend = false;
+  out->reverse_ordering = false;
+  out->scale = 0;
+  out->sample_now = false;
 }
 
-void print_report(outputStream* st, const print_info_t* pi) {
+void print_report(outputStream* st, const print_info_t* pinfo) {
 
   st->print("Vitals:");
 
@@ -1258,17 +1250,29 @@ void print_report(outputStream* st, const print_info_t* pi) {
 
   st->cr();
 
-  if (pi == NULL) {
-    pi = default_settings();
+  print_info_t info;
+  if (pinfo != NULL) {
+    info = *pinfo;
+  } else {
+    default_settings(&info);
   }
 
   // Print legend at the top (omit if suppressed on command line, or in csv mode).
-  if (pi->no_legend == false && pi->csv == false) {
-    print_legend(st, pi);
+  if (info.no_legend == false && info.csv == false) {
+    print_legend(st, &info);
     st->cr();
   }
 
-  RecordTables::the_tables()->print_all(st, pi);
+  // If we are to sample the current values at print time, do that and print them too.
+  Sample* sample_now = NULL;
+  if (info.sample_now) {
+    sample_now = Sample::allocate();
+    sample_values(sample_now, true /* never lock for now sample - be safe */ );
+  }
+
+  g_all_tables->print_all(st, &info, sample_now);
+
+  os::free(sample_now);
 
 }
 
@@ -1290,13 +1294,13 @@ void dump_reports() {
   ::printf("Dumping Vitals to %s\n", vitals_file_name);
   {
     fileStream fs(vitals_file_name);
-    static const StatisticsHistory::print_info_t settings = {
+    static const sapmachine_vitals::print_info_t settings = {
         false, // raw
         false, // csv
         false, // no_legend
         true,  // reverse_ordering
         0,     // scale
-        0      // max
+        true   // sample_now
     };
     print_report(&fs, &settings);
   }
@@ -1309,13 +1313,13 @@ void dump_reports() {
   ::printf("Dumping Vitals csv to %s\n", vitals_file_name);
   {
     fileStream fs(vitals_file_name);
-    static const StatisticsHistory::print_info_t settings = {
+    static const sapmachine_vitals::print_info_t settings = {
         false, // raw
         true,  // csv
         false, // no_legend
         true,  // reverse_ordering
         1 * K, // scale
-        0      // max
+        true   // sample_now
     };
     print_report(&fs, &settings);
   }
@@ -1325,4 +1329,4 @@ void dump_reports() {
 // For printing in thread lists only.
 const Thread* samplerthread() { return g_sampler_thread; }
 
-} // namespace StatisticsHistory
+} // namespace sapmachine_vitals

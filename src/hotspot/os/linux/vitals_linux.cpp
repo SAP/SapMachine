@@ -1,6 +1,7 @@
 /*
+ * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +27,22 @@
 #include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
-#include "services/stathist_internals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "vitals/vitals_internals.hpp"
 
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
 
-namespace StatisticsHistory {
+namespace sapmachine_vitals {
 
 class ProcFile {
   char* _buf;
 
   // To keep the code simple, I just use a fixed sized buffer.
-  enum { bufsize = 4*K };
+  enum { bufsize = 64*K };
 
 public:
 
@@ -93,6 +94,55 @@ public:
 
 };
 
+// Returns the sum of RSS and Swap for the process heap segment
+static value_t get_process_heap_size() {
+  FILE* f = ::fopen("/proc/self/smaps", "r");
+  value_t result = INVALID_VALUE;
+  if (f != NULL) {
+    char line[256];
+    int safety = 100000; // for safety reasons;
+    // Note: this does not guarantee atomicity wrt updates of the underlying file;
+    // however, we don't care here. We just weed out improbable values. Encountering
+    // inconsistencies due to concurrent updates should be very rare and probably manifest
+    // as unparseable lines.
+    int state = 0; // 1 - found segment, 2 - have rss 3 - have swap
+    long long rss = 0;
+    long long swap = 0;
+    while (state < 3 && ::fgets(line, sizeof(line), f) != NULL && safety > 0) {
+      // We look for something like this:
+      // "559f05393000-559f05671000 rw-p 00000000 00:00 0                          [heap]"
+      // ...
+      // RSS:     100 kB"
+      // ...
+      // Swap:    100 kB"
+      switch (state) {
+      case 0:
+        if (::strstr(line, "[heap]") != NULL) {
+          state = 1;
+        }
+        break;
+      case 1:
+        if (::sscanf(line, "Rss: %llu kB", &rss) == 1) {
+          rss *= K; state = 2;
+        }
+        break;
+      case 2:
+        if (::sscanf(line, "Swap: %llu kB", &swap) == 1) {
+          swap *= K; state = 3;
+        }
+        break;
+      }
+      safety --;
+    }
+    fclose(f);
+
+    if (state == 3) {
+      result = swap + rss;
+    }
+  }
+  return result;
+}
+
 struct cpu_values_t {
   value_t user;
   value_t nice;
@@ -141,14 +191,14 @@ class CPUTimeColumn: public Column {
   long _clk_tck;
   int _num_cores;
 
-  int do_print(outputStream* st, value_t value, value_t last_value,
+  int do_print0(outputStream* st, value_t value, value_t last_value,
       int last_value_age, const print_info_t* pi) const {
     // CPU values may overflow, so the delta may be negative.
     if (last_value > value) {
       return 0;
     }
     int l = 0;
-    if (value != INVALID_VALUE && last_value != INVALID_VALUE) {
+    if (last_value != INVALID_VALUE) {
 
       // If the last sample is less than one second old, we omit calculating the cpu
       // usage.
@@ -180,7 +230,7 @@ class CPUTimeColumn: public Column {
 
 public:
   CPUTimeColumn(const char* category, const char* header, const char* name, const char* description)
-    : Column(category, header, name, description)
+    : Column(category, header, name, description, true)
   {
     _clk_tck = ::sysconf(_SC_CLK_TCK);
     _num_cores = os::active_processor_count();
@@ -216,6 +266,7 @@ static Column* g_col_process_rssanon = NULL;
 static Column* g_col_process_rssfile = NULL;
 static Column* g_col_process_rssshmem = NULL;
 static Column* g_col_process_swapped_out = NULL;
+static Column* g_col_process_heap = NULL;
 
 static Column* g_col_process_cpu_user = NULL;
 static Column* g_col_process_cpu_system = NULL;
@@ -246,12 +297,10 @@ bool platform_columns_initialize() {
   } else {
     g_col_system_memfree = new MemorySizeColumn("system", NULL, "free", "Unused memory");
   }
-
   g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
   g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
 
   g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in");
-
   g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out");
 
   g_col_system_num_procs = new PlainValueColumn("system", NULL, "p", "Number of processes");
@@ -288,6 +337,11 @@ bool platform_columns_initialize() {
 
   g_col_process_swapped_out = new MemorySizeColumn("process", NULL, "swdo", "Memory swapped out");
 
+  // If we manage to locate the heap segment once, and calc its size, we assume it can be done always.
+  if (get_process_heap_size() != INVALID_VALUE) {
+    g_col_process_heap = new MemorySizeColumn("process", NULL, "hp", "Process heap segment (brk), resident + swap");
+  }
+
   g_col_process_cpu_user = new CPUTimeColumn("process", "cpu", "us", "Process cpu user time");
 
   g_col_process_cpu_system = new CPUTimeColumn("process", "cpu", "sy", "Process cpu system time");
@@ -304,10 +358,10 @@ bool platform_columns_initialize() {
   return true;
 }
 
-static void set_value_in_record(Column* col, record_t* record, value_t val) {
+static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
   if (col != NULL) {
     int index = col->index();
-    record->values[index] = val;
+    sample->set_value(index, val);
   }
 }
 
@@ -320,7 +374,7 @@ static bool is_numerical_id(const char* s) {
   return *p == '\0' ? true : false;
 }
 
-void sample_platform_values(record_t* record) {
+void sample_platform_values(Sample* sample) {
 
   int idx = 0;
   value_t v = 0;
@@ -331,16 +385,16 @@ void sample_platform_values(record_t* record) {
     // All values in /proc/meminfo are in KB
     const size_t scale = K;
 
-    set_value_in_record(g_col_system_memfree, record,
+    set_value_in_sample(g_col_system_memfree, sample,
         bf.parsed_prefixed_value("MemFree:", scale));
 
-    set_value_in_record(g_col_system_memavail, record,
+    set_value_in_sample(g_col_system_memavail, sample,
         bf.parsed_prefixed_value("MemAvailable:", scale));
 
     value_t swap_total = bf.parsed_prefixed_value("SwapTotal:", scale);
     value_t swap_free = bf.parsed_prefixed_value("SwapFree:", scale);
     if (swap_total != INVALID_VALUE && swap_free != INVALID_VALUE) {
-      set_value_in_record(g_col_system_swap, record, swap_total - swap_free);
+      set_value_in_sample(g_col_system_swap, sample, swap_total - swap_free);
     }
 
     // Calc committed ratio. Values > 100% indicate overcommitment.
@@ -348,13 +402,13 @@ void sample_platform_values(record_t* record) {
     value_t committed = bf.parsed_prefixed_value("Committed_AS:", scale);
     if (commitlimit != INVALID_VALUE && commitlimit != 0 && committed != INVALID_VALUE) {
       value_t ratio = (committed * 100) / commitlimit;
-      set_value_in_record(g_col_system_memcommitted_ratio, record, ratio);
+      set_value_in_sample(g_col_system_memcommitted_ratio, sample, ratio);
     }
   }
 
   if (bf.read("/proc/vmstat")) {
-    set_value_in_record(g_col_system_pages_swapped_in, record, bf.parsed_prefixed_value("pswpin"));
-    set_value_in_record(g_col_system_pages_swapped_out, record, bf.parsed_prefixed_value("pswpout"));
+    set_value_in_sample(g_col_system_pages_swapped_in, sample, bf.parsed_prefixed_value("pswpin"));
+    set_value_in_sample(g_col_system_pages_swapped_out, sample, bf.parsed_prefixed_value("pswpout"));
   }
 
   if (bf.read("/proc/stat")) {
@@ -363,33 +417,35 @@ void sample_platform_values(record_t* record) {
     const char* line = bf.get_prefixed_line("cpu");
     parse_proc_stat_cpu_line(line, &values);
 
-    set_value_in_record(g_col_system_cpu_user, record, values.user + values.nice);
-    set_value_in_record(g_col_system_cpu_system, record, values.system);
-    set_value_in_record(g_col_system_cpu_idle, record, values.idle);
-    set_value_in_record(g_col_system_cpu_waiting, record, values.iowait);
-    set_value_in_record(g_col_system_cpu_steal, record, values.steal);
-    set_value_in_record(g_col_system_cpu_guest, record, values.guest + values.guest_nice);
+    set_value_in_sample(g_col_system_cpu_user, sample, values.user + values.nice);
+    set_value_in_sample(g_col_system_cpu_system, sample, values.system);
+    set_value_in_sample(g_col_system_cpu_idle, sample, values.idle);
+    set_value_in_sample(g_col_system_cpu_waiting, sample, values.iowait);
+    set_value_in_sample(g_col_system_cpu_steal, sample, values.steal);
+    set_value_in_sample(g_col_system_cpu_guest, sample, values.guest + values.guest_nice);
 
-    set_value_in_record(g_col_system_num_procs_running, record,
+    set_value_in_sample(g_col_system_num_procs_running, sample,
         bf.parsed_prefixed_value("procs_running"));
-    set_value_in_record(g_col_system_num_procs_blocked, record,
+    set_value_in_sample(g_col_system_num_procs_blocked, sample,
         bf.parsed_prefixed_value("procs_blocked"));
   }
 
   if (bf.read("/proc/self/status")) {
 
-    set_value_in_record(g_col_process_virt, record, bf.parsed_prefixed_value("VmSize:", K));
-    set_value_in_record(g_col_process_swapped_out, record, bf.parsed_prefixed_value("VmSwap:", K));
-    set_value_in_record(g_col_process_rss, record, bf.parsed_prefixed_value("VmRSS:", K));
+    set_value_in_sample(g_col_process_virt, sample, bf.parsed_prefixed_value("VmSize:", K));
+    set_value_in_sample(g_col_process_swapped_out, sample, bf.parsed_prefixed_value("VmSwap:", K));
+    set_value_in_sample(g_col_process_rss, sample, bf.parsed_prefixed_value("VmRSS:", K));
 
-    set_value_in_record(g_col_process_rssanon, record, bf.parsed_prefixed_value("RssAnon:", K));
-    set_value_in_record(g_col_process_rssfile, record, bf.parsed_prefixed_value("RssFile:", K));
-    set_value_in_record(g_col_process_rssshmem, record, bf.parsed_prefixed_value("RssShmem:", K));
+    set_value_in_sample(g_col_process_rssanon, sample, bf.parsed_prefixed_value("RssAnon:", K));
+    set_value_in_sample(g_col_process_rssfile, sample, bf.parsed_prefixed_value("RssFile:", K));
+    set_value_in_sample(g_col_process_rssshmem, sample, bf.parsed_prefixed_value("RssShmem:", K));
 
-    set_value_in_record(g_col_process_num_threads, record,
+    set_value_in_sample(g_col_process_num_threads, sample,
         bf.parsed_prefixed_value("Threads:"));
 
   }
+
+  set_value_in_sample(g_col_process_heap, sample, get_process_heap_size());
 
   // Number of open files: iterate over /proc/self/fd and count.
   {
@@ -409,7 +465,7 @@ void sample_platform_values(record_t* record) {
         }
       } while(en != NULL);
       ::closedir(d);
-      set_value_in_record(g_col_process_num_of, record, v);
+      set_value_in_sample(g_col_process_num_of, sample, v);
     }
   }
 
@@ -440,15 +496,15 @@ void sample_platform_values(record_t* record) {
         }
       } while(en != NULL);
       ::closedir(d);
-      set_value_in_record(g_col_system_num_procs, record, v_p);
-      set_value_in_record(g_col_system_num_threads, record, v_t);
+      set_value_in_sample(g_col_system_num_procs, sample, v_p);
+      set_value_in_sample(g_col_system_num_threads, sample, v_t);
     }
   }
 
   if (bf.read("/proc/self/io")) {
-    set_value_in_record(g_col_process_io_bytes_read, record,
+    set_value_in_sample(g_col_process_io_bytes_read, sample,
         bf.parsed_prefixed_value("rchar:"));
-    set_value_in_record(g_col_process_io_bytes_written, record,
+    set_value_in_sample(g_col_process_io_bytes_written, sample,
         bf.parsed_prefixed_value("wchar:"));
   }
 
@@ -460,10 +516,10 @@ void sample_platform_values(record_t* record) {
     long unsigned cpu_utime = 0;
     long unsigned cpu_stime = 0;
     ::sscanf(text, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &cpu_utime, &cpu_stime);
-    set_value_in_record(g_col_process_cpu_user, record, cpu_utime);
-    set_value_in_record(g_col_process_cpu_system, record, cpu_stime);
+    set_value_in_sample(g_col_process_cpu_user, sample, cpu_utime);
+    set_value_in_sample(g_col_process_cpu_system, sample, cpu_stime);
   }
 
 }
 
-} // namespace StatisticsHistory
+} // namespace sapmachine_vitals
