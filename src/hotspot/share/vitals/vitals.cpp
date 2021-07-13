@@ -25,7 +25,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
+#include "jvm.h"
 
 #include "gc/shared/collectedHeap.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -35,7 +35,6 @@
 #include "runtime/os.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "services/mallocTracker.hpp"
