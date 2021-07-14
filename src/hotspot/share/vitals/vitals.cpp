@@ -931,7 +931,7 @@ public:
     record_stack_base_and_size();
     for (;;) {
       take_sample();
-      os::sleep(this, get_sample_interval_ms() * 1000, false);
+      os::sleep(this, get_sample_interval_ms(), false);
       if (_stop) {
         break;
       }
