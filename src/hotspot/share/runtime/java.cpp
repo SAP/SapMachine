@@ -92,6 +92,10 @@
 #include "jfr/jfr.hpp"
 #endif
 
+// SapMachine 2019-09-01: vitals.
+#include "runtime/globals.hpp"
+#include "vitals/vitals.hpp"
+
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
@@ -346,6 +350,14 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
+  // SapMachine 2019-09-01: vitals.
+  if (DumpVitalsAtExit) {
+    sapmachine_vitals::dump_reports();
+  }
+  if (PrintVitalsAtExit) {
+    sapmachine_vitals::print_report(tty);
+  }
+
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -386,6 +398,14 @@ void print_statistics() {
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  // SapMachine 2019-09-01: vitals.
+  if (DumpVitalsAtExit) {
+    sapmachine_vitals::dump_reports();
+  }
+  if (PrintVitalsAtExit) {
+    sapmachine_vitals::print_report(tty);
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {

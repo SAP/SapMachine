@@ -59,6 +59,9 @@
 #include "jfr/jfr.hpp"
 #endif
 
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
+
 #ifndef PRODUCT
 #include <signal.h>
 #endif // PRODUCT
@@ -1038,6 +1041,15 @@ void VMError::report(outputStream* st, bool _verbose) {
        MemTracker::error_report(st);
      }
 
+  // SapMachine 2019-02-20 : vitals
+  STEP("Vitals")
+     if (_verbose) {
+       sapmachine_vitals::print_info_t info;
+       sapmachine_vitals::default_settings(&info);
+       info.sample_now = true; // About the only place where we do this apart from explicitly setting the "now" parm on jcmd
+       sapmachine_vitals::print_report(st);
+     }
+
   STEP("printing system")
 
      if (_verbose) {
@@ -1216,6 +1228,13 @@ void VMError::print_vm_info(outputStream* st) {
 
   MemTracker::error_report(st);
 
+  // SapMachine 2019-02-20 : vitals
+  // STEP("Vitals")
+  sapmachine_vitals::print_info_t info;
+  sapmachine_vitals::default_settings(&info);
+  info.sample_now = false;
+  sapmachine_vitals::print_report(st);
+
   // STEP("printing system")
 
   st->cr();
@@ -1381,12 +1400,13 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   static bool out_done = false;         // done printing to standard out
   static bool log_done = false;         // done saving error log
 
-  if (SuppressFatalErrorMessage) {
-      os::abort(CreateCoredumpOnCrash);
-  }
   intptr_t mytid = os::current_thread_id();
   if (_first_error_tid == -1 &&
       Atomic::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
+
+    if (SuppressFatalErrorMessage) {
+      os::abort(CreateCoredumpOnCrash);
+    }
 
     // Initialize time stamps to use the same base.
     out.time_stamp().update_to(1);
@@ -1440,19 +1460,31 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (_first_error_tid != mytid) {
-      char msgbuf[64];
-      jio_snprintf(msgbuf, sizeof(msgbuf),
-                   "[thread " INTX_FORMAT " also had an error]",
-                   mytid);
-      out.print_raw_cr(msgbuf);
+      if (!SuppressFatalErrorMessage) {
+        char msgbuf[64];
+        jio_snprintf(msgbuf, sizeof(msgbuf),
+                     "[thread " INTX_FORMAT " also had an error]",
+                     mytid);
+        out.print_raw_cr(msgbuf);
+      }
 
-      // error reporting is not MT-safe, block current thread
+      // Error reporting is not MT-safe, nor can we let the current thread
+      // proceed, so we block it.
       os::infinite_sleep();
 
     } else {
       if (recursive_error_count++ > 30) {
-        out.print_raw_cr("[Too many errors, abort]");
+        if (!SuppressFatalErrorMessage) {
+          out.print_raw_cr("[Too many errors, abort]");
+        }
         os::die();
+      }
+
+      if (SuppressFatalErrorMessage) {
+        // If we already hit a secondary error during abort, then calling
+        // it again is likely to hit another one. But eventually, if we
+        // don't deadlock somewhere, we will call os::die() above.
+        os::abort(CreateCoredumpOnCrash);
       }
 
       outputStream* const st = log.is_open() ? &log : &out;
@@ -1882,3 +1914,13 @@ void VMError::controlled_crash(int how) {
   ShouldNotReachHere();
 }
 #endif // !PRODUCT
+
+// SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks
+//  to tty on CrashOnOutOfMemoryError
+void VMError::print_stack(outputStream* st) {
+  Thread* t = Thread::current_or_null_safe();
+  char buf[1024];
+  if (t != NULL && t->is_Java_thread()) {
+    VMError::print_stack_trace(st, (JavaThread*) t, buf, sizeof(buf), false);
+  }
+}
