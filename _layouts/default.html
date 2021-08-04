@@ -13,10 +13,23 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){window.dataLayer.push(arguments);}
-      gtag('consent', 'default', { 'ad_storage': 'denied', 'analytics_storage': 'denied'});
+      function gtag() { window.dataLayer.push(arguments); }
+      gtag('consent', 'default', { 'ad_storage': 'denied', 'analytics_storage': 'denied' });
       gtag('js', new Date());
       gtag('config', '{{ site.google_analytics }}');
+
+      function sendDownloadEvent(target) {
+        function withTimeout(callback, timeout) {
+          var called = false;
+          function wrapper() {
+            if (!called) {
+              called = true;
+              callback();
+            }
+          }
+          setTimeout(wrapper, timeout || 1000);
+          return wrapper;
+        }
     </script>
     {% endif %}
 
