@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Set;
+#ifndef CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
+#define CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
 
-import jdk.javadoc.doclet.Doclet;
-import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.doclet.DocletEnvironment;
+#include OS_CPU_HEADER_INLINE(pauth)
 
-public class X {
-    public static boolean run(DocletEnvironment root) {
-        System.out.println("X.start");
-        return true;
-    }
-    public Set<Doclet.Option> getSupportedOptions() {
-        return Collections.emptySet();
-    }
-
-    public void init(Locale locale, Reporter reporter) {
-        return;
-    }
+inline bool pauth_ptr_is_raw(address ptr) {
+  // Confirm none of the high bits are set in the pointer.
+  return ptr == pauth_strip_pointer(ptr);
 }
+
+#endif // CPU_AARCH64_PAUTH_AARCH64_INLINE_HPP
