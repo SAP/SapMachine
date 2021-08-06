@@ -27,7 +27,7 @@
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
- *      8243559 8225072 8258630 8259312 8256421 8225081
+ *      8243559 8225072 8258630 8259312 8256421 8225081 8225082
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -54,12 +54,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 92;
+    private static final int COUNT = 91;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "F3:C0:65:09:4C:B6:0C:AB:23:22:C5:04:D3:3B:6C:75:C4:3D:C1:3F:54:C3:C5:A7:CC:9E:EB:1E:C4:08:35:D8";
+            = "D4:30:2F:A6:73:9F:20:B0:65:7B:EE:A1:3F:1B:CB:94:47:27:97:7E:0D:BB:D0:40:82:8F:40:8E:1D:5A:DF:45";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -150,8 +150,6 @@ public class VerifyCACerts {
                     "49:E7:A4:42:AC:F0:EA:62:87:05:00:54:B5:25:64:B6:50:E4:F4:9E:42:E3:48:D6:AA:38:E0:39:E9:57:B1:C1");
             put("dtrustclass3ca2ev [jdk]",
                     "EE:C5:49:6B:98:8C:E9:86:25:B9:34:09:2E:EC:29:08:BE:D0:B0:F3:16:C2:D4:73:0C:84:EA:F1:F3:D3:48:81");
-            put("identrustdstx3 [jdk]",
-                    "06:87:26:03:31:A7:24:03:D9:09:F1:05:E6:9B:CF:0D:32:E1:BD:24:93:FF:C6:D9:20:6D:11:BC:D6:77:07:39");
             put("identrustpublicca [jdk]",
                     "30:D0:89:5A:9A:44:8A:26:20:91:63:55:22:D1:F5:20:10:B5:86:7A:CA:E1:2C:78:EF:95:8F:D4:F4:38:9F:2F");
             put("identrustcommercial [jdk]",
@@ -270,8 +268,6 @@ public class VerifyCACerts {
             add("luxtrustglobalrootca [jdk]");
             // Valid until: Wed Mar 17 11:33:33 PDT 2021
             add("quovadisrootca [jdk]");
-            // Valid until: Thu Sep 30 14:01:15 GMT 2021
-            add("identrustdstx3 [jdk]");
         }
     };
 
