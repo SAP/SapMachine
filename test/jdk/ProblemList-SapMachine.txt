@@ -298,6 +298,32 @@ sun/tools/jstat/jstatLineCounts4.sh                                          824
 ###############################################################################
 # Failing new tests, unsupported new features in jdk17
 
+# SapMachine 2021-07-15
+# These tests create core files on linux-s390x when executing the packaged binary. Might be releated to usage
+# of jdk.incubator.foreign that is not implemented on s390. BUt could also be something compleetely different.
+tools/jpackage/share/jdk/jpackage/tests/AppVersionTest.java                          linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/BasicTest.java                               linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/CookedRuntimeTest.java                       linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/DotInNameTest.java                           linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/JavaOptionsEqualsTest.java#id0               linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/JavaOptionsEqualsTest.java#id1               linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/JLinkOptionsTest.java                        linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/MainClassTest.java                           linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/ModulePathTest.java                          linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/ModulePathTest2.java                         linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java                         linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/MultipleJarAppTest.java                      linux-s390x
+tools/jpackage/share/jdk/jpackage/tests/NoMPathRuntimeTest.java                      linux-s390x
+tools/jpackage/share/AddLauncherTest.java#id1                                        linux-s390x
+tools/jpackage/share/ArgumentsTest.java                                              linux-s390x
+tools/jpackage/share/EmptyFolderTest.java                                            linux-s390x
+
+# SapMachine 2021-08-17
+# These tests do run several hours in a fastdebug build (seen 5 hours on linuxx86_64).
+# They will always hit the timeout value. Exclude them to save execution time.
+# Opened https://bugs.openjdk.java.net/browse/JDK-8271613.
+java/foreign/TestMatrix.java                                                         generic-all
+
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
