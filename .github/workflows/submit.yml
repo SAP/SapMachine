@@ -1479,9 +1479,10 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: transient_jdk-macos-aarch64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          # SapMachine 2020-08-27: Adapt bundle names
           path: |
-            jdk/build/macos-aarch64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin${{ matrix.artifact }}.tar.gz
-            jdk/build/macos-aarch64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin-tests${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-aarch64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-aarch64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin-tests${{ matrix.artifact }}.tar.gz
 
 
   macos_x64_test:
