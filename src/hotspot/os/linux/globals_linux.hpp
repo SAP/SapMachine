@@ -81,6 +81,12 @@
   product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
                                                                         \
+  /* SapMachine 2021-09-01: malloc-trace */                             \
+  product(bool, EnableMallocTrace, false, DIAGNOSTIC,                   \
+          "Enable malloc trace at VM initialization")                   \
+  product(bool, PrintMallocTraceAtExit, false, DIAGNOSTIC,              \
+          "Print Malloc Trace upon VM exit")                            \
+																	                                      \
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
           "Write map file for Linux perf tool at exit")
 
