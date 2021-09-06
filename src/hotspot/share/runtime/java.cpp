@@ -549,6 +549,11 @@ void before_exit(JavaThread* thread) {
     }
   }
 
+  // SapMachine 2021-09-01: shutdown vitals thread
+  if (EnableVitals) {
+    sapmachine_vitals::cleanup();
+  }
+
   #undef BEFORE_EXIT_NOT_RUN
   #undef BEFORE_EXIT_RUNNING
   #undef BEFORE_EXIT_DONE
