@@ -1008,11 +1008,14 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing flags")
 
     if (_verbose) {
+      // SapMachine 2021-09-07:
+      // - print all values, not only default
+      // - comments are unnecessary bloat
       JVMFlag::printFlags(
         st,
-        true, // with comments
+        false, // with comments
         false, // no ranges
-        true); // skip defaults
+        false); // skip defaults
       st->cr();
     }
 
