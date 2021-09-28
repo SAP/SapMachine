@@ -272,6 +272,8 @@ public class VerifyCACerts {
             add("quovadisrootca [jdk]");
             // Valid until: Thu Sep 30 14:01:15 GMT 2021
             add("identrustdstx3 [jdk]");
+             // Valid until Wed Dec 15 09:00:00 CET 2021
+            add("globalsignr2ca [jdk]");
         }
     };
 
