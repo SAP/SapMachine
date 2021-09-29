@@ -54,6 +54,10 @@
 // SapMachine 2019-02-20 : vitals
 #include "vitals/vitalsDCmd.hpp"
 
+// SapMachine 2021-09-06: Cherrypick 8268893: "jcmd to trim the glibc heap"
+#ifdef LINUX
+#include "trimCHeapDCmd.hpp"
+#endif
 
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
@@ -76,6 +80,12 @@ void DCmdRegistrant::register_dcmds(){
   // Third  argument specifies if the command is hidden
   uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
                          | DCmd_Source_MBean;
+
+  // SapMachine 2021-09-06: Cherrypick 8268893: "jcmd to trim the glibc heap"
+#ifdef LINUX
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
+#endif
+
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
