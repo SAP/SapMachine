@@ -318,6 +318,16 @@
                     }
                 },
                 {
+                    "tag": "sapmachine-18+18",
+                    "jdk": {
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B18/sapmachine-jdk-18-ea.18_macos-aarch64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B18/sapmachine-jdk-18-eabeta.18_linux-aarch64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B18/sapmachine-jre-18-eabeta.18_linux-aarch64_bin.tar.gz"
+                    }
+                },
+                {
                     "tag": "sapmachine-18+17",
                     "jdk": {
                         "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B17/sapmachine-jdk-18-ea.17_linux-ppc64le_bin.tar.gz",
