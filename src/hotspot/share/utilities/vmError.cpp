@@ -1013,11 +1013,14 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing flags")
 
     if (_verbose) {
+      // SapMachine 2021-09-07:
+      // - print all values, not only default
+      // - comments are unnecessary bloat
       JVMFlag::printFlags(
         st,
-        true, // with comments
+        false, // with comments
         false, // no ranges
-        true); // skip defaults
+        false); // skip defaults
       st->cr();
     }
 
@@ -1060,7 +1063,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        sapmachine_vitals::print_info_t info;
        sapmachine_vitals::default_settings(&info);
        info.sample_now = true; // About the only place where we do this apart from explicitly setting the "now" parm on jcmd
-       sapmachine_vitals::print_report(st);
+       sapmachine_vitals::print_report(st, &info);
      }
 
   STEP("printing system")
@@ -1256,8 +1259,8 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Vitals")
   sapmachine_vitals::print_info_t info;
   sapmachine_vitals::default_settings(&info);
-  info.sample_now = false;
-  sapmachine_vitals::print_report(st);
+  info.sample_now = false; // lets play it safe in non-error hs-info printout
+  sapmachine_vitals::print_report(st, &info);
 
   // STEP("printing system")
 
