@@ -84,6 +84,8 @@
   /* SapMachine 2021-09-01: malloc-trace */                             \
   product(bool, EnableMallocTrace, false, DIAGNOSTIC,                   \
           "Enable malloc trace at VM initialization")                   \
+                                                                        \
+  /* SapMachine 2021-09-01: malloc-trace */                             \
   product(bool, PrintMallocTraceAtExit, false, DIAGNOSTIC,              \
           "Print Malloc Trace upon VM exit")                            \
 																	                                      \

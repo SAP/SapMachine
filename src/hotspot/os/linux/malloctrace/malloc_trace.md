@@ -31,18 +31,18 @@ thomas@starfish$ jcmd AllocCHeap System.malloctrace on
 Tracing activated
 ```
 
-#### Switch trace off 
+#### Switch trace off:
 ```
 thomas@starfish$ jcmd AllocCHeap System.malloctrace off
 268112:
 Tracing deactivated
 ```
 
-#### Print a SapMachine MallocTrace report. 
+#### Print a SapMachine MallocTrace report:
 
 Two options exist:
-a full report which can be lengthy but will show all call sites
-(default) an abridged report which only shows the ten "hottest" call sites.
+- a full report which can be lengthy but will show all call sites.
+- (default) an abridged report which only shows the ten "hottest" call sites.
 
 ```
 jcmd (VM) System.malloctrace print [all]
@@ -97,7 +97,7 @@ Malloc trace on.
 74515 captures (0 without stack).
 ```
 
-#### Reset the call site table
+#### Reset the call site table:
 
 It is possible to reset the call site table.
 
