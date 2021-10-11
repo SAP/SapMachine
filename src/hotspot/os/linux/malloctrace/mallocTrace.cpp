@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 
+#include "jvm_io.h"
 #include "malloctrace/assertHandling.hpp"
 #include "malloctrace/locker.hpp"
 #include "malloctrace/mallocTrace.hpp"
@@ -97,23 +98,25 @@ class HookControl : public AllStatic {
 public:
 
 #ifdef ASSERT
+  static char* print_hooks(char* out, size_t outlen) {
+    jio_snprintf(out, outlen, "__malloc_hook=" PTR_FORMAT ", __realloc_hook=" PTR_FORMAT ", __memalign_hook=" PTR_FORMAT ", "
+                 "my_malloc_hook=" PTR_FORMAT ", my_realloc_hook=" PTR_FORMAT ", my_memalign_hook=" PTR_FORMAT ".",
+                 (intptr_t)__malloc_hook, (intptr_t)__realloc_hook, (intptr_t)__memalign_hook,
+                 (intptr_t)my_malloc_hook,  (intptr_t)my_realloc_hook,  (intptr_t)my_memalign_hook);
+    return out;
+  }
   static void verify() {
+    char tmp[256];
     if (_hooks_are_active) {
       malloctrace_assert(__malloc_hook == my_malloc_hook && __realloc_hook == my_realloc_hook &&
                          __memalign_hook == my_memalign_hook,
-                         "Expected my hooks to be active, but found: "
-                         "__malloc_hook=" PTR_FORMAT ", __realloc_hook=" PTR_FORMAT
-                         ", __memalign_hook=" PTR_FORMAT " instead.",
-                         (intptr_t)__malloc_hook, (intptr_t)__realloc_hook,
-                         (intptr_t)__memalign_hook);
+                         "Hook mismatch (expected my hooks to be active). Hook state: %s",
+                         print_hooks(tmp, sizeof(tmp)));
     } else {
       malloctrace_assert(__malloc_hook != my_malloc_hook && __realloc_hook != my_realloc_hook &&
                          __memalign_hook != my_memalign_hook,
-                         "Expected my hooks to be inactive, but found: "
-                         "__malloc_hook=" PTR_FORMAT ", __realloc_hook=" PTR_FORMAT
-                         ", __memalign_hook=" PTR_FORMAT " instead.",
-                         (intptr_t)__malloc_hook, (intptr_t)__realloc_hook,
-                         (intptr_t)__memalign_hook);
+                         "Hook mismatch (expected default hooks to be active). Hook state: %s",
+                         print_hooks(tmp, sizeof(tmp)));
     }
   }
 #endif
@@ -241,6 +244,12 @@ static void* my_malloc_hook(size_t size, const void *caller) {
 }
 
 static void* my_realloc_hook(void* old, size_t size, const void *caller) {
+  // realloc(0): "If size was equal to 0, either NULL or a pointer suitable to be passed to free() is returned."
+  // The glibc currently does the former (unlike malloc(0), which does the latter and can cause leaks). As long
+  // as we are sure the glibc returns NULL for realloc(0), we can shortcut here.
+  if (size == 0) {
+    return NULL;
+  }
   return my_malloc_or_realloc_hook(old, size);
 }
 
@@ -291,22 +300,22 @@ bool MallocTracer::enable(bool use_backtrace) {
       // First time malloc trace is enabled, allocate the site table. We don't want to preallocate it
       // unconditionally since it costs several MB.
       g_sites = SiteTable::create();
+      if (g_sites == NULL) {
+        return false;
+      }
     }
     HookControl::enable(); // << from this moment on concurrent threads may enter our hooks but will then wait on the lock
     g_use_backtrace = use_backtrace;
     DEBUG_ONLY(g_times_enabled ++;)
-    return true;
   }
-  return false;
+  return true;
 }
 
-bool MallocTracer::disable() {
+void MallocTracer::disable() {
   Locker lck;
   if (HookControl::hooks_are_active()) {
     HookControl::disable();
-    return true;
   }
-  return false;
 }
 
 void MallocTracer::reset() {

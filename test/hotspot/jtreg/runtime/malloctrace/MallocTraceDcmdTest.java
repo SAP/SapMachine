@@ -115,7 +115,6 @@ public class MallocTraceDcmdTest {
         System.out.println("--- " + command);
         ProcessBuilder pb = new ProcessBuilder(command);
         output = new OutputAnalyzer(pb.start());
-output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
         return output;
     }
@@ -123,11 +122,7 @@ output.reportDiagnosticSummary();
     // System.malloctrace on
     private static void testOn() throws Exception {
         OutputAnalyzer output = testCommand("on");
-        if (currentState) {
-            output.shouldContain("Tracing already active");
-        } else {
-            output.shouldContain("Tracing activated");
-        }
+        output.shouldContain("Tracing active");
         numSwitchedOn ++;
         currentState = true;
     }
@@ -135,11 +130,7 @@ output.reportDiagnosticSummary();
     // System.malloctrace off
     private static void testOff() throws Exception {
         OutputAnalyzer output = testCommand("off");
-        if (currentState) {
-            output.shouldContain("Tracing deactivated");
-        } else {
-            output.shouldContain("Tracing was already deactivated");
-        }
+        output.shouldContain("Tracing inactive");
         currentState = false;
     }
 

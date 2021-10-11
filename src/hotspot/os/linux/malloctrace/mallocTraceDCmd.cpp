@@ -54,16 +54,13 @@ void MallocTraceDCmd::execute(DCmdSource source, TRAPS) {
       }
     }
     if (MallocTracer::enable(use_backtrace)) {
-      _output->print_raw("Tracing activated");
+      _output->print_raw("Tracing active");
     } else {
-      _output->print_raw("Tracing already active");
+      _output->print("Failed to activate");
     }
   } else if (::strcmp(_option.value(), "off") == 0) {
-    if (MallocTracer::disable()) {
-      _output->print_raw("Tracing deactivated");
-    } else {
-      _output->print_raw("Tracing was already deactivated");
-    }
+    MallocTracer::disable();
+    _output->print_raw("Tracing inactive");
   } else if (::strcmp(_option.value(), "print") == 0) {
     bool all = false;
     if (subopt != NULL) {
@@ -93,6 +90,8 @@ static const char* const usage_for_option =
   "Valid Values:\n"
   " - on [bt|nmt]\n"
   "    Switches trace on. Optional second parameter overrides the stack walk method.\n"
+  "                      - nmt (default): uses internal stackwalking.\n"
+  "                      - bt: uses glibc stackwalking (may give better results, but can be unstable).\n"
   " - off\n"
   "    Switches trace off.\n"
   " - print [all]\n"

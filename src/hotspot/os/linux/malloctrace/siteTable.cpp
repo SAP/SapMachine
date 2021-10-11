@@ -56,8 +56,8 @@ class BackTraceWrapper {
 public:
   BackTraceWrapper() : _fun(load_symbol()) {}
 
-  // Capture a stack using backtrace(3); return number of frames.
-  bool call(Stack* stack) const {
+  // Capture a stack using backtrace(3); return true on success.
+  bool capture(Stack* stack) const {
     if (_fun == NULL) {
       return false;
     }
@@ -109,7 +109,7 @@ void Stack::print_on(outputStream* st) const {
 // one getting the better results.
 bool Stack::capture_stack(Stack* stack, bool use_backtrace) {
   stack->reset();
-  return use_backtrace ? g_backtrace_wrapper.call(stack) : capture_stack_nmt_like(stack);
+  return use_backtrace ? g_backtrace_wrapper.capture(stack) : capture_stack_nmt_like(stack);
 }
 
 #ifdef ASSERT
@@ -170,6 +170,7 @@ void SiteTable::print_stats(outputStream* st) const {
       used_slots ++;
     }
   }
+  // Note: if you change this format, check gtest test_site_table parser.
   st->print("Table size: %u, num_entries: %u, used slots: %u, longest chain: %u, invocs: "
              UINT64_FORMAT ", lost: " UINT64_FORMAT ", collisions: " UINT64_FORMAT,
              table_size, _size, used_slots, longest_chain,
@@ -179,8 +180,7 @@ void SiteTable::print_stats(outputStream* st) const {
 // Sorting stuff for printing the table
 
 static int qsort_helper(const void* s1, const void* s2) {
-  return ((const Site*)s2)->invocations -
-         ((const Site*)s1)->invocations;
+  return ((const Site*)s2)->invocations > ((const Site*)s1)->invocations ? 1 : -1;
 }
 
 void SiteTable::print_table(outputStream* st, bool all) const {

@@ -43,6 +43,7 @@ class Locker {
   bool _locked;
 
   bool lock() {
+    malloctrace_assert(!_locked, "already locked");
     if (::pthread_mutex_lock(&_pthread_mutex) != 0) {
       malloctrace_assert(false, "MALLOCTRACE lock failed");
       return false;

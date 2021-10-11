@@ -57,7 +57,7 @@ struct Stack {
     for (int i = 0; i < num_frames; i++) {
       hash += (uintptr_t)_frames[i];
     }
-    return hash | 1; // Hash should never be 0
+    return hash;
   }
 
   void reset() {

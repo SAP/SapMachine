@@ -81,7 +81,7 @@ static void test_print_table(const SiteTable* table, int expected_entries) {
   if (expected_entries != -1) {
     char match[32];
     jio_snprintf(match, sizeof(match),
-                 "num_entries: %u", expected_entries);
+                 "num_entries: %u,", expected_entries);
     ASSERT_NE(::strstr(ss.base(), match), (char*)NULL);
   }
   ss.reset();
