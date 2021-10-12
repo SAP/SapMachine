@@ -75,6 +75,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
 
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTrace.hpp"
+
 // put OS-includes here
 # include <sys/types.h>
 # include <sys/mman.h>
@@ -4633,6 +4636,11 @@ jint os::init_2(void) {
     // Disable code cache flushing to ensure the map file written at
     // exit contains all nmethods generated during execution.
     FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
+  }
+
+  // SapMachine 2021-09-01: malloc-trace
+  if (EnableMallocTrace) {
+    sap::MallocTracer::enable();
   }
 
   return JNI_OK;
