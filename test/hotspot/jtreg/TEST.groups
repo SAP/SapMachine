@@ -338,7 +338,11 @@ tier1_serviceability = \
 #  or which tests downstream-only features.
 tier1_sapmachine = \
   runtime/Vitals \
+<<<<<<< HEAD
   serviceability/dcmd/vm/TrimLibcHeapTest.java
+=======
+  runtime/malloctrace
+>>>>>>> bf45d7295c2... SapMachine #939: Add facility to trace uninstrumented malloc calls in VM and third party coding
 
 # SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
 #  or which tests downstream-only features.

@@ -93,6 +93,11 @@
 #include "runtime/globals.hpp"
 #include "vitals/vitals.hpp"
 
+// SapMachine 2021-09-01: malloc-trace
+#ifdef LINUX
+#include "malloctrace/mallocTrace.hpp"
+#endif
+
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
@@ -538,6 +543,13 @@ void before_exit(JavaThread* thread) {
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
   }
+
+#ifdef LINUX
+  // SapMachine 2021-09-01: malloc-trace
+  if (PrintMallocTraceAtExit) {
+    sap::MallocTracer::print(tty, true);
+  }
+#endif
 
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);

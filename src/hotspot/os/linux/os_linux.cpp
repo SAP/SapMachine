@@ -76,6 +76,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTrace.hpp"
+
 // put OS-includes here
 # include <sys/types.h>
 # include <sys/mman.h>
@@ -5468,6 +5471,11 @@ jint os::init_2(void) {
 
   if (DumpSharedMappingsInCore) {
     set_coredump_filter(FILE_BACKED_SHARED_BIT);
+  }
+
+  // SapMachine 2021-09-01: malloc-trace
+  if (EnableMallocTrace) {
+    sap::MallocTracer::enable();
   }
 
   return JNI_OK;
