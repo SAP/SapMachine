@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 
 // SapMachine 2019-09-01: vitals.
 #include "runtime/globals.hpp"
@@ -47,15 +48,15 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
 }
 
 size_t ClassLoaderDataGraph::num_instance_classes() {
-  return _num_instance_classes;
+  return Atomic::load(&_num_instance_classes);
 }
 
 size_t ClassLoaderDataGraph::num_array_classes() {
-  return _num_array_classes;
+  return Atomic::load(&_num_array_classes);
 }
 
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
-  Atomic::add(&_num_instance_classes, count);
+  Atomic::add(&_num_instance_classes, count, memory_order_relaxed);
   // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_loaded(count);
@@ -63,8 +64,8 @@ void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
-  assert(count <= _num_instance_classes, "Sanity");
-  Atomic::sub(&_num_instance_classes, count);
+  size_t old_count = Atomic::fetch_and_add(&_num_instance_classes, -count, memory_order_relaxed);
+  assert(old_count >= count, "Sanity");
   // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_unloaded(count);
@@ -72,7 +73,7 @@ void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
-  Atomic::add(&_num_array_classes, count);
+  Atomic::add(&_num_array_classes, count, memory_order_relaxed);
   // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_loaded(count);
@@ -80,8 +81,8 @@ void ClassLoaderDataGraph::inc_array_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
-  assert(count <= _num_array_classes, "Sanity");
-  Atomic::sub(&_num_array_classes, count);
+  size_t old_count = Atomic::fetch_and_add(&_num_array_classes, -count, memory_order_relaxed);
+  assert(old_count >= count, "Sanity");
   // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_unloaded(count);
