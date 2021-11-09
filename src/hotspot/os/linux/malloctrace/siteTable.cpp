@@ -154,14 +154,6 @@ void Stack::print_on(outputStream* st) const {
     st->print("[" PTR_FORMAT "] ", p2i(_frames[i]));
     if (print_function_and_library_name(st, _frames[i], tmp, sizeof(tmp), true, true, false)) {
       st->cr();
-    } else if (CodeCache::contains((void*)_frames[i])) {
-      CodeBlob* b = CodeCache::find_blob_unsafe((void*)(void*)_frames[i]);
-      if (b != NULL) {
-        //b->dump_for_addr(_frames[i], st, false);
-        b->print_value_on(st);
-      }
-    } else {
-      st->cr();
     }
   }
 }
