@@ -38,7 +38,7 @@ static volatile bool g_asserting = false;
 bool prepare_assert() {
 
   // Ignore all but the first assert
-  if (Atomic::cmpxchg(&g_asserting, false, true) != false) {
+  if (Atomic::cmpxchg(true, &g_asserting, false) != false) {
     ::printf("Ignoring secondary assert in malloc trace...\n");
     return false;
   }

@@ -37,6 +37,67 @@
 
 #ifdef __GLIBC__
 
+// Pulled from JDK17 (see os::print_function_and_library_name()).
+// Note: Abridged version, does not handle function descriptors, which only concerns ppc64.
+// But since these are real code pointers, not function descriptors, this should be fine.
+static bool print_function_and_library_name(outputStream* st,
+                                            address addr,
+                                            char* buf, int buflen,
+                                            bool shorten_paths,
+                                            bool demangle,
+                                            bool strip_arguments) {
+  // If no scratch buffer given, allocate one here on stack.
+  // (used during error handling; its a coin toss, really, if on-stack allocation
+  //  is worse than (raw) C-heap allocation in that case).
+  char* p = buf;
+  if (p == NULL) {
+    p = (char*)::alloca(O_BUFLEN);
+    buflen = O_BUFLEN;
+  }
+  int offset = 0;
+  bool have_function_name = os::dll_address_to_function_name(addr, p, buflen,
+                                                             &offset, demangle);
+  bool is_function_descriptor = false;
+
+  if (have_function_name) {
+    // Print function name, optionally demangled
+    if (demangle && strip_arguments) {
+      char* args_start = strchr(p, '(');
+      if (args_start != NULL) {
+        *args_start = '\0';
+      }
+    }
+    // Print offset. Omit printing if offset is zero, which makes the output
+    // more readable if we print function pointers.
+    if (offset == 0) {
+      st->print("%s", p);
+    } else {
+      st->print("%s+%d", p, offset);
+    }
+  } else {
+    st->print(PTR_FORMAT, p2i(addr));
+  }
+  offset = 0;
+
+  const bool have_library_name = os::dll_address_to_library_name(addr, p, buflen, &offset);
+  if (have_library_name) {
+    // Cut path parts
+    if (shorten_paths) {
+      char* p2 = strrchr(p, os::file_separator()[0]);
+      if (p2 != NULL) {
+        p = p2 + 1;
+      }
+    }
+    st->print(" in %s", p);
+    if (!have_function_name) { // Omit offset if we already printed the function offset
+      st->print("+%d", offset);
+    }
+  }
+
+  return have_function_name || have_library_name;
+}
+// End: print_function_and_library_name picked from JDK17
+
 namespace sap {
 
 /////// Wrapper for the glibc backtrace(3) function;
@@ -91,7 +152,7 @@ void Stack::print_on(outputStream* st) const {
   char tmp[256];
   for (int i = 0; i < num_frames && _frames[i] != NULL; i++) {
     st->print("[" PTR_FORMAT "] ", p2i(_frames[i]));
-    if (os::print_function_and_library_name(st, _frames[i], tmp, sizeof(tmp), true, true, false)) {
+    if (print_function_and_library_name(st, _frames[i], tmp, sizeof(tmp), true, true, false)) {
       st->cr();
     } else if (CodeCache::contains((void*)_frames[i])) {
       CodeBlob* b = CodeCache::find_blob_unsafe((void*)(void*)_frames[i]);

@@ -26,7 +26,7 @@
 
 #ifdef LINUX
 
-#include "jvm_io.h"
+#include "jvm.h"
 #include "malloctrace/siteTable.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
