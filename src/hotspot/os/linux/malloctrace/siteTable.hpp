@@ -41,7 +41,7 @@ namespace sap {
 // - using an NMT-like callstack walker
 // I am not sure yet which is better. Have to experiment.
 
-enum class capture_method_t {
+enum capture_method_t {
   nmt_like = 0, using_backtrace = 1
 };
 

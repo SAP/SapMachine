@@ -25,12 +25,12 @@
 
 #include "precompiled.hpp"
 
-#include "jvm_io.h"
+#include "jvm.h"
 #include "malloctrace/assertHandling.hpp"
 #include "malloctrace/locker.hpp"
 #include "malloctrace/mallocTrace.hpp"
 #include "malloctrace/siteTable.hpp"
-#include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"

@@ -26,7 +26,7 @@
 #ifndef OS_LINUX_MALLOCTRACE_MALLOCTRACE_HPP
 #define OS_LINUX_MALLOCTRACE_MALLOCTRACE_HPP
 
-#include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef __GLIBC__
