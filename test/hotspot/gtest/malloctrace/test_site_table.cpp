@@ -37,7 +37,6 @@
 #ifdef __GLIBC__
 
 using sap::SiteTable;
-using sap::Stack;
 
 static void init_random_randomly() {
   os::init_random((int)os::elapsed_counter());
@@ -46,7 +45,7 @@ static void init_random_randomly() {
 //#define LOG
 
 static void fill_stack_randomly(sap::Stack* s) {
-  for (unsigned i = 0; i < Stack::num_frames; i++) {
+  for (unsigned i = 0; i < sap::Stack::num_frames; i++) {
     s->_frames[i] = (address)(intptr_t)os::random();
   }
 }
@@ -64,8 +63,8 @@ static void destroy_site_table(SiteTable* s) {
 }
 
 // Helper, create an array of unique stacks, randomly filled; returned array is C-heap allocated
-static Stack* create_unique_stack_array(int num) {
-  Stack* random_stacks = NEW_C_HEAP_ARRAY(Stack, num, mtTest);
+static sap::Stack* create_unique_stack_array(int num) {
+  sap::Stack* random_stacks = NEW_C_HEAP_ARRAY(sap::Stack, num, mtTest);
   for (int i = 0; i < num; i ++) {
     fill_stack_randomly(random_stacks + i);
     // ensure uniqueness
@@ -109,7 +108,7 @@ TEST_VM(MallocTrace, site_table_basics) {
 
   // Generate a number of random stacks; enough to hit overflow limit from time to time.
   const int num_stacks = safe_to_add_without_overflow + 100;
-  Stack* random_stacks = create_unique_stack_array(num_stacks);
+  sap::Stack* random_stacks = create_unique_stack_array(num_stacks);
 
   // Add n guaranteed-to-be-unique call stacks to the table; observe table; do that n times, which should
   // increase invoc counters.
@@ -159,7 +158,7 @@ TEST_VM(MallocTrace, site_table_random) {
 
   // Generate a number of random stacks; enough to hit overflow limit from time to time.
   const int num_stacks = SiteTable::max_entries() * 1.3;
-  Stack* random_stacks = create_unique_stack_array(num_stacks);
+  sap::Stack* random_stacks = create_unique_stack_array(num_stacks);
 
   for (int i = 0; i < num_stacks; i ++) {
     fill_stack_randomly(random_stacks + i);
@@ -167,7 +166,7 @@ TEST_VM(MallocTrace, site_table_random) {
 
   // Now register these stacks randomly, a lot of times.
   for (int i = 0; i < 1000*1000; i ++) {
-    Stack* stack = random_stacks + (os::random() % num_stacks);
+    sap::Stack* stack = random_stacks + (os::random() % num_stacks);
     table->add_site(stack, 1024);
     ASSERT_EQ(table->invocations(), (uint64_t)i + 1);
   }
