@@ -61,6 +61,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
+// SapMachine 2021-05-21
+#include "runtime/globals.hpp"
+
 #include <stdio.h>
 
 // Support for showing register content on asserts/guarantees.
@@ -324,6 +327,22 @@ void report_java_out_of_memory(const char* message) {
   // commands multiple times we just do it once when the first threads reports
   // the error.
   if (Atomic::cmpxchg(1, &out_of_memory_reported, 0) == 0) {
+
+    // SapMachine 2021-05-21: If any one of the xxxOnOutOfMemoryError is specified,
+    //  print stack to stdout. Do this before any subsequent handling - this is the
+    //  most important information.
+    if ((HeapDumpOnOutOfMemoryError) ||
+        (OnOutOfMemoryError && OnOutOfMemoryError[0]) ||
+        CrashOnOutOfMemoryError || ExitOnOutOfMemoryError) {
+      VMError::print_stack(tty);
+    }
+
+    // SapMachine 2021-05-21: If we crash due to CrashOnOutOfMemoryError, deactivate
+    //  cores unless they had been explicitly enabled.
+    if (CrashOnOutOfMemoryError && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+      FLAG_SET_ERGO(bool, CreateCoredumpOnCrash, false);
+    }
+
     // create heap dump before OnOutOfMemoryError commands are executed
     if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
