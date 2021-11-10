@@ -259,10 +259,12 @@
                 {
                     "tag": "sapmachine-18+22",
                     "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B22/sapmachine-jdk-18-ea.22_linux-x64_bin.tar.gz",
                         "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B22/sapmachine-jdk-18-ea.22_macos-aarch64_bin.dmg",
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B22/sapmachine-jdk-18-eabeta.22_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B22/sapmachine-jre-18-ea.22_linux-x64_bin.tar.gz",
                         "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B22/sapmachine-jre-18-ea.22_macos-aarch64_bin.dmg",
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B22/sapmachine-jre-18-eabeta.22_linux-aarch64_bin.tar.gz"
                     }
