@@ -384,6 +384,10 @@ void print_statistics() {
     MemTracker::final_report(tty);
   }
 
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
+  }
+
   // SapMachine 2019-09-01: vitals.
   if (DumpVitalsAtExit) {
     sapmachine_vitals::dump_reports();
@@ -433,6 +437,10 @@ void print_statistics() {
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
+  }
+
+  if (PrintMetaspaceStatisticsAtExit) {
+    MetaspaceUtils::print_basic_report(tty, 0);
   }
 
   // SapMachine 2019-09-01: vitals.

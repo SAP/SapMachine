@@ -46,11 +46,11 @@ class ciEnv : StackObj {
 
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
+  friend class PrepareExtraDataClosure;
 
 private:
   Arena*           _arena;       // Alias for _ciEnv_arena except in init_shared_objects()
   Arena            _ciEnv_arena;
-  int              _system_dictionary_modification_counter;
   ciObjectFactory* _factory;
   OopRecorder*     _oop_recorder;
   DebugInformationRecorder* _debug_info;
@@ -189,6 +189,10 @@ private:
     }
   }
 
+  ciMetadata* cached_metadata(Metadata* o) {
+    return _factory->cached_metadata(o);
+  }
+
   ciInstance* get_instance(oop o) {
     if (o == NULL) return NULL;
     return get_object(o)->as_instance();
@@ -295,7 +299,7 @@ public:
     MethodCompilable_never
   };
 
-  ciEnv(CompileTask* task, int system_dictionary_modification_counter);
+  ciEnv(CompileTask* task);
   // Used only during initialization of the ci
   ciEnv(Arena* arena);
   ~ciEnv();
@@ -450,9 +454,6 @@ public:
   // Output stream for logging compilation info.
   CompileLog* log() { return _log; }
   void set_log(CompileLog* log) { _log = log; }
-
-  // Check for changes to the system dictionary during compilation
-  bool system_dictionary_modification_counter_changed();
 
   void record_failure(const char* reason);      // Record failure and report later
   void report_failure(const char* reason);      // Report failure immediately

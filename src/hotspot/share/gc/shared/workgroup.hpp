@@ -90,7 +90,8 @@ class GangTaskDispatcher : public CHeapObj<mtGC> {
 
   // Distributes the task out to num_workers workers.
   // Returns when the task has been completed by all workers.
-  virtual void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers) = 0;
+  virtual void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers,
+                                              bool add_foreground_work) = 0;
 
   // Worker API.
 
@@ -199,6 +200,27 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   virtual AbstractGangWorker* allocate_worker(uint which) = 0;
 };
 
+// Temporarily try to set the number of active workers.
+// It's not guaranteed that it succeeds, and users need to
+// query the number of active workers.
+class WithUpdatedActiveWorkers : public StackObj {
+private:
+  AbstractWorkGang* const _gang;
+  const uint              _old_active_workers;
+
+public:
+  WithUpdatedActiveWorkers(AbstractWorkGang* gang, uint requested_num_workers) :
+      _gang(gang),
+      _old_active_workers(gang->active_workers()) {
+    uint capped_num_workers = MIN2(requested_num_workers, gang->total_workers());
+    gang->update_active_workers(capped_num_workers);
+  }
+
+  ~WithUpdatedActiveWorkers() {
+    _gang->update_active_workers(_old_active_workers);
+  }
+};
+
 // An class representing a gang of workers.
 class WorkGang: public AbstractWorkGang {
   // To get access to the GangTaskDispatcher instance.
@@ -222,8 +244,9 @@ public:
   // Run a task with the given number of workers, returns
   // when the task is done. The number of workers must be at most the number of
   // active workers.  Additional workers may be created if an insufficient
-  // number currently exists.
-  void run_task(AbstractGangTask* task, uint num_workers);
+  // number currently exists. If the add_foreground_work flag is true, the current thread
+  // is used to run the task too.
+  void run_task(AbstractGangTask* task, uint num_workers, bool add_foreground_work = false);
 
 protected:
   virtual AbstractGangWorker* allocate_worker(uint which);

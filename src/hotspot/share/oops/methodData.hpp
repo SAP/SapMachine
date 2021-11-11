@@ -32,6 +32,7 @@
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
@@ -1943,7 +1944,13 @@ public:
 // adjusted in the event of a change in control flow.
 //
 
-class CleanExtraDataClosure;
+class CleanExtraDataClosure : public StackObj {
+public:
+  virtual bool is_live(Method* m) = 0;
+};
+
+
+class ciMethodData;
 
 class MethodData : public Metadata {
   friend class VMStructs;
@@ -1951,6 +1958,7 @@ class MethodData : public Metadata {
 private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
+  friend class ciMethodData;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -1966,10 +1974,9 @@ private:
 
   Mutex _extra_data_lock;
 
-  MethodData(const methodHandle& method, int size, TRAPS);
+  MethodData(const methodHandle& method);
 public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
-  MethodData() : _extra_data_lock(Monitor::leaf, "MDO extra data lock") {}; // For ciMethodData
 
   bool is_methodData() const volatile { return true; }
   void initialize();
@@ -1980,22 +1987,87 @@ public:
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
+
+  // Compiler-related counters.
+  class CompilerCounters {
+    friend class VMStructs;
+    friend class JVMCIVMStructs;
+
+    int  _creation_mileage;           // method mileage at MDO creation
+    uint _nof_decompiles;             // count of all nmethod removals
+    uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
+    uint _nof_overflow_traps;         // trap count, excluding _trap_hist
+    union {
+      intptr_t _align;
+      u1 _array[JVMCI_ONLY(2 *) MethodData::_trap_hist_limit];
+    } _trap_hist;
+
+    void init_trap_hist() {
+      STATIC_ASSERT(sizeof(_trap_hist) % HeapWordSize == 0); // "align"
+      uint size_in_words = sizeof(_trap_hist) / HeapWordSize;
+      Copy::zero_to_words((HeapWord*) &_trap_hist, size_in_words);
+    }
+  public:
+    CompilerCounters(Method* m) : _creation_mileage(MethodData::mileage_of(m)),
+      _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+      init_trap_hist();
+    }
+    CompilerCounters() : _creation_mileage(0), // for ciMethodData
+      _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
+      init_trap_hist();
+    }
+
+    int      creation_mileage() const { return _creation_mileage; }
+
+    // Return (uint)-1 for overflow.
+    uint trap_count(int reason) const {
+      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      return (int)((_trap_hist._array[reason]+1) & _trap_hist_mask) - 1;
+    }
+
+    uint inc_trap_count(int reason) {
+      // Count another trap, anywhere in this method.
+      assert(reason >= 0, "must be single trap");
+      assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
+      uint cnt1 = 1 + _trap_hist._array[reason];
+      if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
+        _trap_hist._array[reason] = cnt1;
+        return cnt1;
+      } else {
+        return _trap_hist_mask + (++_nof_overflow_traps);
+      }
+    }
+
+    uint overflow_trap_count() const {
+      return _nof_overflow_traps;
+    }
+    uint overflow_recompile_count() const {
+      return _nof_overflow_recompiles;
+    }
+    uint inc_overflow_recompile_count() {
+      return ++_nof_overflow_recompiles;
+    }
+    uint decompile_count() const {
+      return _nof_decompiles;
+    }
+    uint inc_decompile_count() {
+      return ++_nof_decompiles;
+    }
+
+    // Support for code generation
+    static ByteSize trap_history_offset() {
+      return byte_offset_of(CompilerCounters, _trap_hist._array);
+    }
+  };
+
 private:
-  uint _nof_decompiles;             // count of all nmethod removals
-  uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
-  uint _nof_overflow_traps;         // trap count, excluding _trap_hist
-  union {
-    intptr_t _align;
-    u1 _array[JVMCI_ONLY(2 *) _trap_hist_limit];
-  } _trap_hist;
+  CompilerCounters _compiler_counters;
 
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   intx              _eflags;          // flags on escape information
   intx              _arg_local;       // bit set of non-escaping arguments
   intx              _arg_stack;       // bit set of stack-allocatable arguments
   intx              _arg_returned;    // bit set of returned arguments
-
-  int _creation_mileage;              // method mileage at MDO creation
 
   // How many invocations has this MDO seen?
   // These counters are used to determine the exact age of MDO.
@@ -2036,10 +2108,6 @@ private:
   // parameter profiling.
   enum { no_parameters = -2, parameters_uninitialized = -1 };
   int _parameters_type_data_di;
-  int parameters_size_in_bytes() const {
-    ParametersTypeData* param = parameters_type_data();
-    return param == NULL ? 0 : param->size_in_bytes();
-  }
 
   // Beginning of the data entries
   intptr_t _data[1];
@@ -2116,11 +2184,12 @@ private:
   static bool profile_parameters_jsr292_only();
   static bool profile_all_parameters();
 
-  void clean_extra_data(CleanExtraDataClosure* cl);
   void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
   void verify_extra_data_clean(CleanExtraDataClosure* cl);
 
 public:
+  void clean_extra_data(CleanExtraDataClosure* cl);
+
   static int header_size() {
     return sizeof(MethodData)/wordSize;
   }
@@ -2145,8 +2214,7 @@ public:
   void collect_statistics(KlassSizeStats *sz) const;
 #endif
 
-  int      creation_mileage() const  { return _creation_mileage; }
-  void set_creation_mileage(int x)   { _creation_mileage = x; }
+  int      creation_mileage() const { return _compiler_counters.creation_mileage(); }
 
   int invocation_count() {
     if (invocation_counter()->carry()) {
@@ -2250,6 +2318,11 @@ public:
     return _data_size;
   }
 
+  int parameters_size_in_bytes() const {
+    ParametersTypeData* param = parameters_type_data();
+    return param == NULL ? 0 : param->size_in_bytes();
+  }
+
   // Accessors
   Method* method() const { return _method; }
 
@@ -2308,42 +2381,33 @@ public:
 
   // Return (uint)-1 for overflow.
   uint trap_count(int reason) const {
-    assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
-    return (int)((_trap_hist._array[reason]+1) & _trap_hist_mask) - 1;
+    return _compiler_counters.trap_count(reason);
   }
   // For loops:
   static uint trap_reason_limit() { return _trap_hist_limit; }
   static uint trap_count_limit()  { return _trap_hist_mask; }
   uint inc_trap_count(int reason) {
-    // Count another trap, anywhere in this method.
-    assert(reason >= 0, "must be single trap");
-    assert((uint)reason < JVMCI_ONLY(2*) _trap_hist_limit, "oob");
-    uint cnt1 = 1 + _trap_hist._array[reason];
-    if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
-      _trap_hist._array[reason] = cnt1;
-      return cnt1;
-    } else {
-      return _trap_hist_mask + (++_nof_overflow_traps);
-    }
+    return _compiler_counters.inc_trap_count(reason);
   }
 
   uint overflow_trap_count() const {
-    return _nof_overflow_traps;
+    return _compiler_counters.overflow_trap_count();
   }
   uint overflow_recompile_count() const {
-    return _nof_overflow_recompiles;
+    return _compiler_counters.overflow_recompile_count();
   }
-  void inc_overflow_recompile_count() {
-    _nof_overflow_recompiles += 1;
+  uint inc_overflow_recompile_count() {
+    return _compiler_counters.inc_overflow_recompile_count();
   }
   uint decompile_count() const {
-    return _nof_decompiles;
+    return _compiler_counters.decompile_count();
   }
-  void inc_decompile_count() {
-    _nof_decompiles += 1;
-    if (decompile_count() > (uint)PerMethodRecompilationCutoff) {
+  uint inc_decompile_count() {
+    uint dec_count = _compiler_counters.inc_decompile_count();
+    if (dec_count > (uint)PerMethodRecompilationCutoff) {
       method()->set_not_compilable(CompLevel_full_optimization, true, "decompile_count > PerMethodRecompilationCutoff");
     }
+    return dec_count;
   }
   uint tenure_traps() const {
     return _tenure_traps;
@@ -2369,7 +2433,7 @@ public:
   }
 
   static ByteSize trap_history_offset() {
-    return byte_offset_of(MethodData, _trap_hist._array);
+    return byte_offset_of(MethodData, _compiler_counters) + CompilerCounters::trap_history_offset();
   }
 
   static ByteSize invocation_counter_offset() {

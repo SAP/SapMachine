@@ -1362,7 +1362,11 @@ void os::print_siginfo(outputStream* os, const void* si0) {
     os->print(", si_addr: " PTR_FORMAT, p2i(si->si_addr));
 #ifdef SIGPOLL
   } else if (sig == SIGPOLL) {
-    os->print(", si_band: %ld", si->si_band);
+    // siginfo_t.si_band is defined as "long", and it is so in most
+    // implementations. But SPARC64 glibc has a bug: si_band is "int".
+    // Cast si_band to "long" to prevent format specifier mismatch.
+    // See: https://sourceware.org/bugzilla/show_bug.cgi?id=23821
+    os->print(", si_band: %ld", (long) si->si_band);
 #endif
   }
 
@@ -2016,7 +2020,8 @@ void os::PlatformEvent::park() {       // AKA "down()"
     while (_event < 0) {
       // OS-level "spurious wakeups" are ignored
       status = pthread_cond_wait(_cond, _mutex);
-      assert_status(status == 0, status, "cond_wait");
+      assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
+                    status, "cond_wait");
     }
     --_nParked;
 
@@ -2211,7 +2216,8 @@ void Parker::park(bool isAbsolute, jlong time) {
   if (time == 0) {
     _cur_index = REL_INDEX; // arbitrary choice when not timed
     status = pthread_cond_wait(&_cond[_cur_index], _mutex);
-    assert_status(status == 0, status, "cond_timedwait");
+    assert_status(status == 0 MACOS_ONLY(|| status == ETIMEDOUT),
+                  status, "cond_wait");
   }
   else {
     _cur_index = isAbsolute ? ABS_INDEX : REL_INDEX;

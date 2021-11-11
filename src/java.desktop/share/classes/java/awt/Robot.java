@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 import sun.awt.image.SunWritableRaster;
 import sun.java2d.SunGraphicsEnvironment;
+
+import static sun.java2d.SunGraphicsEnvironment.toDeviceSpace;
+import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
 
 /**
  * This class is used to generate native system input events
@@ -134,8 +137,6 @@ public class Robot {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof ComponentFactory) {
             peer = ((ComponentFactory)toolkit).createRobot(this, screen);
-            disposer = new RobotDisposer(peer);
-            sun.java2d.Disposer.addRecord(anchor, disposer);
         }
         initLegalButtonMask();
     }
@@ -176,22 +177,6 @@ public class Robot {
             throw new IllegalArgumentException("not a valid screen device");
         }
     }
-
-    private transient Object anchor = new Object();
-
-    static class RobotDisposer implements sun.java2d.DisposerRecord {
-        private final RobotPeer peer;
-        public RobotDisposer(RobotPeer peer) {
-            this.peer = peer;
-        }
-        public void dispose() {
-            if (peer != null) {
-                peer.dispose();
-            }
-        }
-    }
-
-    private transient RobotDisposer disposer;
 
     /**
      * Moves mouse pointer to given screen coordinates.
@@ -395,13 +380,9 @@ public class Robot {
      */
     public synchronized Color getPixelColor(int x, int y) {
         checkScreenCaptureAllowed();
-        AffineTransform tx = GraphicsEnvironment.
-                getLocalGraphicsEnvironment().getDefaultScreenDevice().
-                getDefaultConfiguration().getDefaultTransform();
-        x = (int) (x * tx.getScaleX());
-        y = (int) (y * tx.getScaleY());
-        Color color = new Color(peer.getRGBPixel(x, y));
-        return color;
+        Point point = peer.useAbsoluteCoordinates() ? toDeviceSpaceAbs(x, y)
+                                                    : toDeviceSpace(x, y);
+        return new Color(peer.getRGBPixel(point.x, point.y));
     }
 
     /**
@@ -534,16 +515,17 @@ public class Robot {
 
         } else {
 
-            int sX = (int) Math.floor(screenRect.x * uiScaleX);
-            int sY = (int) Math.floor(screenRect.y * uiScaleY);
-            int sWidth = (int) Math.ceil(screenRect.width * uiScaleX);
-            int sHeight = (int) Math.ceil(screenRect.height * uiScaleY);
-            int temppixels[];
-            Rectangle scaledRect = new Rectangle(sX, sY, sWidth, sHeight);
-            temppixels = peer.getRGBPixels(scaledRect);
+            Rectangle scaledRect;
+            if (peer.useAbsoluteCoordinates()) {
+                scaledRect = toDeviceSpaceAbs(gc, screenRect.x,
+                        screenRect.y, screenRect.width, screenRect.height);
+            } else {
+                scaledRect = toDeviceSpace(gc, screenRect.x,
+                        screenRect.y, screenRect.width, screenRect.height);
+            }
 
             // HighResolutionImage
-            pixels = temppixels;
+            pixels = peer.getRGBPixels(scaledRect);
             buffer = new DataBufferInt(pixels, pixels.length);
             raster = Raster.createPackedRaster(buffer, scaledRect.width,
                     scaledRect.height, scaledRect.width, bandmasks, null);

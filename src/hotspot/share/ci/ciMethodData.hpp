@@ -400,10 +400,10 @@ private:
   u_char _saw_free_extra_data;
 
   // Support for interprocedural escape analysis
-  intx              _eflags;          // flags on escape information
-  intx              _arg_local;       // bit set of non-escaping arguments
-  intx              _arg_stack;       // bit set of stack-allocatable arguments
-  intx              _arg_returned;    // bit set of returned arguments
+  intx _eflags;       // flags on escape information
+  intx _arg_local;    // bit set of non-escaping arguments
+  intx _arg_stack;    // bit set of stack-allocatable arguments
+  intx _arg_returned; // bit set of returned arguments
 
   // Maturity of the oop when the snapshot is taken.
   int _current_mileage;
@@ -415,17 +415,15 @@ private:
   int _backedge_counter;
 
   // Coherent snapshot of original header.
-  MethodData _orig;
+  MethodData::CompilerCounters _orig;
 
-  // Area dedicated to parameters. NULL if no parameter profiling for
-  // this method.
+  // Area dedicated to parameters. NULL if no parameter profiling for this method.
   DataLayout* _parameters;
   int parameters_size() const {
     return _parameters == NULL ? 0 : parameters_type_data()->size_in_bytes();
   }
 
-  ciMethodData(MethodData* md);
-  ciMethodData();
+  ciMethodData(MethodData* md = NULL);
 
   // Accessors
   int data_size() const { return _data_size; }
@@ -475,7 +473,8 @@ private:
     return (address) _data;
   }
 
-  void load_extra_data();
+  void prepare_metadata();
+  void load_remaining_extra_data();
   ciProfileData* bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots);
 
   void dump_replay_data_type_helper(outputStream* out, int round, int& count, ProfileData* pdata, ByteSize offset, ciKlass* k);
@@ -554,8 +553,8 @@ public:
   uint trap_count(int reason) const {
     return _orig.trap_count(reason);
   }
-  uint trap_reason_limit() const { return _orig.trap_reason_limit(); }
-  uint trap_count_limit()  const { return _orig.trap_count_limit(); }
+  uint trap_reason_limit() const { return MethodData::trap_reason_limit(); }
+  uint trap_count_limit()  const { return MethodData::trap_count_limit(); }
 
   // Helpful query functions that decode trap_state.
   int has_trap_at(ciProfileData* data, int reason);

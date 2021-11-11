@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,8 +617,20 @@ class Stream<T> extends ExchangeImpl<T> {
         if (contentLength > 0) {
             h.setHeader("content-length", Long.toString(contentLength));
         }
+        URI uri = request.uri();
+        if (uri != null) {
+            h.setHeader("host", Utils.hostString(request));
+        }
         HttpHeaders sysh = filterHeaders(h.build());
         HttpHeaders userh = filterHeaders(request.getUserHeaders());
+        // Filter context restricted from userHeaders
+        userh = HttpHeaders.of(userh.map(), Utils.CONTEXT_RESTRICTED(client()));
+
+        final HttpHeaders uh = userh;
+
+        // Filter any headers from systemHeaders that are set in userHeaders
+        sysh = HttpHeaders.of(sysh.map(), (k,v) -> uh.firstValue(k).isEmpty());
+
         OutgoingHeaders<Stream<T>> f = new OutgoingHeaders<>(sysh, userh, this);
         if (contentLength == 0) {
             f.setFlag(HeadersFrame.END_STREAM);
@@ -870,7 +882,6 @@ class Stream<T> extends ExchangeImpl<T> {
                     // handle bytes to send downstream
                     while (item.hasRemaining()) {
                         if (debug.on()) debug.log("trySend: %d", item.remaining());
-                        assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         DataFrame df = getDataFrame(item);
                         if (df == null) {
                             if (debug.on())
@@ -890,9 +901,12 @@ class Stream<T> extends ExchangeImpl<T> {
                                 connection.resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                                 throw new IOException(msg);
                             } else if (remainingContentLength == 0) {
+                                assert !endStreamSent : "internal error, send data after END_STREAM flag";
                                 df.setFlag(DataFrame.END_STREAM);
                                 endStreamSent = true;
                             }
+                        } else {
+                            assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         }
                         if (debug.on())
                             debug.log("trySend: sending: %d", df.getDataLength());

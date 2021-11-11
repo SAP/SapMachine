@@ -22,29 +22,22 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 5044150
   @summary Tests that pupup doesn't popdown if no space to display under
   @author andrei.dmitriev area=awt.choice
-  @library ../../../../lib/testlibrary
-  @build jdk.testlibrary.OSInfo
-  @run applet PopupPosTest.html
+  @requires (os.family == "linux")
+  @run main PopupPosTest
 */
 
 import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 
-import jdk.testlibrary.OSInfo;
-
-public class PopupPosTest extends Applet
+public class PopupPosTest
 {
-    public void start ()
-    {
-        if(OSInfo.getOSType().equals(OSInfo.OSType.MACOSX)) {
-            // On OS X, popup isn't under the mouse
-            return;
-        }
+    public static void main(final String[] args) {
         Frame frame = new TestFrame();
     }
 }

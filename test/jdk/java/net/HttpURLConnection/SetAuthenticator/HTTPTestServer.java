@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -398,6 +396,10 @@ public class HTTPTestServer extends HTTPTest {
     }
 
     public InetSocketAddress getAddress() {
+        return serverImpl.getAddress();
+    }
+
+    public InetSocketAddress getProxyAddress() {
         return serverImpl.getAddress();
     }
 
@@ -1029,7 +1031,7 @@ public class HTTPTestServer extends HTTPTest {
         }
 
         @Override
-        public InetSocketAddress getAddress() {
+        public InetSocketAddress getProxyAddress() {
             return new InetSocketAddress(ss.getInetAddress(), ss.getLocalPort());
         }
 
@@ -1057,7 +1059,7 @@ public class HTTPTestServer extends HTTPTest {
             Socket clientConnection = null;
             try {
                 while (true) {
-                    System.out.println("Tunnel: Waiting for client");
+                    System.out.println("Tunnel: Waiting for client at: " + ss);
                     Socket previous = clientConnection;
                     try {
                         clientConnection = ss.accept();
