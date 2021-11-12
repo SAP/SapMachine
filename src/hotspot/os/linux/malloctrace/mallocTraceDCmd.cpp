@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "malloctrace/mallocTrace.hpp"
 #include "malloctrace/mallocTraceDCmd.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <errno.h>
@@ -106,6 +107,17 @@ MallocTraceDCmd::MallocTraceDCmd(outputStream* output, bool heap) :
 {
   _dcmdparser.add_dcmd_argument(&_option);
   _dcmdparser.add_dcmd_argument(&_suboption);
+}
+
+int MallocTraceDCmd::num_arguments() {
+  ResourceMark rm;
+  MallocTraceDCmd* dcmd = new MallocTraceDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
 }
 
 } // namespace sap

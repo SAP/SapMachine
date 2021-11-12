@@ -41,6 +41,7 @@ public:
   static const char* name() {
     return "System.malloctrace";
   }
+  static int num_arguments();
   static const char* description() {
     return "Trace malloc call sites\n"
            "Note: do *not* use in conjunction with MALLOC_CHECK_..!";
