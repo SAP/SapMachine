@@ -33,7 +33,7 @@ import java.util.Random;
 // For now 64bit only, 32bit stack capturing still does not work that well
 
 /*
- * @test
+ * @test MallocTraceDcmdTest
  * @summary Test the System.malloctrace command
  * @library /test/lib
  * @requires vm.bits == "64"
@@ -43,7 +43,7 @@ import java.util.Random;
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MallocTraceDcmdTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MallocTraceDcmdTest
  */
 
 public class MallocTraceDcmdTest {
@@ -173,6 +173,5 @@ public class MallocTraceDcmdTest {
         testReset();
         testPrint(false);
         testOff();
-throw new Exception("boom");
     }
 }
