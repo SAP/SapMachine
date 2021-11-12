@@ -41,10 +41,9 @@ import java.util.Random;
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-EnableMallocTrace
- *      MallocTraceDcmdTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI MallocTraceDcmdTest
  */
 
 public class MallocTraceDcmdTest {
@@ -115,6 +114,7 @@ public class MallocTraceDcmdTest {
         System.out.println("--- " + command);
         ProcessBuilder pb = new ProcessBuilder(command);
         output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
         return output;
     }
@@ -173,5 +173,6 @@ public class MallocTraceDcmdTest {
         testReset();
         testPrint(false);
         testOff();
+throw new Exception("boom");
     }
 }
