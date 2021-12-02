@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import jdk.testlibrary.OutputAnalyzer;
+#ifndef OS_CPU_WINDOWS_AARCH64_BYTES_WINDOWS_AARCH64_INLINE_HPP
+#define OS_CPU_WINDOWS_AARCH64_BYTES_WINDOWS_AARCH64_INLINE_HPP
 
-/*
- * @test
- * @bug 8251155
- * @summary Test host names starting with digits
- * @library /lib/testlibrary /test/lib
- * @build jdk.testlibrary.* JpsHelper
- * @run driver TestJpsHostName
- */
-public class TestJpsHostName {
+#include <stdlib.h>
 
-    public static void main(String[] args) throws Throwable {
-        testJpsHostName("12345");
-        testJpsHostName("12345:37266");
-    }
-
-    private static void testJpsHostName(String hostname) throws Exception {
-        OutputAnalyzer output = JpsHelper.jps(hostname);
-        output.shouldNotContain("Malformed Host Identifier: " + hostname);
-    }
-
+// Efficient swapping of data bytes from Java byte
+// ordering to native byte ordering and vice versa.
+inline u2   Bytes::swap_u2(u2 x) {
+  return _byteswap_ushort(x);
 }
+
+inline u4   Bytes::swap_u4(u4 x) {
+  return _byteswap_ulong(x);
+}
+
+inline u8 Bytes::swap_u8(u8 x) {
+  return _byteswap_uint64(x);
+}
+
+#endif // OS_CPU_WINDOWS_AARCH64_BYTES_WINDOWS_AARCH64_INLINE_HPP

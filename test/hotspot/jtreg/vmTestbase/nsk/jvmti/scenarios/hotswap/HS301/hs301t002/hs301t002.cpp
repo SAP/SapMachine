@@ -31,9 +31,7 @@
 #include "jvmti_tools.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS301/hs301t002/MyClass"
 #define DIR_NAME "newclass"
 #define PATH_FORMAT "%s%02d/%s"
@@ -54,8 +52,7 @@ JNIEXPORT jint JNI_OnLoad_hs301t002(JavaVM *jvm, char *options, void *reserved) 
 #endif
 jint Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     nsk_printf(" Agent:: VM Started.\n");
-    if ( ! NSK_VERIFY ( JNI_OK == NSK_CPP_STUB3(GetEnv, vm,
-                    (void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
+    if ( ! NSK_VERIFY ( JNI_OK == vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1) ) ) {
         nsk_printf(" Agent ::Agent failed to get jvmti env.\n");
         return JNI_ERR;
     } else {
@@ -66,7 +63,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
         }
         memset(&caps, 0, sizeof(caps));
         caps.can_redefine_classes = 1;
-        if ( ! NSK_JVMTI_VERIFY ( NSK_CPP_STUB2(AddCapabilities, jvmti, &caps) ) ) {
+        if ( ! NSK_JVMTI_VERIFY ( jvmti->AddCapabilities(&caps) ) ) {
             nsk_printf(" Agent:: Error occured while adding capabilities.\n");
             return JNI_ERR;
         }
@@ -87,7 +84,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS301_hs301t002_hs301t002_redefine(JNIEnv * jni
 
     redefineNumber=0;
     ret = JNI_FALSE;
-    if (!NSK_JNI_VERIFY(jni, (cls = NSK_CPP_STUB2(FindClass, jni, SEARCH_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(SEARCH_NAME)) != NULL)) {
         nsk_printf("Agent:: (*JNI)->FindClass(jni, %s) returns `null`.\n", SEARCH_NAME);
         return NSK_FALSE;
     }
@@ -102,6 +99,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS301_hs301t002_hs301t002_redefine(JNIEnv * jni
     return ret;
 }
 
-#ifdef __cplusplus
 }
-#endif

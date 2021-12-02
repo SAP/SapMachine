@@ -31,9 +31,7 @@
 #include "JVMTITools.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define EXP_OBJ_NUMBER 1
 
@@ -113,7 +111,7 @@ Java_nsk_jvmti_scenarios_allocation_AP07_ap07t002_setTag( JNIEnv* jni,
                                                           jobject target,
                                                           jlong   tag ) {
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetTag, jvmti, target, tag))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(target, tag))) {
         nsk_jvmti_setFailStatus();
     }
 }
@@ -130,12 +128,10 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     do {
 
         NSK_DISPLAY0("Calling IterateOverReachableObjects\n");
-        if (!NSK_JVMTI_VERIFY(
-                NSK_CPP_STUB5(IterateOverReachableObjects, jvmti,
-                                                           heapRootCallback,
-                                                           stackReferenceCallback,
-                                                           objectReferenceCallback,
-                                                           NULL /*user_data*/))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(heapRootCallback,
+                                                                 stackReferenceCallback,
+                                                                 objectReferenceCallback,
+                                                                 NULL /*user_data*/))) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -171,12 +167,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_tag_objects = 1;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_tag_objects)
@@ -189,6 +183,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

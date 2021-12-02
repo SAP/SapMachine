@@ -28,9 +28,7 @@
 #include <aod.h>
 #include <jvmti_aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Agent receives expected number of ClassLoad events and finishes work
@@ -59,8 +57,7 @@ void JNICALL classLoadHandler(
         return;
     }
 
-    if (NSK_JVMTI_VERIFY(NSK_CPP_STUB2(
-            RawMonitorEnter, jvmti, eventsCounterMonitor))) {
+    if (NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventsCounterMonitor))) {
 
         eventsCounter++;
 
@@ -71,7 +68,7 @@ void JNICALL classLoadHandler(
             nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_LOAD, success, jvmti, jni);
         }
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit, jvmti, eventsCounterMonitor))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventsCounterMonitor))) {
             success = 0;
         }
     } else {
@@ -111,13 +108,13 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor, jvmti, "attach045-agent00-eventsCounterMonitor", &eventsCounterMonitor))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("attach045-agent00-eventsCounterMonitor", &eventsCounterMonitor))) {
         return JNI_ERR;
     }
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ClassLoad = classLoadHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 
@@ -134,6 +131,4 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 }
 
 
-#ifdef __cplusplus
 }
-#endif

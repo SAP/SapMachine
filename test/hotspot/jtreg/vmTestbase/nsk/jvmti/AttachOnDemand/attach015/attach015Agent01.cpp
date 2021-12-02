@@ -28,9 +28,7 @@
 #include <aod.h>
 #include <jvmti_aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Expected agent work scenario:
@@ -99,7 +97,7 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     memset(&eventCallbacks,0, sizeof(eventCallbacks));
     eventCallbacks.ClassLoad = classLoadHandler;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, jvmti, &eventCallbacks, sizeof(eventCallbacks))) ) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))) ) {
         return JNI_ERR;
     }
 
@@ -114,6 +112,4 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 
     return JNI_OK;
 }
-#ifdef __cplusplus
 }
-#endif

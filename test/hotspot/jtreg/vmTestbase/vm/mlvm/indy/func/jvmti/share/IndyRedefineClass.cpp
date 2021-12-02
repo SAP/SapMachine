@@ -30,9 +30,7 @@
 #include "jvmti_tools.h"
 #include "mlvmJvmtiUtils.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jvmtiEnv* gJvmtiEnv = NULL;
 
@@ -90,22 +88,22 @@ static void popFrameLogic(jvmtiEnv * jvmti_env, jthread thread) {
     if ( tls->countOfFramesToPop <= 0 ) {
 
         NSK_DISPLAY0("Disabling single step\n");
-        if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode, jvmti_env, JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL)) )
+        if ( ! NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL)) )
             gIsErrorOccured = JNI_TRUE;
 
     } else {
 
         NSK_DISPLAY0("Enabling single step\n");
-        if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode, jvmti_env, JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)) )
+        if ( ! NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)) )
             gIsErrorOccured = JNI_TRUE;
 
         if ( tls->countOfFramesToPop == 1 ) {
             NSK_DISPLAY0("Popping a frame\n");
-            if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB2(PopFrame, jvmti_env, thread)) )
+            if ( ! NSK_JVMTI_VERIFY(jvmti_env->PopFrame(thread)) )
                 gIsErrorOccured = JNI_TRUE;
         } else {
             NSK_DISPLAY0("Forcing early return\n");
-            if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB2(ForceEarlyReturnVoid, jvmti_env, thread)) )
+            if ( ! NSK_JVMTI_VERIFY(jvmti_env->ForceEarlyReturnVoid(thread)) )
                 gIsErrorOccured = JNI_TRUE;
         }
 
@@ -143,7 +141,7 @@ MethodEntry(jvmtiEnv *jvmti_env,
 
     NSK_DISPLAY1("Redefining class %s\n", gszRedefinedClassFileName);
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass, jvmti_env, method, &clazz)) )
+    if ( ! NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &clazz)) )
         return;
 
     if ( ! NSK_VERIFY(nsk_jvmti_redefineClass(jvmti_env, clazz, gszRedefinedClassFileName)) ) {
@@ -202,25 +200,23 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
     caps.can_force_early_return = 1;
     caps.can_redefine_classes = 1;
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities, gJvmtiEnv, &caps)) )
+    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->AddCapabilities(&caps)) )
         return JNI_ERR;
 
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.MethodEntry = &MethodEntry;
     callbacks.SingleStep = &SingleStep;
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks, gJvmtiEnv, &callbacks, sizeof(callbacks))) )
+    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventCallbacks(&callbacks, sizeof(callbacks))) )
             return JNI_ERR;
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode, gJvmtiEnv, JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL) ) )
+    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL) ) )
             return JNI_ERR;
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode, gJvmtiEnv, JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL) ) )
+    if ( ! NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL) ) )
             return JNI_ERR;
 
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif
