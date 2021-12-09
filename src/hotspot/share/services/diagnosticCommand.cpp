@@ -51,6 +51,11 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
+#ifdef LINUX
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTraceDCmd.hpp"
+#endif
+
 // SapMachine 2019-02-20 : vitals
 #include "vitals/vitalsDCmd.hpp"
 
@@ -82,8 +87,10 @@ void DCmdRegistrant::register_dcmds(){
                          | DCmd_Source_MBean;
 
   // SapMachine 2021-09-06: Cherrypick 8268893: "jcmd to trim the glibc heap"
+  // SapMachine 2021-09-01: malloc-trace
 #ifdef LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
 #endif
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export, true, false));
