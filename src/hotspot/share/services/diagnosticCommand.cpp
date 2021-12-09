@@ -51,6 +51,18 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
+#ifdef LINUX
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTraceDCmd.hpp"
+#endif
+
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitalsDCmd.hpp"
+
+// SapMachine 2021-09-06: Cherrypick 8268893: "jcmd to trim the glibc heap"
+#ifdef LINUX
+#include "trimCHeapDCmd.hpp"
+#endif
 
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
@@ -73,6 +85,14 @@ void DCmdRegistrant::register_dcmds(){
   // Third  argument specifies if the command is hidden
   uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
                          | DCmd_Source_MBean;
+
+  // SapMachine 2021-09-06: Cherrypick 8268893: "jcmd to trim the glibc heap"
+  // SapMachine 2021-09-01: malloc-trace
+#ifdef LINUX
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
+#endif
+
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
@@ -86,6 +106,8 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
+  // SapMachine 2019-02-20 : vitals
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sapmachine_vitals::VitalsDCmd>(full_export, true, false));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
