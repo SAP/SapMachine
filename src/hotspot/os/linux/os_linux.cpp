@@ -1671,6 +1671,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #ifndef EM_RISCV
   #define EM_RISCV      243               /* RISC-V */
 #endif
+#ifndef EM_LOONGARCH
+  #define EM_LOONGARCH  258               /* LoongArch */
+#endif
 
   static const arch_t arch_array[]={
     {EM_386,         EM_386,     ELFCLASS32, ELFDATA2LSB, (char*)"IA 32"},
@@ -1698,6 +1701,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
     {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISC-V"},
+    {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
 #if  (defined IA32)
@@ -1734,9 +1738,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_SH;
 #elif  (defined RISCV)
   static  Elf32_Half running_arch_code=EM_RISCV;
+#elif  (defined LOONGARCH)
+  static  Elf32_Half running_arch_code=EM_LOONGARCH;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
+        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, LOONGARCH, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
 #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -3441,6 +3447,9 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 
     if (mincore((address)stack_extent, os::vm_page_size(), vec) == -1) {
       // Fallback to slow path on all errors, including EAGAIN
+      assert((uintptr_t)addr >= stack_extent,
+             "Sanity: addr should be larger than extent, " PTR_FORMAT " >= " PTR_FORMAT,
+             p2i(addr), stack_extent);
       stack_extent = (uintptr_t) get_stack_commited_bottom(
                                                            os::Linux::initial_thread_stack_bottom(),
                                                            (size_t)addr - stack_extent);
