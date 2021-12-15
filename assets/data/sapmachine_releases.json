@@ -17,6 +17,12 @@
             "label": "SapMachine 18",
             "lts": false,
             "ea": true
+        },
+        {
+            "id": "19",
+            "label": "SapMachine 19",
+            "lts": false,
+            "ea": true
         }
     ],
     "imageTypes": [
@@ -673,6 +679,19 @@
                         "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B1/sapmachine-jre-18-ea.1_windows-x64_bin.msi",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B1/sapmachine-jre-18-ea.1_windows-x64_bin.zip",
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B1/sapmachine-jre-18-eabeta.1_linux-aarch64_bin.tar.gz"
+                    }
+                }
+            ]
+        },
+        "19": {
+            "releases": [
+                {
+                    "tag": "sapmachine-19+1",
+                    "jdk": {
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jdk-19-ea.1_macos-aarch64_bin.dmg"
+                    },
+                    "jre": {
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jre-19-ea.1_macos-aarch64_bin.dmg"
                     }
                 }
             ]
