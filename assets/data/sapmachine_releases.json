@@ -688,10 +688,12 @@
                 {
                     "tag": "sapmachine-19+1",
                     "jdk": {
-                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jdk-19-ea.1_macos-aarch64_bin.dmg"
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jdk-19-ea.1_macos-aarch64_bin.dmg",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jdk-19-eabeta.1_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
-                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jre-19-ea.1_macos-aarch64_bin.dmg"
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jre-19-ea.1_macos-aarch64_bin.dmg",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jre-19-eabeta.1_linux-aarch64_bin.tar.gz"
                     }
                 }
             ]
