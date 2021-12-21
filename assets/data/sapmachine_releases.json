@@ -265,9 +265,11 @@
                 {
                     "tag": "sapmachine-18+28",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B28/sapmachine-jdk-18-eabeta.28_linux-aarch64_bin.tar.gz",
                         "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B28/sapmachine-jdk-18-internal.0_macos-aarch64_bin.dmg"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B28/sapmachine-jre-18-eabeta.28_linux-aarch64_bin.tar.gz",
                         "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B28/sapmachine-jre-18-internal.0_macos-aarch64_bin.dmg"
                     }
                 },
@@ -697,10 +699,12 @@
                 {
                     "tag": "sapmachine-19+2",
                     "jdk": {
-                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jdk-19-ea.2_macos-aarch64_bin.dmg"
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jdk-19-ea.2_macos-aarch64_bin.dmg",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jdk-19-eabeta.2_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
-                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jre-19-ea.2_macos-aarch64_bin.dmg"
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jre-19-ea.2_macos-aarch64_bin.dmg",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jre-19-eabeta.2_linux-aarch64_bin.tar.gz"
                     }
                 },
                 {
