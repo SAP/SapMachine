@@ -189,13 +189,18 @@ vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java     
 # This test fails, because we do not have debug symbols available in all tests.
 runtime/NMT/CheckForProperDetailStackTrace.java                                      generic-all
 
-# SapMachine 2019-01-30 These tests fail for some reason on linux-ppc64le. Need to investigate.
+# SapMachine 2019-01-30
+# These tests fail for some reason on linux-ppc64le. Need to investigate.
 gc/g1/humongousObjects/TestHumongousClassLoader.java                                 linux-ppc64le
 gc/g1/humongousObjects/TestHumongousNonArrayAllocation.java                          linux-ppc64le
 
-#SapMachine 2019-07-14 Lately, we see this sporadically...
-#Should be analysed, but we exclude it for now because it's tier1
+# SapMachine 2019-07-14
+# Lately, we see this sporadically. Should be analysed, but we exclude it for now because it's tier1
 runtime/Safepoint/TestAbortVMOnSafepointTimeout.java                                 generic-all
 
 # SapMachine 2020-06-18 This test fails on our macOS machines due to the SAP specific DNS
 serviceability/jvmti/8036666/GetObjectLockCount.java                                 macosx-all
+
+# SapMachine 2021-12-28
+# Strange issues when pulling jdk-18+29. Exclude for now, try to enable again with jdk-18+30
+gc/shenandoah/options/TestSelectiveBarrierFlags.java                                 generic-all

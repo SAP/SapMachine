@@ -380,3 +380,8 @@ java/lang/ProcessHandle/OnExitTest.java                                         
 # We see this test failing on our linux boxes
 # https://bugs.openjdk.java.net/browse/JDK-8249079
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java                 8249079 linux-all
+
+# SapMachine 2021-12-28
+# Strange issues when pulling jdk-18+29. Exclude for now, try to enable again with jdk-18+30
+java/foreign/stackwalk/TestAsyncStackWalk.java#shenandoah
+java/foreign/stackwalk/TestStackWalk.java#shenandoah
