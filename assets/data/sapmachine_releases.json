@@ -710,10 +710,14 @@
                     "tag": "sapmachine-19+3",
                     "jdk": {
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jdk-19-ea.3_linux-x64_bin.tar.gz",
+                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jdk-19-ea.3_windows-x64_bin.msi",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jdk-19-ea.3_windows-x64_bin.zip",
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jdk-19-eabeta.3_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jre-19-ea.3_linux-x64_bin.tar.gz",
+                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jre-19-ea.3_windows-x64_bin.msi",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jre-19-ea.3_windows-x64_bin.zip",
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jre-19-eabeta.3_linux-aarch64_bin.tar.gz"
                     }
                 },
