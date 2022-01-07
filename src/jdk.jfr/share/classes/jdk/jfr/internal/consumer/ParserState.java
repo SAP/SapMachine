@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,16 @@
  * questions.
  */
 
-package java.lang.invoke;
+package jdk.jfr.internal.consumer;
 
-/**
- * Base class for memory access var handle implementations.
- */
-abstract class MemoryAccessVarHandleBase extends VarHandle {
+public final class ParserState {
+    private volatile boolean closed;
 
-    /** endianness **/
-    final boolean be;
-
-    /** access size (in bytes, computed from var handle carrier type) **/
-    final long length;
-
-    /** alignment constraint (in bytes, expressed as a bit mask) **/
-    final long alignmentMask;
-
-    /** if true, only the base part of the address will be checked for alignment **/
-    final boolean skipAlignmentMaskCheck;
-
-    MemoryAccessVarHandleBase(VarForm form, boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask, boolean exact) {
-        super(form, exact);
-        this.skipAlignmentMaskCheck = skipAlignmentMaskCheck;
-        this.be = be;
-        this.length = length;
-        this.alignmentMask = alignmentMask;
+    public boolean isClosed() {
+        return closed;
     }
 
-    static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + address);
+    public void close() {
+        closed = true;
     }
 }

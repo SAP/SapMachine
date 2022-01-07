@@ -200,7 +200,3 @@ runtime/Safepoint/TestAbortVMOnSafepointTimeout.java                            
 
 # SapMachine 2020-06-18 This test fails on our macOS machines due to the SAP specific DNS
 serviceability/jvmti/8036666/GetObjectLockCount.java                                 macosx-all
-
-# SapMachine 2021-12-28
-# Strange issues when pulling jdk-18+29. Exclude for now, try to enable again with jdk-18+30
-gc/shenandoah/options/TestSelectiveBarrierFlags.java                                 generic-all
