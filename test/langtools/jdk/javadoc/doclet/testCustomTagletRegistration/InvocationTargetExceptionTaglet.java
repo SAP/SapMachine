@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,38 @@
  * questions.
  */
 
-package jdk.jfr.event.gc.collection;
-import jdk.test.lib.jfr.GCHelper;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
-/**
- * @test
- * @key jfr
- * @requires vm.hasJFR
- *
- * @requires vm.gc == "G1" | vm.gc == null
- * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @library /test/lib /test/jdk
- *
- * @run driver jdk.jfr.event.gc.collection.TestGCCauseWithG1FullCollection
- */
-public class TestGCCauseWithG1FullCollection {
-    public static void main(String[] args) throws Exception {
-        String testID = "G1FullCollection";
-        String[] vmFlags = {"-XX:+UseG1GC"};
-        String[] gcNames = {GCHelper.gcG1New, GCHelper.gcG1Old, GCHelper.gcG1Full};
-        String[] gcCauses = {"GCLocker Initiated GC", "G1 Evacuation Pause", "G1 Preventive Collection",
-                             "G1 Compaction Pause", "System.gc()"};
-        GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
+import javax.lang.model.element.Element;
+
+import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet;
+
+public class InvocationTargetExceptionTaglet implements Taglet {
+
+    public InvocationTargetExceptionTaglet() {
+        throw new RuntimeException();
+    }
+
+    @Override
+    public Set<Location> getAllowedLocations() {
+        return EnumSet.allOf(Location.class);
+    }
+
+    @Override
+    public boolean isInlineTag() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return "InvocationTargetExceptionTaglet";
+    }
+
+    @Override
+    public String toString(List<? extends DocTree> tags, Element element) {
+        return "";
     }
 }
