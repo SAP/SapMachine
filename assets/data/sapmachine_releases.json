@@ -770,6 +770,15 @@
         "19": {
             "releases": [
                 {
+                    "tag": "sapmachine-19+5",
+                    "jdk": {
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jdk-19-ea.5_macos-aarch64_bin.dmg"
+                    },
+                    "jre": {
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jre-19-ea.5_macos-aarch64_bin.dmg"
+                    }
+                },
+                {
                     "tag": "sapmachine-19+4",
                     "jdk": {
                         "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B4/sapmachine-jdk-19-ea.4_linux-ppc64le_bin.tar.gz",
