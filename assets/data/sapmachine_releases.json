@@ -1,6 +1,12 @@
 {
     "majors": [
         {
+            "id": "11",
+            "label": "SapMachine 11",
+            "lts": true,
+            "ea": false
+        },
+        {
             "id": "16",
             "label": "SapMachine 16",
             "lts": false,
@@ -64,6 +70,19 @@
         }
     ],
     "assets": {
+        "11": {
+            "releases": [
+                {
+                    "tag": "sapmachine-11.0.14",
+                    "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14/sapmachine-jdk-11.0.14-beta_linux-aarch64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14/sapmachine-jre-11.0.14-beta_linux-aarch64_bin.tar.gz"
+                    }
+                }
+            ]
+        },
         "16": {
             "releases": [
                 {
