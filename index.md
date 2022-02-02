@@ -14,9 +14,9 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 * Among the biggest external contributors to the OpenJDK project (see fix ratio for [Java 11](https://blogs.oracle.com/java-platform-group/building-jdk-11-together), [12](https://blogs.oracle.com/java-platform-group/the-arrival-of-java-12), [13](https://blogs.oracle.com/java-platform-group/the-arrival-of-java-13), [14](https://blogs.oracle.com/java-platform-group/the-arrival-of-java-14), [15](https://blogs.oracle.com/java-platform-group/the-arrival-of-java-15), [16](https://inside.java/2021/03/16/the-arrival-of-java16/), [17](https://inside.java/2021/09/14/the-arrival-of-java17/)).
 
-* Leading the [OpenJDK 17 updates project](https://wiki.openjdk.java.net/display/JDKUpdates/JDK+17u) and heavily supporting the [OpenJDK 11 updates project](https://wiki.openjdk.java.net/display/JDKUpdates/JDK11u)
+* Leading the [OpenJDK 17 updates project](https://wiki.openjdk.java.net/display/JDKUpdates/JDK+17u) and heavily supporting the [OpenJDK 11 updates project](https://wiki.openjdk.java.net/display/JDKUpdates/JDK11u).
 
-* Leading the [PowerPC/AIX](http://openjdk.java.net/projects/ppc-aix-port/) porting project.
+* Leading the [PowerPC/AIX porting project](http://openjdk.java.net/projects/ppc-aix-port/).
 
 * Contributing as many of our features as possible to the OpenJDK project and keep the diff of this project as small as possible.
 
