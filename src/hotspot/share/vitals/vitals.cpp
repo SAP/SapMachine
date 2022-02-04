@@ -1130,7 +1130,6 @@ static value_t get_bytes_malloced_by_jvm_via_sapjvm_mallstat() {
   return result;
 }
 
-#if INCLUDE_NMT
 static value_t get_bytes_malloced_by_jvm_via_nmt() {
   value_t result = INVALID_VALUE;
   if (MemTracker::tracking_level() != NMT_off) {
@@ -1139,7 +1138,6 @@ static value_t get_bytes_malloced_by_jvm_via_nmt() {
   }
   return result;
 }
-#endif // INCLUDE_NMT
 
 void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
@@ -1177,11 +1175,9 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   // bytes malloced by JVM. Prefer sapjvm mallstat if available (less overhead, always-on). Fall back to NMT
   // otherwise.
   value_t bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_sapjvm_mallstat();
-#if INCLUDE_NMT
   if (bytes_malloced_by_jvm == INVALID_VALUE && !avoid_locking) {
     bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_nmt();
   }
-#endif
   set_value_in_sample(g_col_nmt_malloc, sample, bytes_malloced_by_jvm);
 
   // Java threads
