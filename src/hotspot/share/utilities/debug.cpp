@@ -503,8 +503,6 @@ extern "C" JNIEXPORT void pp(void* p) {
     oop obj = cast_to_oop(p);
     obj->print();
   } else {
-#if INCLUDE_NMT
-    // With NMT
     if (MemTracker::enabled()) {
       const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
       ReservedMemoryRegion region(0, 0);
@@ -537,7 +535,6 @@ extern "C" JNIEXPORT void pp(void* p) {
         }
       }
     }
-#endif // INCLUDE_NMT
     tty->print(PTR_FORMAT, p2i(p));
   }
 }
