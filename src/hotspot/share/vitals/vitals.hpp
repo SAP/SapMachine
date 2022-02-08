@@ -29,6 +29,11 @@
 
 #include "utilities/globalDefinitions.hpp"
 
+// Configure for different JDK versions
+#define JDK_MAINLINE
+//#define JDK17u
+//#define JDK11u
+
 class outputStream;
 class Thread;
 

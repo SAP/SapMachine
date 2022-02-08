@@ -32,8 +32,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "vitals/vitals.hpp"
 
-
-
 namespace sapmachine_vitals {
 
   typedef uint64_t value_t;
