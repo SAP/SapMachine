@@ -242,6 +242,15 @@
                     }
                 },
                 {
+                    "tag": "sapmachine-18+35",
+                    "jdk": {
+                        "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B35/sapmachine-jdk-18-ea.35_macos-x64_bin.dmg"
+                    },
+                    "jre": {
+                        "osx-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B35/sapmachine-jre-18-ea.35_macos-x64_bin.dmg"
+                    }
+                },
+                {
                     "tag": "sapmachine-18+34",
                     "jdk": {
                         "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18%2B34/sapmachine-jdk-18-ea.34_linux-ppc64le_bin.tar.gz",
@@ -835,10 +844,12 @@
                 {
                     "tag": "sapmachine-19+9",
                     "jdk": {
-                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jdk-19-ea.9_macos-aarch64_bin.dmg"
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jdk-19-ea.9_macos-aarch64_bin.dmg",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jdk-19-eabeta.9_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
-                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jre-19-ea.9_macos-aarch64_bin.dmg"
+                        "osx-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jre-19-ea.9_macos-aarch64_bin.dmg",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jre-19-eabeta.9_linux-aarch64_bin.tar.gz"
                     }
                 },
                 {
