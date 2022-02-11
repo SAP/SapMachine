@@ -83,7 +83,9 @@ tier3 = \
     :build \
     :jdk_vector \
     :jdk_rmi \
-    :jdk_jfr_tier3
+    :jdk_svc \
+   -:jdk_svc_sanity \
+   -:svc_tools
 
 # Everything not in other tiers
 tier4 = \
@@ -292,9 +294,6 @@ jdk_tools = \
 jdk_jfr = \
     jdk/jfr
 
-jdk_jfr_tier3 = \
-    jdk/jfr/event/metadata/TestLookForUntestedEvents.java
-
 #
 # Catch-all for other areas with a small number of tests
 #
@@ -391,6 +390,9 @@ jdk_accessibility = \
 jfc_demo = \
      demo/jfc
 
+jdk_editpad = \
+     jdk/editpad
+
 jdk_desktop = \
     :jdk_awt \
     :jdk_2d \
@@ -400,7 +402,8 @@ jdk_desktop = \
     :jdk_imageio \
     :jdk_accessibility \
     :jfc_demo \
-    :jdk_client_sanity
+    :jdk_client_sanity \
+    :jdk_editpad
 
 # SwingSet3 tests.
 jdk_client_sanity = \
