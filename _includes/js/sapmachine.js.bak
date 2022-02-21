@@ -255,10 +255,11 @@ All rights reserved. Confidential and proprietary.
                 optionElement.addClass('download_select_option')
                 optionElement.append(labelElement)
 
+                if (data.majors[i].lts)
+                    optionElement.append($('<div> (Long Term Support)</div>'))
+
                 if (data.majors[i].ea)
                     optionElement.append($('<div> (Pre-Release)</div>'))
-                else if (data.majors[i].lts)
-                    optionElement.append($('<div> (Long Term Support)</div>'))
 
                 this._majorSelector.append(optionElement)
             }
