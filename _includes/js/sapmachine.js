@@ -115,14 +115,6 @@ All rights reserved. Confidential and proprietary.
         if (!a.ea && b.ea)
             return -1
 
-        if (!a.lts && b.lts) {
-            return 1
-        }
-
-        if (a.lts && !b.lts) {
-            return -1
-        }
-
         if (a.id < b.id) {
             return 1
         }
