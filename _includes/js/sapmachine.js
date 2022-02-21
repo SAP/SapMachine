@@ -109,27 +109,25 @@ All rights reserved. Confidential and proprietary.
     }
 
     function majorsComparator(a, b) {
-        var aMajor = a.id
-        var bMajor = b.id
+        if (a.ea && !b.ea)
+            return 1
 
-        if ((a.lts && b.lts) ||
-            (!a.lts && !b.lts)) {
-            if (aMajor < bMajor) {
-                return 1
-            }
-
-            if (aMajor > bMajor) {
-                return -1
-            }
-
-            return 0
-        }
+        if (!a.ea && b.ea)
+            return -1
 
         if (!a.lts && b.lts) {
             return 1
         }
 
         if (a.lts && !b.lts) {
+            return -1
+        }
+
+        if (a.id < b.id) {
+            return 1
+        }
+
+        if (a.id > b.id) {
             return -1
         }
 
