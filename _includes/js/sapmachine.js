@@ -133,11 +133,11 @@ All rights reserved. Confidential and proprietary.
             var isLinux = navigator.platform.toUpperCase().indexOf('LINUX') !== -1
 
             if (isMac) {
-                return 'osx-x64'
+                return 'macos-x64-installer'
             }
 
             if (isWindows) {
-                return 'windows-x64'
+                return 'windows-x64-installer'
             }
 
             if (isLinux) {
