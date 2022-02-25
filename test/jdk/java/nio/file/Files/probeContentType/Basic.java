@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -110,8 +110,8 @@ public class Basic {
                             + " cannot be determined");
                     failures++;
                 } else if (!expectedTypes.contains(type)) {
-                    System.err.printf("Content type: %s; expected: %s%n",
-                        type, expectedTypes);
+                    System.err.printf("For extension %s we got content type: %s; expected: %s%n",
+                            extension, type, expectedTypes);
                     failures++;
                 }
             } finally {
@@ -155,7 +155,7 @@ public class Basic {
         // Verify that certain extensions are mapped to the correct type.
         var exTypes = new ExType[] {
                 new ExType("adoc", List.of("text/plain")),
-                new ExType("bz2", List.of("application/bz2", "application/x-bzip2")),
+                new ExType("bz2", List.of("application/bz2", "application/x-bzip2", "application/x-bzip")),
                 new ExType("css", List.of("text/css")),
                 new ExType("csv", List.of("text/csv")),
                 new ExType("doc", List.of("application/msword")),
@@ -166,19 +166,19 @@ public class Basic {
                 new ExType("js", List.of("text/javascript", "application/javascript")),
                 new ExType("json", List.of("application/json")),
                 new ExType("markdown", List.of("text/markdown")),
-                new ExType("md", List.of("text/markdown")),
+                new ExType("md", List.of("text/markdown", "application/x-genesis-rom")),
                 new ExType("mp3", List.of("audio/mpeg")),
                 new ExType("mp4", List.of("video/mp4")),
                 new ExType("odp", List.of("application/vnd.oasis.opendocument.presentation")),
                 new ExType("ods", List.of("application/vnd.oasis.opendocument.spreadsheet")),
                 new ExType("odt", List.of("application/vnd.oasis.opendocument.text")),
                 new ExType("pdf", List.of("application/pdf")),
-                new ExType("php", List.of("text/plain", "text/php")),
+                new ExType("php", List.of("text/plain", "text/php", "application/x-php")),
                 new ExType("png", List.of("image/png")),
                 new ExType("ppt", List.of("application/vnd.ms-powerpoint")),
                 new ExType("pptx",List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")),
-                new ExType("py", List.of("text/plain", "text/x-python-script")),
-                new ExType("rar", List.of("application/vnd.rar")),
+                new ExType("py", List.of("text/plain", "text/x-python", "text/x-python-script")),
+                new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar")),
                 new ExType("rtf", List.of("application/rtf", "text/rtf")),
                 new ExType("webm", List.of("video/webm")),
                 new ExType("webp", List.of("image/webp")),

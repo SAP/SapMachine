@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,10 +267,8 @@ public class VerifyCACerts {
             add("luxtrustglobalrootca [jdk]");
             // Valid until: Wed Mar 17 11:33:33 PDT 2021
             add("quovadisrootca [jdk]");
-            // SapMachine 2021-09-23: globalsignr2ca will be removed with 11.0.14.
-            // Suppress warning until after 11.0.13 delivery to have green tests.
-            // Valid until: Wed Dec 15 08:00:00 GMT 2021
-            add("globalsignr2ca [jdk]");
+            // Valid until: Sat May 21 04:00:00 GMT 2022
+            add("geotrustglobalca [jdk]");
         }
     };
 
