@@ -38,18 +38,23 @@ import java.util.Map;
 @Artifact(organization = "gov.nist.math", name = "scimark", revision = "2.0", extension = "zip")
 public class Scimark {
     public static void main(String... args) throws Exception {
-        Map<String, Path> artifacts;
-        try {
-            artifacts = ArtifactResolver.resolve(Scimark.class);
-        } catch (ArtifactResolverException e) {
-            throw new Error("TESTBUG: Can not resolve artifacts for "
-                            + Scimark.class.getName(), e);
-        }
+        String sciMark2Cp = System.getProperty("SCIMARK_2_CP");
 
+        if (sciMark2Cp == null) {
+            Map<String, Path> artifacts;
+            try {
+                artifacts  = ArtifactResolver.resolve(Scimark.class);
+            } catch (ArtifactResolverException e) {
+                throw new Error("TESTBUG: Can not resolve artifacts for "
+                                + Scimark.class.getName(), e);
+            }
+            sciMark2Cp = artifacts.get("gov.nist.math.scimark-2.0").toString();
+        }
         OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
-            "-cp", artifacts.get("gov.nist.math.scimark-2.0").toString(),
+            "-cp", sciMark2Cp,
             "jnt.scimark2.commandline", "-large")
             .start());
+        System.out.println(output.getOutput());
         output.shouldHaveExitValue(0);
     }
 }

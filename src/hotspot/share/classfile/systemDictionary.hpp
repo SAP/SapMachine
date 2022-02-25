@@ -158,6 +158,7 @@ class OopStorage;
   do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool,                      Opt                 ) \
   do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, reflect_UnsafeStaticFieldAccessorImpl,     Opt                 ) \
   do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive,                   Opt                 ) \
+  do_klass(reflect_NativeConstructorAccessorImpl_klass, reflect_NativeConstructorAccessorImpl,     Opt                 ) \
                                                                                                                          \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                            \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle,       Opt                 ) \
