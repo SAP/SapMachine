@@ -126,10 +126,14 @@
                 {
                     "tag": "sapmachine-17.0.3+3",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jdk-17.0.3-ea.3_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jdk-17.0.3-ea.3_linux-x64_bin.tar.gz",
+                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jdk-17.0.3-ea.3_macos-x64_bin.dmg",
+                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jdk-17.0.3-ea.3_macos-x64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jre-17.0.3-ea.3_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jre-17.0.3-ea.3_linux-x64_bin.tar.gz",
+                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jre-17.0.3-ea.3_macos-x64_bin.dmg",
+                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3%2B3/sapmachine-jre-17.0.3-ea.3_macos-x64_bin.tar.gz"
                     }
                 }
             ]
