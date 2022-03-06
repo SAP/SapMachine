@@ -335,7 +335,7 @@ static void print_column_names(outputStream* st, const ColumnWidths* widths, con
   if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
   } else {
-    st->put(',');
+    st->print_raw("time,");
   }
 
   const Column* c = ColumnList::the_list()->first();
@@ -793,7 +793,6 @@ class SampleTables: public CHeapObj<mtInternal> {
       print_header_line(st, widths, pi);
     }
     print_column_names(st, widths, pi);
-    st->cr();
   }
 
   // Helper, print a time span given in seconds-
@@ -860,18 +859,22 @@ public:
         st->print_cr("Now:");
         print_headers(st, &widths, pi);
         print_one_sample(st, sample_now, NULL, &widths, pi);
+        st->cr();
       }
-      st->cr();
 
-      print_time_span(st, short_term_span_seconds);
+      if (pi->csv == false) {
+        print_time_span(st, short_term_span_seconds);
+      }
       print_headers(st, &widths, pi);
       print_table(&_short_term_table, st, &widths, pi);
       st->cr();
 
-      print_time_span(st, long_term_span_seconds);
-      print_headers(st, &widths, pi);
-      print_table(&_long_term_table, st, &widths, pi);
-      st->cr();
+      if (!_long_term_table.is_empty()) {
+        print_time_span(st, long_term_span_seconds);
+        print_headers(st, &widths, pi);
+        print_table(&_long_term_table, st, &widths, pi);
+        st->cr();
+      }
 
       st->cr();
 
@@ -1245,20 +1248,20 @@ void default_settings(print_info_t* out) {
 
 void print_report(outputStream* st, const print_info_t* pinfo) {
 
-  st->print("Vitals:");
-
   if (ColumnList::the_list() == NULL) {
     st->print_cr(" (unavailable)");
     return;
   }
-
-  st->cr();
 
   print_info_t info;
   if (pinfo != NULL) {
     info = *pinfo;
   } else {
     default_settings(&info);
+  }
+
+  if (info.csv == false) {
+    st->cr();
   }
 
   // Print legend at the top (omit if suppressed on command line, or in csv mode).
@@ -1323,7 +1326,7 @@ void dump_reports() {
         false, // no_legend
         true,  // reverse_ordering
         1 * K, // scale
-        true   // sample_now
+        false  // sample_now
     };
     print_report(&fs, &settings);
   }

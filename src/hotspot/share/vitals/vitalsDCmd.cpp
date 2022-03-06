@@ -94,6 +94,7 @@ void VitalsDCmd::execute(DCmdSource source, TRAPS) {
   info.raw = _raw.value();
   info.sample_now = _sample_now.value();
 
+  output()->print_cr("Vitals:");
   sapmachine_vitals::print_report(output(), &info);
 }
 
