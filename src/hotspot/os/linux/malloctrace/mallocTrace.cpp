@@ -373,6 +373,6 @@ void MallocTracer::print_on_error(outputStream* st) {
 // struct AutoOn { AutoOn() { MallocTracer::enable(); } };
 // static AutoOn g_autoon;
 
-#endif // GLIBC
-
 } // namespace sap
+
+#endif // GLIBC
