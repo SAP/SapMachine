@@ -577,11 +577,7 @@ static void print_one_sample(outputStream* st, const Sample* sample,
     const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi) {
 
   // Print timestamp and divider
-  if (sample->timestamp() == 0) {
-    st->print("%*s", TIMESTAMP_LEN, "Now");
-  } else {
-    print_timestamp(st, sample->timestamp());
-  }
+  print_timestamp(st, sample->timestamp());
 
   // For analysis, print sample numbers
 #ifdef ASSERT
@@ -897,6 +893,10 @@ static SampleTables* g_all_tables = NULL;
 
 // Samples all values, but leaves timestamp unchanged
 static void sample_values(Sample* sample, bool avoid_locking) {
+  time_t t;
+  ::time(&t);
+  sample->set_timestamp(t);
+  DEBUG_ONLY(sample->set_num(-1);)
   sample_jvm_values(sample, avoid_locking);
   sample_platform_values(sample);
 }
@@ -913,17 +913,11 @@ class SamplerThread: public NamedThread {
   }
 
   void take_sample() {
-
     _sample->reset();
-
-    time_t t;
-    ::time(&t);
-    _sample->set_timestamp(t);
     DEBUG_ONLY(_sample->set_num(_samples_taken);)
     _samples_taken ++;
     sample_values(_sample, VitalsLockFreeSampling);
     g_all_tables->add_sample(_sample);
-
   }
 
 public:
