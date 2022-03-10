@@ -242,6 +242,7 @@ public:
 //static Column* g_col_system_memtotal = NULL;
 static Column* g_col_system_memfree = NULL;
 static Column* g_col_system_memavail = NULL;
+static Column* g_col_system_memcommitted = NULL;
 static Column* g_col_system_memcommitted_ratio = NULL;
 static Column* g_col_system_swap = NULL;
 
@@ -298,6 +299,7 @@ bool platform_columns_initialize() {
   } else {
     g_col_system_memfree = new MemorySizeColumn("system", NULL, "free", "Unused memory");
   }
+  g_col_system_memcommitted = new MemorySizeColumn("system", NULL, "comm", "Committed memory");
   g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
   g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
 
@@ -402,6 +404,7 @@ void sample_platform_values(Sample* sample) {
     value_t commitlimit = bf.parsed_prefixed_value("CommitLimit:", scale);
     value_t committed = bf.parsed_prefixed_value("Committed_AS:", scale);
     if (commitlimit != INVALID_VALUE && commitlimit != 0 && committed != INVALID_VALUE) {
+      set_value_in_sample(g_col_system_memcommitted, sample, committed);
       value_t ratio = (committed * 100) / commitlimit;
       set_value_in_sample(g_col_system_memcommitted_ratio, sample, ratio);
     }
