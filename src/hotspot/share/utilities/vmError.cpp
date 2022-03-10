@@ -1099,7 +1099,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      }
 
   // SapMachine 2021-09-01: malloc-trace
-#ifdef LINUX
+#if defined(LINUX) && defined(__GLIBC__)
   STEP("printing Malloc Trace info")
 
     if (_verbose) {
@@ -1285,7 +1285,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->print_cr("vm_info: %s", VM_Version::internal_vm_info_string());
   st->cr();
 
-#ifdef LINUX
+#if defined(LINUX) && defined(__GLIBC__)
   // SapMachine 2021-09-01: malloc-trace
   st->print_cr("sapmachine malloc trace");
   sap::MallocTracer::print_on_error(st);
