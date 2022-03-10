@@ -5522,10 +5522,12 @@ jint os::init_2(void) {
     set_coredump_filter(FILE_BACKED_SHARED_BIT);
   }
 
+#ifdef __GLIBC__
   // SapMachine 2021-09-01: malloc-trace
   if (EnableMallocTrace) {
     sap::MallocTracer::enable();
   }
+#endif // __GLIBC__
 
   return JNI_OK;
 }

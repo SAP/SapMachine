@@ -553,10 +553,12 @@ void before_exit(JavaThread* thread) {
   }
 
 #ifdef LINUX
+#ifdef __GLIBC__
   // SapMachine 2021-09-01: malloc-trace
   if (PrintMallocTraceAtExit) {
     sap::MallocTracer::print(tty, true);
   }
+#endif // __GLIBC__
 #endif
 
   if (JvmtiExport::should_post_thread_life()) {
