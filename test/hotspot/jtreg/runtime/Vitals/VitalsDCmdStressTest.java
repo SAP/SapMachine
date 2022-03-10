@@ -43,9 +43,7 @@ public class VitalsDCmdStressTest {
 
     public void run_once(CommandExecutor executor, boolean silent) {
         OutputAnalyzer output = executor.execute("VM.vitals now", silent);
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
         output.shouldContain("Now");
     }
 

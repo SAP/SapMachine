@@ -31,6 +31,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "code/codeCache.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -577,7 +578,13 @@ static void print_one_sample(outputStream* st, const Sample* sample,
     const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi) {
 
   // Print timestamp and divider
+  if (pi->csv) {
+    st->print("\"");
+  }
   print_timestamp(st, sample->timestamp());
+  if (pi->csv) {
+    st->print("\"");
+  }
 
   // For analysis, print sample numbers
 #ifdef ASSERT
@@ -1197,28 +1204,25 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
-  if (!ColumnList::initialize()) {
-    return false;
-  }
+  log_info(os)("Initializing vitals...");
+
+  bool success = ColumnList::initialize();
 
   // Order matters. First platform columns, then jvm columns.
-  if (!platform_columns_initialize()) {
-    return false;
-  }
-
-  if (!add_jvm_columns()) {
-    return false;
-  }
+  success &= platform_columns_initialize();
+  success &= add_jvm_columns();
 
   // -- Now the number of columns is known (and fixed). --
 
   g_all_tables = new SampleTables();
-  if (!g_all_tables) {
-    return false;
-  }
+  success &= (g_all_tables != NULL);
 
-  if (!initialize_sampler_thread()) {
-    return false;
+  success &= initialize_sampler_thread();
+
+  if (success) {
+    log_info(os)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
+  } else {
+    log_warning(os)("Failed to initialize Vitals.");
   }
 
   return true;
