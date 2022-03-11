@@ -1168,7 +1168,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        sapmachine_vitals::default_settings(&info);
        info.sample_now = true;
        st->print_cr("Vitals:");
-       sapmachine_vitals::print_report(st);
+       sapmachine_vitals::print_report(st, &info);
      }
 
   STEP("printing system")
