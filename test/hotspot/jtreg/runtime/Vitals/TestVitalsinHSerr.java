@@ -49,6 +49,7 @@ public class TestVitalsinHSerr {
                 "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
 
         output.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
         VitalsTestHelper.outputMatchesVitalsTextMode(output);

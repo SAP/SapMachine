@@ -25,14 +25,14 @@
  * @test TestVitalsAtExit
  * @summary Test verifies that -XX:+PrintVitalsAtExit prints vitals at exit.
  * @library /test/lib
- * @run driver TestVitalsAtExit run print
+ * @run driver TestVitalsAtExit print
  */
 
 /*
  * @test TestVitalsAtExit
  * @summary Test verifies that -XX:+DumpVitalsAtExit works
  * @library /test/lib
- * @run driver TestVitalsAtExit run dump
+ * @run driver TestVitalsAtExit dump
  */
 
 import jdk.test.lib.Asserts;
@@ -54,8 +54,10 @@ public class TestVitalsAtExit {
         }
         if (args[0].equals("print")) {
             testPrint();
-        } else {
+        } else if (args[0].equals("dump")) {
             testDump();
+        } else {
+            throw new RuntimeException("invalid argument " + args[0]);
         }
     }
 
@@ -69,6 +71,7 @@ public class TestVitalsAtExit {
                 TestVitalsAtExit.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         output.stdoutShouldNotBeEmpty();
         VitalsTestHelper.outputMatchesVitalsTextMode(output);
     }
@@ -84,6 +87,7 @@ public class TestVitalsAtExit {
                 TestVitalsAtExit.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         output.stdoutShouldNotBeEmpty();
         output.shouldContain("Dumping Vitals to abcd.txt");
         output.shouldContain("Dumping Vitals csv to abcd.csv");

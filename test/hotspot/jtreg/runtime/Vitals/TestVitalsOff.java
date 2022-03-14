@@ -39,9 +39,10 @@ public class TestVitalsOff {
                 "-XX:MaxMetaspaceSize=16m",
                 "-Xlog:os",
                 "-Xmx128m",
-                TestVitalsOff.class.getName());
+                "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         output.shouldNotContain("Initializing Vitals");
     }
 
