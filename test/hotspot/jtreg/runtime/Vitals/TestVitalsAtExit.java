@@ -47,7 +47,7 @@ public class TestVitalsAtExit {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             try {
-		        Thread.sleep(5000); // we start with interval=1, so give us some secs to gather samples
+                Thread.sleep(5000); // we start with interval=1, so give us some secs to gather samples
             } catch (InterruptedException err) {
             }
             return;
