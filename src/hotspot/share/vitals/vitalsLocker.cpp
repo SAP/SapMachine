@@ -28,6 +28,11 @@
 #include "precompiled.hpp"
 #include "vitals/vitalsLocker.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 namespace sapmachine_vitals {
 
