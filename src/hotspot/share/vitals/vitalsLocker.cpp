@@ -24,14 +24,13 @@
  *
  */
 
-
 #include "precompiled.hpp"
 #include "vitals/vitalsLocker.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/debug.hpp"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <pthread.h>
+#ifndef _WIN32
+#include <errno.h>
 #endif
 
 namespace sapmachine_vitals {

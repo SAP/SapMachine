@@ -26,10 +26,6 @@
 #ifndef HOTSPOT_SHARE_VITALS_VITALSLOCKER_HPP
 #define HOTSPOT_SHARE_VITALS_VITALSLOCKER_HPP
 
-#include "utilities/globalDefinitions.hpp"
-
-namespace sapmachine_vitals {
-
 // SapMachine  2021-10-14: I need a simple critical section. I don't
 // need hotspot mutex error checking here, and I want to be independent of
 // upstream changes to hotspot mutexes.
@@ -40,9 +36,16 @@ namespace sapmachine_vitals {
   #include <pthread.h>
 #endif
 
+namespace sapmachine_vitals {
+
 class Lock {
   const char* const _name;
-  WINDOWS_ONLY(CRITICAL_SECTION) NOT_WINDOWS(pthread_mutex_t) _lock;
+#ifdef _WIN32
+  CRITICAL_SECTION _lock;
+#else
+  pthread_mutex_t _lock;
+#endif
+
 public:
   Lock(const char* name);
   void lock();
