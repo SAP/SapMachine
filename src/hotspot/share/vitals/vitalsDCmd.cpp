@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -94,6 +94,7 @@ void VitalsDCmd::execute(DCmdSource source, TRAPS) {
   info.raw = _raw.value();
   info.sample_now = _sample_now.value();
 
+  output()->print_cr("Vitals:");
   sapmachine_vitals::print_report(output(), &info);
 }
 
