@@ -180,7 +180,13 @@
         "18": {
             "releases": [
                 {
-                    "tag": "sapmachine-18"
+                    "tag": "sapmachine-18",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18/sapmachine-jdk-18_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18/sapmachine-jre-18_linux-x64_bin.tar.gz"
+                    }
                 }
             ]
         },
