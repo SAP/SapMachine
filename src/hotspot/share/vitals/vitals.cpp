@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "code/codeCache.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
@@ -49,6 +50,10 @@
 #include <locale.h>
 #include <time.h>
 
+// JDK-8280583: "Always build NMT" did away with INCLUDE_NMT for JDK19++
+#ifdef JDK_MAINLINE
+#define INCLUDE_NMT 1
+#endif
 
 namespace sapmachine_vitals {
 
@@ -328,7 +333,7 @@ static void print_column_names(outputStream* st, const ColumnWidths* widths, con
   if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
   } else {
-    st->put(',');
+    st->print_raw("time,");
   }
 
   const Column* c = ColumnList::the_list()->first();
@@ -570,10 +575,12 @@ static void print_one_sample(outputStream* st, const Sample* sample,
     const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi) {
 
   // Print timestamp and divider
-  if (sample->timestamp() == 0) {
-    st->print("%*s", TIMESTAMP_LEN, "Now");
-  } else {
-    print_timestamp(st, sample->timestamp());
+  if (pi->csv) {
+    st->print("\"");
+  }
+  print_timestamp(st, sample->timestamp());
+  if (pi->csv) {
+    st->print("\"");
   }
 
   // For analysis, print sample numbers
@@ -751,26 +758,17 @@ public:
 // It takes care to feed new samples into these tables at the appropriate intervals.
 class SampleTables: public CHeapObj<mtInternal> {
 
-  // Note that sample intervals are bound to VitalsSampleInterval switch. Changing that changes the
-  // clock for all tables.
+  // Short term table: cover one hour, one sample per VitalsSampleInterval (default 10 seconds)
+  static const int short_term_span_seconds = 3600;
 
-  // short term: 10 seconds per sample, 360 samples or 60 minutes total
-  static const int short_term_interval_default = 10;
-  static const int short_term_num_samples = 360;
+  // Mid term table: cover 14 days, one sample per hour
+  static const int long_term_span_seconds = short_term_span_seconds * 24 * 14;
+  static const int long_term_sample_interval = short_term_span_seconds;
+
+  static int short_term_tablesize()      { return (short_term_span_seconds / VitalsSampleInterval) + 1; }
+  static const int long_term_tablesize = (long_term_span_seconds / long_term_sample_interval) + 1;
 
   SampleTable _short_term_table;
-
-  // Downsample tables:
-
-  // mid term: 10 minutes per sample (600 seconds or 60 short term samples), 144 samples or 24 hours in total
-  static const int mid_term_interval_ratio = 60;
-  static const int mid_term_num_samples = 144;
-
-  // long term history: 2 hour intervals (7200 seconds or 720 short term samples), 120 samples or 10 days in total
-  static const int long_term_interval_ratio = 720;
-  static const int long_term_num_samples = 120;
-
-  SampleTable _mid_term_table;
   SampleTable _long_term_table;
 
   int _count;
@@ -795,7 +793,6 @@ class SampleTables: public CHeapObj<mtInternal> {
       print_header_line(st, widths, pi);
     }
     print_column_names(st, widths, pi);
-    st->cr();
   }
 
   // Helper, print a time span given in seconds-
@@ -817,9 +814,8 @@ class SampleTables: public CHeapObj<mtInternal> {
 public:
 
   SampleTables()
-    : _short_term_table(short_term_num_samples),
-      _mid_term_table(mid_term_num_samples),
-      _long_term_table(long_term_num_samples),
+    : _short_term_table(short_term_tablesize()),
+      _long_term_table(long_term_tablesize),
       _count(0)
   {}
 
@@ -828,14 +824,11 @@ public:
     // Nothing we do in here blocks: the sample values are already taken,
     // we only modify existing data structures (no memory is allocated either).
     _short_term_table.add_sample(sample);
-    // Feed downsample tables too, but increment first, so the down-sample tables
-    // are only fed after an initial sample interval has passed. This prevents
-    // filling them up immediately which can be confusing to readers.
+    // Increment before feeding longterm table, in order for it to show up in reports
+    // only after an initial long term table interval has passed
     _count++;
-    if ((_count % mid_term_interval_ratio) == 0) {
-      _mid_term_table.add_sample(sample);
-    }
-    if ((_count % long_term_interval_ratio) == 0) {
+    // Feed long term table
+    if ((_count % long_term_sample_interval) == 0) {
       _long_term_table.add_sample(sample);
     }
   }
@@ -856,7 +849,6 @@ public:
 
       MeasureColumnWidthsClosure mcwclos(pi, &widths);
       _short_term_table.walk_table_locked(&mcwclos);
-      _mid_term_table.walk_table_locked(&mcwclos);
       _long_term_table.walk_table_locked(&mcwclos);
       if (sample_now != NULL) {
         widths.update_from_sample(sample_now, NULL, pi);
@@ -867,23 +859,22 @@ public:
         st->print_cr("Now:");
         print_headers(st, &widths, pi);
         print_one_sample(st, sample_now, NULL, &widths, pi);
+        st->cr();
       }
-      st->cr();
 
-      print_time_span(st, VitalsSampleInterval * short_term_num_samples);
+      if (pi->csv == false) {
+        print_time_span(st, short_term_span_seconds);
+      }
       print_headers(st, &widths, pi);
       print_table(&_short_term_table, st, &widths, pi);
       st->cr();
 
-      print_time_span(st, VitalsSampleInterval * mid_term_interval_ratio * mid_term_num_samples);
-      print_headers(st, &widths, pi);
-      print_table(&_mid_term_table, st, &widths, pi);
-      st->cr();
-
-      print_time_span(st, VitalsSampleInterval * long_term_interval_ratio * long_term_num_samples);
-      print_headers(st, &widths, pi);
-      print_table(&_long_term_table, st, &widths, pi);
-      st->cr();
+      if (!_long_term_table.is_empty()) {
+        print_time_span(st, long_term_span_seconds);
+        print_headers(st, &widths, pi);
+        print_table(&_long_term_table, st, &widths, pi);
+        st->cr();
+      }
 
       st->cr();
 
@@ -906,6 +897,10 @@ static SampleTables* g_all_tables = NULL;
 
 // Samples all values, but leaves timestamp unchanged
 static void sample_values(Sample* sample, bool avoid_locking) {
+  time_t t;
+  ::time(&t);
+  sample->set_timestamp(t);
+  DEBUG_ONLY(sample->set_num(-1);)
   sample_jvm_values(sample, avoid_locking);
   sample_platform_values(sample);
 }
@@ -922,17 +917,11 @@ class SamplerThread: public NamedThread {
   }
 
   void take_sample() {
-
     _sample->reset();
-
-    time_t t;
-    ::time(&t);
-    _sample->set_timestamp(t);
     DEBUG_ONLY(_sample->set_num(_samples_taken);)
     _samples_taken ++;
     sample_values(_sample, VitalsLockFreeSampling);
     g_all_tables->add_sample(_sample);
-
   }
 
 public:
@@ -1215,28 +1204,25 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
-  if (!ColumnList::initialize()) {
-    return false;
-  }
+  log_info(os)("Initializing vitals...");
+
+  bool success = ColumnList::initialize();
 
   // Order matters. First platform columns, then jvm columns.
-  if (!platform_columns_initialize()) {
-    return false;
-  }
-
-  if (!add_jvm_columns()) {
-    return false;
-  }
+  success &= platform_columns_initialize();
+  success &= add_jvm_columns();
 
   // -- Now the number of columns is known (and fixed). --
 
   g_all_tables = new SampleTables();
-  if (!g_all_tables) {
-    return false;
-  }
+  success &= (g_all_tables != NULL);
 
-  if (!initialize_sampler_thread()) {
-    return false;
+  success &= initialize_sampler_thread();
+
+  if (success) {
+    log_info(os)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
+  } else {
+    log_warning(os)("Failed to initialize Vitals.");
   }
 
   return true;
@@ -1260,20 +1246,20 @@ void default_settings(print_info_t* out) {
 
 void print_report(outputStream* st, const print_info_t* pinfo) {
 
-  st->print("Vitals:");
-
   if (ColumnList::the_list() == NULL) {
     st->print_cr(" (unavailable)");
     return;
   }
-
-  st->cr();
 
   print_info_t info;
   if (pinfo != NULL) {
     info = *pinfo;
   } else {
     default_settings(&info);
+  }
+
+  if (info.csv == false) {
+    st->cr();
   }
 
   // Print legend at the top (omit if suppressed on command line, or in csv mode).
@@ -1338,7 +1324,7 @@ void dump_reports() {
         false, // no_legend
         true,  // reverse_ordering
         1 * K, // scale
-        true   // sample_now
+        false  // sample_now
     };
     print_report(&fs, &settings);
   }

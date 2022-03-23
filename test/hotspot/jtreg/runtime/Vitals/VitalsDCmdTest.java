@@ -32,84 +32,58 @@
  * @run testng/othervm -XX:VitalsSampleInterval=1 VitalsDCmdTest
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
+import org.testng.annotations.Test;
 
 public class VitalsDCmdTest {
 
     public void run(CommandExecutor executor) {
 
         OutputAnalyzer output = executor.execute("VM.vitals");
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
+        output.shouldMatch("\\d+[gkm]"); // we print by default in "dynamic" scale which should show some values as k or m or g
         output.shouldNotContain("Now"); // off by default
 
         output = executor.execute("VM.vitals reverse");
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
-        output.shouldNotContain("Now"); // off by default
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
 
         output = executor.execute("VM.vitals scale=m");
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
-        output.shouldNotContain("Now"); // off by default
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
+        output.shouldNotMatch("\\d+[km]"); // A specific scale disables dynamic scaling, and we omit the unit suffix
 
         output = executor.execute("VM.vitals scale=1");
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
-        output.shouldNotContain("Now"); // off by default
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
+        output.shouldNotMatch("\\d+[km]"); // A specific scale disables dynamic scaling, and we omit the unit suffix
 
         output = executor.execute("VM.vitals raw");
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
-        output.shouldNotContain("Now"); // off by default
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
 
         output = executor.execute("VM.vitals now");
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
-        output.shouldContain("Now");
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
 
         output = executor.execute("VM.vitals reverse now");
-        output.shouldContain("--jvm--");
-        output.shouldContain("--heap--");
-        output.shouldContain("--meta--");
-        output.shouldContain("Now");
+        VitalsTestHelper.outputMatchesVitalsTextMode(output);
 
         output = executor.execute("VM.vitals csv");
-        output.shouldContain("jvm-heap-comm,jvm-heap-used,jvm-meta-comm,jvm-meta-used");
-
-        output = executor.execute("VM.vitals csv now");
-        output.shouldContain("jvm-heap-comm,jvm-heap-used,jvm-meta-comm,jvm-meta-used");
-        output.shouldContain("Now");
+        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
+        output.shouldNotContain("Now"); // off always in csv mode
 
         output = executor.execute("VM.vitals csv reverse");
-        output.shouldContain("jvm-heap-comm,jvm-heap-used,jvm-meta-comm,jvm-meta-used");
+        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
 
         output = executor.execute("VM.vitals csv reverse raw");
-        output.shouldContain("jvm-heap-comm,jvm-heap-used,jvm-meta-comm,jvm-meta-used");
+        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
 
         output = executor.execute("VM.vitals csv now reverse raw");
-        output.shouldContain("jvm-heap-comm,jvm-heap-used,jvm-meta-comm,jvm-meta-used");
-        output.shouldContain("Now");
-
+        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
     }
 
     @Test
     public void jmx() {
-        run(new JMXExecutor());
-        // wait two seconds to collect some samples, then repeat with filled tables
         try {
-            Thread.sleep(2000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
