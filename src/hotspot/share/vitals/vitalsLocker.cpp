@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,10 +24,14 @@
  *
  */
 
-
 #include "precompiled.hpp"
 #include "vitals/vitalsLocker.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/debug.hpp"
 
+#ifndef _WIN32
+#include <errno.h>
+#endif
 
 namespace sapmachine_vitals {
 
