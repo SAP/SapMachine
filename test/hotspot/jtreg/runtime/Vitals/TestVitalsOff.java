@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
-  *
+ * Copyright (c) 2021, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,51 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef HOTSPOT_SHARE_VITALS_VITALSLOCKER_HPP
-#define HOTSPOT_SHARE_VITALS_VITALSLOCKER_HPP
+/*
+ * @test TestVitalsOff
+ * @summary Test verifies that -XX:-EnableVitals disables vitals
+ * @library /test/lib
+ * @run driver TestVitalsOff run
+ */
 
-// SapMachine  2021-10-14: I need a simple critical section. I don't
-// need hotspot mutex error checking here, and I want to be independent of
-// upstream changes to hotspot mutexes.
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-#ifdef _WIN32
-  #include <windows.h>
-#else
-  #include <pthread.h>
-#endif
+public class TestVitalsOff {
 
-namespace sapmachine_vitals {
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:-EnableVitals",
+                "-XX:MaxMetaspaceSize=16m",
+                "-Xlog:os",
+                "-Xmx128m",
+                "-version");
 
-class Lock {
-  const char* const _name;
-#ifdef _WIN32
-  CRITICAL_SECTION _lock;
-#else
-  pthread_mutex_t _lock;
-#endif
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        output.shouldNotContain("Initializing Vitals");
+    }
 
-public:
-  Lock(const char* name);
-  void lock();
-  void unlock();
-};
-
-class AutoLock {
-  Lock* const _lock;
-public:
-  AutoLock(Lock* lock)
-    : _lock(lock)
-  {
-    _lock->lock();
-  }
-  ~AutoLock() {
-    _lock->unlock();
-  }
-};
-
-};
-
-#endif /* HOTSPOT_SHARE_VITALS_VITALS_HPP */
+}

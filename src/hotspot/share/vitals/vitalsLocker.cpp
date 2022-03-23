@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,10 +24,14 @@
  *
  */
 
-
 #include "precompiled.hpp"
 #include "vitals/vitalsLocker.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/debug.hpp"
 
+#ifndef _WIN32
+#include <errno.h>
+#endif
 
 namespace sapmachine_vitals {
 
@@ -47,7 +51,11 @@ void Lock::unlock() {
 
 #else
 
-Lock::Lock(const char* name) : _name(name), _lock(PTHREAD_MUTEX_INITIALIZER) {}
+// JDK11: cannot use PTHREAD_MUTEX_INITIALIZER in init list
+// "extended initializer lists only available with -std=c++11 or -std=gnu++11"
+Lock::Lock(const char* name) : _name(name) {
+  ::pthread_mutex_init(&_lock, NULL);
+}
 
 void Lock::lock() {
   int rc = ::pthread_mutex_lock(&_lock);

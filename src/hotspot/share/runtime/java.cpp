@@ -398,6 +398,7 @@ void print_statistics() {
     sapmachine_vitals::dump_reports();
   }
   if (PrintVitalsAtExit) {
+    tty->print_cr("Vitals:");
     sapmachine_vitals::print_report(tty);
   }
 
