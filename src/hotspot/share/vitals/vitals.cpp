@@ -35,7 +35,6 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
-#include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
@@ -47,14 +46,15 @@
 #include "utilities/ostream.hpp"
 #include "vitals/vitals.hpp"
 #include "vitals/vitals_internals.hpp"
+#include "vitals/vitalsLocker.hpp"
 
 #include <locale.h>
 #include <time.h>
 
 
-static Mutex* g_vitals_lock = NULL;
-
 namespace sapmachine_vitals {
+
+static Lock g_vitals_lock("VitalsLock");
 
 namespace counters {
 
@@ -92,6 +92,7 @@ size_t Sample::size_in_bytes() {
   return sizeof(Sample) + sizeof(value_t) * (num_values() - 1); // -1 since Sample::values is size 1 to shut up compilers about zero length arrays
 }
 
+// Note: this is not to be used for regular samples, which live in a preallocated table.
 Sample* Sample::allocate() {
   Sample* s = (Sample*) NEW_C_HEAP_ARRAY(char, size_in_bytes(), mtInternal);
   s->reset();
@@ -652,7 +653,6 @@ public:
   bool is_empty() const { return _head == -1; }
 
   void add_sample(const Sample* sample) {
-    assert_lock_strong(g_vitals_lock);
     // Advance head
     _head ++;
     if (_head == _num_entries) {
@@ -691,7 +691,6 @@ public:
   }
 
   void walk_table_locked(Closure* closure, bool youngest_to_oldest = true) const {
-    assert_lock_strong(g_vitals_lock);
 
     if (_head == -1) {
       return;
@@ -778,6 +777,10 @@ class SampleTables: public CHeapObj<mtInternal> {
 
   int _count;
 
+  // A pre-allocated buffer for printing reports. We preallocate this since
+  // when we want to print the report we may be in no condition to allocate memory.
+  char _temp_buffer[196 * K];
+
   static void print_table(const SampleTable* table, outputStream* st,
                           const ColumnWidths* widths, const print_info_t* pi) {
     if (table->is_empty()) {
@@ -823,7 +826,9 @@ public:
   {}
 
   void add_sample(const Sample* sample) {
-    MutexLocker ml(g_vitals_lock, Mutex::_no_safepoint_check_flag);
+    AutoLock autolock(&g_vitals_lock);
+    // Nothing we do in here blocks: the sample values are already taken,
+    // we only modify existing data structures (no memory is allocated either).
     _short_term_table.add_sample(sample);
     // Feed downsample tables too, but increment first, so the down-sample tables
     // are only fed after an initial sample interval has passed. This prevents
@@ -837,46 +842,62 @@ public:
     }
   }
 
-  void print_all(outputStream* st, const print_info_t* pi, const Sample* sample_now) const {
+  void print_all(outputStream* external_stream, const print_info_t* pi, const Sample* sample_now) {
 
-    MutexLocker ml(g_vitals_lock, Mutex::_no_safepoint_check_flag);
+    // We are paranoid about blocking inside a lock. So we print to a preallocated buffer under
+    // lock protection, and copy ot the outside stream when out of the lock.
+    stringStream sstrm(_temp_buffer, sizeof(_temp_buffer));
 
-    // Pre-calc column widths needed to display all tables and values nicely aligned
-    ColumnWidths widths;
+    { // lock start
+      AutoLock autolock(&g_vitals_lock);
 
-    MeasureColumnWidthsClosure mcwclos(pi, &widths);
-    _short_term_table.walk_table_locked(&mcwclos);
-    _mid_term_table.walk_table_locked(&mcwclos);
-    _long_term_table.walk_table_locked(&mcwclos);
-    if (sample_now != NULL) {
-      widths.update_from_sample(sample_now, NULL, pi);
-    }
+      outputStream* st = &sstrm;
 
-    // Now print
-    if (sample_now != NULL) {
-      st->print_cr("Now:");
+      // Pre-calc column widths needed to display all tables and values nicely aligned
+      ColumnWidths widths;
+
+      MeasureColumnWidthsClosure mcwclos(pi, &widths);
+      _short_term_table.walk_table_locked(&mcwclos);
+      _mid_term_table.walk_table_locked(&mcwclos);
+      _long_term_table.walk_table_locked(&mcwclos);
+      if (sample_now != NULL) {
+        widths.update_from_sample(sample_now, NULL, pi);
+      }
+
+      // Now print
+      if (sample_now != NULL) {
+        st->print_cr("Now:");
+        print_headers(st, &widths, pi);
+        print_one_sample(st, sample_now, NULL, &widths, pi);
+      }
+      st->cr();
+
+      print_time_span(st, VitalsSampleInterval * short_term_num_samples);
       print_headers(st, &widths, pi);
-      print_one_sample(st, sample_now, NULL, &widths, pi);
+      print_table(&_short_term_table, st, &widths, pi);
+      st->cr();
+
+      print_time_span(st, VitalsSampleInterval * mid_term_interval_ratio * mid_term_num_samples);
+      print_headers(st, &widths, pi);
+      print_table(&_mid_term_table, st, &widths, pi);
+      st->cr();
+
+      print_time_span(st, VitalsSampleInterval * long_term_interval_ratio * long_term_num_samples);
+      print_headers(st, &widths, pi);
+      print_table(&_long_term_table, st, &widths, pi);
+      st->cr();
+
+      st->cr();
+
+    } // lock end
+
+    // If this fires, enlarge the buffer size. Since the table sizes are static, output here cannot be endless,
+    // so there must be a number large enough to fit every possible report.
+    external_stream->print_raw(_temp_buffer);
+    if (sstrm.size() >= sizeof(_temp_buffer) - 1) {
+      external_stream->cr();
+      external_stream->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t)sstrm.count());
     }
-    st->cr();
-
-    print_time_span(st, VitalsSampleInterval * short_term_num_samples);
-    print_headers(st, &widths, pi);
-    print_table(&_short_term_table, st, &widths, pi);
-    st->cr();
-
-    print_time_span(st, VitalsSampleInterval * mid_term_interval_ratio * mid_term_num_samples);
-    print_headers(st, &widths, pi);
-    print_table(&_mid_term_table, st, &widths, pi);
-    st->cr();
-
-    print_time_span(st, VitalsSampleInterval * long_term_interval_ratio * long_term_num_samples);
-    print_headers(st, &widths, pi);
-    print_table(&_long_term_table, st, &widths, pi);
-    st->cr();
-
-    st->cr();
-
   }
 
 };
@@ -1192,8 +1213,6 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 }
 
 bool initialize() {
-
-  g_vitals_lock = new Mutex(Mutex::leaf, "Vitals Lock", true, Mutex::_safepoint_check_never);
 
   if (!ColumnList::initialize()) {
     return false;
