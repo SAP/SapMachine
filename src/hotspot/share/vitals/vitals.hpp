@@ -30,8 +30,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Configure for different JDK versions
-#define JDK_MAINLINE
-//#define JDK18u
+//#define JDK_MAINLINE
+#define JDK18u
 //#define JDK17u
 //#define JDK11u
 
