@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -89,6 +90,20 @@ public class OnExitTest extends ProcessUtil {
         }
     }
 
+    static void systemCommand(String... command) {
+        ProcessBuilder pb = new ProcessBuilder(Arrays.asList(command));
+        System.out.println(">>>>>>>>> systemCommand " + Arrays.toString(command));
+        pb.inheritIO();
+        Process p = null;
+        try {
+            p = pb.start();
+            p.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("<<<<<<<<< systemCommand " + Arrays.toString(command));
+    }
+
     /**
      * Test of Completion handler when parent is killed.
      * Spawn 1 child to spawn 3 children each with 2 children.
@@ -150,6 +165,7 @@ public class OnExitTest extends ProcessUtil {
 
             // Check that each of the spawned processes is included in the children
             List<ProcessHandle> remaining = new ArrayList<>(children);
+
             processes.forEach((p, parent) -> {
                 Assert.assertTrue(remaining.remove(p), "spawned process should have been in children");
             });
@@ -164,7 +180,19 @@ public class OnExitTest extends ProcessUtil {
             }
 
             proc.destroy();  // kill off the parent
-            proc.waitFor();
+
+            while(proc.isAlive()) {
+                proc.waitFor(20, TimeUnit.SECONDS);
+                processes.forEach((p, parent) -> {
+                    if (p.isAlive()) {
+                        System.out.println("Thomas: This guy is still alive: " + p.toString());
+                        systemCommand("ps", "-lfp", "" + p.pid());
+                        systemCommand("ls", "-lH", "/proc/" + p.pid());
+                        systemCommand("cat", "/proc/" + p.pid() + "/cmdline");
+                        systemCommand("cat", "/proc/" + p.pid() + "/stat");
+                    }
+                });
+            }
 
             // Wait for all the processes and corresponding onExit CF to be completed
             processes.forEach((p, parent) -> {

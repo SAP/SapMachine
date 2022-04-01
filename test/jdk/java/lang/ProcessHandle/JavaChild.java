@@ -342,6 +342,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
                                     }
                                 } while (true);
                             }
+
                             // Wait for all children to be gone
                             Instant timeOut = Instant.now().plusSeconds(10L);
                             while (!completedChildren.containsAll(children)) {
