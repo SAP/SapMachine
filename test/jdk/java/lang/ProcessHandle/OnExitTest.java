@@ -62,7 +62,7 @@ public class OnExitTest extends ProcessUtil {
     /**
      * Basic test of exitValue and onExit.
      */
-    @Test
+//    @Test
     public static void test1() {
         try {
             int[] exitValues = {0, 1, 10};
@@ -118,14 +118,16 @@ public class OnExitTest extends ProcessUtil {
 
             JavaChild proc = JavaChild.spawnJavaChild("stdin");
             procHandle = proc.toHandle();
-            printf(" spawned: %d%n", proc.pid());
+            System.out.println(" root process spawned: " + proc.pid());
 
             proc.forEachOutputLine((s) -> {
+                System.out.println("Child says: " + s);
                 String[] split = s.trim().split(" ");
                 if (split.length == 3 && split[1].equals("spawn")) {
                     Long child = Long.valueOf(split[2]);
                     Long parent = Long.valueOf(split[0].split(":")[0]);
                     processes.put(ProcessHandle.of(child).get(), ProcessHandle.of(parent).get());
+            //        systemCommand("ps", "-lfp", "" + child);
                 }
             });
 
@@ -180,19 +182,22 @@ public class OnExitTest extends ProcessUtil {
             }
 
             proc.destroy();  // kill off the parent
+            proc.waitFor();
 
-            while(proc.isAlive()) {
-                proc.waitFor(20, TimeUnit.SECONDS);
-                processes.forEach((p, parent) -> {
-                    if (p.isAlive()) {
-                        System.out.println("Thomas: This guy is still alive: " + p.toString());
-                        systemCommand("ps", "-lfp", "" + p.pid());
-                        systemCommand("ls", "-lH", "/proc/" + p.pid());
-                        systemCommand("cat", "/proc/" + p.pid() + "/cmdline");
-                        systemCommand("cat", "/proc/" + p.pid() + "/stat");
-                    }
-                });
-            }
+            boolean some_are_still_alive;
+
+            long t1 = System.currentTimeMillis();
+            Thread.sleep(1000 * 30);
+
+            processes.forEach((p, parent) -> {
+                if (p.isAlive()) {
+                    System.out.println("Thomas: This guy is still alive: " + p.toString());
+                    systemCommand("ps", "-lfp", "" + p.pid());
+                    systemCommand("ls", "-lH", "/proc/" + p.pid());
+                    systemCommand("cat", "/proc/" + p.pid() + "/cmdline");
+                    systemCommand("cat", "/proc/" + p.pid() + "/stat");
+                }
+            });
 
             // Wait for all the processes and corresponding onExit CF to be completed
             processes.forEach((p, parent) -> {
@@ -233,7 +238,7 @@ public class OnExitTest extends ProcessUtil {
      * Command (A) to exit.
      * Check that (B) does not complete until (A) has exited.
      */
-    @Test
+//    @Test
     public static void peerOnExitTest() {
         String line = null;
         ArrayBlockingQueue<String> alines = new ArrayBlockingQueue<>(100);

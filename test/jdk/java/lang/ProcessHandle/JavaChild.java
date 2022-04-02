@@ -322,6 +322,9 @@ private static volatile int commandSeq = 0;         // Command sequence number
                                     interpretCommands(split);
                                 }
                             }
+
+                            sendResult("exit_read_loop");
+
                             // EOF on stdin, close stdin on all spawned processes
                             for (JavaChild p : children) {
                                 try {
@@ -332,10 +335,14 @@ private static volatile int commandSeq = 0;         // Command sequence number
                                 }
                             }
 
+                            sendResult("pipes_to_children_closed");
+
                             for (JavaChild p : children) {
                                 do {
                                     try {
+                                        sendResult("child_waitfor", p.pid());
                                         p.waitFor();
+                                        sendResult("child_waitfor_done", p.pid(), p.toHandle().isAlive());
                                         break;
                                     } catch (InterruptedException e) {
                                         // retry
@@ -449,6 +456,7 @@ private static volatile int commandSeq = 0;         // Command sequence number
                 }
             }
         } catch (Throwable t) {
+            sendResult("Exception", t.toString());
             t.printStackTrace(System.err);
             System.exit(1);
         }
