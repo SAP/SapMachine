@@ -199,6 +199,8 @@ public class OnExitTest extends ProcessUtil {
                 }
             });
 
+            systemCommand("ps", "-Alf" );
+
             // Wait for all the processes and corresponding onExit CF to be completed
             processes.forEach((p, parent) -> {
                 try {
