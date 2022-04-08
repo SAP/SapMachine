@@ -30,14 +30,14 @@ JTREG_VERSION=5.1
 JTREG_BUILD=b01
 GTEST_VERSION=1.8.1
 
-LINUX_X64_BOOT_JDK_FILENAME=openjdk-11_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.12%2B7/OpenJDK11U-jdk_x64_linux_hotspot_11.0.12_7.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=8770f600fc3b89bf331213c7aa21f8eedd9ca5d96036d1cd48cb2748a3dbefd2
+LINUX_X64_BOOT_JDK_FILENAME=sapmachine-11.0.14.1_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14.1/sapmachine-jdk-11.0.14.1_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=f9ec22c87c76671ee86bf5aecf5ea9fa1a5767c0d1fa96d331dd942215084ea9
 
-WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-11_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.12%2B7/OpenJDK11U-jdk_x64_windows_hotspot_11.0.12_7.zip
-WINDOWS_X64_BOOT_JDK_SHA256=c54123dd4b0d6473221539e7003b8ca1c1757c5588c46465565b03bf8781f807
+WINDOWS_X64_BOOT_JDK_FILENAME=sapmachine-11.0.14.1_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14.1/sapmachine-jdk-11.0.14.1_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_SHA256=4d1b5a01cb8ed06620f9c96457bcb5b0637bd752eb6563c39781efc82e92731a
 
-MACOS_X64_BOOT_JDK_FILENAME=openjdk-11_osx-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.12%2B7/OpenJDK11U-jdk_x64_mac_hotspot_11.0.12_7.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=13d056ee9a57bf2d5b3af4504c8f8cf7a246c4dff78f96b70dd05dad98075855
+MACOS_X64_BOOT_JDK_FILENAME=sapmachine-11.0.14.1_osx-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14.1/sapmachine-jdk-11.0.14.1_osx-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=497c5d0e697867f44f62a6cf5a8caabe2ceb623dd6c229278a3d5c1d3d11d9fb
