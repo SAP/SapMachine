@@ -33,6 +33,7 @@
 #include "utilities/ostream.hpp"
 #include "vitals/vitals_internals.hpp"
 
+#include <malloc.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
@@ -269,6 +270,9 @@ static Column* g_col_process_rssfile = NULL;
 static Column* g_col_process_rssshmem = NULL;
 static Column* g_col_process_swapped_out = NULL;
 static Column* g_col_process_heap = NULL;
+static Column* g_col_process_chp_used = NULL;
+static Column* g_col_process_chp_free = NULL;
+static Column* g_col_process_chp_trimcap = NULL;
 
 static Column* g_col_process_cpu_user = NULL;
 static Column* g_col_process_cpu_system = NULL;
@@ -278,6 +282,29 @@ static Column* g_col_process_io_bytes_read = NULL;
 static Column* g_col_process_io_bytes_written = NULL;
 
 static Column* g_col_process_num_threads = NULL;
+
+
+// Try to obtain mallinfo2. That replacement of mallinf is 64-bit capable and its values won't wrap.
+// Only exists in glibc 2.33 and later.
+#ifdef __GLIBC__
+struct glibc_mallinfo2 {
+  size_t arena;
+  size_t ordblks;
+  size_t smblks;
+  size_t hblks;
+  size_t hblkhd;
+  size_t usmblks;
+  size_t fsmblks;
+  size_t uordblks;
+  size_t fordblks;
+  size_t keepcost;
+};
+typedef struct glibc_mallinfo2 (*mallinfo2_func_t)(void);
+static mallinfo2_func_t g_mallinfo2 = NULL;
+static void mallinfo2_init() {
+  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+}
+#endif // __GLIBC__
 
 bool platform_columns_initialize() {
 
@@ -342,8 +369,20 @@ bool platform_columns_initialize() {
 
   // If we manage to locate the heap segment once, and calc its size, we assume it can be done always.
   if (get_process_heap_size() != INVALID_VALUE) {
-    g_col_process_heap = new MemorySizeColumn("process", NULL, "hp", "Process heap segment (brk), resident + swap");
+    // Note: this is useful for the case when MALLOC_ARENA_MAX is 1, because then the glibc uses this segment for its
+    // one and only arena. Note however that if the brk segment cannot grow, glibc heap will switch to a new arena
+    g_col_process_heap = new MemorySizeColumn("process", NULL, "brk", "Process heap segment size (brk), resident + swap");
   }
+
+#ifdef __GLIBC__
+  mallinfo2_init();
+  g_col_process_chp_used = new MemorySizeColumn("process", "cheap", "usd",
+      g_mallinfo2 != NULL ? "C-Heap, in-use allocations" :
+                            "C-Heap, in-use allocations (unavailable if RSS > 4G)");
+  g_col_process_chp_free = new MemorySizeColumn("process", "cheap", "free",
+      g_mallinfo2 != NULL ? "C-Heap, bytes in free blocks" :
+                            "C-Heap, bytes in free blocks (unavailable if RSS > 4G)");
+#endif // __GLIBC__
 
   g_col_process_cpu_user = new CPUTimeColumn("process", "cpu", "us", "Process cpu user time");
 
@@ -381,6 +420,8 @@ void sample_platform_values(Sample* sample) {
 
   int idx = 0;
   value_t v = 0;
+
+  value_t rss_all = 0;
 
   ProcFile bf;
   if (bf.read("/proc/meminfo")) {
@@ -438,7 +479,8 @@ void sample_platform_values(Sample* sample) {
 
     set_value_in_sample(g_col_process_virt, sample, bf.parsed_prefixed_value("VmSize:", K));
     set_value_in_sample(g_col_process_swapped_out, sample, bf.parsed_prefixed_value("VmSwap:", K));
-    set_value_in_sample(g_col_process_rss, sample, bf.parsed_prefixed_value("VmRSS:", K));
+    rss_all = bf.parsed_prefixed_value("VmRSS:", K);
+    set_value_in_sample(g_col_process_rss, sample, rss_all);
 
     set_value_in_sample(g_col_process_rssanon, sample, bf.parsed_prefixed_value("RssAnon:", K));
     set_value_in_sample(g_col_process_rssfile, sample, bf.parsed_prefixed_value("RssFile:", K));
@@ -524,6 +566,28 @@ void sample_platform_values(Sample* sample) {
     set_value_in_sample(g_col_process_cpu_system, sample, cpu_stime);
   }
 
-}
+#ifdef __GLIBC__
+  // Collect some c-heap info using either one of mallinfo or mallinfo2.
+  if (g_mallinfo2 != NULL) {
+    struct glibc_mallinfo2 mi = g_mallinfo2();
+    // (from experiments and glibc source code reading: the closest to "used" would be adding the mmaped data area size
+    //  (contains large allocations) to the small block sizes
+    set_value_in_sample(g_col_process_chp_used, sample, mi.uordblks + mi.hblkhd);
+    set_value_in_sample(g_col_process_chp_free, sample, mi.fordblks);
+  } else {
+    struct mallinfo mi = mallinfo();
+    set_value_in_sample(g_col_process_chp_used, sample, (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd);
+    set_value_in_sample(g_col_process_chp_free, sample, (size_t)(unsigned)mi.fordblks);
+    // In 64-bit mode, omit printing values if we could conceivably have wrapped, since they are misleading.
+#ifdef _LP64
+    if (rss_all >= 4 * G) {
+      set_value_in_sample(g_col_process_chp_used, sample, INVALID_VALUE);
+      set_value_in_sample(g_col_process_chp_free, sample, INVALID_VALUE);
+    }
+#endif
+  }
+#endif // __GLIBC__
+
+} // end: sample_platform_values
 
 } // namespace sapmachine_vitals
