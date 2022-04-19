@@ -1161,7 +1161,11 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_metaspace_cap_until_gc, sample, MetaspaceGC::capacity_until_GC());
 
   // Code cache
-  const size_t codecache_committed = CodeCache::capacity();
+  size_t codecache_committed = INVALID_VALUE;
+  if (!avoid_locking) {
+    MutexLocker lck(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    codecache_committed = CodeCache::capacity();
+  }
   set_value_in_sample(g_col_codecache_committed, sample, codecache_committed);
 
   // bytes malloced by JVM. Prefer sapjvm mallstat if available (less overhead, always-on). Fall back to NMT
