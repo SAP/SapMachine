@@ -132,9 +132,11 @@
                 {
                     "tag": "sapmachine-18.0.1",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.1/sapmachine-jdk-18.0.1-beta_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.1/sapmachine-jdk-18.0.1_linux-x64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.1/sapmachine-jre-18.0.1-beta_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.1/sapmachine-jre-18.0.1_linux-x64_bin.tar.gz"
                     }
                 }
@@ -172,7 +174,13 @@
         "17": {
             "releases": [
                 {
-                    "tag": "sapmachine-17.0.3"
+                    "tag": "sapmachine-17.0.3",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3/sapmachine-jdk-17.0.3_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3/sapmachine-jre-17.0.3_linux-x64_bin.tar.gz"
+                    }
                 }
             ]
         },
@@ -208,7 +216,13 @@
         "11": {
             "releases": [
                 {
-                    "tag": "sapmachine-11.0.15"
+                    "tag": "sapmachine-11.0.15",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.15/sapmachine-jdk-11.0.15_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.15/sapmachine-jre-11.0.15_linux-x64_bin.tar.gz"
+                    }
                 }
             ]
         },
