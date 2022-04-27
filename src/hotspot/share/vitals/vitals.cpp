@@ -986,6 +986,7 @@ static Column* g_col_metaspace_cap_until_gc = NULL;
 static Column* g_col_codecache_committed = NULL;
 
 static Column* g_col_nmt_malloc = NULL;
+static Column* g_col_nmt_mmap = NULL;
 
 static Column* g_col_number_of_java_threads = NULL;
 static Column* g_col_number_of_java_threads_non_demon = NULL;
@@ -1029,7 +1030,10 @@ static bool add_jvm_columns() {
       NULL, "code", "Code cache, committed");
 
   g_col_nmt_malloc = new MemorySizeColumn("jvm",
-      NULL, "mlc", "Memory malloced by hotspot (requires NMT)");
+      "nmt", "mlc", "Memory malloced by hotspot (requires NMT)");
+
+  g_col_nmt_mmap = new MemorySizeColumn("jvm",
+      "nmt", "map", "Memory mapped and committed by hotspot (requires NMT)");
 
   g_col_number_of_java_threads = new PlainValueColumn("jvm",
       "jthr", "num", "Number of java threads");
@@ -1129,6 +1133,16 @@ static value_t get_bytes_malloced_by_jvm_via_nmt() {
   }
   return result;
 }
+static value_t get_bytes_mmaped_by_jvm_via_nmt() {
+  value_t result = INVALID_VALUE;
+  if (MemTracker::tracking_level() != NMT_off) {
+    MutexLocker locker(MemTracker::query_lock());
+    VirtualMemorySnapshot snapshot;
+    VirtualMemorySummary::snapshot(&snapshot);
+    result = snapshot.total_committed();
+  }
+  return result;
+}
 #endif // INCLUDE_NMT
 
 void sample_jvm_values(Sample* sample, bool avoid_locking) {
@@ -1161,7 +1175,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_metaspace_cap_until_gc, sample, MetaspaceGC::capacity_until_GC());
 
   // Code cache
-  size_t codecache_committed = INVALID_VALUE;
+  value_t codecache_committed = INVALID_VALUE;
   if (!avoid_locking) {
     MutexLocker lck(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     codecache_committed = CodeCache::capacity();
@@ -1177,6 +1191,12 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   }
 #endif
   set_value_in_sample(g_col_nmt_malloc, sample, bytes_malloced_by_jvm);
+
+#if INCLUDE_NMT
+  if (!avoid_locking) {
+    set_value_in_sample(g_col_nmt_mmap, sample, get_bytes_mmaped_by_jvm_via_nmt());
+  }
+#endif
 
   // Java threads
   set_value_in_sample(g_col_number_of_java_threads, sample, Threads::number_of_threads());
