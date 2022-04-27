@@ -571,18 +571,21 @@ void sample_platform_values(Sample* sample) {
   // Collect some c-heap info using either one of mallinfo or mallinfo2.
   if (g_mallinfo2 != NULL) {
     struct glibc_mallinfo2 mi = g_mallinfo2();
-    set_value_in_sample(g_col_process_chp_used, sample, mi.uordblks);
+    // (from experiments and glibc source code reading: the closest to "used" would be adding the mmaped data area size
+    //  (contains large allocations) to the small block sizes
+    set_value_in_sample(g_col_process_chp_used, sample, mi.uordblks + mi.hblkhd);
     set_value_in_sample(g_col_process_chp_free, sample, mi.fordblks);
   } else {
-    // Omit printing values if we could conceivably have wrapped, since they are misleading.
-    if (rss_all < 4 * G) {
-      struct mallinfo mi = mallinfo();
-      set_value_in_sample(g_col_process_chp_used, sample, (size_t)(unsigned)mi.uordblks);
-      set_value_in_sample(g_col_process_chp_free, sample, (size_t)(unsigned)mi.fordblks);
-    } else {
+    struct mallinfo mi = mallinfo();
+    set_value_in_sample(g_col_process_chp_used, sample, (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd);
+    set_value_in_sample(g_col_process_chp_free, sample, (size_t)(unsigned)mi.fordblks);
+    // In 64-bit mode, omit printing values if we could conceivably have wrapped, since they are misleading.
+#ifdef _LP64
+    if (rss_all >= 4 * G) {
       set_value_in_sample(g_col_process_chp_used, sample, INVALID_VALUE);
       set_value_in_sample(g_col_process_chp_free, sample, INVALID_VALUE);
     }
+#endif
   }
 #endif // __GLIBC__
 
