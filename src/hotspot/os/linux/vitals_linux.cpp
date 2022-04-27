@@ -270,9 +270,10 @@ static Column* g_col_process_rssfile = NULL;
 static Column* g_col_process_rssshmem = NULL;
 static Column* g_col_process_swapped_out = NULL;
 static Column* g_col_process_heap = NULL;
+#ifdef __GLIBC__
 static Column* g_col_process_chp_used = NULL;
 static Column* g_col_process_chp_free = NULL;
-static Column* g_col_process_chp_trimcap = NULL;
+#endif // __GLIBC__
 
 static Column* g_col_process_cpu_user = NULL;
 static Column* g_col_process_cpu_system = NULL;
@@ -377,11 +378,11 @@ bool platform_columns_initialize() {
 #ifdef __GLIBC__
   mallinfo2_init();
   g_col_process_chp_used = new MemorySizeColumn("process", "cheap", "usd",
-      g_mallinfo2 != NULL ? "C-Heap, in-use allocations" :
-                            "C-Heap, in-use allocations (unavailable if RSS > 4G)");
+      g_mallinfo2 != NULL ? "C-Heap, in-use allocations (glibc only)" :
+                            "C-Heap, in-use allocations (glibc only) (unavailable if RSS > 4G)");
   g_col_process_chp_free = new MemorySizeColumn("process", "cheap", "fr",
-      g_mallinfo2 != NULL ? "C-Heap, bytes in free blocks" :
-                            "C-Heap, bytes in free blocks (unavailable if RSS > 4G)");
+      g_mallinfo2 != NULL ? "C-Heap, bytes in free blocks (glibc only)" :
+                            "C-Heap, bytes in free blocks (glibc only) (unavailable if RSS > 4G)");
 #endif // __GLIBC__
 
   g_col_process_cpu_user = new CPUTimeColumn("process", "cpu", "us", "Process cpu user time");
