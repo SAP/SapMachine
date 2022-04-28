@@ -188,7 +188,13 @@
         "17": {
             "releases": [
                 {
-                    "tag": "sapmachine-17.0.3.0.1"
+                    "tag": "sapmachine-17.0.3.0.1",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3.0.1/sapmachine-jdk-17.0.3.0.1_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.3.0.1/sapmachine-jre-17.0.3.0.1_linux-x64_bin.tar.gz"
+                    }
                 }
             ]
         },
