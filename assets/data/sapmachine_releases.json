@@ -240,9 +240,11 @@
                 {
                     "tag": "sapmachine-11.0.15.0.1",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.15.0.1/sapmachine-jdk-11.0.15.0.1-beta_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.15.0.1/sapmachine-jdk-11.0.15.0.1_linux-x64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.15.0.1/sapmachine-jre-11.0.15.0.1-beta_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.15.0.1/sapmachine-jre-11.0.15.0.1_linux-x64_bin.tar.gz"
                     }
                 }
