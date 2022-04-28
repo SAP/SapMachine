@@ -4652,6 +4652,10 @@ jint os::init_2(void) {
   if (EnableMallocTrace) {
     sap::MallocTracer::enable();
   }
+#else
+  if (!FLAG_IS_DEFAULT(EnableMallocTrace)) {
+    warning("Not a glibc system. EnableMallocTrace ignored.");
+  }
 #endif // __GLIBC__
 
   return JNI_OK;

@@ -152,7 +152,19 @@ public class MallocTraceDcmdTest {
         }
     }
 
+    // aka, Alpine
+    private static boolean NotAGlibcSystem() throws Exception {
+        OutputAnalyzer output = testCommand("print");
+        return output.getStdout().contains("Not a glibc system");
+    }
+
     public static void main(String args[]) throws Exception {
+
+        if (NotAGlibcSystem()) {
+            System.out.println("Not a glibc system, skipping test");
+            return; // skip on Alpine and friends
+        }
+
         MallocStresser stresser = new MallocStresser(3);
         stresser.start();
         Thread.sleep(1000);

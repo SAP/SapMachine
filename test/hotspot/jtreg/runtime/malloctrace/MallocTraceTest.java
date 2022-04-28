@@ -54,6 +54,13 @@ public class MallocTraceTest {
                     option, "-XX:+PrintMallocTraceAtExit", "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
+
+            // Ignore output for Alpine
+            if (output.getStderr().contains("Not a glibc system")) {
+                System.out.println("Not a glibc system, skipping test");
+                return;
+            }
+
             if (active) {
                 String stdout = output.getStdout();
                 // Checking for the correct frames is a whack-the-mole game since we cannot be sure how frames
