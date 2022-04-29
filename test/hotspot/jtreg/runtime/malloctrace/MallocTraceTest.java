@@ -23,6 +23,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 // SapMachine 2021-08-01: malloctrace
 // For now 64bit only, 32bit stack capturing still does not work that well
@@ -57,8 +58,7 @@ public class MallocTraceTest {
 
             // Ignore output for Alpine
             if (output.getStderr().contains("Not a glibc system")) {
-                System.out.println("Not a glibc system, skipping test");
-                return;
+                throw new SkippedException("Not a glibc system, skipping test");
             }
 
             if (active) {
