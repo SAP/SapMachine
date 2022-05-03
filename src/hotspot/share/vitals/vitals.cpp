@@ -1216,6 +1216,13 @@ bool initialize() {
 
   log_info(os)("Initializing vitals...");
 
+  // Adjust VitalsSampleInterval
+  if (VitalsSampleInterval == 0) {
+    log_warning(os)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
+                    VitalsSampleInterval);
+    return false;
+  }
+
   bool success = ColumnList::initialize();
 
   // Order matters. First platform columns, then jvm columns.
