@@ -1118,12 +1118,6 @@ public:
   }
 };
 
-static value_t get_bytes_malloced_by_jvm_via_sapjvm_mallstat() {
-  value_t result = INVALID_VALUE;
-  // SAPJVM plug in mallstat entry here.
-  return result;
-}
-
 #if INCLUDE_NMT
 static value_t get_bytes_malloced_by_jvm_via_nmt() {
   value_t result = INVALID_VALUE;
@@ -1182,18 +1176,10 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   }
   set_value_in_sample(g_col_codecache_committed, sample, codecache_committed);
 
-  // bytes malloced by JVM. Prefer sapjvm mallstat if available (less overhead, always-on). Fall back to NMT
-  // otherwise.
-  value_t bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_sapjvm_mallstat();
-#if INCLUDE_NMT
-  if (bytes_malloced_by_jvm == INVALID_VALUE && !avoid_locking) {
-    bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_nmt();
-  }
-#endif
-  set_value_in_sample(g_col_nmt_malloc, sample, bytes_malloced_by_jvm);
-
+  // NMT integration
 #if INCLUDE_NMT
   if (!avoid_locking) {
+    set_value_in_sample(g_col_nmt_malloc, sample, get_bytes_malloced_by_jvm_via_nmt());
     set_value_in_sample(g_col_nmt_mmap, sample, get_bytes_mmaped_by_jvm_via_nmt());
   }
 #endif
