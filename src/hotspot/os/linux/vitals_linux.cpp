@@ -272,7 +272,6 @@ static Column* g_col_process_swapped_out = NULL;
 static Column* g_col_process_heap = NULL;
 static Column* g_col_process_chp_used = NULL;
 static Column* g_col_process_chp_free = NULL;
-static Column* g_col_process_chp_trimcap = NULL;
 
 static Column* g_col_process_cpu_user = NULL;
 static Column* g_col_process_cpu_system = NULL;
