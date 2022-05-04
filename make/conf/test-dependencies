@@ -30,14 +30,14 @@ JTREG_VERSION=6
 JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
-LINUX_X64_BOOT_JDK_FILENAME=openjdk-17.0.2_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jdk_x64_linux_hotspot_17.0.2_8.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=288f34e3ba8a4838605636485d0365ce23e57d5f2f68997ac4c2e4c01967cd48
+LINUX_X64_BOOT_JDK_FILENAME=sapmachine-17.0.2_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.2/sapmachine-jdk-17.0.2_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=f0c17f9477169159c92f4a2d445d37626cf1fe26732af0b550281b27e44c6f34
 
-WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-17.0.2_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jdk_x64_windows_hotspot_17.0.2_8.zip
-WINDOWS_X64_BOOT_JDK_SHA256=d083479ca927dce2f586f779373d895e8bf668c632505740279390384edf03fa
+WINDOWS_X64_BOOT_JDK_FILENAME=sapmachine-17.0.2_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.2/sapmachine-jdk-17.0.2_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_SHA256=fdc230b23b5114e52ef7bacaabd6d0a121b4ce70cfdd9f477735dbffbf5b047b
 
-MACOS_X64_BOOT_JDK_FILENAME=openjdk-17.0.2_macos-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jdk_x64_mac_hotspot_17.0.2_8.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=3630e21a571b7180876bf08f85d0aac0bdbb3267b2ae9bd242f4933b21f9be32
+MACOS_X64_BOOT_JDK_FILENAME=sapmachine-17.0.2_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.2/sapmachine-jdk-17.0.2_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=228b9952002dd60e626c46b8ff051e8e25d577d358390cd52dd7e4ea50863cef
