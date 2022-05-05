@@ -1170,7 +1170,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   // Code cache
   value_t codecache_committed = INVALID_VALUE;
   if (!avoid_locking) {
-    MutexLocker lck(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    MutexLockerEx lck(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     codecache_committed = CodeCache::capacity();
   }
   set_value_in_sample(g_col_codecache_committed, sample, codecache_committed);
