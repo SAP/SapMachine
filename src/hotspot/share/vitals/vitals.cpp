@@ -983,6 +983,7 @@ static Column* g_col_metaspace_cap_until_gc = NULL;
 static Column* g_col_codecache_committed = NULL;
 
 static Column* g_col_nmt_malloc = NULL;
+static Column* g_col_nmt_mmap = NULL;
 
 static Column* g_col_number_of_java_threads = NULL;
 static Column* g_col_number_of_java_threads_non_demon = NULL;
@@ -1026,7 +1027,10 @@ static bool add_jvm_columns() {
       NULL, "code", "Code cache, committed");
 
   g_col_nmt_malloc = new MemorySizeColumn("jvm",
-      NULL, "mlc", "Memory malloced by hotspot (requires NMT)");
+      "nmt", "mlc", "Memory malloced by hotspot (requires NMT)");
+
+  g_col_nmt_mmap = new MemorySizeColumn("jvm",
+      "nmt", "map", "Memory mapped and committed by hotspot (requires NMT)");
 
   g_col_number_of_java_threads = new PlainValueColumn("jvm",
       "jthr", "num", "Number of java threads");
@@ -1113,18 +1117,22 @@ static uint64_t accumulate_thread_stack_size() {
 //  }
 //};
 
-static value_t get_bytes_malloced_by_jvm_via_sapjvm_mallstat() {
-  value_t result = INVALID_VALUE;
-  // SAPJVM plug in mallstat entry here.
-  return result;
-}
-
 #if INCLUDE_NMT
 static value_t get_bytes_malloced_by_jvm_via_nmt() {
   value_t result = INVALID_VALUE;
   if (MemTracker::tracking_level() != NMT_off) {
     MutexLocker locker(MemTracker::query_lock());
     result = MallocMemorySummary::as_snapshot()->total();
+  }
+  return result;
+}
+static value_t get_bytes_mmaped_by_jvm_via_nmt() {
+  value_t result = INVALID_VALUE;
+  if (MemTracker::tracking_level() != NMT_off) {
+    MutexLocker locker(MemTracker::query_lock());
+    VirtualMemorySnapshot snapshot;
+    VirtualMemorySummary::snapshot(&snapshot);
+    result = snapshot.total_committed();
   }
   return result;
 }
@@ -1160,18 +1168,20 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_metaspace_cap_until_gc, sample, MetaspaceGC::capacity_until_GC());
 
   // Code cache
-  const size_t codecache_committed = CodeCache::capacity();
+  value_t codecache_committed = INVALID_VALUE;
+  if (!avoid_locking) {
+    MutexLocker lck(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    codecache_committed = CodeCache::capacity();
+  }
   set_value_in_sample(g_col_codecache_committed, sample, codecache_committed);
 
-  // bytes malloced by JVM. Prefer sapjvm mallstat if available (less overhead, always-on). Fall back to NMT
-  // otherwise.
-  value_t bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_sapjvm_mallstat();
+  // NMT integration
 #if INCLUDE_NMT
-  if (bytes_malloced_by_jvm == INVALID_VALUE && !avoid_locking) {
-    bytes_malloced_by_jvm = get_bytes_malloced_by_jvm_via_nmt();
+  if (!avoid_locking) {
+    set_value_in_sample(g_col_nmt_malloc, sample, get_bytes_malloced_by_jvm_via_nmt());
+    set_value_in_sample(g_col_nmt_mmap, sample, get_bytes_mmaped_by_jvm_via_nmt());
   }
 #endif
-  set_value_in_sample(g_col_nmt_malloc, sample, bytes_malloced_by_jvm);
 
   // Java threads
   set_value_in_sample(g_col_number_of_java_threads, sample, Threads::number_of_threads());
@@ -1205,6 +1215,13 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 bool initialize() {
 
   log_info(os)("Initializing vitals...");
+
+  // Adjust VitalsSampleInterval
+  if (VitalsSampleInterval == 0) {
+    log_warning(os)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
+                    VitalsSampleInterval);
+    return false;
+  }
 
   bool success = ColumnList::initialize();
 
