@@ -30,6 +30,8 @@ import sun.hotspot.WhiteBox;
 import java.util.ArrayList;
 import java.util.Random;
 
+import jtreg.SkippedException;
+
 // For now 64bit only, 32bit stack capturing still does not work that well
 
 /*
@@ -152,7 +154,18 @@ public class MallocTraceDcmdTest {
         }
     }
 
+    // aka, Alpine
+    private static boolean NotAGlibcSystem() throws Exception {
+        OutputAnalyzer output = testCommand("print");
+        return output.getStdout().contains("Not a glibc system");
+    }
+
     public static void main(String args[]) throws Exception {
+
+        if (NotAGlibcSystem()) {
+            throw new SkippedException("Not a glibc system, skipping test");
+        }
+
         MallocStresser stresser = new MallocStresser(3);
         stresser.start();
         Thread.sleep(1000);
