@@ -16,6 +16,10 @@ on:
         required: true
         default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows x64, macOS x64"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prerequisites:
     name: Prerequisites
@@ -28,6 +32,7 @@ jobs:
       platform_linux_x86: ${{ steps.check_platforms.outputs.platform_linux_x86 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
+      platform_macos_aarch64: ${{ steps.check_platforms.outputs.platform_macos_aarch64 }}
       dependencies: ${{ steps.check_deps.outputs.dependencies }}
 
     steps:
@@ -43,6 +48,7 @@ jobs:
           echo "::set-output name=platform_linux_x86::${{ contains(github.event.inputs.platforms, 'linux x86') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x86'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
+          echo "::set-output name=platform_macos_aarch64::${{ contains(github.event.inputs.platforms, 'macos aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos aarch64'))) }}"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine unique bundle identifier
@@ -51,7 +57,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
         if: steps.check_submit.outputs.should_run != 'false'
@@ -80,14 +86,14 @@ jobs:
 
       - name: Check if a jtreg image is present in the cache
         id: jtreg
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/jtreg/
           key: jtreg-${{ env.JTREG_REF }}-v1
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Checkout the jtreg source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "openjdk/jtreg"
           ref: ${{ env.JTREG_REF }}
@@ -105,7 +111,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
       - name: Store jtreg for use by later steps
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jtreg_${{ steps.check_bundle_id.outputs.bundle_id }}
           path: ~/jtreg/
@@ -137,13 +143,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -159,14 +165,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -201,7 +207,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           # SapMachine 2020-11-04: Adapt bundle names
@@ -263,11 +269,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -283,14 +289,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -298,14 +304,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64${{ matrix.artifact }}
@@ -329,6 +335,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin-tests${{ matrix.artifact }}
@@ -344,7 +351,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
@@ -379,14 +386,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -453,13 +460,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -475,14 +482,14 @@ jobs:
 
       - name: Restore build JDK
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64
         continue-on-error: true
 
       - name: Restore build JDK (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64
@@ -514,7 +521,7 @@ jobs:
 
       - name: Cache sysroot
         id: cache-sysroot
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/sysroot-${{ matrix.debian-arch }}/
           key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('jdk/.github/workflows/submit.yml') }}
@@ -602,13 +609,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -624,14 +631,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -673,7 +680,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           # SapMachine 2020-11-04: Adapt bundle names
@@ -736,11 +743,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -756,14 +763,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -771,14 +778,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x86${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x86${{ matrix.artifact }}
@@ -802,6 +809,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin-tests${{ matrix.artifact }}
@@ -817,7 +825,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
@@ -852,14 +860,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x86${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x86${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -889,27 +897,38 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v3
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/packages
           key: cygwin-packages-${{ runner.os }}-v1
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -926,14 +945,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -972,7 +991,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           # SapMachine 2020-11-04: Adapt bundle names
@@ -1035,11 +1054,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1054,29 +1073,40 @@ jobs:
           Get-ChildItem "$HOME\bootjdk\$env:BOOT_JDK_VERSION\*\*" | Move-Item -Destination "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v3
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/packages
           key: cygwin-packages-${{ runner.os }}-v1
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -1084,14 +1114,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-windows-x64${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-windows-x64${{ matrix.artifact }}
@@ -1119,6 +1149,7 @@ jobs:
         run: echo ("imageroot=" + (Get-ChildItem -Path $HOME/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin${{ matrix.artifact }} -Filter release -Recurse -ErrorAction SilentlyContinue -Force).DirectoryName) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Run tests
+        id: run_tests
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
@@ -1137,7 +1168,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ((Get-ChildItem -Path build\*\test-results\test-summary.txt -Recurse | Select-String -Pattern "TEST SUCCESS" ).Count -eq 0) {
             Get-Content -Path build\*\test-results\*\*\newfailures.txt ;
@@ -1174,14 +1205,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/windows-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -1213,13 +1244,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1235,14 +1266,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -1277,13 +1308,112 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           # SapMachine 2020-11-04: Adapt bundle names
           path: |
-            jdk/build/macos-x64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}.tar.gz
-            jdk/build/macos-x64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-x64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-x64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}.tar.gz
+
+  macos_aarch64_build:
+    name: macOS aarch64
+    runs-on: "macos-10.15"
+    needs: prerequisites
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_macos_aarch64 != 'false'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - build release
+          - build debug
+        include:
+          - flavor: build release
+          - flavor: build debug
+            flags: --enable-debug
+            artifact: -debug
+
+    env:
+      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
+      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_FILENAME }}"
+      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_URL }}"
+      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_SHA256 }}"
+
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v3
+        with:
+          path: jdk
+
+      - name: Restore boot JDK from cache
+        id: bootjdk
+        uses: actions/cache@v3
+        with:
+          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
+
+      - name: Download boot JDK
+        run: |
+          mkdir -p ${HOME}/bootjdk/${BOOT_JDK_VERSION} || true
+          wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+          echo "${BOOT_JDK_SHA256}  ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | shasum -a 256 -c >/dev/null -
+          tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          mv "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"*/* "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"
+        if: steps.bootjdk.outputs.cache-hit != 'true'
+
+      - name: Restore jtreg artifact
+        id: jtreg_restore
+        uses: actions/download-artifact@v3
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v3
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
+
+      - name: Fix jtreg permissions
+        run: chmod -R a+rx ${HOME}/jtreg/
+
+      - name: Install dependencies
+        run: brew install make
+
+      - name: Select Xcode version
+        run: sudo xcode-select --switch /Applications/Xcode_12.4.app/Contents/Developer
+
+      - name: Configure
+        run: >
+          bash configure
+          --with-conf-name=macos-aarch64
+          --openjdk-target=aarch64-apple-darwin
+          ${{ matrix.flags }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-version-build=0
+          --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}/Contents/Home
+          --with-jtreg=${HOME}/jtreg
+          --with-default-make-target="product-bundles test-bundles"
+          --with-zlib=system
+          --with-jvm-features=shenandoahgc
+          --enable-jtreg-failure-handler
+        working-directory: jdk
+
+      - name: Build
+        run: make CONF_NAME=macos-aarch64
+        working-directory: jdk
+
+      - name: Persist test bundles
+        uses: actions/upload-artifact@v3
+        with:
+          name: transient_jdk-macos-aarch64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: |
+            jdk/build/macos-aarch64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/macos-aarch64/bundles/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-aarch64_bin-tests${{ matrix.artifact }}.tar.gz
 
   macos_x64_test:
     name: macOS x64
@@ -1339,11 +1469,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1359,14 +1489,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -1374,14 +1504,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-macos-x64${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-macos-x64${{ matrix.artifact }}
@@ -1389,15 +1519,15 @@ jobs:
 
       - name: Unpack jdk
         run: |
-          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}"
+          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}"
           # SapMachine 2020-11-04: Adapt bundle names
-          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}"
+          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }}"
 
       - name: Unpack tests
         run: |
-          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}"
+          mkdir -p "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}"
           # SapMachine 2020-11-04: Adapt bundle names
-          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}"
+          tar -xf "${HOME}/jdk-macos-x64${{ matrix.artifact }}/sapmachine-jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}"
 
       - name: Install dependencies
         run: brew install make
@@ -1407,13 +1537,14 @@ jobs:
 
       - name: Find root of jdk image dir
         run: |
-          imageroot=`find ${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }} -name release -type f`
+          imageroot=`find ${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin${{ matrix.artifact }} -name release -type f`
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
-          TEST_IMAGE_DIR=${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}
+          TEST_IMAGE_DIR=${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_macos-x64_bin-tests${{ matrix.artifact }}
           BOOT_JDK=${HOME}/bootjdk/${BOOT_JDK_VERSION}/Contents/Home
           JT_HOME=${HOME}/jtreg
           gmake run-test-prebuilt
@@ -1426,7 +1557,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
@@ -1461,14 +1592,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/macos-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/macos-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -1485,11 +1616,12 @@ jobs:
       - linux_x86_test
       - windows_x64_test
       - macos_x64_test
+      - macos_aarch64_build
 
     steps:
       - name: Determine current artifacts endpoint
         id: actions_runtime
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: "return { url: process.env['ACTIONS_RUNTIME_URL'], token: process.env['ACTIONS_RUNTIME_TOKEN'] }"
 
@@ -1512,7 +1644,7 @@ jobs:
           done
 
       - name: Fetch remaining artifacts (test results)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: test-results
 
@@ -1529,7 +1661,7 @@ jobs:
           done
 
       - name: Upload a combined test results artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-results_${{ needs.prerequisites.outputs.bundle_id }}
           path: test-results
