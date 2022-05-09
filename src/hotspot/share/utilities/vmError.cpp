@@ -1389,7 +1389,7 @@ void VMError::print_vm_info(outputStream* st) {
   sapmachine_vitals::default_settings(&info);
   info.sample_now = false;
   st->print_cr("Vitals:");
-  sapmachine_vitals::print_report(st);
+  sapmachine_vitals::print_report(st, &info);
 
   // STEP("printing system")
 
