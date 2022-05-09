@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "vitals/vitals.hpp"
 
 namespace sapmachine_vitals {
