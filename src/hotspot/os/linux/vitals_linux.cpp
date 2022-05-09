@@ -477,7 +477,8 @@ void sample_platform_values(Sample* sample) {
   if (bf.read("/proc/self/status")) {
 
     set_value_in_sample(g_col_process_virt, sample, bf.parsed_prefixed_value("VmSize:", K));
-    set_value_in_sample(g_col_process_swapped_out, sample, bf.parsed_prefixed_value("VmSwap:", K));
+    value_t vm_swap = bf.parsed_prefixed_value("VmSwap:", K);
+    set_value_in_sample(g_col_process_swapped_out, sample, vm_swap);
     rss_all = bf.parsed_prefixed_value("VmRSS:", K);
     set_value_in_sample(g_col_process_rss, sample, rss_all);
 
@@ -488,6 +489,10 @@ void sample_platform_values(Sample* sample) {
     set_value_in_sample(g_col_process_num_threads, sample,
         bf.parsed_prefixed_value("Threads:"));
 
+    // Hook in high memory reports
+    if (HighMemoryThreshold > 0 && (rss_all + vm_swap) > HighMemoryThreshold) {
+      sapmachine_vitals::trigger_high_memory_report();
+    }
   }
 
   set_value_in_sample(g_col_process_heap, sample, get_process_heap_size());

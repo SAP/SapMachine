@@ -518,6 +518,22 @@ const intx ObjectAlignmentInBytes = 8;
           "When DumpVitalsAtExit is set, the file name prefix for the "     \
           "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \
+  /* SapMachine 2022-05-09 : HighMemoryThreshold */                         \
+  product(size_t, HighMemoryThreshold, 0,                                   \
+          "Trigger threshold for (Dump|Print)InfoOnHighMemory. "            \
+          "Inactive (0) by default.")                                       \
+  product(bool, DumpReportOnHighMemory, false,                              \
+          "If HighMemoryThreshold is set and process memory reaches the "   \
+          "threshold, a report will be dumped to a file called "            \
+          "\"sapmachine_highmemory_<pid>.txt\". This report will contain "  \
+          "at least Vitals and NMT reports.\n"                              \
+          "This feature requires Vitals to be active")                      \
+  product(bool, PrintReportOnHighMemory, false,                             \
+          "If HighMemoryThreshold is set and process memory reaches the "   \
+          "threshold, a report will be printed to tty. This report will "   \
+          "contain at least Vitals and NMT reports.\n"                      \
+          "This feature requires Vitals to be active")                      \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \

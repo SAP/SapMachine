@@ -126,6 +126,14 @@ void MemTracker::final_report(outputStream* output) {
   }
 }
 
+// SapMachine 2022-05-09: report for HighMemoryThreshold
+// If detail level active, do a detail report, otherwise a summary report.
+void MemTracker::vitals_highmemory_report(outputStream* output) {
+  if (enabled()) {
+    report(tracking_level() >= NMT_detail ? false : true, output, K);
+  }
+}
+
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
  assert(output != NULL, "No output stream");
   MemBaseline baseline;

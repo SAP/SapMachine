@@ -219,6 +219,10 @@ class MemTracker : AllStatic {
   // Report when handling PrintNMTStatistics before VM shutdown.
   static void final_report(outputStream* output);
 
+  // SapMachine 2022-05-09: report for HighMemoryThreshold
+  // If detail level active, do a detail report, otherwise a summary report.
+  static void vitals_highmemory_report(outputStream* output);
+
   // Stored baseline
   static inline MemBaseline& get_baseline() {
     return _baseline;

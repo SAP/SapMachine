@@ -198,6 +198,9 @@ namespace sapmachine_vitals {
   // Implemented by platform specific
   bool platform_columns_initialize();
 
+  // Called by platform samplers
+  void trigger_high_memory_report();
+
   void sample_platform_values(Sample* sample);
   void sample_jvm_values(Sample* sample, bool avoid_locking);
 
