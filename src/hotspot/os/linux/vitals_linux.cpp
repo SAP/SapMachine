@@ -193,8 +193,6 @@ public:
 
 };
 
-//static Column* g_col_system_memtotal = NULL;
-static Column* g_col_system_memfree = NULL;
 static Column* g_col_system_memavail = NULL;
 static Column* g_col_system_memcommitted = NULL;
 static Column* g_col_system_memcommitted_ratio = NULL;
@@ -259,23 +257,8 @@ static void mallinfo2_init() {
 bool platform_columns_initialize() {
 
   // Order matters!
-//  g_col_system_memtotal = new MemorySizeColumn("system", NULL, "total", "Total physical memory.");
 
-  // Since free and avail are kind of redundant, only display free if avail is not available (very old kernels)
-  bool have_avail = false;
-  {
-    ProcFile bf;
-    if (bf.read("/proc/meminfo")) {
-      have_avail = (bf.parsed_prefixed_value("MemAvailable:", 1) != INVALID_VALUE);
-    }
-  }
-
-  // To save horizontal space, we print either avail or free
-  if (have_avail) { //  (>=3.14)
-    g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
-  } else {
-    g_col_system_memfree = new MemorySizeColumn("system", NULL, "free", "Unused memory");
-  }
+  g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
   g_col_system_memcommitted = new MemorySizeColumn("system", NULL, "comm", "Committed memory");
   g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
   g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
@@ -370,9 +353,6 @@ void sample_platform_values(Sample* sample) {
 
     // All values in /proc/meminfo are in KB
     const size_t scale = K;
-
-    set_value_in_sample(g_col_system_memfree, sample,
-        bf.parsed_prefixed_value("MemFree:", scale));
 
     set_value_in_sample(g_col_system_memavail, sample,
         bf.parsed_prefixed_value("MemAvailable:", scale));
