@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 
 public class VitalsTestHelper {
 
-
     // Example output:
     // Last 60 minutes:
     //                      ---------------------------system--------------------------- ------------------------process------------------------ --------------------------------------jvm---------------------------------------

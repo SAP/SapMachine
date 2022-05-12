@@ -73,6 +73,26 @@ public:
 
   const char* text() const { return _buf; }
 
+  // Utility function; parse a number string as value_t
+  static value_t as_value(const char* text, size_t scale = 1) {
+    value_t value;
+    errno = 0;
+    char* endptr = NULL;
+    value = (value_t)::strtoll(text, &endptr, 10);
+    if (endptr == text || errno != 0) {
+      value = INVALID_VALUE;
+    } else {
+      value *= scale;
+    }
+    return value;
+  }
+
+  // Return the start of the file, as number. Useful for proc files which
+  // contain a single number. Returns INVALID_VALUE if value did not parse
+  value_t as_value(size_t scale = 1) const {
+    return as_value(_buf, scale);
+  }
+
   const char* get_prefixed_line(const char* prefix) const {
     return ::strstr(_buf, prefix);
   }
@@ -83,13 +103,7 @@ public:
     if (s != NULL) {
       errno = 0;
       const char* p = s + ::strlen(prefix);
-      char* endptr = NULL;
-      value = (value_t)::strtoll(p, &endptr, 10);
-      if (p == endptr || errno != 0) {
-        value = INVALID_VALUE;
-      } else {
-        value *= scale;
-      }
+      return as_value(p, scale);
     }
     return value;
   }
@@ -207,6 +221,14 @@ static Column* g_col_system_num_threads = NULL;
 static Column* g_col_system_num_procs_running = NULL;
 static Column* g_col_system_num_procs_blocked = NULL;
 
+static bool g_show_cgroup_info = false;
+static Column* g_col_system_cgrp_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_soft_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_usage_in_bytes = NULL;
+static Column* g_col_system_cgrp_memsw_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_memsw_usage_in_bytes = NULL;
+static Column* g_col_system_cgrp_kmem_usage_in_bytes = NULL;
+
 static Column* g_col_system_cpu_user = NULL;
 static Column* g_col_system_cpu_system = NULL;
 static Column* g_col_system_cpu_idle = NULL;
@@ -258,13 +280,15 @@ bool platform_columns_initialize() {
 
   // Order matters!
 
-  g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
-  g_col_system_memcommitted = new MemorySizeColumn("system", NULL, "comm", "Committed memory");
-  g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
-  g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
+  // System
 
-  g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in");
-  g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out");
+  g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping [*]");
+  g_col_system_memcommitted = new MemorySizeColumn("system", NULL, "comm", "Committed memory [*]");
+  g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent) [*]");
+  g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used [*]");
+
+  g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in [*]");
+  g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out [*]");
 
   g_col_system_num_procs = new PlainValueColumn("system", NULL, "p", "Number of processes");
   g_col_system_num_threads = new PlainValueColumn("system", NULL, "t", "Number of threads");
@@ -272,11 +296,33 @@ bool platform_columns_initialize() {
   g_col_system_num_procs_running = new PlainValueColumn("system", NULL, "pr", "Number of processes running");
   g_col_system_num_procs_blocked = new PlainValueColumn("system", NULL, "pb", "Number of processes blocked");
 
-  g_col_system_cpu_user =     new CPUTimeColumn("system", "cpu", "us", "Global cpu user time");
-  g_col_system_cpu_system =   new CPUTimeColumn("system", "cpu", "sy", "Global cpu system time");
-  g_col_system_cpu_idle =     new CPUTimeColumn("system", "cpu", "id", "Global cpu idle time");
-  g_col_system_cpu_steal =    new CPUTimeColumn("system", "cpu", "st", "Global cpu time stolen");
-  g_col_system_cpu_guest =    new CPUTimeColumn("system", "cpu", "gu", "Global cpu time spent on guest");
+  g_col_system_cpu_user =     new CPUTimeColumn("system", "cpu", "us", "CPU user time [*]");
+  g_col_system_cpu_system =   new CPUTimeColumn("system", "cpu", "sy", "CPU system time [*]");
+  g_col_system_cpu_idle =     new CPUTimeColumn("system", "cpu", "id", "CPU idle time [*]");
+  g_col_system_cpu_steal =    new CPUTimeColumn("system", "cpu", "st", "CPU time stolen [*]");
+  g_col_system_cpu_guest =    new CPUTimeColumn("system", "cpu", "gu", "CPU time spent on guest [*]");
+
+
+  // We omit c-group info if we run inside a root memory controller, or if the system runs without cgroups
+  g_show_cgroup_info = false;
+  {
+    ProcFile bf;
+    if (bf.read("/proc/self/cgroup")) {
+      bool is_root_mem_controller = (::strstr(bf.text(), "memory:/\n") != NULL);
+      g_show_cgroup_info = !is_root_mem_controller;
+    }
+  }
+
+  if (g_show_cgroup_info) {
+    g_col_system_cgrp_limit_in_bytes = new MemorySizeColumn("system", "cgroup", "lim", "cgroup memory limit");
+    g_col_system_cgrp_memsw_limit_in_bytes = new MemorySizeColumn("system", "cgroup", "limsw", "cgroup memory+swap limit");
+    g_col_system_cgrp_soft_limit_in_bytes = new MemorySizeColumn("system", "cgroup", "slim", "cgroup memory soft limit");
+    g_col_system_cgrp_usage_in_bytes = new MemorySizeColumn("system", "cgroup", "usg", "cgroup memory usage");
+    g_col_system_cgrp_memsw_usage_in_bytes = new MemorySizeColumn("system", "cgroup", "usgsw", "cgroup memory+swap usage");
+    g_col_system_cgrp_kmem_usage_in_bytes = new MemorySizeColumn("system", "cgroup", "kusg", "cgroup kernel memory usage");
+  }
+
+  // Process
 
   g_col_process_virt = new MemorySizeColumn("process", NULL, "virt", "Virtual size");
 
@@ -394,6 +440,37 @@ void sample_platform_values(Sample* sample) {
         bf.parsed_prefixed_value("procs_running"));
     set_value_in_sample(g_col_system_num_procs_blocked, sample,
         bf.parsed_prefixed_value("procs_blocked"));
+  }
+
+  // cgroups business
+  if (g_show_cgroup_info) {
+    if (bf.read("/sys/fs/cgroup/memory/memory.usage_in_bytes")) {
+      set_value_in_sample(g_col_system_cgrp_usage_in_bytes, sample, bf.as_value(1));
+    }
+    if (bf.read("/sys/fs/cgroup/memory/memory.memsw.usage_in_bytes")) {
+      set_value_in_sample(g_col_system_cgrp_memsw_usage_in_bytes, sample, bf.as_value(1));
+    }
+    if (bf.read("/sys/fs/cgroup/memory/memory.kmem.usage_in_bytes")) {
+      set_value_in_sample(g_col_system_cgrp_kmem_usage_in_bytes, sample, bf.as_value(1));
+    }
+    // Cgroup limits defaults to PAGE_COUNTER_MAX in the kernel; on 64-bit, its LONG_MAX aligned down to pagesize;
+    // but since I am not sure this is always true, just assume a very high value.
+    const size_t very_high_value = LP64_ONLY(128 * K * G) NOT_LP64(4 * G);
+    if (bf.read("/sys/fs/cgroup/memory/memory.limit_in_bytes")) {
+      value_t v = bf.as_value(1);
+      set_value_in_sample(g_col_system_cgrp_limit_in_bytes, sample,
+                         (v > very_high_value ? INVALID_VALUE : v)); // very large numbers mean unlimited
+    }
+    if (bf.read("/sys/fs/cgroup/memory/memory.soft_limit_in_bytes")) {
+      value_t v = bf.as_value(1);
+      set_value_in_sample(g_col_system_cgrp_soft_limit_in_bytes, sample,
+                         (v > very_high_value ? INVALID_VALUE : v)); // very large numbers mean unlimited
+    }
+    if (bf.read("/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes")) {
+      value_t v = bf.as_value(1);
+      set_value_in_sample(g_col_system_cgrp_memsw_limit_in_bytes, sample,
+                         (v > very_high_value ? INVALID_VALUE : v)); // very large numbers mean unlimited
+    }
   }
 
   if (bf.read("/proc/self/status")) {
