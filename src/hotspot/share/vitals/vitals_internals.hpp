@@ -158,6 +158,24 @@ namespace sapmachine_vitals {
     {}
   };
 
+  ////// Legend: handles the legend
+
+  class Legend: public CHeapObj<mtInternal> {
+    stringStream _legend;
+    stringStream _footnote;
+    static Legend* _the_legend;
+    // needed during building the legend
+    const char* _last_added_cat;
+  public:
+    Legend();
+    void add_column_info(const char* const category, const char* const header,
+                         const char* const name, const char* const description);
+    void add_footnote(const char* text);
+    void print_on(outputStream* st) const;
+    static Legend* the_legend () { return _the_legend; }
+    static bool initialize();
+  };
+
   ////// ColumnList: a singleton class holding all information about all columns
 
   class ColumnList: public CHeapObj<mtInternal> {
@@ -190,7 +208,25 @@ namespace sapmachine_vitals {
 
   };
 
-  // Implemented by platform specific
+  // Convenient method to define and register a possibly deactivated column
+  // (a deactivated column is not shown in the table, but still shown in the legend, to
+  //  given the user a hint about it)
+  template <class ColumnType>
+  Column* define_column (
+      const char* const category, const char* const header,
+      const char* const name, const char* const description,
+      bool is_active)
+  {
+    Column* c = NULL;
+    if (is_active) {
+      c = new ColumnType(category, header, name, description);
+      ColumnList::the_list()->add_column(c);
+    }
+    Legend::the_legend()->add_column_info(category, header, name, description);
+    return c;
+  }
+
+  // Ask platform to add platform specific columns
   bool platform_columns_initialize();
 
   void sample_platform_values(Sample* sample);

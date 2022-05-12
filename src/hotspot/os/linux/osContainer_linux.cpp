@@ -36,6 +36,21 @@ bool  OSContainer::_is_initialized   = false;
 bool  OSContainer::_is_containerized = false;
 CgroupSubsystem* cgroup_subsystem;
 
+// SapMachine 2022-05-01 Vitals
+// This is an ugly hack aimed at having as little merge surface as possible across JDK versions.
+extern const char* sapmachine_get_memory_controller_path() {
+  if (cgroup_subsystem != NULL) {
+    CachingCgroupController* cc = cgroup_subsystem->memory_controller();
+    if (cc != NULL) {
+      CgroupController* c = cc->controller();
+      if (c != NULL) {
+        return c->subsystem_path();
+      }
+    }
+  }
+  return NULL;
+}
+
 /* init
  *
  * Initialize the container support and determine if
