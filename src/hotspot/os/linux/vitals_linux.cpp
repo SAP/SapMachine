@@ -26,6 +26,8 @@
 
 #include "precompiled.hpp"
 #include "jvm_io.h"
+#include "osContainer_linux.hpp"
+#include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -37,6 +39,8 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+
+extern const char* sapmachine_get_memory_controller_path();
 
 namespace sapmachine_vitals {
 
@@ -73,6 +77,26 @@ public:
 
   const char* text() const { return _buf; }
 
+  // Utility function; parse a number string as value_t
+  static value_t as_value(const char* text, size_t scale = 1) {
+    value_t value;
+    errno = 0;
+    char* endptr = NULL;
+    value = (value_t)::strtoll(text, &endptr, 10);
+    if (endptr == text || errno != 0) {
+      value = INVALID_VALUE;
+    } else {
+      value *= scale;
+    }
+    return value;
+  }
+
+  // Return the start of the file, as number. Useful for proc files which
+  // contain a single number. Returns INVALID_VALUE if value did not parse
+  value_t as_value(size_t scale = 1) const {
+    return as_value(_buf, scale);
+  }
+
   const char* get_prefixed_line(const char* prefix) const {
     return ::strstr(_buf, prefix);
   }
@@ -83,13 +107,7 @@ public:
     if (s != NULL) {
       errno = 0;
       const char* p = s + ::strlen(prefix);
-      char* endptr = NULL;
-      value = (value_t)::strtoll(p, &endptr, 10);
-      if (p == endptr || errno != 0) {
-        value = INVALID_VALUE;
-      } else {
-        value *= scale;
-      }
+      return as_value(p, scale);
     }
     return value;
   }
@@ -207,6 +225,14 @@ static Column* g_col_system_num_threads = NULL;
 static Column* g_col_system_num_procs_running = NULL;
 static Column* g_col_system_num_procs_blocked = NULL;
 
+static bool g_show_cgroup_info = false;
+static Column* g_col_system_cgrp_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_soft_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_usage_in_bytes = NULL;
+static Column* g_col_system_cgrp_memsw_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_memsw_usage_in_bytes = NULL;
+static Column* g_col_system_cgrp_kmem_usage_in_bytes = NULL;
+
 static Column* g_col_system_cpu_user = NULL;
 static Column* g_col_system_cpu_system = NULL;
 static Column* g_col_system_cpu_idle = NULL;
@@ -214,11 +240,15 @@ static Column* g_col_system_cpu_steal = NULL;
 static Column* g_col_system_cpu_guest = NULL;
 
 static Column* g_col_process_virt = NULL;
+
+static bool g_show_rss_detail_info = false;
 static Column* g_col_process_rss = NULL;
 static Column* g_col_process_rssanon = NULL;
 static Column* g_col_process_rssfile = NULL;
 static Column* g_col_process_rssshmem = NULL;
+
 static Column* g_col_process_swapped_out = NULL;
+
 static Column* g_col_process_chp_used = NULL;
 static Column* g_col_process_chp_free = NULL;
 
@@ -254,73 +284,264 @@ static void mallinfo2_init() {
 }
 #endif // __GLIBC__
 
+/////////////// cgroup stuff
+// We use part of the hotspot cgroup wrapper, but not all of it.
+// The reason:
+// - wrapper uses UL heavily, which I don't want to happen in a sampler thread (I only log in initialization, which is ok)
+// - wrapper does not expose all metrics I need (eg kmem)
+// What the wrapper does very nicely is the parse stuff, which I don't want to re-invent, therefore
+// I use the wrapper to get the controller path.
+
+class CGroups : public AllStatic {
+
+  static bool _containerized;
+  static const char* _file_usg;
+  static const char* _file_usgsw;
+  static const char* _file_lim;
+  static const char* _file_limsw;
+  static const char* _file_slim;
+  static const char* _file_kusg;
+
+public:
+
+  static bool initialize() {
+
+    // For the heck of it, I go through with initialization even if we are not
+    // containerized, since I like to know controller paths even for those cases.
+
+    _containerized = OSContainer::is_containerized();
+    log_info(os)("Vitals cgroup initialization: containerized = %d", _containerized);
+
+    const char* controller_path = sapmachine_get_memory_controller_path();
+    if (controller_path == NULL) {
+      log_info(os)("Vitals cgroup initialization: controller path NULL");
+      return false;
+    }
+    size_t pathlen = ::strlen(controller_path);
+    if (pathlen == 0) {
+      log_info(os)("Vitals cgroup initialization: controller path empty?");
+      return false;
+    }
+    stringStream path;
+    if (controller_path[pathlen - 1] == '/') {
+      path.print("%s", controller_path);
+    } else {
+      path.print("%s/", controller_path);
+    }
+
+    log_info(os)("Vitals cgroup initialization: controller path: %s", path.base());
+
+    // V1 or V2?
+    stringStream ss;
+    ss.print("%smemory.usage_in_bytes", path.base());
+    struct stat s;
+    const bool isv1 = os::file_exists(ss.base());
+    if (isv1) {
+      log_info(os)("Vitals cgroup initialization: v1");
+    } else  {
+      ss.reset();
+      ss.print("%smemory.current", path.base());
+      if (os::file_exists(ss.base())) {
+        // okay, its v2
+        log_info(os)("Vitals cgroup initialization: v2");
+      } else {
+        log_info(os)("Vitals cgroup initialization: no clue. Giving up.");
+      }
+    }
+
+    _file_usg = os::strdup(ss.base()); // so, we have that.
+
+#define STORE_PATH(variable, filename) \
+  ss.reset(); ss.print("%s%s", path.base(), filename); variable = os::strdup(ss.base());
+
+    if (isv1) {
+      STORE_PATH(_file_usgsw, "memory.memsw.usage_in_bytes");
+      STORE_PATH(_file_kusg, "memory.kmem.usage_in_bytes");
+      STORE_PATH(_file_lim, "memory.limit_in_bytes");
+      STORE_PATH(_file_limsw, "memory.memsw.limit_in_bytes");
+      STORE_PATH(_file_slim, "memory.soft_limit_in_bytes");
+    } else {
+      STORE_PATH(_file_usgsw, "memory.swap.current");
+      STORE_PATH(_file_kusg, "memory.kmem.usage_in_bytes");
+      STORE_PATH(_file_lim, "memory.max");
+      STORE_PATH(_file_limsw, "memory.swap.max");
+      STORE_PATH(_file_slim, "memory.low");
+    }
+#undef STORE_PATH
+
+#define LOG_PATH(variable) \
+    log_info(os)("Vitals: %s=%s", #variable, variable == NULL ? "<null>" : variable);
+    LOG_PATH(_file_usg)
+    LOG_PATH(_file_usgsw)
+    LOG_PATH(_file_kusg)
+    LOG_PATH(_file_lim)
+    LOG_PATH(_file_limsw)
+    LOG_PATH(_file_slim)
+#undef LOG_PATH
+
+    // Initialization went through. We show columns if we are containerized.
+    return _containerized;
+  }
+
+  struct cgroup_values_t {
+    value_t lim;
+    value_t limsw;
+    value_t slim;
+    value_t usg;
+    value_t usgsw;
+    value_t kusg;
+  };
+
+  static bool get_stats(cgroup_values_t* v) {
+    v->lim = v->limsw = v->slim = v->usg = v->usgsw = v->kusg = INVALID_VALUE;
+    ProcFile pf;
+#define GET_VALUE(var) \
+  { \
+    const char* what = _file_ ## var; \
+    if (what != NULL && pf.read(what)) { \
+      v-> var = pf.as_value(1); \
+    } \
+  }
+  GET_VALUE(usg);
+  GET_VALUE(usgsw);
+  GET_VALUE(kusg);
+  GET_VALUE(lim);
+  GET_VALUE(limsw);
+  GET_VALUE(slim);
+#undef GET_VALUE
+    // Cgroup limits defaults to PAGE_COUNTER_MAX in the kernel; so a very large number means "no limit"
+    // Note that on 64-bit, the default is LONG_MAX aligned down to pagesize; but I am not sure this is
+    // always true, so I just assume a very high value.
+    const size_t practically_infinite = LP64_ONLY(128 * K * G) NOT_LP64(4 * G);
+    if (v->lim > practically_infinite)    v->lim = INVALID_VALUE;
+    if (v->slim > practically_infinite)   v->slim = INVALID_VALUE;
+    if (v->limsw > practically_infinite)  v->limsw = INVALID_VALUE;
+    return true;
+
+  } // end: CGroups::get_stats()
+
+}; // end: CGroups
+
+bool CGroups::_containerized = false;
+const char* CGroups::_file_usg = NULL;
+const char* CGroups::_file_usgsw = NULL;
+const char* CGroups::_file_lim = NULL;
+const char* CGroups::_file_limsw = NULL;
+const char* CGroups::_file_slim = NULL;
+const char* CGroups::_file_kusg = NULL;
+
 bool platform_columns_initialize() {
 
-  // Order matters!
+  const char* const system_cat = "system";
+  const char* const process_cat = "process";
 
-  g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
-  g_col_system_memcommitted = new MemorySizeColumn("system", NULL, "comm", "Committed memory");
-  g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
-  g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
+  Legend::the_legend()->add_footnote("   [host]: values are host-global (not containerized).");
+  Legend::the_legend()->add_footnote("   [cgrp]: only shown if containerized");
+  Legend::the_legend()->add_footnote("    [krn]: depends on kernel version");
 
-  g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in [*] [delta]");
-  g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out [*] [delta]");
+  g_col_system_memavail =
+      define_column<MemorySizeColumn>(system_cat, NULL, "avail", "Memory available without swapping [host]", true);
+  g_col_system_memcommitted =
+      define_column<MemorySizeColumn>(system_cat, NULL, "comm", "Committed memory [host]", true);
+  g_col_system_memcommitted_ratio =
+      define_column<PlainValueColumn>(system_cat, NULL, "crt", "Committed-to-Commit-Limit ratio (percent) [host]", true);
+  g_col_system_swap =
+      define_column<MemorySizeColumn>(system_cat, NULL, "swap", "Swap space used [host]", true);
 
-  g_col_system_num_procs = new PlainValueColumn("system", NULL, "p", "Number of processes");
-  g_col_system_num_threads = new PlainValueColumn("system", NULL, "t", "Number of threads");
+  g_col_system_pages_swapped_in =
+      define_column<DeltaValueColumn>(system_cat, NULL, "si", "Number of pages swapped in [host] [delta]", true);
+  g_col_system_pages_swapped_out =
+      define_column<DeltaValueColumn>(system_cat, NULL, "so", "Number of pages pages swapped out [host] [delta]", true);
 
-  g_col_system_num_procs_running = new PlainValueColumn("system", NULL, "pr", "Number of processes running");
-  g_col_system_num_procs_blocked = new PlainValueColumn("system", NULL, "pb", "Number of processes blocked");
+  g_col_system_num_procs =
+      define_column<PlainValueColumn>(system_cat, NULL, "p", "Number of processes", true);
+  g_col_system_num_threads =
+      define_column<PlainValueColumn>(system_cat, NULL, "t", "Number of threads", true);
 
-  g_col_system_cpu_user =     new CPUTimeColumn("system", "cpu", "us", "Global cpu user time");
-  g_col_system_cpu_system =   new CPUTimeColumn("system", "cpu", "sy", "Global cpu system time");
-  g_col_system_cpu_idle =     new CPUTimeColumn("system", "cpu", "id", "Global cpu idle time");
-  g_col_system_cpu_steal =    new CPUTimeColumn("system", "cpu", "st", "Global cpu time stolen");
-  g_col_system_cpu_guest =    new CPUTimeColumn("system", "cpu", "gu", "Global cpu time spent on guest");
+  g_col_system_num_procs_running =
+      define_column<PlainValueColumn>(system_cat, NULL, "pr", "Number of processes running", true);
+  g_col_system_num_procs_blocked =
+      define_column<PlainValueColumn>(system_cat, NULL, "pb", "Number of processes blocked", true);
 
-  g_col_process_virt = new MemorySizeColumn("process", NULL, "virt", "Virtual size");
+  g_col_system_cpu_user =
+      define_column<CPUTimeColumn>(system_cat, "cpu", "us", "CPU user time [host]", true);
+  g_col_system_cpu_system =
+      define_column<CPUTimeColumn>(system_cat, "cpu", "sy", "CPU system time [host]", true);
+  g_col_system_cpu_idle =
+        define_column<CPUTimeColumn>(system_cat, "cpu", "id", "CPU idle time [host]", true);
+  g_col_system_cpu_steal =
+        define_column<CPUTimeColumn>(system_cat, "cpu", "st", "CPU time stolen [host]", true);
+  g_col_system_cpu_guest =
+        define_column<CPUTimeColumn>(system_cat, "cpu", "gu", "CPU time spent on guest [host]", true);
 
-  bool have_rss_detail_info = false;
+  g_show_cgroup_info = CGroups::initialize();
+  g_col_system_cgrp_limit_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "lim", "cgroup memory limit [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_memsw_limit_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "limsw", "cgroup memory+swap limit [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_soft_limit_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "slim", "cgroup memory soft limit [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_usage_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "usg", "cgroup memory usage [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_memsw_usage_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "usgsw", "cgroup memory+swap usage [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_kmem_usage_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "kusg", "cgroup kernel memory usage (cgroup v1 only) [cgrp]", g_show_cgroup_info);
+
+  // Process
+
+  g_col_process_virt =
+    define_column<MemorySizeColumn>(process_cat, NULL, "virt", "Virtual size", true);
+
+  // RSS detail needs kernel >= 4.5
   {
     ProcFile bf;
     if (bf.read("/proc/self/status")) {
-      have_rss_detail_info = bf.parsed_prefixed_value("RssAnon:", 1) != INVALID_VALUE;
+      g_show_rss_detail_info = (bf.parsed_prefixed_value("RssAnon:", 1) != INVALID_VALUE);
     }
   }
-  if (have_rss_detail_info) {
-    // Linux 4.5 ++
-    g_col_process_rss = new MemorySizeColumn("process", "rss", "all", "Resident set size, total");
-    g_col_process_rssanon = new MemorySizeColumn("process", "rss", "anon", "Resident set size, anonymous memory (>=4.5)");
-    g_col_process_rssfile = new MemorySizeColumn("process", "rss", "file", "Resident set size, file mappings (>=4.5)");
-    g_col_process_rssshmem = new MemorySizeColumn("process", "rss", "shm", "Resident set size, shared memory (>=4.5)");
-  } else {
-    g_col_process_rss = new MemorySizeColumn("process", NULL, "rss", "Resident set size, total");
-  }
+  g_col_process_rss =
+      define_column<MemorySizeColumn>(process_cat, "rss", "all", "Resident set size, total", true);
+  g_col_process_rssanon =
+      define_column<MemorySizeColumn>(process_cat, "rss", "anon", "Resident set size, anonymous memory [krn]", g_show_rss_detail_info);
+  g_col_process_rssfile =
+      define_column<MemorySizeColumn>(process_cat, "rss", "file", "Resident set size, file mappings [krn]", g_show_rss_detail_info);
+  g_col_process_rssshmem =
+      define_column<MemorySizeColumn>(process_cat, "rss", "shm", "Resident set size, shared memory [krn]", g_show_rss_detail_info);
 
-  g_col_process_swapped_out = new MemorySizeColumn("process", NULL, "swdo", "Memory swapped out");
+  g_col_process_swapped_out =
+      define_column<MemorySizeColumn>(process_cat, NULL, "swdo", "Memory swapped out", true);
 
+  // glibc heap info depends on, obviously, glibc.
+  // Also slightly modify the text if only mallinf, not mallinf2, is available on 64-bit
 #ifdef __GLIBC__
   mallinfo2_init();
-  g_col_process_chp_used = new MemorySizeColumn("process", "cheap", "usd",
-      g_mallinfo2 != NULL ? "C-Heap, in-use allocations" :
-                            "C-Heap, in-use allocations (unavailable if RSS > 4G)");
-  g_col_process_chp_free = new MemorySizeColumn("process", "cheap", "free",
-      g_mallinfo2 != NULL ? "C-Heap, bytes in free blocks" :
-                            "C-Heap, bytes in free blocks (unavailable if RSS > 4G)");
-#endif // __GLIBC__
+  const bool show_glibc_heap_info = true;
+#else
+  const bool show_glibc_heap_info = false;
+#endif
+  g_col_process_chp_used =
+      define_column<MemorySizeColumn>(process_cat, "cheap", "usd", "C-Heap, in-use allocations (may be unavailable if RSS > 4G)", show_glibc_heap_info);
+  g_col_process_chp_free =
+      define_column<MemorySizeColumn>(process_cat, "cheap", "free", "C-Heap, bytes in free blocks (may be unavailable if RSS > 4G)", show_glibc_heap_info);
 
-  g_col_process_cpu_user = new CPUTimeColumn("process", "cpu", "us", "Process cpu user time");
+  g_col_process_cpu_user =
+      define_column<CPUTimeColumn>(process_cat, "cpu", "us", "Process cpu user time", true);
 
-  g_col_process_cpu_system = new CPUTimeColumn("process", "cpu", "sy", "Process cpu system time");
+  g_col_process_cpu_system =
+    define_column<CPUTimeColumn>(process_cat, "cpu", "sy", "Process cpu system time", true);
 
-  g_col_process_num_of = new PlainValueColumn("process", "io", "of", "Number of open files");
+  g_col_process_num_of =
+      define_column<PlainValueColumn>(process_cat, "io", "of", "Number of open files", true);
 
-  g_col_process_io_bytes_read = new DeltaMemorySizeColumn("process", "io", "rd", "IO bytes read from storage or cache");
+  g_col_process_io_bytes_read =
+    define_column<DeltaMemorySizeColumn>(process_cat, "io", "rd", "IO bytes read from storage or cache", true);
 
-  g_col_process_io_bytes_written = new DeltaMemorySizeColumn("process", "io", "wr", "IO bytes written");
+  g_col_process_io_bytes_written =
+      define_column<DeltaMemorySizeColumn>(process_cat, "io", "wr", "IO bytes written", true);
 
-  g_col_process_num_threads = new PlainValueColumn("process", NULL, "thr", "Number of native threads");
-
+  g_col_process_num_threads =
+      define_column<PlainValueColumn>(process_cat, NULL, "thr", "Number of native threads", true);
 
   return true;
 }
@@ -396,6 +617,19 @@ void sample_platform_values(Sample* sample) {
         bf.parsed_prefixed_value("procs_blocked"));
   }
 
+  // cgroups business
+  if (g_show_cgroup_info) {
+    CGroups::cgroup_values_t v;
+    if (CGroups::get_stats(&v)) {
+      set_value_in_sample(g_col_system_cgrp_usage_in_bytes, sample, v.usg);
+      set_value_in_sample(g_col_system_cgrp_memsw_usage_in_bytes, sample, v.usgsw);
+      set_value_in_sample(g_col_system_cgrp_kmem_usage_in_bytes, sample, v.kusg);
+      set_value_in_sample(g_col_system_cgrp_limit_in_bytes, sample, v.lim);
+      set_value_in_sample(g_col_system_cgrp_soft_limit_in_bytes, sample, v.slim);
+      set_value_in_sample(g_col_system_cgrp_memsw_limit_in_bytes, sample, v.limsw);
+    }
+  }
+
   if (bf.read("/proc/self/status")) {
 
     set_value_in_sample(g_col_process_virt, sample, bf.parsed_prefixed_value("VmSize:", K));
@@ -403,9 +637,11 @@ void sample_platform_values(Sample* sample) {
     rss_all = bf.parsed_prefixed_value("VmRSS:", K);
     set_value_in_sample(g_col_process_rss, sample, rss_all);
 
-    set_value_in_sample(g_col_process_rssanon, sample, bf.parsed_prefixed_value("RssAnon:", K));
-    set_value_in_sample(g_col_process_rssfile, sample, bf.parsed_prefixed_value("RssFile:", K));
-    set_value_in_sample(g_col_process_rssshmem, sample, bf.parsed_prefixed_value("RssShmem:", K));
+    if (g_show_rss_detail_info) {
+      set_value_in_sample(g_col_process_rssanon, sample, bf.parsed_prefixed_value("RssAnon:", K));
+      set_value_in_sample(g_col_process_rssfile, sample, bf.parsed_prefixed_value("RssFile:", K));
+      set_value_in_sample(g_col_process_rssshmem, sample, bf.parsed_prefixed_value("RssShmem:", K));
+    }
 
     set_value_in_sample(g_col_process_num_threads, sample,
         bf.parsed_prefixed_value("Threads:"));

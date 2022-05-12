@@ -232,6 +232,51 @@ public:
   }
 };
 
+
+////// Legend ///////////////////////////////////////////////
+
+Legend* Legend::_the_legend = NULL;
+
+bool Legend::initialize() {
+  _the_legend = new Legend();
+  return _the_legend != NULL;
+}
+
+stringStream _legend;
+stringStream _footnote;
+static Legend* _the_legend;
+
+Legend::Legend() : _last_added_cat(NULL) {}
+
+void Legend::add_column_info(const char* const category, const char* const header,
+                       const char* const name, const char* const description) {
+  // Print category label if this column opens a new category
+  if (_last_added_cat != category) {
+    print_text_with_dashes(&_legend, category, 30);
+    _legend.cr();
+  }
+  _last_added_cat = category;
+  // print column name and description
+  const int min_width_column_label = 16;
+  char buf[32];
+  if (header != NULL) {
+    jio_snprintf(buf, sizeof(buf), "%s-%s", header, name);
+  } else {
+    jio_snprintf(buf, sizeof(buf), "%s", name);
+  }
+  _legend.print_cr("%*s: %s", min_width_column_label, buf, description);
+}
+
+void Legend::add_footnote(const char* text) {
+  _footnote.print_cr("%s", text);
+}
+
+void Legend::print_on(outputStream* st) const {
+  st->print_raw(_legend.base());
+  st->cr();
+  st->print_raw(_footnote.base());
+}
+
 ////// ColumnList: a singleton class holding all information about all columns
 
 ColumnList* ColumnList::_the_list = NULL;
@@ -361,45 +406,6 @@ static void print_column_names(outputStream* st, const ColumnWidths* widths, con
   st->cr();
 }
 
-static void print_legend(outputStream* st, const print_info_t* pi) {
-  const Column* c = ColumnList::the_list()->first();
-  const Column* c_prev = NULL;
-  while (c != NULL) {
-    // Print category label.
-    if (c->index_within_category_section() == 0) {
-      print_text_with_dashes(st, c->category(), 30);
-      st->cr();
-    }
-    // print column name and description
-    const int min_width_column_label = 16;
-    char buf[32];
-    if (c->header() != NULL) {
-      jio_snprintf(buf, sizeof(buf), "%s-%s", c->header(), c->name());
-    } else {
-      jio_snprintf(buf, sizeof(buf), "%s", c->name());
-    }
-    st->print("%*s: %s", min_width_column_label, buf, c->description());
-
-    st->cr();
-
-    c_prev = c;
-    c = c->next();
-  }
-  st->cr();
-  st->print_cr("[delta] values refer to the previous measurement.");
-  if (pi->scale != 0) {
-    const char* display_unit = NULL;
-    switch (pi->scale) {
-      case 1: display_unit = "  "; break;
-      case K: display_unit = "KB"; break;
-      case M: display_unit = "MB"; break;
-      case G: display_unit = "GB"; break;
-      default: ShouldNotReachHere();
-    }
-    st->print_cr("[mem] values are in %s.", display_unit);
-  }
-}
-
 // Print a human readable size.
 // byte_size: size, in bytes, to be printed.
 // scale: K,M,G or 0 (dynamic)
@@ -483,9 +489,7 @@ Column::Column(const char* category, const char* header, const char* name, const
     _description(description),
     _next(NULL), _idx(-1),
     _idx_cat(-1), _idx_hdr(-1)
-{
-  ColumnList::the_list()->add_column(this);
-}
+{}
 
 void Column::print_value(outputStream* st, value_t value, value_t last_value,
     int last_value_age, int min_width, const print_info_t* pi) const {
@@ -973,18 +977,25 @@ static Column* g_col_heap_used = NULL;
 
 static Column* g_col_metaspace_committed = NULL;
 static Column* g_col_metaspace_used = NULL;
+
+static bool g_show_classspace_columns = false;
 static Column* g_col_classspace_committed = NULL;
 static Column* g_col_classspace_used = NULL;
+
 static Column* g_col_metaspace_cap_until_gc = NULL;
 
 static Column* g_col_codecache_committed = NULL;
 
+static bool g_show_nmt_columns = false;
 static Column* g_col_nmt_malloc = NULL;
 static Column* g_col_nmt_mmap = NULL;
 
 static Column* g_col_number_of_java_threads = NULL;
 static Column* g_col_number_of_java_threads_non_demon = NULL;
+
+static bool g_show_size_thread_stacks_col = false;
 static Column* g_col_size_thread_stacks = NULL;
+
 static Column* g_col_number_of_java_threads_created = NULL;
 
 static Column* g_col_number_of_clds = NULL;
@@ -998,63 +1009,75 @@ static Column* g_col_number_of_class_unloads = NULL;
 
 static bool add_jvm_columns() {
   // Order matters!
+  const char* const jvm_cat = "jvm";
 
-  g_col_heap_committed = new MemorySizeColumn("jvm",
-      "heap", "comm", "Java Heap Size, committed");
-  g_col_heap_used = new MemorySizeColumn("jvm",
-      "heap", "used", "Java Heap Size, used");
+  Legend::the_legend()->add_footnote("  [delta]: values refer to the previous measurement.");
+  Legend::the_legend()->add_footnote("    [nmt]: only shown if NMT is available and activated");
+  Legend::the_legend()->add_footnote("     [cs]: only shown on 64-bit if class space is active");
+  Legend::the_legend()->add_footnote("  [linux]: only on Linux");
 
-  g_col_metaspace_committed = new MemorySizeColumn("jvm",
-      "meta", "comm", "Meta Space Size (class+nonclass), committed");
+  g_col_heap_committed =
+      define_column<MemorySizeColumn>(jvm_cat, "heap", "comm", "Java Heap Size, committed", true);
+  g_col_heap_used =
+      define_column<MemorySizeColumn>(jvm_cat, "heap", "used", "Java Heap Size, used", true);
 
-  g_col_metaspace_used = new MemorySizeColumn("jvm",
-      "meta", "used", "Meta Space Size (class+nonclass), used");
+  g_col_metaspace_committed =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "comm", "Meta Space Size (class+nonclass), committed", true);
+  g_col_metaspace_used =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "used", "Meta Space Size (class+nonclass), used", true);
 
-  if (Metaspace::using_class_space()) {
-    g_col_classspace_committed = new MemorySizeColumn("jvm",
-        "meta", "csc", "Class Space Size, committed");
-    g_col_classspace_used = new MemorySizeColumn("jvm",
-        "meta", "csu", "Class Space Size, used");
-  }
+  // Class space columns only shown if class space is active
+  g_show_classspace_columns = Metaspace::using_class_space();
+  g_col_classspace_committed =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "csc", "Class Space Size, committed [cs]", g_show_classspace_columns);
+  g_col_classspace_used =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "csu", "Class Space Size, used [cs]",  g_show_classspace_columns);
 
-  g_col_metaspace_cap_until_gc = new MemorySizeColumn("jvm",
-      "meta", "gctr", "GC threshold");
+  g_col_metaspace_cap_until_gc =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "gctr", "GC threshold", true);
 
-  g_col_codecache_committed = new MemorySizeColumn("jvm",
-      NULL, "code", "Code cache, committed");
+  g_col_codecache_committed =
+      define_column<MemorySizeColumn>(jvm_cat, NULL, "code", "Code cache, committed", true);
 
-  g_col_nmt_malloc = new MemorySizeColumn("jvm",
-      "nmt", "mlc", "Memory malloced by hotspot (requires NMT)");
+  // NMT columns only shown if NMT is at least at summary level
+  g_show_nmt_columns =
+#if INCLUDE_NMT
+      (MemTracker::tracking_level() >= NMT_summary)
+#else
+      false
+#endif
+  ;
+  g_col_nmt_malloc =
+     define_column<MemorySizeColumn>(jvm_cat, "nmt", "mlc", "Memory malloced by hotspot [nmt]", g_show_nmt_columns);
+  g_col_nmt_mmap =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "map", "Memory mapped by hotspot [nmt]", g_show_nmt_columns);
 
-  g_col_nmt_mmap = new MemorySizeColumn("jvm",
-      "nmt", "map", "Memory mapped and committed by hotspot (requires NMT)");
+  g_col_number_of_java_threads =
+      define_column<PlainValueColumn>(jvm_cat, "jthr", "num", "Number of java threads", true);
+  g_col_number_of_java_threads_non_demon =
+      define_column<PlainValueColumn>(jvm_cat, "jthr", "nd", "Number of non-demon java threads", true);
+  g_col_number_of_java_threads_created =
+      define_column<DeltaValueColumn>(jvm_cat, "jthr", "cr", "Threads created [delta]", true);
 
-  g_col_number_of_java_threads = new PlainValueColumn("jvm",
-      "jthr", "num", "Number of java threads");
+  // Displaying thread stack size for now only implemented on Linux, and requires NMT
+  g_show_size_thread_stacks_col = LINUX_ONLY(g_show_nmt_columns) NOT_LINUX(false);
+  g_col_size_thread_stacks =
+      define_column<MemorySizeColumn>(jvm_cat, "jthr", "st", "Total reserved size of java thread stacks [nmt] [linux]",
+          g_show_size_thread_stacks_col);
 
-  g_col_number_of_java_threads_non_demon = new PlainValueColumn("jvm",
-      "jthr", "nd", "Number of non-demon java threads");
+  g_col_number_of_clds =
+      define_column<PlainValueColumn>(jvm_cat,  "cldg", "num", "Classloader Data", true);
+  g_col_number_of_anon_clds =
+      define_column<PlainValueColumn>(jvm_cat,  "cldg", "anon", "Anonymous CLD", true);
 
-  g_col_number_of_java_threads_created = new DeltaValueColumn("jvm",
-      "jthr", "cr", "Threads created [delta]");
+  g_col_number_of_classes =
+      define_column<PlainValueColumn>(jvm_cat, "cls", "num", "Classes (instance + array)", true);
 
-  g_col_size_thread_stacks = new MemorySizeColumn("jvm",
-      "jthr", "st", "Total reserved size of java thread stacks");
+  g_col_number_of_class_loads =
+        define_column<DeltaValueColumn>(jvm_cat, "cls", "ld", "Class loaded [delta]", true);
 
-  g_col_number_of_clds = new PlainValueColumn("jvm",
-      "cldg", "num", "Classloader Data");
-
-  g_col_number_of_anon_clds = new PlainValueColumn("jvm",
-      "cldg", "anon", "Anonymous CLD");
-
-  g_col_number_of_classes = new PlainValueColumn("jvm",
-      "cls", "num", "Classes (instance + array)");
-
-  g_col_number_of_class_loads = new DeltaValueColumn("jvm",
-      "cls", "ld", "Class loaded [delta]");
-
-  g_col_number_of_class_unloads = new DeltaValueColumn("jvm",
-      "cls", "uld", "Classes unloaded [delta]");
+  g_col_number_of_class_unloads =
+        define_column<DeltaValueColumn>(jvm_cat, "cls", "uld", "Classes unloaded [delta]", true);
 
   return true;
 }
@@ -1218,6 +1241,7 @@ bool initialize() {
   }
 
   bool success = ColumnList::initialize();
+  success &= Legend::initialize();
 
   // Order matters. First platform columns, then jvm columns.
   success &= platform_columns_initialize();
@@ -1275,7 +1299,18 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
 
   // Print legend at the top (omit if suppressed on command line, or in csv mode).
   if (info.no_legend == false && info.csv == false) {
-    print_legend(st, &info);
+    Legend::the_legend()->print_on(st);
+    if (info.scale != 0) {
+      const char* display_unit = NULL;
+      switch (info.scale) {
+        case 1: display_unit = "bytes"; break;
+        case K: display_unit = "KB"; break;
+        case M: display_unit = "MB"; break;
+        case G: display_unit = "GB"; break;
+        default: ShouldNotReachHere();
+      }
+      st->print_cr("[mem] values are in %s.", display_unit);
+    }
     st->cr();
   }
 
