@@ -392,6 +392,7 @@ static void print_legend(outputStream* st, const print_info_t* pi) {
   }
   st->cr();
   st->print_cr("[delta] values refer to the previous measurement.");
+  st->print_cr("[*] values are host-global (not containerized).");
   if (pi->scale != 0) {
     const char* display_unit = NULL;
     switch (pi->scale) {
