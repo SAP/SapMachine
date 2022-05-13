@@ -96,55 +96,6 @@ public:
 
 };
 
-// Returns the sum of RSS and Swap for the process heap segment
-static value_t get_process_heap_size() {
-  FILE* f = ::fopen("/proc/self/smaps", "r");
-  value_t result = INVALID_VALUE;
-  if (f != NULL) {
-    char line[256];
-    int safety = 100000; // for safety reasons;
-    // Note: this does not guarantee atomicity wrt updates of the underlying file;
-    // however, we don't care here. We just weed out improbable values. Encountering
-    // inconsistencies due to concurrent updates should be very rare and probably manifest
-    // as unparseable lines.
-    int state = 0; // 1 - found segment, 2 - have rss 3 - have swap
-    long long rss = 0;
-    long long swap = 0;
-    while (state < 3 && ::fgets(line, sizeof(line), f) != NULL && safety > 0) {
-      // We look for something like this:
-      // "559f05393000-559f05671000 rw-p 00000000 00:00 0                          [heap]"
-      // ...
-      // RSS:     100 kB"
-      // ...
-      // Swap:    100 kB"
-      switch (state) {
-      case 0:
-        if (::strstr(line, "[heap]") != NULL) {
-          state = 1;
-        }
-        break;
-      case 1:
-        if (::sscanf(line, "Rss: %llu kB", &rss) == 1) {
-          rss *= K; state = 2;
-        }
-        break;
-      case 2:
-        if (::sscanf(line, "Swap: %llu kB", &swap) == 1) {
-          swap *= K; state = 3;
-        }
-        break;
-      }
-      safety --;
-    }
-    fclose(f);
-
-    if (state == 3) {
-      result = swap + rss;
-    }
-  }
-  return result;
-}
-
 struct cpu_values_t {
   value_t user;
   value_t nice;
@@ -270,7 +221,6 @@ static Column* g_col_process_rssanon = NULL;
 static Column* g_col_process_rssfile = NULL;
 static Column* g_col_process_rssshmem = NULL;
 static Column* g_col_process_swapped_out = NULL;
-static Column* g_col_process_heap = NULL;
 static Column* g_col_process_chp_used = NULL;
 static Column* g_col_process_chp_free = NULL;
 
@@ -365,13 +315,6 @@ bool platform_columns_initialize() {
   }
 
   g_col_process_swapped_out = new MemorySizeColumn("process", NULL, "swdo", "Memory swapped out");
-
-  // If we manage to locate the heap segment once, and calc its size, we assume it can be done always.
-  if (get_process_heap_size() != INVALID_VALUE) {
-    // Note: this is useful for the case when MALLOC_ARENA_MAX is 1, because then the glibc uses this segment for its
-    // one and only arena. Note however that if the brk segment cannot grow, glibc heap will switch to a new arena
-    g_col_process_heap = new MemorySizeColumn("process", NULL, "brk", "Process heap segment size (brk), resident + swap");
-  }
 
 #ifdef __GLIBC__
   mallinfo2_init();
@@ -488,8 +431,6 @@ void sample_platform_values(Sample* sample) {
         bf.parsed_prefixed_value("Threads:"));
 
   }
-
-  set_value_in_sample(g_col_process_heap, sample, get_process_heap_size());
 
   // Number of open files: iterate over /proc/self/fd and count.
   {
