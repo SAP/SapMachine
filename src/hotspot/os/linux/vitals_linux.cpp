@@ -261,7 +261,6 @@ static Column* g_col_system_num_procs_blocked = NULL;
 static Column* g_col_system_cpu_user = NULL;
 static Column* g_col_system_cpu_system = NULL;
 static Column* g_col_system_cpu_idle = NULL;
-static Column* g_col_system_cpu_waiting = NULL;
 static Column* g_col_system_cpu_steal = NULL;
 static Column* g_col_system_cpu_guest = NULL;
 
@@ -343,7 +342,6 @@ bool platform_columns_initialize() {
   g_col_system_cpu_user =     new CPUTimeColumn("system", "cpu", "us", "Global cpu user time");
   g_col_system_cpu_system =   new CPUTimeColumn("system", "cpu", "sy", "Global cpu system time");
   g_col_system_cpu_idle =     new CPUTimeColumn("system", "cpu", "id", "Global cpu idle time");
-  g_col_system_cpu_waiting =  new CPUTimeColumn("system", "cpu", "wa", "Global cpu time spent waiting for IO");
   g_col_system_cpu_steal =    new CPUTimeColumn("system", "cpu", "st", "Global cpu time stolen");
   g_col_system_cpu_guest =    new CPUTimeColumn("system", "cpu", "gu", "Global cpu time spent on guest");
 
@@ -466,7 +464,6 @@ void sample_platform_values(Sample* sample) {
     set_value_in_sample(g_col_system_cpu_user, sample, values.user + values.nice);
     set_value_in_sample(g_col_system_cpu_system, sample, values.system);
     set_value_in_sample(g_col_system_cpu_idle, sample, values.idle);
-    set_value_in_sample(g_col_system_cpu_waiting, sample, values.iowait);
     set_value_in_sample(g_col_system_cpu_steal, sample, values.steal);
     set_value_in_sample(g_col_system_cpu_guest, sample, values.guest + values.guest_nice);
 
