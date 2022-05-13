@@ -160,9 +160,11 @@ void parse_proc_stat_cpu_line(const char* line, cpu_values_t* out) {
   // Note: existence of some of these values depends on kernel version
   out->user = out->nice = out->system = out->idle = out->iowait = out->steal = out->guest = out->guest_nice =
       INVALID_VALUE;
-  int user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
+  uint64_t user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
   int num = ::sscanf(line,
-      "cpu %d %d %d %d %d %d %d %d %d %d",
+      "cpu "
+      UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
+      UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " ",
       &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice);
   if (num >= 4) {
     out->user = user;
