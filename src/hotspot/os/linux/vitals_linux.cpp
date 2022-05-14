@@ -306,7 +306,7 @@ bool platform_columns_initialize() {
   // with /proc/meminfo and also root cgroup cannot have resource limits, so its less interesting.
   // In the future we also may omit if we run inside systemd, but I am not sure if systemd can limit
   // memory usage, and then those limits would be interesting
-  g_show_cgroup_info = !(context == ctx_unknown || context == ctx_root);
+  g_show_cgroup_info = (context != ctx_root);
 
   // System
 

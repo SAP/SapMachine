@@ -25,11 +25,88 @@
  * @test
  * @summary Test of diagnostic command VM.vitals
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/othervm -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=1 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=2 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=3 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=4 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=5 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=6 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=7 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=8 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=9 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=10 -XX:VitalsSampleInterval=1 VitalsDCmdTest
+ */
+
+/*
+ * @test
+ * @summary Test of diagnostic command VM.vitals
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -Dsapmachine.vitalstest=11 -XX:VitalsSampleInterval=1 VitalsDCmdTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -41,43 +118,82 @@ public class VitalsDCmdTest {
 
     public void run(CommandExecutor executor) {
 
-        OutputAnalyzer output = executor.execute("VM.vitals");
-        VitalsTestHelper.outputMatchesVitalsTextMode(output);
-        output.shouldMatch("\\d+[gkm]"); // we print by default in "dynamic" scale which should show some values as k or m or g
-        output.shouldNotContain("Now"); // off by default
+        try {
 
-        output = executor.execute("VM.vitals reverse");
-        VitalsTestHelper.outputMatchesVitalsTextMode(output);
+            int testnumber = Integer.parseInt(System.getProperties().getProperty("sapmachine.vitalstest"));
 
-        output = executor.execute("VM.vitals scale=m");
-        VitalsTestHelper.outputMatchesVitalsTextMode(output);
-        output.shouldNotMatch("\\d+[km]"); // A specific scale disables dynamic scaling, and we omit the unit suffix
+            switch (testnumber) {
+                case 1:
+                    OutputAnalyzer output = executor.execute("VM.vitals");
+                    VitalsTestHelper.outputMatchesVitalsTextMode(output);
+                    output.shouldMatch("\\d+[gkm]"); // we print by default in "dynamic" scale which should show some values as k or m or g
+                    output.shouldNotContain("Now"); // off by default
+                    break;
+                case 2:
+                    output = executor.execute("VM.vitals reverse");
+                    VitalsTestHelper.outputMatchesVitalsTextMode(output);
+                    output.shouldNotContain("Now"); // off by default
+                    break;
+                case 3:
+                    output = executor.execute("VM.vitals scale=m");
+                    VitalsTestHelper.outputMatchesVitalsTextMode(output);
+                    output.shouldNotMatch("\\d+[km]"); // A specific scale disables dynamic scaling, and we omit the unit suffix
+                    output.shouldNotContain("Now"); // off by default
+                    break;
+                case 4:
+                    output = executor.execute("VM.vitals scale=1");
+                    VitalsTestHelper.outputMatchesVitalsTextMode(output);
+                    output.shouldNotMatch("\\d+[km]"); // A specific scale disables dynamic scaling, and we omit the unit suffix
+                    output.shouldNotContain("Now"); // off by default
+                    break;
+                case 5:
+                    output = executor.execute("VM.vitals raw");
+                    VitalsTestHelper.outputMatchesVitalsTextMode(output);
+                    output.shouldNotContain("Now"); // off by default
+                    break;
+                case 6:
+                    output = executor.execute("VM.vitals now");
+                    VitalsTestHelper.outputMatchesVitalsTextMode(output);
+                    output.shouldContain("Now");
+                    break;
+                case 7:
+                    output = executor.execute("VM.vitals reverse now");
+                    VitalsTestHelper.outputMatchesVitalsTextMode(output);
+                    output.shouldContain("Now");
+                    break;
+                case 8:
+                    output = executor.execute("VM.vitals csv");
+                    VitalsTestHelper.outputMatchesVitalsCSVMode(output);
+                    output.shouldNotContain("Now"); // off always in csv mode
+                    VitalsTestHelper.parseAndCheckCSV(output, false);
+                    break;
+                case 9:
+                    output = executor.execute("VM.vitals csv reverse");
+                    VitalsTestHelper.outputMatchesVitalsCSVMode(output);
+                    output.shouldNotContain("Now"); // off always in csv mode
+                    VitalsTestHelper.parseAndCheckCSV(output, false);
+                    break;
+                case 10:
+                    output = executor.execute("VM.vitals csv reverse raw");
+                    VitalsTestHelper.outputMatchesVitalsCSVMode(output);
+                    output.shouldNotContain("Now"); // off always in csv mode
+                    VitalsTestHelper.parseAndCheckCSV(output, true);
+                    break;
+                case 11:
+                    output = executor.execute("VM.vitals csv now reverse raw");
+                    VitalsTestHelper.outputMatchesVitalsCSVMode(output);
+                    output.shouldContain("Now");
+                    // no extensive checks for now since Now sample confuses parser
+                    break;
+                default:
+                    throw new RuntimeException("unknown test number " + testnumber);
+            }
 
-        output = executor.execute("VM.vitals scale=1");
-        VitalsTestHelper.outputMatchesVitalsTextMode(output);
-        output.shouldNotMatch("\\d+[km]"); // A specific scale disables dynamic scaling, and we omit the unit suffix
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
 
-        output = executor.execute("VM.vitals raw");
-        VitalsTestHelper.outputMatchesVitalsTextMode(output);
-
-        output = executor.execute("VM.vitals now");
-        VitalsTestHelper.outputMatchesVitalsTextMode(output);
-
-        output = executor.execute("VM.vitals reverse now");
-        VitalsTestHelper.outputMatchesVitalsTextMode(output);
-
-        output = executor.execute("VM.vitals csv");
-        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
-        output.shouldNotContain("Now"); // off always in csv mode
-
-        output = executor.execute("VM.vitals csv reverse");
-        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
-
-        output = executor.execute("VM.vitals csv reverse raw");
-        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
-
-        output = executor.execute("VM.vitals csv now reverse raw");
-        VitalsTestHelper.outputMatchesVitalsCSVMode(output);
     }
 
     @Test
