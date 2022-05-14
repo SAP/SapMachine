@@ -584,14 +584,6 @@ static void print_one_sample(outputStream* st, const Sample* sample,
     st->print("\"");
   }
 
-  // For analysis, print sample numbers
-#ifdef ASSERT
-  if (pi->raw) {
-    st->print(",%d,%d", sample->num(),
-              last_sample != NULL ? last_sample->num() : -1);
-  }
-#endif
-
   if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_DIVIDER_LEN);
   } else {
