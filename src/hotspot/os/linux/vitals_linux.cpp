@@ -26,7 +26,6 @@
 
 #include "precompiled.hpp"
 #include "jvm_io.h"
-//#include "osContainer_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -74,7 +73,7 @@ public:
 
   const char* text() const { return _buf; }
 
-  // Utility function; parse a integral number as value_t
+  // Utility function; parse a number string as value_t
   static value_t as_value(const char* text, size_t scale = 1) {
     value_t value;
     errno = 0;
