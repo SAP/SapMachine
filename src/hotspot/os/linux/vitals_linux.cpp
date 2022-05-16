@@ -96,55 +96,6 @@ public:
 
 };
 
-// Returns the sum of RSS and Swap for the process heap segment
-static value_t get_process_heap_size() {
-  FILE* f = ::fopen("/proc/self/smaps", "r");
-  value_t result = INVALID_VALUE;
-  if (f != NULL) {
-    char line[256];
-    int safety = 100000; // for safety reasons;
-    // Note: this does not guarantee atomicity wrt updates of the underlying file;
-    // however, we don't care here. We just weed out improbable values. Encountering
-    // inconsistencies due to concurrent updates should be very rare and probably manifest
-    // as unparseable lines.
-    int state = 0; // 1 - found segment, 2 - have rss 3 - have swap
-    long long rss = 0;
-    long long swap = 0;
-    while (state < 3 && ::fgets(line, sizeof(line), f) != NULL && safety > 0) {
-      // We look for something like this:
-      // "559f05393000-559f05671000 rw-p 00000000 00:00 0                          [heap]"
-      // ...
-      // RSS:     100 kB"
-      // ...
-      // Swap:    100 kB"
-      switch (state) {
-      case 0:
-        if (::strstr(line, "[heap]") != NULL) {
-          state = 1;
-        }
-        break;
-      case 1:
-        if (::sscanf(line, "Rss: %llu kB", &rss) == 1) {
-          rss *= K; state = 2;
-        }
-        break;
-      case 2:
-        if (::sscanf(line, "Swap: %llu kB", &swap) == 1) {
-          swap *= K; state = 3;
-        }
-        break;
-      }
-      safety --;
-    }
-    fclose(f);
-
-    if (state == 3) {
-      result = swap + rss;
-    }
-  }
-  return result;
-}
-
 struct cpu_values_t {
   value_t user;
   value_t nice;
@@ -160,9 +111,11 @@ void parse_proc_stat_cpu_line(const char* line, cpu_values_t* out) {
   // Note: existence of some of these values depends on kernel version
   out->user = out->nice = out->system = out->idle = out->iowait = out->steal = out->guest = out->guest_nice =
       INVALID_VALUE;
-  int user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
+  uint64_t user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
   int num = ::sscanf(line,
-      "cpu %d %d %d %d %d %d %d %d %d %d",
+      "cpu "
+      UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
+      UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " ",
       &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice);
   if (num >= 4) {
     out->user = user;
@@ -240,8 +193,6 @@ public:
 
 };
 
-//static Column* g_col_system_memtotal = NULL;
-static Column* g_col_system_memfree = NULL;
 static Column* g_col_system_memavail = NULL;
 static Column* g_col_system_memcommitted = NULL;
 static Column* g_col_system_memcommitted_ratio = NULL;
@@ -259,7 +210,6 @@ static Column* g_col_system_num_procs_blocked = NULL;
 static Column* g_col_system_cpu_user = NULL;
 static Column* g_col_system_cpu_system = NULL;
 static Column* g_col_system_cpu_idle = NULL;
-static Column* g_col_system_cpu_waiting = NULL;
 static Column* g_col_system_cpu_steal = NULL;
 static Column* g_col_system_cpu_guest = NULL;
 
@@ -269,7 +219,6 @@ static Column* g_col_process_rssanon = NULL;
 static Column* g_col_process_rssfile = NULL;
 static Column* g_col_process_rssshmem = NULL;
 static Column* g_col_process_swapped_out = NULL;
-static Column* g_col_process_heap = NULL;
 static Column* g_col_process_chp_used = NULL;
 static Column* g_col_process_chp_free = NULL;
 
@@ -308,23 +257,8 @@ static void mallinfo2_init() {
 bool platform_columns_initialize() {
 
   // Order matters!
-//  g_col_system_memtotal = new MemorySizeColumn("system", NULL, "total", "Total physical memory.");
 
-  // Since free and avail are kind of redundant, only display free if avail is not available (very old kernels)
-  bool have_avail = false;
-  {
-    ProcFile bf;
-    if (bf.read("/proc/meminfo")) {
-      have_avail = (bf.parsed_prefixed_value("MemAvailable:", 1) != INVALID_VALUE);
-    }
-  }
-
-  // To save horizontal space, we print either avail or free
-  if (have_avail) { //  (>=3.14)
-    g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
-  } else {
-    g_col_system_memfree = new MemorySizeColumn("system", NULL, "free", "Unused memory");
-  }
+  g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
   g_col_system_memcommitted = new MemorySizeColumn("system", NULL, "comm", "Committed memory");
   g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
   g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
@@ -341,7 +275,6 @@ bool platform_columns_initialize() {
   g_col_system_cpu_user =     new CPUTimeColumn("system", "cpu", "us", "Global cpu user time");
   g_col_system_cpu_system =   new CPUTimeColumn("system", "cpu", "sy", "Global cpu system time");
   g_col_system_cpu_idle =     new CPUTimeColumn("system", "cpu", "id", "Global cpu idle time");
-  g_col_system_cpu_waiting =  new CPUTimeColumn("system", "cpu", "wa", "Global cpu time spent waiting for IO");
   g_col_system_cpu_steal =    new CPUTimeColumn("system", "cpu", "st", "Global cpu time stolen");
   g_col_system_cpu_guest =    new CPUTimeColumn("system", "cpu", "gu", "Global cpu time spent on guest");
 
@@ -365,13 +298,6 @@ bool platform_columns_initialize() {
   }
 
   g_col_process_swapped_out = new MemorySizeColumn("process", NULL, "swdo", "Memory swapped out");
-
-  // If we manage to locate the heap segment once, and calc its size, we assume it can be done always.
-  if (get_process_heap_size() != INVALID_VALUE) {
-    // Note: this is useful for the case when MALLOC_ARENA_MAX is 1, because then the glibc uses this segment for its
-    // one and only arena. Note however that if the brk segment cannot grow, glibc heap will switch to a new arena
-    g_col_process_heap = new MemorySizeColumn("process", NULL, "brk", "Process heap segment size (brk), resident + swap");
-  }
 
 #ifdef __GLIBC__
   mallinfo2_init();
@@ -428,9 +354,6 @@ void sample_platform_values(Sample* sample) {
     // All values in /proc/meminfo are in KB
     const size_t scale = K;
 
-    set_value_in_sample(g_col_system_memfree, sample,
-        bf.parsed_prefixed_value("MemFree:", scale));
-
     set_value_in_sample(g_col_system_memavail, sample,
         bf.parsed_prefixed_value("MemAvailable:", scale));
 
@@ -464,7 +387,6 @@ void sample_platform_values(Sample* sample) {
     set_value_in_sample(g_col_system_cpu_user, sample, values.user + values.nice);
     set_value_in_sample(g_col_system_cpu_system, sample, values.system);
     set_value_in_sample(g_col_system_cpu_idle, sample, values.idle);
-    set_value_in_sample(g_col_system_cpu_waiting, sample, values.iowait);
     set_value_in_sample(g_col_system_cpu_steal, sample, values.steal);
     set_value_in_sample(g_col_system_cpu_guest, sample, values.guest + values.guest_nice);
 
@@ -489,8 +411,6 @@ void sample_platform_values(Sample* sample) {
         bf.parsed_prefixed_value("Threads:"));
 
   }
-
-  set_value_in_sample(g_col_process_heap, sample, get_process_heap_size());
 
   // Number of open files: iterate over /proc/self/fd and count.
   {
