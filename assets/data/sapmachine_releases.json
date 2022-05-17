@@ -225,12 +225,14 @@
                     "jdk": {
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jdk-17.0.4-ea.2_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jdk-17.0.4-ea.2_macos-aarch64_bin.dmg",
-                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jdk-17.0.4-ea.2_macos-aarch64_bin.tar.gz"
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jdk-17.0.4-ea.2_macos-aarch64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jdk-17.0.4-eabeta.2_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jre-17.0.4-ea.2_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jre-17.0.4-ea.2_macos-aarch64_bin.dmg",
-                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jre-17.0.4-ea.2_macos-aarch64_bin.tar.gz"
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jre-17.0.4-ea.2_macos-aarch64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B2/sapmachine-jre-17.0.4-eabeta.2_linux-aarch64_bin.tar.gz"
                     }
                 }
             ]
@@ -265,10 +267,12 @@
                 {
                     "tag": "sapmachine-11.0.16+2",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_linux-x64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-eabeta.2_linux-aarch64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_linux-x64_bin.tar.gz",
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-eabeta.2_linux-aarch64_bin.tar.gz"
                     }
                 }
             ]
