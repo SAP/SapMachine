@@ -1280,8 +1280,9 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
   }
 
   // If we are to sample the current values at print time, do that and print them too.
+  // Note: we omit the "Now" sample for csv output.
   Sample* sample_now = NULL;
-  if (info.sample_now) {
+  if (info.sample_now && !info.csv) {
     sample_now = Sample::allocate();
     sample_values(sample_now, true /* never lock for now sample - be safe */ );
   }
