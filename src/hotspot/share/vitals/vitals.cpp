@@ -380,11 +380,6 @@ static void print_legend(outputStream* st, const print_info_t* pi) {
     }
     st->print("%*s: %s", min_width_column_label, buf, c->description());
 
-    // If column is a delta value, indicate so
-    if (c->is_delta()) {
-      st->print_raw(" [delta]");
-    }
-
     st->cr();
 
     c_prev = c;
@@ -481,12 +476,11 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
 
 ///////// class Column and childs ///////////
 
-Column::Column(const char* category, const char* header, const char* name, const char* description, bool delta)
+Column::Column(const char* category, const char* header, const char* name, const char* description)
   : _category(category),
     _header(header), // may be NULL
     _name(name),
     _description(description),
-    _delta(delta),
     _next(NULL), _idx(-1),
     _idx_cat(-1), _idx_hdr(-1)
 {
@@ -546,7 +540,7 @@ int PlainValueColumn::do_print0(outputStream* st, value_t value,
 
 int DeltaValueColumn::do_print0(outputStream* st, value_t value,
     value_t last_value, int last_value_age, const print_info_t* pi) const {
-  if (_show_only_positive && last_value > value) {
+  if (last_value > value) {
     // we assume the underlying value to be monotonically raising, and that
     // any negative delta would be just a fluke (e.g. counter overflows)
     // we do not want to show
@@ -1042,7 +1036,7 @@ static bool add_jvm_columns() {
       "jthr", "nd", "Number of non-demon java threads");
 
   g_col_number_of_java_threads_created = new DeltaValueColumn("jvm",
-      "jthr", "cr", "Threads created");
+      "jthr", "cr", "Threads created [delta]");
 
   g_col_size_thread_stacks = new MemorySizeColumn("jvm",
       "jthr", "st", "Total reserved size of java thread stacks");
@@ -1057,10 +1051,10 @@ static bool add_jvm_columns() {
       "cls", "num", "Classes (instance + array)");
 
   g_col_number_of_class_loads = new DeltaValueColumn("jvm",
-      "cls", "ld", "Class loaded");
+      "cls", "ld", "Class loaded [delta]");
 
   g_col_number_of_class_unloads = new DeltaValueColumn("jvm",
-      "cls", "uld", "Classes unloaded");
+      "cls", "uld", "Classes unloaded [delta]");
 
   return true;
 }

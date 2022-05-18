@@ -65,7 +65,6 @@ namespace sapmachine_vitals {
     const char* const _header; // optional. May be NULL.
     const char* const _name;
     const char* const _description;
-    const bool _delta;
 
     // The following members are fixed by ColumnList when the Column is added to it.
     Column* _next;  // next column in table
@@ -78,7 +77,7 @@ namespace sapmachine_vitals {
 
   protected:
 
-    Column(const char* category, const char* header, const char* name, const char* description, bool delta);
+    Column(const char* category, const char* header, const char* name, const char* description);
 
     // Child classes implement this.
     // output stream can be NULL; in that case, method shall return number of characters it would have printed.
@@ -106,7 +105,6 @@ namespace sapmachine_vitals {
 
     const Column* next () const       { return _next; }
 
-    virtual bool is_delta() const         { return _delta; }
     virtual bool is_memory_size() const   { return false; }
 
   };
@@ -118,20 +116,17 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     PlainValueColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
   };
 
   class DeltaValueColumn: public Column {
-    const bool _show_only_positive;
     int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
     // only_positive: only positive deltas are shown, negative deltas are supressed
-    DeltaValueColumn(const char* category, const char* header, const char* name, const char* description,
-        bool show_only_positive = true)
-      : Column(category, header, name, description, true)
-      , _show_only_positive(show_only_positive)
+    DeltaValueColumn(const char* category, const char* header, const char* name, const char* description)
+      : Column(category, header, name, description)
     {}
   };
 
@@ -140,7 +135,7 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     MemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
     bool is_memory_size() const { return true; }
   };
@@ -150,7 +145,7 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     DeltaMemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
   };
 
@@ -159,7 +154,7 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     TimeStampColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
   };
 
