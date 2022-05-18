@@ -185,7 +185,7 @@ class CPUTimeColumn: public Column {
 
 public:
   CPUTimeColumn(const char* category, const char* header, const char* name, const char* description)
-    : Column(category, header, name, description, true)
+    : Column(category, header, name, description)
   {
     _clk_tck = ::sysconf(_SC_CLK_TCK);
     _num_cores = os::active_processor_count();
@@ -263,8 +263,8 @@ bool platform_columns_initialize() {
   g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
   g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
 
-  g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in");
-  g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out");
+  g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in [*] [delta]");
+  g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out [*] [delta]");
 
   g_col_system_num_procs = new PlainValueColumn("system", NULL, "p", "Number of processes");
   g_col_system_num_threads = new PlainValueColumn("system", NULL, "t", "Number of threads");
