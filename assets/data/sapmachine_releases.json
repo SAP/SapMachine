@@ -223,10 +223,12 @@
                 {
                     "tag": "sapmachine-17.0.4+3",
                     "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B3/sapmachine-jdk-17.0.4-ea.3_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B3/sapmachine-jdk-17.0.4-ea.3_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B3/sapmachine-jdk-17.0.4-ea.3_macos-aarch64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B3/sapmachine-jre-17.0.4-ea.3_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B3/sapmachine-jre-17.0.4-ea.3_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B3/sapmachine-jre-17.0.4-ea.3_macos-aarch64_bin.tar.gz"
                     }
@@ -261,24 +263,12 @@
         "11-ea": {
             "releases": [
                 {
-                    "tag": "sapmachine-11.0.16+2",
+                    "tag": "sapmachine-11.0.16+3",
                     "jdk": {
-                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_linux-ppc64le_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_linux-x64_bin.tar.gz",
-                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_macos-x64_bin.dmg",
-                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_macos-x64_bin.tar.gz",
-                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_windows-x64_bin.msi",
-                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-ea.2_windows-x64_bin.zip",
-                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jdk-11.0.16-eabeta.2_linux-aarch64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B3/sapmachine-jdk-11.0.16-ea.3_linux-x64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_linux-ppc64le_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_linux-x64_bin.tar.gz",
-                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_macos-x64_bin.dmg",
-                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_macos-x64_bin.tar.gz",
-                        "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_windows-x64_bin.msi",
-                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-ea.2_windows-x64_bin.zip",
-                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B2/sapmachine-jre-11.0.16-eabeta.2_linux-aarch64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16%2B3/sapmachine-jre-11.0.16-ea.3_linux-x64_bin.tar.gz"
                     }
                 }
             ]
