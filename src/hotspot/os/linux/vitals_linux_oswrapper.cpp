@@ -34,7 +34,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "vitals/vitals_internals.hpp"
 
-#include <malloc.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
@@ -172,26 +171,65 @@ static void parse_proc_stat_cpu_line(const char* line, cpu_values_t* out) {
   }
 }
 
-// Try to obtain mallinfo2. That replacement of mallinf is 64-bit capable and its values won't wrap.
-// Only exists in glibc 2.33 and later.
+// We use either mallinfo (which may be obsolete or removed in newer glibc versions) or mallinfo2
+// (which does not exist prior to glibc 2.34).
 #ifdef __GLIBC__
-struct glibc_mallinfo2 {
-  size_t arena;
-  size_t ordblks;
-  size_t smblks;
-  size_t hblks;
-  size_t hblkhd;
-  size_t usmblks;
-  size_t fsmblks;
-  size_t uordblks;
-  size_t fordblks;
-  size_t keepcost;
+#define MALLINFO_MEMBER_DO(f) \
+		f(arena) \
+		f(ordblks) \
+		f(smblks) \
+		f(hblks) \
+		f(hblkhd) \
+		f(usmblks) \
+		f(fsmblks) \
+		f(uordblks) \
+		f(fordblks) \
+		f(keepcost)
+
+struct glibc_mallinfo {
+#define DEF_MALLINFO_MEMBER(f) int f;
+  MALLINFO_MEMBER_DO(DEF_MALLINFO_MEMBER)
+#undef DEF_MALLINFO_MEMBER
 };
-typedef struct glibc_mallinfo2 (*mallinfo2_func_t)(void);
+
+struct glibc_mallinfo2 {
+#define DEF_MALLINFO2_MEMBER(f) size_t f;
+  MALLINFO_MEMBER_DO(DEF_MALLINFO2_MEMBER)
+#undef DEF_MALLINFO2_MEMBER
+};
+
+typedef struct glibc_mallinfo   (*mallinfo_func_t)(void);
+typedef struct glibc_mallinfo2  (*mallinfo2_func_t)(void);
+
+static mallinfo_func_t  g_mallinfo = NULL;
 static mallinfo2_func_t g_mallinfo2 = NULL;
-static void mallinfo2_init() {
+
+static void mallinfo_init() {
+  g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
   g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
 }
+
+static bool call_best_mallinfo(glibc_mallinfo2* out, value_t current_rss) {
+  bool rc = false;
+  if (g_mallinfo2 != NULL) {
+    (*out) = g_mallinfo2();
+    rc = true;
+  } else if (g_mallinfo != NULL) {
+    // disregard output from old style mallinfo if rss > 4g, since we cannot
+    // know whether we wrapped. For rss < 4g, we know values in mallinfo cannot
+    // have wrapped.
+    if (current_rss < 4 * G) {
+      glibc_mallinfo mi = g_mallinfo();
+      // copy member by member, widening to size_t
+#define WIDEN_MALLINFO_MEMBER(f) out->f = (size_t)(unsigned)mi.f;
+      MALLINFO_MEMBER_DO(WIDEN_MALLINFO_MEMBER)
+#undef DEF_MALLINFO_MEMBER
+      rc = true;
+    }
+  }
+  return rc;
+}
+#undef MALLINFO_MEMBER_DO
 #endif // __GLIBC__
 
 // Helper function, returns true if string is a numerical id
@@ -350,6 +388,11 @@ const char* CGroups::_file_slim = NULL;
 const char* CGroups::_file_kusg = NULL;
 
 void OSWrapper::update_if_needed() {
+
+#define RESETVAL(name) _ ## name = INVALID_VALUE;
+ALL_VALUES_DO(RESETVAL)
+#undef RESETVAL
+
   time_t t;
   time(&t);
   if (t < (_last_update + num_seconds_until_update)) {
@@ -502,31 +545,25 @@ void OSWrapper::update_if_needed() {
   }
 
 #ifdef __GLIBC__
-  mallinfo2_init();
-  // Collect some c-heap info using either one of mallinfo or mallinfo2.
-  if (g_mallinfo2 != NULL) {
-    struct glibc_mallinfo2 mi = g_mallinfo2();
+  glibc_mallinfo2 mi;
+  const size_t current_rss_plus_swap =
+      (_proc_rss_all != INVALID_VALUE && _proc_swdo != INVALID_VALUE) ?
+       _proc_rss_all + _proc_swdo : SIZE_MAX;
+  const bool rc = call_best_mallinfo(&mi, current_rss_plus_swap);
+  if (rc) {
     // (from experiments and glibc source code reading: the closest to "used" would be adding the mmaped data area size
     //  (contains large allocations) to the small block sizes
     _proc_chea_usd = mi.uordblks + mi.hblkhd;
     _proc_chea_free = mi.fordblks;
-  } else {
-    struct mallinfo mi = mallinfo();
-    _proc_chea_usd = (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd;
-    _proc_chea_free = (size_t)(unsigned)mi.fordblks;
-    // In 64-bit mode, omit printing values if we could conceivably have wrapped, since they are misleading.
-#ifdef _LP64
-    if (_proc_rss_all != INVALID_VALUE && _proc_swdo != INVALID_VALUE &&
-        (_proc_rss_all + _proc_swdo >= 4 * G)) {
-      _proc_chea_usd = _proc_chea_free = INVALID_VALUE;
-    }
-#endif
   }
 #endif // __GLIBC__
 
 } // end: ProcFS::update
 
 bool OSWrapper::initialize() {
+#ifdef __GLIBC__
+  mallinfo_init();
+#endif
   return CGroups::initialize();
 }
 
