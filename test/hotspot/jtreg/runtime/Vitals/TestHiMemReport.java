@@ -244,6 +244,18 @@ public class TestHiMemReport {
 
     }
 
+    /**
+     * test that HiMemReport can feel out some limit from the environment without being given one explicitely
+     * (I'm not sure that this always works, but I would like to know if it does not, and if not, in what context)
+     */
+    static void testHasNaturalMax() throws IOException {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+HiMemReport", "-Xlog:os", "-Xmx64m", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        output.shouldNotMatch("HiMemReport.*limit could not be established");
+    }
+
     public static void main(String[] args) throws Exception {
         if (args[0].equals("print"))
             testPrint();

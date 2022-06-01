@@ -389,10 +389,6 @@ const char* CGroups::_file_kusg = NULL;
 
 void OSWrapper::update_if_needed() {
 
-#define RESETVAL(name) _ ## name = INVALID_VALUE;
-ALL_VALUES_DO(RESETVAL)
-#undef RESETVAL
-
   time_t t;
   time(&t);
   if (t < (_last_update + num_seconds_until_update)) {
@@ -401,6 +397,10 @@ ALL_VALUES_DO(RESETVAL)
   _last_update = t;
 
   // Update Values from ProcFS (and elsewhere)
+
+#define RESETVAL(name) _ ## name = INVALID_VALUE;
+ALL_VALUES_DO(RESETVAL)
+#undef RESETVAL
 
   ProcFile bf;
   if (bf.read("/proc/meminfo")) {
