@@ -989,6 +989,9 @@ static Column* g_col_codecache_committed = NULL;
 static bool g_show_nmt_columns = false;
 static Column* g_col_nmt_malloc = NULL;
 static Column* g_col_nmt_mmap = NULL;
+static Column* g_col_nmt_gc_overhead = NULL;
+static Column* g_col_nmt_other = NULL;
+static Column* g_col_nmt_overhead = NULL;
 
 static Column* g_col_number_of_java_threads = NULL;
 static Column* g_col_number_of_java_threads_non_demon = NULL;
@@ -1051,6 +1054,12 @@ static bool add_jvm_columns() {
      define_column<MemorySizeColumn>(jvm_cat, "nmt", "mlc", "Memory malloced by hotspot [nmt]", g_show_nmt_columns);
   g_col_nmt_mmap =
       define_column<MemorySizeColumn>(jvm_cat, "nmt", "map", "Memory mapped by hotspot [nmt]", g_show_nmt_columns);
+  g_col_nmt_gc_overhead =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "gc", "NMT \"gc\" (GC-overhead, malloc and mmap) [nmt]", g_show_nmt_columns);
+  g_col_nmt_other =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "oth", "NMT \"other\" (typically DBB or Unsafe.allocateMemory) [nmt]", g_show_nmt_columns);
+  g_col_nmt_overhead =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "ovh", "NMT overhead [nmt]", g_show_nmt_columns);
 
   g_col_number_of_java_threads =
       define_column<PlainValueColumn>(jvm_cat, "jthr", "num", "Number of java threads", true);
@@ -1094,33 +1103,6 @@ static void set_value_in_sample(const Column* col, Sample* sample, T t) {
   }
 }
 
-class AddStackSizeThreadClosure: public ThreadClosure {
-  size_t _l;
-public:
-  AddStackSizeThreadClosure() : ThreadClosure(), _l(0) {}
-  void do_thread(Thread* thread) {
-    _l += thread->stack_size();
-  }
-  size_t get() const { return _l; }
-};
-
-static uint64_t accumulate_thread_stack_size() {
-#if defined(LINUX)
-  // Do not iterate thread list and query stack size until 8212173 is completely solved. It is solved
-  // for Linux (possibly BSD); on the other platforms, one runs a miniscule but real risk of triggering
-  // the assert in Thread::stack_size().
-  size_t l = 0;
-  AddStackSizeThreadClosure tc;
-  {
-    MutexLocker ml(Threads_lock);
-    Threads::threads_do(&tc);
-  }
-  return (uint64_t)tc.get();
-#else
-  return INVALID_VALUE;
-#endif
-}
-
 // Count CLDs
 class CLDCounterClosure: public CLDClosure {
 public:
@@ -1136,29 +1118,70 @@ public:
 };
 
 #if INCLUDE_NMT
-static value_t get_bytes_malloced_by_jvm_via_nmt() {
+struct nmt_values_t {
+  // How much memory, in total, was committed via mmap
+  value_t mapped_total;
+  // How much memory, in total, was malloced
+  value_t malloced_total;
+  // How many allocations from malloc, in total
+  value_t malloced_num;
+  // thread stack size; depending on NMT version this would
+  // be reserved (I believe up to and including jdk 8) or committed (9+)
+  value_t thread_stacks_committed;
+  // NMT "GC" category (both malloced and mapped)
+  value_t gc_overhead;
+  // NMT "other" category (both malloced and mapped). Usually dominated by DBB allocated with allocateDirect(),
+  // and Unsafe.allocateMemory.
+  value_t other_memory;
+  // NMT overhead  (both malloced and mapped)
+  value_t overhead;
+};
+
+static bool get_nmt_values(nmt_values_t* out) {
   value_t result = INVALID_VALUE;
   if (MemTracker::tracking_level() != NMT_off) {
     MutexLocker locker(MemTracker::query_lock());
-    result = MallocMemorySummary::as_snapshot()->total();
+    /*const*/MallocMemorySnapshot* mlc_snapshot = MallocMemorySummary::as_snapshot();
+    VirtualMemorySnapshot vm_snapshot;
+    VirtualMemorySummary::snapshot(&vm_snapshot);
+    out->malloced_total = mlc_snapshot->total();
+    out->mapped_total = vm_snapshot.total_committed();
+    out->thread_stacks_committed =
+        vm_snapshot.by_type(mtThreadStack)->committed();
+    out->thread_stacks_committed =
+        vm_snapshot.by_type(MEMFLAGS::mtThreadStack)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtThreadStack)->malloc_size();
+    out->gc_overhead =
+        vm_snapshot.by_type(MEMFLAGS::mtGC)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtGC)->malloc_size();
+    out->other_memory =
+        vm_snapshot.by_type(MEMFLAGS::mtOther)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtOther)->malloc_size();
+    out->overhead =
+        vm_snapshot.by_type(MEMFLAGS::mtNMT)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtNMT)->malloc_size() +
+        mlc_snapshot->malloc_overhead()->size();
+    out->malloced_num =
+        // I misuse the tracking overhead counter, since all malloc allocations should have been counted here
+        mlc_snapshot->malloc_overhead()->count();
+    return true;
   }
-  return result;
-}
-static value_t get_bytes_mmaped_by_jvm_via_nmt() {
-  value_t result = INVALID_VALUE;
-  if (MemTracker::tracking_level() != NMT_off) {
-    MutexLocker locker(MemTracker::query_lock());
-    VirtualMemorySnapshot snapshot;
-    VirtualMemorySummary::snapshot(&snapshot);
-    result = snapshot.total_committed();
-  }
-  return result;
+  return false;
 }
 #endif // INCLUDE_NMT
 
 void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
   // Note: if avoid_locking=true, skip values which need JVM-side locking.
+
+  nmt_values_t nmt_vals;
+  bool have_nmt_values = false;
+#if INCLUDE_NMT
+  if (!avoid_locking) {
+    have_nmt_values = get_nmt_values(&nmt_vals);
+  }
+#endif
+
 
   // Heap
   if (!avoid_locking) {
@@ -1194,12 +1217,13 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_codecache_committed, sample, codecache_committed);
 
   // NMT integration
-#if INCLUDE_NMT
-  if (!avoid_locking) {
-    set_value_in_sample(g_col_nmt_malloc, sample, get_bytes_malloced_by_jvm_via_nmt());
-    set_value_in_sample(g_col_nmt_mmap, sample, get_bytes_mmaped_by_jvm_via_nmt());
+  if (have_nmt_values) {
+    set_value_in_sample(g_col_nmt_malloc, sample, nmt_vals.malloced_total);
+    set_value_in_sample(g_col_nmt_mmap, sample, nmt_vals.mapped_total);
+    set_value_in_sample(g_col_nmt_gc_overhead, sample, nmt_vals.gc_overhead);
+    set_value_in_sample(g_col_nmt_other, sample, nmt_vals.other_memory);
+    set_value_in_sample(g_col_nmt_overhead, sample, nmt_vals.overhead);
   }
-#endif
 
   // Java threads
   set_value_in_sample(g_col_number_of_java_threads, sample, Threads::number_of_threads());
@@ -1207,8 +1231,8 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_number_of_java_threads_created, sample, counters::g_threads_created);
 
   // Java thread stack size
-  if (!avoid_locking) {
-    set_value_in_sample(g_col_size_thread_stacks, sample, accumulate_thread_stack_size());
+  if (have_nmt_values) {
+    set_value_in_sample(g_col_size_thread_stacks, sample, nmt_vals.thread_stacks_committed);
   }
 
   // CLDG
