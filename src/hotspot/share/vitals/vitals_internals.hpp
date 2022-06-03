@@ -35,6 +35,8 @@
 
 namespace sapmachine_vitals {
 
+  static const int vitals_version = 0x220600;
+
   typedef uint64_t value_t;
 #define INVALID_VALUE   ((value_t)UINT64_MAX)
 

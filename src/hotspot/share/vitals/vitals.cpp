@@ -275,6 +275,8 @@ void Legend::print_on(outputStream* st) const {
   st->print_raw(_legend.base());
   st->cr();
   st->print_raw(_footnote.base());
+  st->print_cr("(Vitals version %X, pid: %d)", vitals_version, os::current_process_id());
+
 }
 
 ////// ColumnList: a singleton class holding all information about all columns
@@ -1247,6 +1249,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
+  log_info(os)("Vitals v%d", vitals_version);
   log_info(os)("Initializing vitals...");
 
   // Adjust VitalsSampleInterval
