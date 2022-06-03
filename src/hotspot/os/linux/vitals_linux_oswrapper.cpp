@@ -171,9 +171,11 @@ static void parse_proc_stat_cpu_line(const char* line, cpu_values_t* out) {
   }
 }
 
+
+#ifdef __GLIBC__
 // We use either mallinfo (which may be obsolete or removed in newer glibc versions) or mallinfo2
 // (which does not exist prior to glibc 2.34).
-#ifdef __GLIBC__
+
 #define MALLINFO_MEMBER_DO(f) \
 		f(arena) \
 		f(ordblks) \
@@ -209,27 +211,8 @@ static void mallinfo_init() {
   g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
 }
 
-static bool call_best_mallinfo(glibc_mallinfo2* out, value_t current_rss) {
-  bool rc = false;
-  if (g_mallinfo2 != NULL) {
-    (*out) = g_mallinfo2();
-    rc = true;
-  } else if (g_mallinfo != NULL) {
-    // disregard output from old style mallinfo if rss > 4g, since we cannot
-    // know whether we wrapped. For rss < 4g, we know values in mallinfo cannot
-    // have wrapped.
-    if (current_rss < 4 * G) {
-      glibc_mallinfo mi = g_mallinfo();
-      // copy member by member, widening to size_t
-#define WIDEN_MALLINFO_MEMBER(f) out->f = (size_t)(unsigned)mi.f;
-      MALLINFO_MEMBER_DO(WIDEN_MALLINFO_MEMBER)
-#undef DEF_MALLINFO_MEMBER
-      rc = true;
-    }
-  }
-  return rc;
-}
 #undef MALLINFO_MEMBER_DO
+
 #endif // __GLIBC__
 
 // Helper function, returns true if string is a numerical id
@@ -545,20 +528,25 @@ ALL_VALUES_DO(RESETVAL)
   }
 
 #ifdef __GLIBC__
-  glibc_mallinfo2 mi;
-  const size_t current_rss_plus_swap =
-      (_proc_rss_all != INVALID_VALUE && _proc_swdo != INVALID_VALUE) ?
-       _proc_rss_all + _proc_swdo : SIZE_MAX;
-  const bool rc = call_best_mallinfo(&mi, current_rss_plus_swap);
-  if (rc) {
-    // (from experiments and glibc source code reading: the closest to "used" would be adding the mmaped data area size
-    //  (contains large allocations) to the small block sizes
+  // Note "glibc heap used", from experiments and glibc source code reading, would be aprox. the sum
+  //  of mmaped data area size (contains large allocations) and the small block sizes.
+  if (g_mallinfo2 != NULL) {
+    glibc_mallinfo2 mi = g_mallinfo2();
     _proc_chea_usd = mi.uordblks + mi.hblkhd;
     _proc_chea_free = mi.fordblks;
+  } else if (g_mallinfo != NULL) {
+    // disregard output from old style mallinfo if rss > 4g, since we cannot
+    // know whether we wrapped. For rss < 4g, we know values in mallinfo cannot
+    // have wrapped.
+    if (LP64_ONLY(_proc_rss_all < (4 * G)) NOT_LP64(true)) {
+      glibc_mallinfo mi = g_mallinfo();
+      _proc_chea_usd = (value_t)(unsigned)mi.uordblks + (value_t)(unsigned)mi.hblkhd;
+      _proc_chea_free = (value_t)(unsigned)mi.fordblks;
+    }
   }
 #endif // __GLIBC__
 
-} // end: ProcFS::update
+}
 
 bool OSWrapper::initialize() {
 #ifdef __GLIBC__
