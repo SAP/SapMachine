@@ -3104,8 +3104,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
-<<<<<<< HEAD
-=======
   // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
     sapmachine_vitals::initialize();
@@ -3116,7 +3114,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif // LINUX
 
->>>>>>> e13472c86f2... Add HiMemReport facility
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
 
@@ -3130,11 +3127,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
-
-  // SapMachine 2019-02-20 : vitals
-  if (EnableVitals) {
-    sapmachine_vitals::initialize();
-  }
 
 #if INCLUDE_RTM_OPT
   RTMLockingCounters::init();
