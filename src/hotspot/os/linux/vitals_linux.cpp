@@ -151,6 +151,7 @@ bool platform_columns_initialize() {
   Legend::the_legend()->add_footnote("   [host]: values are host-global (not containerized).");
   Legend::the_legend()->add_footnote("   [cgrp]: only shown if containerized");
   Legend::the_legend()->add_footnote("    [krn]: depends on kernel version");
+  Legend::the_legend()->add_footnote("   [glibc]: only shown for glibc-based distros");
 
   // Update values once, to get up-to-date readings. Some of those we need to decide whether to show or hide certain columns
   OSWrapper::initialize();
@@ -233,9 +234,9 @@ bool platform_columns_initialize() {
   const bool show_glibc_heap_info = false;
 #endif
   g_col_process_chp_used =
-      define_column<MemorySizeColumn>(process_cat, "cheap", "usd", "C-Heap, in-use allocations (may be unavailable if RSS > 4G)", show_glibc_heap_info);
+      define_column<MemorySizeColumn>(process_cat, "cheap", "usd", "C-Heap, in-use allocations (may be unavailable if RSS > 4G) [glibc]", show_glibc_heap_info);
   g_col_process_chp_free =
-      define_column<MemorySizeColumn>(process_cat, "cheap", "free", "C-Heap, bytes in free blocks (may be unavailable if RSS > 4G)", show_glibc_heap_info);
+      define_column<MemorySizeColumn>(process_cat, "cheap", "free", "C-Heap, bytes in free blocks (may be unavailable if RSS > 4G) [glibc]", show_glibc_heap_info);
 
   g_col_process_cpu_user =
       define_column<CPUTimeColumn>(process_cat, "cpu", "us", "Process cpu user time", true);
