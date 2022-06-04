@@ -149,7 +149,7 @@ bool platform_columns_initialize() {
   const char* const process_cat = "process";
 
   Legend::the_legend()->add_footnote("   [host]: values are host-global (not containerized).");
-  Legend::the_legend()->add_footnote("   [cgrp]: only shown if containerized");
+  Legend::the_legend()->add_footnote("   [cgrp]: if containerized or running in systemd slice");
   Legend::the_legend()->add_footnote("    [krn]: depends on kernel version");
   Legend::the_legend()->add_footnote("   [glibc]: only shown for glibc-based distros");
 

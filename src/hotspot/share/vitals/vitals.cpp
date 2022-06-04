@@ -276,7 +276,6 @@ void Legend::print_on(outputStream* st) const {
   st->cr();
   st->print_raw(_footnote.base());
   st->print_cr("(Vitals version %X, pid: %d)", vitals_version, os::current_process_id());
-
 }
 
 ////// ColumnList: a singleton class holding all information about all columns
