@@ -277,7 +277,8 @@ public class VitalsValuesSanityCheck {
                 // We may not always show this. But if we do, at least the usage numbers should be checked
                 if (csv.header.hasColumn("syst-cgro-usg")) {
                     checkValueIsBetween(csv, "syst-cgro-usg", veryLowButNot0, highestExpectedMemoryValue);
-                    checkValueIsBetween(csv, "syst-cgro-usgsw", veryLowButNot0, highestExpectedMemoryValue);
+                }
+                if (csv.header.hasColumn("syst-cgro-kusg")) {
                     // kusg can get surprisingly high, e.g. if ran on a host hosting guest VMs (seen that with virtual box)
                     checkValueIsBetween(csv, "syst-cgro-kusg", veryLowButNot0, highestExpectedMemoryValue);
                 }
