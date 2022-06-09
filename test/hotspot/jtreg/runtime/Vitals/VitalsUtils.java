@@ -56,6 +56,7 @@ public class VitalsUtils {
         int nLine = startAtLine;
         while (nLine < lines.length) {
             if (lines[nLine].matches(regexes[nextToMatch])) {
+                System.out.println("Matched \"" + regexes[nextToMatch] +"\" at line " + nLine + "(\"" + lines[nLine] + "\")");
                 nextToMatch++;
                 if (nextToMatch == regexes.length) {
                     break;

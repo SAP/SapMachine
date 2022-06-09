@@ -36,10 +36,17 @@
  */
 
 /*
- * @test TestHiMemReport-dump-with-exec
+ * @test TestHiMemReport-dump-with-exec-to-reportdir
  * @library /test/lib
  * @requires os.family == "linux"
- * @run driver TestHiMemReport dump-with-exec
+ * @run driver TestHiMemReport dump-with-exec-to-reportdir
+ */
+
+/*
+ * @test TestHiMemReport-dump-with-exec-to-stderr
+ * @library /test/lib
+ * @requires os.family == "linux"
+ * @run driver TestHiMemReport dump-with-exec-to-stderr
  */
 
 /*
@@ -56,6 +63,10 @@ import java.io.File;
 import java.io.IOException;
 
 public class TestHiMemReport {
+
+    // Match the output file suffix we generate with the HiMemReportFacility
+    // (xxx_pid<pid>_<year>_<month>_<day>_<hour>_<minute>_<second>.yyy)
+    static final String patterFileSuffix = "_pid\\d+_\\d+_\\d+_\\d+_\\d+_\\d+_\\d+";
 
     // These tests are very simple. We start the VM with a footprint (rss) higher than
     // what we set as HiMemReportMax. Therefore, the HiMem reporter should genereate a
@@ -125,22 +136,22 @@ public class TestHiMemReport {
         // We expect a report in a file inside HiMemReportDir, and a mentioning of it on
         // stderr
         line = VitalsUtils.matchPatterns(lines, line + 1,
-            new String[] { "# Printing to .*himemreport-1/sapmachine_himemalert_pid\\d+_1_100.log",
+            new String[] { "# Printing to .*himemreport-1/sapmachine_himemalert" + patterFileSuffix + ".log",
                            "# Done\\." } );
 
-        String reportFile = output.firstMatch("# Printing to (.*himemreport-1/sapmachine_himemalert_pid\\d+_1_100.log)", 1);
+        String reportFile = output.firstMatch("# Printing to (.*himemreport-1/sapmachine_himemalert" + patterFileSuffix + ".log)", 1);
         VitalsUtils.assertFileExists(reportFile);
 
         VitalsUtils.assertFileContentMatches(new File(reportFile), reportBody);
     }
 
-    static void testDumpWithMultipleExecs() throws Exception {
+    static void testDumpWithExecToReportDir() throws Exception {
         String reportDirName = "himemreport-2";
         // Here we not only dump, but we also execute several jcmds. Therefore we take some more seconds to sleep
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:HiMemReportDir=himemreport-2",
-                "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders;heapdump",
+                "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders;GC.heap_dump",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
@@ -159,26 +170,31 @@ public class TestHiMemReport {
         // We expect a report in a file inside HiMemReportDir, and a mentioning of it on
         // stderr
         line = VitalsUtils.matchPatterns(lines, line + 1,
-                new String[] { "# Printing to .*himemreport-2/sapmachine_himemalert_pid\\d+_1_100.log",
+                new String[] { "# Printing to .*himemreport-2/sapmachine_himemalert" + patterFileSuffix + ".log",
                         "# Done\\." } );
 
-        String reportFile = output.firstMatch("# Printing to (.*himemreport-2/sapmachine_himemalert_pid\\d+_1_100.log)", 1);
+        String reportFile = output.firstMatch("# Printing to (.*himemreport-2/sapmachine_himemalert" + patterFileSuffix + ".log)", 1);
         VitalsUtils.assertFileExists(reportFile);
         VitalsUtils.assertFileContentMatches(new File(reportFile), reportBody);
 
         // We also expect, in the report dir, several more files
-        String reportDir = output.firstMatch("# Printing to (.*himemreport-2/)sapmachine_himemalert_pid\\d+_1_100.log", 1);
+        String reportDir = output.firstMatch("# Printing to (.*himemreport-2/)sapmachine_himemalert" + patterFileSuffix + ".log", 1);
         VitalsUtils.assertFileExists(reportDir);
         File reportDirAsFile = new File(reportDir);
 
         ////////
+        // HiMemReportExec should have caused three jcmds to fire...
 
-        // The "VM.flags" command should have been executed...
-        output.stderrShouldMatch("HiMemReport: executing .*jcmd \\d+ VM.flags -all.*");
+        line = VitalsUtils.matchPatterns(lines, line + 1,
+                new String[] { "HiMemReport: Successfully executed \"VM.flags -all\", output redirected to report dir",
+                        "HiMemReport: Successfully executed \"VM.metaspace show-loaders\", output redirected to report dir",
+                        "HiMemReport: Successfully executed \"GC.heap_dump .*himemreport-2/GC.heap_dump" + patterFileSuffix + ".dump\", output redirected to report dir" } );
 
-        // And I expect two files, VM.flags_pidXXXX_1_100.err and VM.flags_pidXXXX_1_100.out, in the report dir...
-        File VMflagsOutFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.flags_pid\\d+_1_100.out");
-        File VMflagsErrFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.flags_pid\\d+_1_100.err");
+        // VM.flags:
+
+        // I expect two files, VM.flags_pidXXXX_1_100.err and VM.flags_pidXXXX_1_100.out, in the report dir...
+        File VMflagsOutFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.flags" + patterFileSuffix + ".out");
+        File VMflagsErrFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.flags" + patterFileSuffix + ".err");
 
         // The err file should be empty
         VitalsUtils.assertFileisEmpty(VMflagsErrFile.getAbsolutePath());
@@ -188,18 +204,15 @@ public class TestHiMemReport {
         VitalsUtils.assertFileContentMatches(VMflagsOutFile, new String[] {
                 ".*HiMemReport *= *true.*",
                 ".*HiMemReportDir *= *himemreport-2.*",
-                ".*HiMemReportExec *= *VM.flags.*VM.metaspace.*heapdump.*",
+                ".*HiMemReportExec *= *VM.flags.*VM.metaspace.*GC.heap_dump.*",
                 ".*HiMemReportMax *= *134217728.*"
         });
 
-        ////////
+        // "VM.metaspace":
 
-        // The "VM.metaspace" command should have been executed...
-        output.stderrShouldMatch("HiMemReport: executing .*jcmd \\d+ VM.metaspace show-loaders.*");
-
-        // And I expect two files, VM.metaspace_pidXXXX_1_100.err and VM.metaspace_pidXXXX_1_100.out, in the report dir...
-        File VMmetaspaceOutFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.metaspace_pid\\d+_1_100.out");
-        File VMmetaspaceErrFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.metaspace_pid\\d+_1_100.err");
+        // I expect two files, VM.metaspace_pidXXXX_1_100.err and VM.metaspace_pidXXXX_1_100.out, in the report dir...
+        File VMmetaspaceOutFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.metaspace" + patterFileSuffix + ".out");
+        File VMmetaspaceErrFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "VM.metaspace" + patterFileSuffix + ".err");
 
         // The err file should be empty
         VitalsUtils.assertFileisEmpty(VMmetaspaceErrFile.getAbsolutePath());
@@ -216,16 +229,13 @@ public class TestHiMemReport {
                 "MaxMetaspaceSize.*"
         });
 
-        ////////
+        // GC.heap_dump:
 
-        // The special "GC.heap_dump" command should have caused GC.heap_dump with suitable parameters
-        output.stderrShouldMatch("HiMemReport: executing .*jcmd \\d+ GC.heap_dump.*himemreport-2/heapdump_pid\\d+_1_100.*");
-
-        // And I expect three files, heapdump_pidXXXX_1_100.err and heapdump_pidXXXX_1_100.out, in the report dir,
-        // and, separately from that, the heap dump file heapdump_pidXXXX_1_100.dump
-        File heapDumpOutFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "heapdump_pid\\d+_1_100.out");
-        File heapDumpErrFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "heapdump_pid\\d+_1_100.err");
-        File heapDumpDumpFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "heapdump_pid\\d+_1_100.dump");
+        // I expect three files, the usual GC.heap_dump_pid<pid>_<timestamp>.(out|err) and the heap dump itself as
+        // GC.heap_dump_pid<pid>_<timestamp>.dump.
+        File heapDumpOutFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "GC.heap_dump" + patterFileSuffix + ".out");
+        File heapDumpErrFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "GC.heap_dump" + patterFileSuffix + ".err");
+        File heapDumpDumpFile = VitalsUtils.findFirstMatchingFileInDirectory(reportDirAsFile,  "GC.heap_dump" + patterFileSuffix + ".dump");
 
         // The err file should be empty
         VitalsUtils.assertFileisEmpty(heapDumpErrFile.getAbsolutePath());
@@ -241,8 +251,51 @@ public class TestHiMemReport {
         if (heapDumpDumpFile.length() < 1024 * 16) {
             throw new RuntimeException("heap dump suspiciously small.");
         }
+    } // end: testDumpWithExecToReportDir
 
-    }
+    // Test multiple Execs, with the output of the commands going to stderr
+    static void testDumpWithExecToStderr() throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
+                "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders",
+                "-XX:NativeMemoryTracking=summary",
+                "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
+                TestHiMemReport.class.getName(),
+                "sleep", "4" // num seconds to sleep to give the reporter thread time to generate output
+        );
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
+        output.shouldHaveExitValue(0);
+
+        // We expect the normal HiMemReport on stderr...
+        String[] lines = VitalsUtils.stderrAsLines(output);
+        int line = VitalsUtils.matchPatterns(lines, 0, beforeReport);
+        line = VitalsUtils.matchPatterns(lines, line + 1, reportHeader);
+        line = VitalsUtils.matchPatterns(lines, line + 1, reportBody);
+
+        // ... as well as the output of VM.flags
+        line = VitalsUtils.matchPatterns(lines, line + 1, new String [] {
+                        ".*HiMemReport *= *true.*",
+                        ".*HiMemReportMax *= *134217728.*",
+                        "HiMemReport: Successfully executed \"VM.flags -all\""
+        });
+
+        // ... as well as the output of VM.metaspace
+        line = VitalsUtils.matchPatterns(lines, line + 1, new String [] {
+                "Usage per loader:",
+                ".*app.*",
+                ".*bootstrap.*",
+                "Total Usage.*",
+                "Virtual space.*",
+                "Settings.*",
+                "MaxMetaspaceSize.*",
+                "HiMemReport: Successfully executed \"VM.metaspace show-loaders\""
+        });
+
+    } // end: testDumpWithExecToReportDir
+
+
 
     /**
      * test that HiMemReport can feel out some limit from the environment without being given one explicitely
@@ -261,8 +314,10 @@ public class TestHiMemReport {
             testPrint();
         else if (args[0].equals("dump"))
             testDump();
-        else if (args[0].equals("dump-with-exec"))
-            testDumpWithMultipleExecs();
+        else if (args[0].equals("dump-with-exec-to-reportdir"))
+            testDumpWithExecToReportDir();
+        else if (args[0].equals("dump-with-exec-to-stderr"))
+            testDumpWithExecToStderr();
         else if (args[0].equals("natural-max"))
             testHasNaturalMax();
         else if (args[0].equals("sleep")) {

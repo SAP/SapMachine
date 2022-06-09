@@ -45,6 +45,11 @@
 #include "vitals/vitals_internals.hpp"
 
 #include <unistd.h>
+#include <spawn.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+
 
 // We print to the stderr stream directly in this code (since we want to bypass ttylock)
 static fdStream stderr_stream(2);
@@ -62,13 +67,22 @@ namespace sapmachine_vitals {
 
 //////////// pretty printing stuff //////////////////////////////////
 
-static void print_date_and_time(outputStream *st, time_t t) {
-  char buf[32];
-  struct tm* timeinfo;
-  timeinfo = ::localtime(&t);
-  size_t rc = ::strftime(buf, sizeof(buf), "%F %T", timeinfo);
-  assert(rc < 32, "sanity strftime");
+#define STRFTIME_FROM_TIME_T(st, fmt, t)                    \
+  char buf[32];                                             \
+  struct tm* timeinfo;                                      \
+  timeinfo = ::localtime(&t);                               \
+  size_t rc = ::strftime(buf, sizeof(buf), fmt, timeinfo);  \
+  assert(rc < 32, "sanity strftime");                       \
   st->print_raw(buf);
+
+
+static void print_date_and_time(outputStream *st, time_t t) {
+  STRFTIME_FROM_TIME_T(st, "%F %T", t);
+}
+
+// For use in file names
+static void print_date_and_time_underscored(outputStream *st, time_t t) {
+  STRFTIME_FROM_TIME_T(st, "%Y_%m_%d_%H_%M_%S", t);
 }
 
 static void print_current_date_and_time(outputStream *st) {
@@ -343,14 +357,14 @@ public:
 
 static ReportDir* g_report_dir = NULL;
 
-static void print_high_memory_report_header(outputStream* st, const char* message) {
+static void print_high_memory_report_header(outputStream* st, const char* message, int pid, time_t t) {
   char tmp[255];
   st->print_cr("############");
   st->print_cr("#");
   st->print_cr("# High Memory Report:");
-  st->print_cr("# pid: %d thread id: " INTX_FORMAT, os::current_process_id(), os::current_thread_id());
+  st->print_cr("# pid: %d thread id: " INTX_FORMAT, pid, os::current_thread_id());
   st->print_cr("# %s", message);
-  st->print_raw("# "); print_current_date_and_time(st); st->cr();
+  st->print_raw("# "); print_date_and_time(st, t); st->cr();
   st->print_cr("# Spike number: %d", g_alert_state->current_spike_no());
   st->print_cr("#");
   st->flush();
@@ -397,9 +411,10 @@ static void print_high_memory_report(outputStream* st) {
   st->flush();
 }
 
-// Create a file name into the report directory: <dir>/<name>.pid<pid>_<spike>_<percentage>.<suffix>
+// Create a file name into the report directory: <reportdir or cwd>/<name>.<pid>_<spike>_<percentage>.<suffix>
 // (leave dir NULL to just get a file name)
-static void print_file_name(stringStream* ss, const char* dir, const char* name, int pid, int spikeno, int percentage, const char* suffix) {
+static void print_file_name(stringStream* ss, const char* name, int pid, time_t timestamp, const char* suffix) {
+  const char* dir = g_report_dir != NULL ? g_report_dir->path() : NULL;
   if (dir != NULL) {
     if (dir[0] != '/') {
       char* cwd = ::get_current_dir_name(); // glibc speciality, return ptr is malloced
@@ -411,152 +426,247 @@ static void print_file_name(stringStream* ss, const char* dir, const char* name,
       ss->put('/');
     }
   }
-  ss->print("%s_pid%d_%d_%d%s",
-      name, pid, spikeno, percentage, suffix);
+  ss->print("%s_pid%d_", name, pid);
+  print_date_and_time_underscored(ss, timestamp);
+  ss->print("%s", suffix);
 }
 
 ///////////////////// JCmd support //////////////////////////////////////////
-//
-// if the standard report is not sufficient, the VM can fire additional reports
-// against itself.
 
-class JCmdInfo : public CHeapObj<mtInternal> {
-  stringStream _cmd;
-  stringStream _args;
-  const JCmdInfo* _next;
+class ParsedCommand {
+
+  stringStream _name; // command name without args
+  stringStream _args; // arguments
+
 public:
-  JCmdInfo() : _next(NULL) {}
-  stringStream& cmdstream() {
-    return _cmd;
+
+  ParsedCommand(const char* command) {
+    // trim front
+    const char* p = command;
+    while (isspace(*p)) {
+      p ++;
+    }
+    if ((*p) != '\0') {
+      // read name
+      while (!isspace(*p) && (*p) != '\0') {
+        _name.put(*p);
+        p++;
+      }
+      // find start of args; read args
+      while (isspace(*p)) {
+        p ++;
+      }
+      if ((*p) != '\0') {
+        _args.print_raw(p);
+      }
+    }
   }
-  stringStream& args_stream() {
-    return _args;
-  }
-  const char* command() const { return _cmd.base(); }
+
+  bool is_empty() const { return _name.size() == 0; }
+  const char* name() const { return _name.base(); }
+
+  bool has_arguments() const { return _args.size() > 0; }
   const char* args() const { return _args.base(); }
-  const JCmdInfo* next() const { return _next; }
-  void set_next(const JCmdInfo* cmd) {
-    _next = cmd;
+
+  // Unfortunately, the DCmd framework lacks the ability to check DCmd without
+  // executing them. Here, we do some simple basic checks. Failing them will result
+  // in a warning, not an error, in order to prevent us from having to modify this
+  // code each time a DCmd changes or is added.
+  bool is_valid() const {
+    static const char* valid_prefixes[] = { "Compiler", "GC", "JFR", "JVMTI",
+                                            "Management", "System", "Thread",
+                                            "VM",  "help", NULL };
+    if (_name.size() > 0) {
+      for (const char** p = valid_prefixes; (*p) != NULL; p ++) {
+        if (::strncasecmp(_name.base(), *p, ::strlen(*p)) == 0) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 };
 
-class LilJcmdParser {
-  JCmdInfo* _cur;
-  JCmdInfo* _last;
-  JCmdInfo* _first;
-  enum { expect_cmd, read_cmd, read_args } _state;
-
-  void finish() {
-    if (_cur != NULL && _cur->cmdstream().size() > 0) {
-      if (_first == NULL) {
-        _first = _cur;
-      }
-      if (_last != NULL) {
-        _last->set_next(_cur);
-      }
-      _last = _cur;
-      _cur = NULL;
-    }
-  }
-
-  void parse(const char* input) {
-    assert(_first == NULL && _cur == NULL && _last == NULL && _state == expect_cmd,
-           "just use once");
-    const char* p = input;
-    while (*p != '\0') {
-      switch (_state) {
-      case expect_cmd:
-        if (*p != ';' && *p != ' ') {
-          _state = read_cmd;
-          _cur = new JCmdInfo();
-          continue;
-        }
-        break;
-      case read_cmd:
-        if (*p == ' ') {
-          _state = read_args;
-        } else if (*p == ';') {
-          finish();
-          _state = expect_cmd;
-        } else {
-          _cur->cmdstream().put(*p);
-        }
-        break;
-      case read_args:
-        if (*p == ';') {
-          finish();
-          _state = expect_cmd;
-        } else {
-          _cur->args_stream().put(*p);
-        }
-        break;
-      default: {
-        ShouldNotReachHere();
-        }
-      }
-      p++;
-    }
-    finish();
-  }
-
-  LilJcmdParser(const char* input) :
-    _cur(NULL), _last(NULL),
-    _first(NULL), _state(expect_cmd) {
-    parse(input);
-  }
-
-public:
-
-  const JCmdInfo* first() const { return _first; }
-
-  static const JCmdInfo* parse_exec_string(const char* input) {
-    LilJcmdParser parser(input);
-    return parser.first();
-  }
+// Helper structures for posix_spawn_file_actions_t and posix_spawnattr_t where
+// cleanup depends on successful initialization.
+// Helper structures for posix_spawn_file_actions_t and posix_spawnattr_t where
+// cleanup depends on successful initialization.
+struct PosixSpawnFileActions {
+  posix_spawn_file_actions_t v;
+  const bool ok;
+  PosixSpawnFileActions() : ok(::posix_spawn_file_actions_init(&v) == 0) {}
+  ~PosixSpawnFileActions() { ok && ::posix_spawn_file_actions_destroy(&v); }
 };
 
-static const JCmdInfo* g_jcmds = NULL;
+struct PosixSpawnAttr {
+  posix_spawnattr_t v;
+  const bool ok;
+  PosixSpawnAttr() : ok(::posix_spawnattr_init(&v) == 0) {}
+  ~PosixSpawnAttr() { ok && ::posix_spawnattr_destroy(&v); }
+};
 
-static void call_jcmds(int spikeno, int percentage) {
-  assert(HiMemReportExec != NULL && g_report_dir != NULL, "Sanity");
+// Call jcmd. If outFile and errFile are not Null, redirect stdout and stderr, otherwise
+// print both stdout and stderr to VMs stderr.
+// Returns true if command was executed successfully and exitcode was 0, false otherwise.
+// If command failed, err_msg will contain an error string.
+static bool spawn_command(const char** argv, const char* outFile, const char* errFile, stringStream* err_msg) {
 
-  const int pid = os::current_process_id();
-  const char* java_home = Arguments::get_java_home();
+  // I want vfork, but use posix_spawn, since vfork() is becoming obsolete and compilers
+  // will warn. Its also safer, and with modern glibcs it is as cheap as vfork.
+  PosixSpawnFileActions fa;
+  PosixSpawnAttr atr;
 
-  for (const JCmdInfo* Cmd = g_jcmds; Cmd != NULL; Cmd = Cmd->next()) {
-    const char* cmd = Cmd->command();
-    const char* args = Cmd->args();
+  bool rc = fa.ok && atr.ok;
 
-    // Assemble command
-    stringStream ss;
-    ss.print("/bin/bash -c 'cd %s; %s/bin/jcmd %d ", g_report_dir->path(), java_home, pid);
+  if (outFile != NULL) { // Redirect stdout, stderr to files
+        assert(errFile != NULL, "Require both");
+    rc &= (::posix_spawn_file_actions_addopen(&fa.v, 1,
+        outFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0);
+    rc &= (::posix_spawn_file_actions_addopen(&fa.v, 2,
+        errFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0);
+  } else { // Dup stdout to stderr
+    rc &= (::posix_spawn_file_actions_adddup2 (&fa.v, 2, 1) == 0);
+  }
+  pid_t child_pid = -1;
 
-    // Handle some special cases:
-    if (::strcmp(cmd, "heapdump") == 0) {
-      // "heapdump" : do a heap dump with the correctly named dump file (path needs to be absolute)
-      stringStream heapdumpFile;
-      print_file_name(&heapdumpFile, g_report_dir->path(), "heapdump", pid, spikeno, percentage, ".dump");
-      ss.print("GC.heap_dump -gz=1 %s", heapdumpFile.base());
-    } // .... Add more if needed
-    else {
-      // Generic case
-      ss.print("%s %s", cmd, args);
+  // Hint toward vfork. Note that newer glibcs (2.24+) will ignore this, but they use clone(),
+  // so its alright.
+  rc &= (posix_spawnattr_setflags(&atr.v, POSIX_SPAWN_USEVFORK) == 0);
+
+  if (rc == false) {
+    err_msg->print("Error during posix_spawn setup");
+    return false;
+  }
+
+  // Note about inheriting file descriptors: in theory, posix_spawn should close all stray descriptors:
+  // "If file_actions is a null pointer, then file descriptors open in the calling process shall remain open
+  //  in the child process, except for those whose close-on- exec flag FD_CLOEXEC is set (see fcntl)."
+  // (https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnp.html)
+  // - which I assume means they get closed if we specify a file actions object, which we do.
+  rc &= (::posix_spawn(&child_pid, argv[0], &fa.v, &atr.v, (char**)argv, os::get_environ()) == 0);
+
+  if (rc) {
+    int status;
+    rc = (::waitpid(child_pid, &status, 0) != -1) &&
+         (WIFEXITED(status) && WEXITSTATUS(status) == 0);
+    if (rc == false) {
+      err_msg->print("Command failed or crashed");
     }
-    // We dump jcmd stdout stderr  to .out and .err files respectively (relative path is fine since child will
-    // cd into the report dir before)
-    ss.print(" > ");
-    print_file_name(&ss, NULL, cmd, pid, spikeno, percentage, ".out");
-    ss.print(" 2> ");
-    print_file_name(&ss, NULL, cmd, pid, spikeno, percentage, ".err");
-    ss.print("'");
+  } else {
+    err_msg->print("posix_spawn failed (%s)", os::strerror(errno));
+  }
 
-    stderr_stream.print_cr("HiMemReport: executing \"%s\" ...", ss.base());
-    // Note: fork_and_exec uses posix_spawn, which in turn *should* use clone(VM_VFORK) or possibly vfork,
-    // so we should have no problem forking in high mem pressure scenarios.
-    int rc = os::fork_and_exec(ss.base());
-    stderr_stream.print_cr("HiMemReport: Done (%d).", rc);
+  return rc;
+}
+
+// Calls a single jcmd via posix_spawn. Output is written to <report-dir>/<command name>-<pid>-<spike>-<percentage>
+// if HiMemReportDir is given; to stdout if not.
+static void call_single_jcmd(const ParsedCommand* cmd, int pid, time_t t) {
+
+  // if report dir is given, calc .out and .err file names
+  const char* out_file = NULL;
+  const char* err_file = NULL;
+  stringStream out_file_ss, err_file_ss;
+  if (g_report_dir != NULL) {
+    // output files are named <command name>_pid<pid>_<timestamp>.(out|err), e.g. "VM.info_4711_2022_08_01_07_52_22.out".
+    print_file_name(&out_file_ss, cmd->name(), pid, t, ".out");
+    out_file = out_file_ss.base();
+    print_file_name(&err_file_ss, cmd->name(), pid, t, ".err");
+    err_file = err_file_ss.base();
+  }
+
+  stringStream jcmd_executable;
+  jcmd_executable.print("%s/bin/jcmd", Arguments::get_java_home());
+
+  stringStream target_pid;
+  target_pid.print("%d", pid);
+
+  stringStream jcmd_command;
+  jcmd_command.print_raw(cmd->name());
+  if (cmd->has_arguments()) {
+    jcmd_command.put(' ');
+    jcmd_command.print_raw(cmd->args());
+  }
+
+  // Special consideration for GC.heap_dump: if the command was given without arguments, we append
+  // a file name for the heap dump ("<reportdir>/heapdump_pid<pid>_<timestamp>.dump")
+  if (!cmd->has_arguments() && ::strcmp(cmd->name(), "GC.heap_dump") == 0) {
+    jcmd_command.put(' ');
+    print_file_name(&jcmd_command, "GC.heap_dump", pid, t, ".dump");
+  }
+
+  const char* argv[4];
+  argv[0] = jcmd_executable.base();
+  argv[1] = target_pid.base();
+  argv[2] = jcmd_command.base();
+  argv[3] = NULL;
+
+  stringStream err_msg;
+  if (spawn_command(argv, out_file, err_file, &err_msg)) {
+    stderr_stream.print("HiMemReport: Successfully executed \"%s\"", jcmd_command.base());
+    if (out_file != NULL) {
+      stderr_stream.print(", output redirected to report dir");
+    }
+    stderr_stream.cr();
+  } else {
+    stderr_stream.print("HiMemReport: Failed to execute \"%s\" (%s)", jcmd_command.base(), err_msg.base());
   }
 }
+
+// Helper, trims string
+static char* trim_string(char* s) {
+  char* p = s;
+  while (::isspace(*p)) p++;
+  char* p2 = p + ::strlen(p) - 1;
+  while (p2 > p && ::isspace(*p2)) {
+    *p2 = '\0';
+    p2--;
+  }
+  return p;
+}
+
+struct JcmdClosure {
+  virtual bool do_it(const char* cmd) = 0;
+};
+
+static bool iterate_exec_string(const char* exec_string, JcmdClosure* closure) {
+  char* exec_copy = os::strdup(exec_string);
+  char* save = NULL;
+  for (char* tok = strtok_r(exec_copy, ";", &save);
+       tok != NULL; tok = ::strtok_r(NULL, ";", &save)) {
+    const char* p = trim_string(tok);
+    if (::strlen(p) > 0 && !closure->do_it(p)) {
+      os::free(exec_copy);
+      return false;
+    }
+  }
+  os::free(exec_copy);
+  return true;
+}
+
+class CallJCmdClosure : public JcmdClosure {
+  const pid_t _pid;
+  const time_t _time;
+public:
+  CallJCmdClosure(int pid, time_t time) : _pid(pid), _time(time) {}
+  bool do_it(const char* command_string) override {
+    ParsedCommand cmd(command_string);
+    assert(cmd.is_valid(), "Invalid command");
+    call_single_jcmd(&cmd, _pid, _time);
+    return true;
+  }
+};
+
+struct VerifyJCmdClosure : public JcmdClosure {
+  bool do_it(const char* command_string) override {
+    log_info(os)("HiMemReportExec: storing command \"%s\".", command_string);
+    if (!ParsedCommand(command_string).is_valid()) {
+      log_warning(os)("HiMemReportExec: Command \"%s\" invalid.", command_string);
+      return false;
+    }
+    return true;
+  }
+};
 
 //////////////////// alert handling and reporting ///////////////////////////////////////////////////////////////
 
@@ -571,20 +681,23 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
                triggering_size / K, percentage, describe_maximum_by_compare_type(g_compare_what),
                g_alert_state->maximum() / K);
   const char* message = reason.base();
+
   const int pid = os::current_process_id();
+  time_t t;
+  time(&t);
 
   bool printed = false;
 
-  print_high_memory_report_header(&stderr_stream, message);
+  print_high_memory_report_header(&stderr_stream, message, pid, t);
 
   if (g_report_dir != NULL) {
     // Dump to file in report dir
     stringStream ss;
-    print_file_name(&ss, HiMemReportDir, "sapmachine_himemalert", pid, spikeno, percentage, ".log");
+    print_file_name(&ss, "sapmachine_himemalert", pid, t, ".log");
     fileStream fs(ss.base());
     if (fs.is_open()) {
       stderr_stream.print_cr("# Printing to %s", ss.base());
-      print_high_memory_report_header(&fs, message);
+      print_high_memory_report_header(&fs, message, pid, t);
       print_high_memory_report(&fs);
       printed = true;
     } else {
@@ -603,8 +716,9 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
   stderr_stream.cr();
   stderr_stream.flush();
 
-  if (g_jcmds != NULL) {
-    call_jcmds(spikeno, percentage);
+  if (HiMemReportExec != NULL) {
+    CallJCmdClosure closure(pid, t);
+    iterate_exec_string(HiMemReportExec, &closure);
   }
 }
 
@@ -700,6 +814,12 @@ extern void initialize_himem_report_facility() {
 
   assert(g_compare_what == compare_type::compare_none && g_alert_state == NULL, "Only initialize once");
 
+  // Verify the exec string
+  VerifyJCmdClosure closure;
+  if (HiMemReportExec != NULL && iterate_exec_string(HiMemReportExec, &closure) == false) {
+    vm_exit_during_initialization("Vitals HiMemReportExec: One or more Exec commands were invalid");
+  }
+
   // We need to decide what we will compare with what. To do that, we get the current system values.
   // - If user manually specified a maximum, we will compare rss+swap with that maximum
   // - If we live inside a cgroup with a memory limit, we will compare process rss+swap vs this limit
@@ -746,18 +866,6 @@ extern void initialize_himem_report_facility() {
   }
 
   g_alert_state = new AlertState(limit);
-
-  if (HiMemReportExec != NULL) {
-    if (HiMemReportDir == NULL) {
-      vm_exit_during_initialization("Vitals HiMemReport: HiMemReportExec requires HiMemReportDir.");
-    }
-    g_jcmds = LilJcmdParser::parse_exec_string(HiMemReportExec);
-#ifdef ASSERT
-    if (g_jcmds != NULL) {
-      g_jcmds->print_on(&stderr_stream);
-    }
-#endif
-  }
 
   if (!initialize_reporter_thread()) {
     log_warning(os)("Vitals HiMemReport: Failed to start monitor thread. Will disable.");

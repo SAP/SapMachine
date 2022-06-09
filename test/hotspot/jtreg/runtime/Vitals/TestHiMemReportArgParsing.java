@@ -65,18 +65,6 @@ import java.io.IOException;
 public class TestHiMemReportArgParsing {
 
     /**
-     * test that HiMemReportExec without HiMemReportDir results in an error
-     */
-    static void testExecNeedsDir() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportExec=VM.info",
-                "-Xmx64m", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotHaveExitValue(0);
-        output.shouldContain("HiMemReportExec requires HiMemReportDir");
-    }
-
-    /**
      * test HiMemReportDir with a valid, absolute path to a non-existing directory
      */
     static void testValidNonExistingReportDir() throws IOException {
@@ -141,9 +129,7 @@ public class TestHiMemReportArgParsing {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args[0].equals("ExecNeedsDir"))
-            testExecNeedsDir();
-        else if (args[0].equals("ValidNonExistingReportDir"))
+        if (args[0].equals("ValidNonExistingReportDir"))
             testValidNonExistingReportDir();
         else if (args[0].equals("ValidExistingReportDir"))
             testValidExistingReportDir();
