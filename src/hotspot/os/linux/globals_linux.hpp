@@ -78,7 +78,15 @@
           "be dumped into the corefile.")                               \
                                                                         \
   diagnostic(bool, UseCpuAllocPath, false,                              \
-             "Use CPU_ALLOC code path in os::active_processor_count ")
+             "Use CPU_ALLOC code path in os::active_processor_count ")  \
+                                                                        \
+  /* SapMachine 2021-09-01: malloc-trace */                             \
+  diagnostic(bool, EnableMallocTrace, false,                            \
+          "Enable malloc trace at VM initialization")                   \
+                                                                        \
+  /* SapMachine 2021-09-01: malloc-trace */                             \
+  diagnostic(bool, PrintMallocTraceAtExit, false,                       \
+          "Print Malloc Trace upon VM exit")                            \
 
 //
 // Defines Linux-specific default values. The flags are available on all
