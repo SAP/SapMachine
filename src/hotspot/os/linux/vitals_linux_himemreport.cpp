@@ -64,6 +64,7 @@ static fdStream stderr_stream(2);
 
 namespace sapmachine_vitals {
 
+static const int HiMemReportDecaySeconds = 60 * 5;
 
 //////////// pretty printing stuff //////////////////////////////////
 
@@ -99,8 +100,8 @@ class AlertState : public CHeapObj<mtInternal> {
   const size_t _maximum;
 
   // Alert percentages per level
-  static const int _alvl_perc[5]; // = { 0, 66, 75, 90, 100 };
-  //                                     0  2   3   4,  5
+  static const int _alvl_perc[4]; // = { 0, 75, 85, 95 };
+  //                                     0  1   2   3
 
   // alert level: 0: all is well, 1..6: we are at x percent
   int _alvl;
@@ -183,7 +184,7 @@ public:
 
 };
 
-const int AlertState::_alvl_perc[5] = { 0, 66, 75, 90, 100 };
+const int AlertState::_alvl_perc[4] = { 0, 75, 85, 95 };
 
 static AlertState* g_alert_state = NULL;
 

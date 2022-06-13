@@ -85,8 +85,7 @@
   /* SapMachine 2022-05-01: HiMemReport */                              \
   product(bool, HiMemReport, false,                                     \
          "A high memory report will be generated when process "         \
-         "rss+swap reaches either one of 66%, 75%, 90%, 100% of a "     \
-         "maximum.\n"                                                   \
+         "rss+swap reaches either one of 75%, 85%, 95% of a maximum.\n" \
          "If the VM is containerized, that maximum is the container "   \
          "memory limit at VM start. If the VM is not containerized, "   \
          "that maximum is the total size of physical memory.\n"         \
@@ -101,19 +100,13 @@
 			    "directory "                                                  \
 			    "<dir>/sapmachine_himemalert_<pid>_<spike>_<percentage>.log.") \
   product(ccstr, HiMemReportExec, NULL,                                 \
-		      "Upon high memory alert, after the base report was written, " \
-		      "call one or more jcmds on the VM. Separate multiple "        \
-		      "commands with semicola. Requires HiMemReportDir to be "      \
-		      "specified. Command stdout and stderr are written into the "  \
-		      "report directory as "                                        \
-		      "<command-name>_<pid>_<spike>_<percentage>.(out|err).\n"      \
-		      "The following special commands are recognized:\n"            \
-		      "- heapdump: calls GC.heapdump and writes the dump file "     \
-		      "into the report dir\n"                                       \
+		      "Upon high memory alert, after the base report has been "     \
+		      "written, call one or more jcmds. Separate multiple "         \
+		      "commands with ';'. Command output appears in stderr, unless " \
+		      "HiMemReportDir was specified, in which case it is dumped "   \
+		      "as file into the report directory \n"                        \
 		      "Example: "                                                   \
 		      "\"-XX:HiMemReportExec=VM.info;GC.class_histogram -all;heapdump\"") \
-  develop(int, HiMemReportDecaySeconds, 60 * 3,                         \
-          "Spike recognition decay")                                    \
                                                                         \
   product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
