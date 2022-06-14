@@ -177,9 +177,9 @@ bool platform_columns_initialize() {
       define_column<PlainValueColumn>(system_cat, NULL, "t", "Number of threads", true);
 
   g_col_system_num_procs_running =
-      define_column<PlainValueColumn>(system_cat, NULL, "pr", "Number of processes running", true);
+      define_column<PlainValueColumn>(system_cat, NULL, "tr", "Number of threads running", true);
   g_col_system_num_procs_blocked =
-      define_column<PlainValueColumn>(system_cat, NULL, "pb", "Number of processes blocked", true);
+      define_column<PlainValueColumn>(system_cat, NULL, "tb", "Number of threads blocked on disk IO", true);
 
   g_col_system_cpu_user =
       define_column<CPUTimeColumn>(system_cat, "cpu", "us", "CPU user time [host]", true);
@@ -287,8 +287,8 @@ void sample_platform_values(Sample* sample) {
   set_value_in_sample(g_col_system_cpu_steal, sample, OSWrapper::syst_cpu_st());
   set_value_in_sample(g_col_system_cpu_guest, sample, OSWrapper::syst_cpu_gu());
 
-  set_value_in_sample(g_col_system_num_procs_running, sample, OSWrapper::syst_pr());
-  set_value_in_sample(g_col_system_num_procs_blocked, sample, OSWrapper::syst_pb());
+  set_value_in_sample(g_col_system_num_procs_running, sample, OSWrapper::syst_tr());
+  set_value_in_sample(g_col_system_num_procs_blocked, sample, OSWrapper::syst_tb());
 
   // cgroups business
   if (g_show_cgroup_info) {

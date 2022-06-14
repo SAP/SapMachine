@@ -46,8 +46,8 @@ class OSWrapper {
 	  f(syst_so) \
 	  f(syst_p) \
 	  f(syst_t) \
-	  f(syst_pr) \
-	  f(syst_pb) \
+	  f(syst_tr) \
+	  f(syst_tb) \
 	  f(syst_cpu_us) \
 	  f(syst_cpu_sy) \
 	  f(syst_cpu_id) \

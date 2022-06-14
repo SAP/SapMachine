@@ -267,11 +267,11 @@ public class VitalsValuesSanityCheck {
 
                 long min_expected_kernel_threads = min_expected_java_threads;
                 long max_expected_kernel_threads = 1000000000; // same here
-                long syst_t = checkValueIsBetween(csv, "syst-p", min_expected_kernel_threads, max_expected_kernel_threads);
+                long syst_t = checkValueIsBetween(csv, "syst-t", min_expected_kernel_threads, max_expected_kernel_threads);
 
-                // processes running, processes blocked (cannot be more than number of kernel threads)
-                checkValueIsBetween(csv, "syst-pr", 0, syst_t);
-                checkValueIsBetween(csv, "syst-pb", 0, syst_t);
+                // threads running, blocked on disk IO (cannot be larger than number of kernel threads)
+                checkValueIsBetween(csv, "syst-tr", 0, syst_t);
+                checkValueIsBetween(csv, "syst-tb", 0, syst_t);
 
                 // Cgroup
                 // We may not always show this. But if we do, at least the usage numbers should be checked

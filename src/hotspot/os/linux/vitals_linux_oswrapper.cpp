@@ -428,8 +428,13 @@ ALL_VALUES_DO(RESETVAL)
     _syst_cpu_st = values.steal;
     _syst_cpu_gu = values.guest + values.guest_nice;
 
-    _syst_pr = bf.parsed_prefixed_value("procs_running");
-    _syst_pb = bf.parsed_prefixed_value("procs_blocked");
+    // procs_running: this is actually number of threads running
+    // procs_blocked: number of threads blocked on real disk IO
+    // See https://utcc.utoronto.ca/~cks/space/blog/linux/ProcessStatesAndProcStat
+    // and https://lore.kernel.org/lkml/12601530441257@xenotime.net/#t
+    // and the canonical man page description at https://www.kernel.org/doc/Documentation/filesystems/proc.txt
+    _syst_tr = bf.parsed_prefixed_value("procs_running");
+    _syst_tb = bf.parsed_prefixed_value("procs_blocked");
   }
 
   // cgroups business
