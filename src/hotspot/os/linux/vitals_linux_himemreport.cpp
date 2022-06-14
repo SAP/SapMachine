@@ -100,8 +100,7 @@ class AlertState : public CHeapObj<mtInternal> {
   const size_t _maximum;
 
   // Alert percentages per level
-  static const int _alvl_perc[4]; // = { 0, 75, 85, 95 };
-  //                                     0  1   2   3
+  static const int _alvl_perc[5];
 
   // alert level: 0: all is well, 1..6: we are at x percent
   int _alvl;
@@ -119,7 +118,9 @@ class AlertState : public CHeapObj<mtInternal> {
 
   int calc_alvl(int percentage) const {
     int i = 0;
-    while (_alvl_perc[i] < 100 && percentage >= _alvl_perc[i + 1]) i ++;
+    while ((_alvl_perc[i + 1] != -1) && (_alvl_perc[i + 1] <= percentage)) {
+      i ++;
+    }
     return i;
   }
 
@@ -184,7 +185,7 @@ public:
 
 };
 
-const int AlertState::_alvl_perc[4] = { 0, 75, 85, 95 };
+const int AlertState::_alvl_perc[5] = { 0, 66, 75, 90, -1 };
 
 static AlertState* g_alert_state = NULL;
 
@@ -753,8 +754,8 @@ void pulse_himem_report() {
       }
       // If the alert level increased to a new value, trigger a new report
       trigger_high_memory_report(new_alvl, spikeno, new_percentage, rss_swap);
-      // If we passed 66% mark, do a NMT baseline
-      if (AlertState::alert_level_percentage(old_alvl) < 66 && new_percentage >= 66) {
+      // Upon first alert, do a NMT baseline
+      if (old_alvl == 0 && new_alvl > 0) {
         if (NMTStuff::capture_baseline()) {
           stderr_stream.print_cr("HiMemoryReport: ... captured NMT baseline");
         }
@@ -843,7 +844,7 @@ extern void initialize_himem_report_facility() {
       // limit against total physical memory
       g_compare_what = compare_type::compare_rss_vs_phys;
       limit = (size_t)OSWrapper::syst_phys();
-      log_info(os)("Vitals HiMemReport: Setting limit to total physical memory (" SIZE_FORMAT " K).", limit / K);
+      log_info(os)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", (limit / K) / 2);
     }
   }
 

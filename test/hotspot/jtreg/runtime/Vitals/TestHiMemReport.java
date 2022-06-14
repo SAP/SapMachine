@@ -75,14 +75,14 @@ public class TestHiMemReport {
     // predict, with a certain correctness, rss and swap.
 
     static final String[] beforeReport = {
-        "HiMemoryReport: rss\\+swap=.* - alert level increased to 3 \\(>=95%\\).",
-        "HiMemoryReport: ... seems we passed alert level 1 \\(75%\\) without noticing.",
-        "HiMemoryReport: ... seems we passed alert level 2 \\(85%\\) without noticing.",
+        "HiMemoryReport: rss\\+swap=.* - alert level increased to 3 \\(>=\\d+%\\).",
+        "HiMemoryReport: ... seems we passed alert level 1 \\(\\d+%\\) without noticing.",
+        "HiMemoryReport: ... seems we passed alert level 2 \\(\\d+%\\) without noticing.",
     };
 
     static final String[] reportHeader = {
             "# High Memory Report:",
-            "# rss\\+swap .* larger than 95% of HiMemReportMax.*",
+            "# rss\\+swap .* larger than \\d+% of HiMemReportMax.*",
             "# Spike number: 1",
     };
 
