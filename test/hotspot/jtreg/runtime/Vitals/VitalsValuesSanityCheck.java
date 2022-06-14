@@ -280,7 +280,8 @@ public class VitalsValuesSanityCheck {
                 }
                 if (csv.header.hasColumn("syst-cgro-kusg")) {
                     // kusg can get surprisingly high, e.g. if ran on a host hosting guest VMs (seen that with virtual box)
-                    checkValueIsBetween(csv, "syst-cgro-kusg", veryLowButNot0, highestExpectedMemoryValue);
+                    // ... and it can be 0 too for some reason, seen on our loaner ppcle machines at Adopt
+                    checkValueIsBetween(csv, "syst-cgro-kusg", 0, highestExpectedMemoryValue);
                 }
 
                 // Check --- process --- cols on Linux
