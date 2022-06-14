@@ -1001,7 +1001,19 @@ static Column* g_col_number_of_classes = NULL;
 static Column* g_col_number_of_class_loads = NULL;
 static Column* g_col_number_of_class_unloads = NULL;
 
-//...
+static bool is_nmt_enabled() {
+#if INCLUDE_NMT
+  // Note: JDK version dependency: Before JDK18, NMT had the ability to shut down operations
+  // at any point in time, and therefore we also had NMT_minimal tracking level. Therefore,
+  // to stay version independent, we never must compare against NMT_off or NMT_minimal directly,
+  // only always against NMT_summary/detail. And to be very safe, don't assume a numerical
+  // value either, since older JDKs had NMT_unknown as a very high numerical value.
+  const NMT_TrackingLevel lvl = MemTracker::tracking_level();
+  return (lvl == NMT_summary || lvl == NMT_detail);
+#else
+  return false;
+#endif
+}
 
 static bool add_jvm_columns() {
   // Order matters!
@@ -1036,13 +1048,7 @@ static bool add_jvm_columns() {
       define_column<MemorySizeColumn>(jvm_cat, NULL, "code", "Code cache, committed", true);
 
   // NMT columns only shown if NMT is at least at summary level
-  g_show_nmt_columns =
-#if INCLUDE_NMT
-      (MemTracker::tracking_level() >= NMT_summary)
-#else
-      false
-#endif
-  ;
+  g_show_nmt_columns = is_nmt_enabled();
   g_col_nmt_malloc =
      define_column<MemorySizeColumn>(jvm_cat, "nmt", "mlc", "Memory malloced by hotspot [nmt]", g_show_nmt_columns);
   g_col_nmt_mmap =
@@ -1132,7 +1138,7 @@ struct nmt_values_t {
 
 static bool get_nmt_values(nmt_values_t* out) {
   value_t result = INVALID_VALUE;
-  if (MemTracker::tracking_level() != NMT_off) {
+  if (is_nmt_enabled()) {
     MutexLocker locker(MemTracker::query_lock());
     /*const*/MallocMemorySnapshot* mlc_snapshot = MallocMemorySummary::as_snapshot();
     VirtualMemorySnapshot vm_snapshot;
