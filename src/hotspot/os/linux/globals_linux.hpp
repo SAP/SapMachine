@@ -97,20 +97,20 @@
 	product(size_t, HiMemReportMax, 0,                                    \
          "Specifies the maximum rss+swap size for HiMemReport.")        \
   product(ccstr, HiMemReportDir, NULL,                                  \
-			    "Specifies a directory into which reports are written. Gets " \
-			    "created (one level only) if it does not exist.")             \
+         "Specifies a directory into which reports are written. Gets " \
+         "created (one level only) if it does not exist.")             \
   product(ccstr, HiMemReportExec, NULL,                                 \
-		      "Specifies one or more jcmds to be executed after a high "    \
-		      "memory report has been written. Multiple commands are "      \
-		      "separated by ';'. Command output is written to stderr. If "  \
-		      "HiMemReportDir is specified, command output is redirected to " \
-		      "\"<report directory>/<command>_pid<pid>_timestamp.(out|err)\"." \
-		      "If one of the commands is \"GC.heap_dump\" and its "         \
-		      "arguments are omitted, the heap dump is written as "         \
-		      "\"GC.heap_dump_pid<pid>_timestamp\" to either report "       \
-		      "directory or current directory if HiMemReportDir is "        \
-		      "omitted.\n"                                                  \
-          "Example: \"-XX:HiMemReportExec=GC.class_histogram -all;GC.heap_dump\"") \
+         "Specifies one or more jcmds to be executed after a high "    \
+         "memory report has been written. Multiple commands are "      \
+         "separated by ';'. Command output is written to stderr. If "  \
+         "HiMemReportDir is specified, command output is redirected to " \
+         "\"<report directory>/<command>_pid<pid>_timestamp.(out|err)\"." \
+         "If one of the commands is \"GC.heap_dump\" and its "         \
+         "arguments are omitted, the heap dump is written as "         \
+         "\"GC.heap_dump_pid<pid>_timestamp\" to either report "       \
+         "directory or current directory if HiMemReportDir is "        \
+         "omitted.\n"                                                  \
+         "Example: \"-XX:HiMemReportExec=GC.class_histogram -all;GC.heap_dump\"") \
                                                                         \
   product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
