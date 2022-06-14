@@ -94,7 +94,7 @@
          "printed to stderr. If HiMemReportDir is specified, that "     \
          "report is redirected to \"<report directory>/"                \
          "<sapmachine_himemalert>_pid<pid>_<timestamp>.log\".")         \
-	product(size_t, HiMemReportMax, 0,                                    \
+  product(size_t, HiMemReportMax, 0,                                    \
          "Specifies the maximum rss+swap size for HiMemReport.")        \
   product(ccstr, HiMemReportDir, NULL,                                  \
          "Specifies a directory into which reports are written. Gets " \
