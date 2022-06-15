@@ -163,10 +163,11 @@ public class VitalsValuesSanityCheck {
             long expected_minimal_cheap_usage = cheapAllocationSize + expected_minimal_cheap_usage_jvm;
 
             // We read the vitals in csv form and get the parsed output.
+            // Note to self: don't use raw! It does display delta values as accumulating absolutes.
             // The heap (64m) should show up as full committed. It is also touched, so it should contribute to RSS unless we swap
             // The VM will have allocated 32M C-heap as well, in 1KB chunks. These should show up in NMT, in the cheap columns
             // as well as in rss.
-            OutputAnalyzer output = executor.execute("VM.vitals csv raw");
+            OutputAnalyzer output = executor.execute("VM.vitals csv scale=1");
             VitalsTestHelper.outputMatchesVitalsCSVMode(output);
             output.shouldNotContain("Now"); // off by default
             CSVParser.CSV csv = VitalsTestHelper.parseCSV(output);
