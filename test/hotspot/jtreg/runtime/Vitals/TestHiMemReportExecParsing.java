@@ -58,7 +58,7 @@ public class TestHiMemReportExecParsing {
 
     static void do_test(String execString, boolean shouldSucceed, String... shouldContain) throws IOException {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+HiMemReport", "-Xlog:os", "-XX:HiMemReportExec=" + execString,
+                "-XX:+HiMemReport", "-Xlog:vitals", "-XX:HiMemReportExec=" + execString,
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (shouldSucceed) {

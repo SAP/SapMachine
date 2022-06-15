@@ -225,8 +225,8 @@ public class VitalsValuesSanityCheck {
             long jvm_thr_num = checkValueIsBetween(csv, "jvm-jthr-num", min_expected_java_threads, max_expected_java_threads);
             // we expect at least 1 non-deamon thread (me)
             checkValueIsBetween(csv, "jvm-jthr-nd", 1, jvm_thr_num);
-            // How many threads were created? If every thread created still alive, as much as are alive
-            checkValueIsBetween(csv, "jvm-jthr-cr", jvm_thr_num, 10000);
+            // How many threads were created in the last second (delta col)?
+            checkValueIsBetween(csv, "jvm-jthr-cr", 0, 10000);
 
             // Classloaders:
             long min_expected_classloaders = 1; // probably more
@@ -238,10 +238,11 @@ public class VitalsValuesSanityCheck {
             long min_expected_classes_base = 300; // probably more
             long max_expected_classes_base = 60000; // probably way less
             long jvm_cls_num = checkValueIsBetween(csv, "jvm-cls-num", min_expected_classes_base, max_expected_classes_base);
-            // cls-ld and cls-uld are delta values, but we should have more than one sample
-            checkValueIsBetween(csv, "jvm-cls-ld", jvm_cls_num, max_expected_classes_base);
+            // cls-ld and cls-uld are delta values!
+            // Unless loading is insanely slow, I'd expect at least two-digit loads per second (vitals interval)
+            checkValueIsBetween(csv, "jvm-cls-ld", 10, max_expected_classes_base);
+            // I don't think we have unloaded yet
             checkValueIsBetween(csv, "jvm-cls-uld", 0, max_expected_classes_base);
-
 
             // Linux specific platform columns
             if (Platform.isLinux()) {

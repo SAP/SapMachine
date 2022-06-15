@@ -37,7 +37,7 @@ public class TestVitalsOff {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:-EnableVitals",
                 "-XX:MaxMetaspaceSize=16m",
-                "-Xlog:os",
+                "-Xlog:vitals",
                 "-Xmx128m",
                 "-version");
 

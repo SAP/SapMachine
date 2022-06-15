@@ -19,7 +19,7 @@ public class VitalsUtils {
     }
 
     static File createSubTestDir(String name, boolean create) {
-        File subdir = new File(outputDir, "test-outputdir-1");
+        File subdir = new File(outputDir, name);
         if (subdir.exists()) {
             throw new RuntimeException("test dir already exists: " + subdir);
         }
@@ -38,9 +38,17 @@ public class VitalsUtils {
         }
     }
 
+    static void fileShouldNotExist(File f) {
+        if (f.exists()) {
+            throw new RuntimeException("expected not to exist, but exists: " + f);
+        }
+    }
 
     static String[] stderrAsLines(OutputAnalyzer output) {
         return output.getStderr().split("\\R");
+    }
+    static String[] stdoutAsLines(OutputAnalyzer output) {
+        return output.getStdout().split("\\R");
     }
 
     /**
@@ -65,9 +73,17 @@ public class VitalsUtils {
             nLine ++;
         }
         if (nextToMatch < regexes.length) {
-            throw new RuntimeException("Not all matches found. First missing pattern:" + regexes[nextToMatch]);
+            throw new RuntimeException("Not all matches found. First missing pattern " + nextToMatch + ":" + regexes[nextToMatch]);
         }
         return nLine;
+    }
+
+    static int outputStderrMatchesPatterns(OutputAnalyzer output, String[] regexes) {
+        return matchPatterns(stderrAsLines(output), 0, regexes);
+    }
+
+    static int outputStdoutMatchesPatterns(OutputAnalyzer output, String[] regexes) {
+        return matchPatterns(stdoutAsLines(output), 0, regexes);
     }
 
     static String [] fileAsLines(File f) throws IOException {

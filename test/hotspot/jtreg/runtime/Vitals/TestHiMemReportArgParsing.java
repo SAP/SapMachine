@@ -36,6 +36,13 @@
  */
 
 /*
+ * @test TestHiMemReportArgParsing-InValidReportDir
+ * @library /test/lib
+ * @requires os.family == "linux"
+ * @run driver TestHiMemReportArgParsing InValidReportDir
+ */
+
+/*
  * @test TestHiMemReportArgParsing-HiMemReportOn
  * @library /test/lib
  * @requires os.family == "linux"
@@ -68,12 +75,18 @@ public class TestHiMemReportArgParsing {
      * test HiMemReportDir with a valid, absolute path to a non-existing directory
      */
     static void testValidNonExistingReportDir() throws IOException {
-        File subdir = VitalsUtils.createSubTestDir("test-outputdir-1", true);
+        File subdir = VitalsUtils.createSubTestDir("test-outputdir-1", false);
+        VitalsUtils.fileShouldNotExist(subdir);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(),
+                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(), "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
+        VitalsUtils.outputStdoutMatchesPatterns(output, new String[] {
+                ".*[vitals].*HiMemReportDir: Created report directory.*" + subdir.getName() + ".*",
+                ".*[vitals].*HiMemReport subsystem initialized.*"
+        });
         VitalsUtils.fileShouldExist(subdir);
     }
 
@@ -81,14 +94,39 @@ public class TestHiMemReportArgParsing {
      * test HiMemReportDir with a valid, absolute path to an existing directory
      */
     static void testValidExistingReportDir() throws IOException {
-        File subdir = VitalsUtils.createSubTestDir("test-outputdir-2", false);
+        File subdir = VitalsUtils.createSubTestDir("test-outputdir-2", true);
+        VitalsUtils.fileShouldExist(subdir);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(),
+                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(), "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
-        // VM should have created the output directory
+        VitalsUtils.outputStdoutMatchesPatterns(output, new String[] {
+                ".*[vitals].*Found existing report directory at.*" + subdir.getName() + ".*",
+                ".*[vitals].*HiMemReport subsystem initialized.*"
+        });
         VitalsUtils.fileShouldExist(subdir);
+    }
+
+    /**
+     * test HiMemReportDir with an invalid path (containing several layers, which the VM will not create, it will only
+     * create subdirs of max 1 level). We explicitly omit Xlog:vitals, but still expect a warning
+     */
+    static void testInValidReportDir() throws IOException {
+        File f = new File("/tmp/gibsnicht/gibsnicht/gibsnicht");
+        VitalsUtils.fileShouldNotExist(f);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + f.getAbsolutePath(), "-Xlog:vitals",
+                "-Xmx64m", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
+        output.shouldNotHaveExitValue(0);
+        VitalsUtils.outputStdoutMatchesPatterns(output, new String[] {
+                ".*[vitals].*Failed to create report directory.*" + f.getAbsolutePath() + ".*",
+                "Error occurred during initialization of VM"
+        });
+        VitalsUtils.fileShouldNotExist(f);
     }
 
     /**
@@ -96,12 +134,15 @@ public class TestHiMemReportArgParsing {
      */
     static void testHiMemReportOn() throws IOException {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+HiMemReport", "-Xlog:os",
+                "-XX:+HiMemReport", "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
-        output.shouldContain("Vitals HiMemReport: Setting limit to");
-        output.shouldContain("HiMemReport subsystem initialized.");
+        VitalsUtils.outputStdoutMatchesPatterns(output, new String[] {
+                ".*[vitals].*Setting limit to.*",
+                ".*[vitals].*HiMemReport subsystem initialized.*"
+        });
     }
 
     /**
@@ -109,11 +150,12 @@ public class TestHiMemReportArgParsing {
      */
     static void testHiMemReportOff() throws IOException {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:-HiMemReport", "-Xlog:os",
+                "-XX:-HiMemReport", "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
-        output.shouldNotContain("Vitals HiMemReport: Setting limit to");
+        output.shouldNotContain("HiMemReport subsystem initialized");
     }
 
     /**
@@ -121,11 +163,12 @@ public class TestHiMemReportArgParsing {
      */
     static void testHiMemReportOffByDefault() throws IOException {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-Xlog:os",
+                "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
-        output.shouldNotContain("Vitals HiMemReport: Setting limit to");
+        output.shouldNotContain("HiMemReport subsystem initialized");
     }
 
     public static void main(String[] args) throws Exception {
@@ -133,6 +176,8 @@ public class TestHiMemReportArgParsing {
             testValidNonExistingReportDir();
         else if (args[0].equals("ValidExistingReportDir"))
             testValidExistingReportDir();
+        else if (args[0].equals("InValidReportDir"))
+            testInValidReportDir();
         else if (args[0].equals("HiMemReportOn"))
             testHiMemReportOn();
         else if (args[0].equals("HiMemReportOff"))
