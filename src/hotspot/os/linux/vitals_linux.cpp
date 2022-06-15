@@ -111,8 +111,6 @@ static bool g_show_cgroup_info = false;
 static Column* g_col_system_cgrp_limit_in_bytes = NULL;
 static Column* g_col_system_cgrp_soft_limit_in_bytes = NULL;
 static Column* g_col_system_cgrp_usage_in_bytes = NULL;
-//static Column* g_col_system_cgrp_memsw_limit_in_bytes = NULL;
-//static Column* g_col_system_cgrp_memsw_usage_in_bytes = NULL;
 static Column* g_col_system_cgrp_kmem_usage_in_bytes = NULL;
 
 static Column* g_col_system_cpu_user = NULL;
@@ -197,14 +195,10 @@ bool platform_columns_initialize() {
   g_show_cgroup_info = OSContainer::is_containerized() || (OSWrapper::syst_cgro_lim() != INVALID_VALUE || OSWrapper::syst_cgro_limsw() != INVALID_VALUE);
   g_col_system_cgrp_limit_in_bytes =
         define_column<MemorySizeColumn>(system_cat, "cgroup", "lim", "cgroup memory limit [cgrp]", g_show_cgroup_info);
-  //g_col_system_cgrp_memsw_limit_in_bytes =
-  //      define_column<MemorySizeColumn>(system_cat, "cgroup", "limsw", "cgroup memory+swap limit [cgrp]", g_show_cgroup_info);
   g_col_system_cgrp_soft_limit_in_bytes =
         define_column<MemorySizeColumn>(system_cat, "cgroup", "slim", "cgroup memory soft limit [cgrp]", g_show_cgroup_info);
   g_col_system_cgrp_usage_in_bytes =
         define_column<MemorySizeColumn>(system_cat, "cgroup", "usg", "cgroup memory usage [cgrp]", g_show_cgroup_info);
-  //g_col_system_cgrp_memsw_usage_in_bytes =
-  //    define_column<MemorySizeColumn>(system_cat, "cgroup", "usgsw", "cgroup memory+swap usage [cgrp]", g_show_cgroup_info);
   g_col_system_cgrp_kmem_usage_in_bytes =
         define_column<MemorySizeColumn>(system_cat, "cgroup", "kusg", "cgroup kernel memory usage (cgroup v1 only) [cgrp]", g_show_cgroup_info);
 
