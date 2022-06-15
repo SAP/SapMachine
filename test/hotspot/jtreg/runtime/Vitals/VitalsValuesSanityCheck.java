@@ -317,8 +317,8 @@ public class VitalsValuesSanityCheck {
                 // (at least one, since we write to stdout. Probably not many more.
                 checkValueIsBetween(csv, "proc-io-of", 1, 1000);
 
-                // IO read, written (note: deltas, so its "read, written, in one second"). We will have at least read some
-                checkValueIsBetween(csv, "proc-io-rd", veryLowButNot0, 1 * G);
+                // IO read, written (note: deltas, so its "read, written, in one second").
+                checkValueIsBetween(csv, "proc-io-rd", 0, 1 * G);
                 checkValueIsBetween(csv, "proc-io-wr", 0, 10 * G);
 
                 // Number of threads in this process (java + native)
