@@ -84,7 +84,7 @@
                                                                         \
   /* SapMachine 2022-05-01: HiMemReport */                              \
   product(bool, HiMemReport, false,                                     \
-         "VM will write a high memory report and optionally execute "   \
+         "VM writes a high memory report and optionally execute "       \
          "additional jcmds if its rss+swap reaches 66%, 75% or 90% of " \
          "a maximum. If the VM is containerized, that maximum is the "  \
          "container memory limit at VM start. If the VM is not "        \
@@ -95,14 +95,14 @@
          "report is redirected to \"<report directory>/"                \
          "<sapmachine_himemalert>_pid<pid>_<timestamp>.log\".")         \
   product(size_t, HiMemReportMax, 0,                                    \
-         "Specifies the maximum rss+swap size for HiMemReport.")        \
+         "Overrides the maximum reference size for HiMemReport.")       \
   product(ccstr, HiMemReportDir, NULL,                                  \
-         "Specifies a directory into which reports are written. Gets " \
-         "created (one level only) if it does not exist.")             \
+         "Specifies a directory into which reports are written. Gets "  \
+         "created (one level only) if it does not exist.")              \
   product(ccstr, HiMemReportExec, NULL,                                 \
-         "Specifies one or more jcmds to be executed after a high "    \
-         "memory report has been written. Multiple commands are "      \
-         "separated by ';'. Command output is written to stderr. If "  \
+         "Specifies one or more jcmds to be executed after a high "     \
+         "memory report has been written. Multiple commands are "       \
+         "separated by ';'. Command output is written to stderr. If "   \
          "HiMemReportDir is specified, command output is redirected to " \
          "\"<report directory>/<command>_pid<pid>_timestamp.(out|err)\"." \
          "If one of the commands is \"GC.heap_dump\" and its "         \
