@@ -49,18 +49,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-
+// Logging and output:
+// We log during initialization phase to UL using the "vitals" tag.
+// In the high memory detection thread itself, when triggering the report, we write strictly to
+// stderr, directly. We don't use tty since we want to bypass ttylock. Sub command output also
+// gets written to stderr.
 
 // We print to the stderr stream directly in this code (since we want to bypass ttylock)
 static fdStream stderr_stream(2);
-
-#ifdef ASSERT
-#define LOG_HERE_F(msg, ...)  { printf("[%d] ", (int)::getpid()); ::printf(msg, __VA_ARGS__); printf("\n"); fflush(stdout); }
-#define LOG_HERE(msg)         { printf("[%d] ", (int)::getpid()); ::printf("%s", msg); printf("\n"); fflush(stdout); }
-#else
-#define LOG_HERE_F(msg, ...)
-#define LOG_HERE(msg)
-#endif
 
 namespace sapmachine_vitals {
 
@@ -332,16 +328,21 @@ public:
 
   bool create_if_needed() {
     // Create the report directory (just the leaf dir, I don't bother creating the whole hierarchy)
-    log_info(os)("create/validate HiMemReportDir \"%s\"...", path());
     struct stat s;
     if (::stat(path(), &s) == -1) {
-      if (::mkdir(path(), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) == -1) {
-        log_warning(os)("HiMemReportDir: Failed to create report directory \"%s\" (%d)", path(), errno);
+      if (::mkdir(path(), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH) != -1) {
+        log_info(vitals)("HiMemReportDir: Created report directory \"%s\"", path());
+      } else {
+        log_warning(vitals)("HiMemReportDir: Failed to create report directory \"%s\" (%d)", path(), errno);
         return false;
       }
-    } else if (!S_ISDIR(s.st_mode)) {
-      log_warning(os)("HiMemReportDir: \"%s\" exists, but its not a directory.", path());
-      return false;
+    } else {
+      if (S_ISDIR(s.st_mode)) {
+        log_info(vitals)("HiMemReportDir: Found existing report directory at \"%s\"", path());
+      } else {
+        log_warning(vitals)("HiMemReportDir: \"%s\" exists, but its not a directory.", path());
+        return false;
+      }
     }
     // Test access by touching a file in this dir. For convenience, we leave the touched file in it
     // and write the VM start time and some other info into it.
@@ -661,9 +662,9 @@ public:
 
 struct VerifyJCmdClosure : public JcmdClosure {
   bool do_it(const char* command_string) override {
-    log_info(os)("HiMemReportExec: storing command \"%s\".", command_string);
+    log_info(vitals)("HiMemReportExec: storing command \"%s\".", command_string);
     if (!ParsedCommand(command_string).is_valid()) {
-      log_warning(os)("HiMemReportExec: Command \"%s\" invalid.", command_string);
+      log_warning(vitals)("HiMemReportExec: Command \"%s\" invalid.", command_string);
       return false;
     }
     return true;
@@ -832,24 +833,24 @@ extern void initialize_himem_report_facility() {
   if (HiMemReportMax != 0) {
     g_compare_what = compare_type::compare_rss_vs_manual_limit;
     limit = HiMemReportMax;
-    log_info(os)("Vitals HiMemReport: Setting limit to HiMemReportMax (" SIZE_FORMAT " K).", limit / K);
+    log_info(vitals)("Vitals HiMemReport: Setting limit to HiMemReportMax (" SIZE_FORMAT " K).", limit / K);
   } else {
     OSWrapper::update_if_needed();
     if (OSWrapper::syst_cgro_lim() != INVALID_VALUE) {
       // limit against cgroup limit
       g_compare_what = compare_type::compare_rss_vs_cgroup_limit;
       limit = (size_t)OSWrapper::syst_cgro_lim();
-      log_info(os)("Vitals HiMemReport: Setting limit to cgroup memory limit (" SIZE_FORMAT " K).", limit / K);
+      log_info(vitals)("Vitals HiMemReport: Setting limit to cgroup memory limit (" SIZE_FORMAT " K).", limit / K);
     } else if (OSWrapper::syst_phys() != INVALID_VALUE) {
       // limit against total physical memory
       g_compare_what = compare_type::compare_rss_vs_phys;
       limit = (size_t)OSWrapper::syst_phys();
-      log_info(os)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", (limit / K) / 2);
+      log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", (limit / K) / 2);
     }
   }
 
   if (limit == 0) {
-    log_warning(os)("Vitals HiMemReport: limit could not be established; will disable high memory reports "
+    log_warning(vitals)("Vitals HiMemReport: limit could not be established; will disable high memory reports "
                     "(specify HiMemReportMax to establish a manual limit).");
     FLAG_SET_ERGO(HiMemReport, false);
     return;
@@ -861,7 +862,7 @@ extern void initialize_himem_report_facility() {
   if (HiMemReportDir != NULL && ::strlen(HiMemReportDir) > 0) {
     g_report_dir = new ReportDir(HiMemReportDir);
     if (!g_report_dir->create_if_needed()) {
-      log_warning(os)("Vitals: Cannot access HiMemReportDir %s.", g_report_dir->path());
+      log_warning(vitals)("Vitals: Cannot access HiMemReportDir %s.", g_report_dir->path());
       vm_exit_during_initialization("Vitals HiMemReport: Failed to create or access HiMemReportDir.");
       return;
     }
@@ -870,12 +871,12 @@ extern void initialize_himem_report_facility() {
   g_alert_state = new AlertState(limit);
 
   if (!initialize_reporter_thread()) {
-    log_warning(os)("Vitals HiMemReport: Failed to start monitor thread. Will disable.");
+    log_warning(vitals)("Vitals HiMemReport: Failed to start monitor thread. Will disable.");
     FLAG_SET_ERGO(HiMemReport, false);
     return;
   }
 
-  log_info(os)("Vitals: HiMemReport subsystem initialized.");
+  log_info(vitals)("Vitals: HiMemReport subsystem initialized.");
 
 }
 

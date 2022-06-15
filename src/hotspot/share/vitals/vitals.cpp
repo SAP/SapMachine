@@ -1254,12 +1254,12 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
-  log_info(os)("Vitals v%d", vitals_version);
-  log_info(os)("Initializing vitals...");
+  log_info(vitals)("Vitals v%x", vitals_version);
+  log_info(vitals)("Initializing vitals...");
 
   // Adjust VitalsSampleInterval
   if (VitalsSampleInterval == 0) {
-    log_warning(os)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
+    log_warning(vitals)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
                     VitalsSampleInterval);
     return false;
   }
@@ -1279,9 +1279,9 @@ bool initialize() {
   success &= initialize_sampler_thread();
 
   if (success) {
-    log_info(os)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
+    log_info(vitals)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
   } else {
-    log_warning(os)("Failed to initialize Vitals.");
+    log_warning(vitals)("Failed to initialize Vitals.");
   }
 
   return true;
