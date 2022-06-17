@@ -675,7 +675,18 @@ struct VerifyJCmdClosure : public JcmdClosure {
 
 static int g_num_alerts = 0;
 
+// We don't want to flood the report directory if the footprint of the VM wobbles strongly. We will give up
+// after a reasonable amount of reports have been printed.
+static const int max_spikes = 32;
+
 static void trigger_high_memory_report(int alvl, int spikeno, int percentage, size_t triggering_size) {
+
+  if (spikeno >= max_spikes) {
+    if (spikeno == max_spikes) {
+      stderr_stream.print_cr("# HiMemReport: Too many spikes encountered. Further reports will be omitted.");
+    }
+    return;
+  }
 
   g_num_alerts ++;
 
@@ -723,6 +734,7 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
     CallJCmdClosure closure(pid, t);
     iterate_exec_string(HiMemReportExec, &closure);
   }
+
 }
 
 ///////////////// Monitor thread /////////////////////////////////////////
