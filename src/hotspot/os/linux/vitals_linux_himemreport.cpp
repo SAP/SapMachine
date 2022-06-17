@@ -386,6 +386,11 @@ static void print_high_memory_report(outputStream* st) {
   st->cr();
   st->flush();
 
+  Arguments::print_summary_on(st);
+  st->cr();
+  st->cr();
+  st->flush();
+
   st->print_cr("--- Vitals ---");
   sapmachine_vitals::print_info_t info;
   sapmachine_vitals::default_settings(&info);
