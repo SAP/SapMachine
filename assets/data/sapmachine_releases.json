@@ -254,10 +254,12 @@
                 {
                     "tag": "sapmachine-17.0.4+7",
                     "jdk": {
-                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B7/sapmachine-jdk-17.0.4-ea.7_linux-aarch64_bin.tar.gz"
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B7/sapmachine-jdk-17.0.4-ea.7_linux-aarch64_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B7/sapmachine-jdk-17.0.4-ea.7_linux-x64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B7/sapmachine-jre-17.0.4-ea.7_linux-aarch64_bin.tar.gz"
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B7/sapmachine-jre-17.0.4-ea.7_linux-aarch64_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.4%2B7/sapmachine-jre-17.0.4-ea.7_linux-x64_bin.tar.gz"
                     }
                 }
             ]
