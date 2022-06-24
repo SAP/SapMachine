@@ -66,11 +66,13 @@ static const int HiMemReportDecaySeconds = 60 * 5;
 
 #define STRFTIME_FROM_TIME_T(st, fmt, t)                    \
   char buf[32];                                             \
-  struct tm* timeinfo;                                      \
-  timeinfo = ::localtime(&t);                               \
-  size_t rc = ::strftime(buf, sizeof(buf), fmt, timeinfo);  \
-  assert(rc < 32, "sanity strftime");                       \
-  st->print_raw(buf);
+  struct tm timeinfo;                                       \
+  if (::localtime_r(&t, &timeinfo) != NULL &&               \
+      ::strftime(buf, sizeof(buf), fmt, &timeinfo) != 0) {  \
+    st->print_raw(buf);                                     \
+  } else {                                                  \
+    st->print_raw("unknown_date");                          \
+  }
 
 
 static void print_date_and_time(outputStream *st, time_t t) {
@@ -217,43 +219,41 @@ class NMTStuff : public AllStatic {
   static time_t _baseline_time;
 
   // Fill a given baseline
-  static bool fill_baseline(MemBaseline& baseline) {
+  static void fill_baseline(MemBaseline& baseline) {
     const NMT_TrackingLevel lvl = MemTracker::tracking_level();
     if (lvl >= NMT_summary) {
       const bool summary_only = (lvl == NMT_summary);
-      if (baseline.baseline(summary_only)) {
-        return true;
-      }
+      baseline.baseline(summary_only);
     }
-    return true;
   }
 
 public:
 
+  static bool is_enabled() {
+    const NMT_TrackingLevel lvl = MemTracker::tracking_level();
+    // Note: I avoid assumptions about numerical values of NMT_TrackingLevel
+    // (e.g. "lvl >= NMT_summary") since their order changed over time and we
+    // want to be JDK-version-agnostic here.
+    return lvl == NMT_summary || lvl == NMT_detail;
+  }
+
   // Capture a baseline right now
-  static bool capture_baseline() {
-    if (fill_baseline(_baseline)) {
-      time(&_baseline_time);
-      return true;
-    }
-    return false;
+  static void capture_baseline() {
+    fill_baseline(_baseline);
+    time(&_baseline_time);
   }
 
   // Do the best possible report with the given NMT tracking level.
   // If we are at summary level, do a summary level report
   // If we are at detail level, do a detail level report
   // If we have a baseline captured, do a diff level report
-  static bool report_as_best_as_possible(outputStream* st) {
+  static void report_as_best_as_possible(outputStream* st) {
 
-    const NMT_TrackingLevel lvl = MemTracker::tracking_level();
-    if (lvl >= NMT_summary) {
+    if (NMTStuff::is_enabled()) {
 
       // Get the state now
       MemBaseline baseline_now;
-      if (!fill_baseline(baseline_now)) {
-        st->print_cr("failed.");
-        return false;
-      }
+      fill_baseline(baseline_now);
 
       // prepare and print suitable report
       if (_baseline.baseline_type() == baseline_now.baseline_type()) {
@@ -287,7 +287,6 @@ public:
       st->print_cr("NMT is disabled, nothing to print");
     }
 
-    return true;
   }
 
   // If the situation calmed down, reset (clear the base line)
@@ -314,13 +313,13 @@ public:
 
   ReportDir(const char* d) {
     assert(d != NULL && strlen(d) > 0, "sanity");
-    if (HiMemReportDir[0] != '/') { // relative?
+    if (d[0] != '/') { // relative?
       char* p = ::get_current_dir_name();
       _dir.print("%s/", p);
       ::free(p); // [sic]
     }
     _dir.print_raw(d);
-    const size_t l = ::strlen(HiMemReportDir);
+    const size_t l = ::strlen(d);
     if (d[l - 1] != '/') {
       _dir.put('/');
     }
@@ -464,9 +463,7 @@ public:
       while (isspace(*p)) {
         p ++;
       }
-      if ((*p) != '\0') {
-        _args.print_raw(p);
-      }
+      _args.print_raw(p);
     }
   }
 
@@ -477,9 +474,9 @@ public:
   const char* args() const { return _args.base(); }
 
   // Unfortunately, the DCmd framework lacks the ability to check DCmd without
-  // executing them. Here, we do some simple basic checks. Failing them will result
-  // in a warning, not an error, in order to prevent us from having to modify this
-  // code each time a DCmd changes or is added.
+  // executing them. Here, we do some simple basic checks. Failing them will
+  // exit the VM right away, but passing them does still not mean the command
+  // is well formed since we don't check the arguments.
   bool is_valid() const {
     static const char* valid_prefixes[] = { "Compiler", "GC", "JFR", "JVMTI",
                                             "Management", "System", "Thread",
@@ -669,6 +666,7 @@ struct VerifyJCmdClosure : public JcmdClosure {
   bool do_it(const char* command_string) override {
     log_info(vitals)("HiMemReportExec: storing command \"%s\".", command_string);
     if (!ParsedCommand(command_string).is_valid()) {
+      // We print a warning here, fingerpointing the specific command that failed, then exit the VM later.
       log_warning(vitals)("HiMemReportExec: Command \"%s\" invalid.", command_string);
       return false;
     }
@@ -774,7 +772,8 @@ void pulse_himem_report() {
       trigger_high_memory_report(new_alvl, spikeno, new_percentage, rss_swap);
       // Upon first alert, do a NMT baseline
       if (old_alvl == 0 && new_alvl > 0) {
-        if (NMTStuff::capture_baseline()) {
+        if (NMTStuff::is_enabled()) {
+          NMTStuff::capture_baseline();
           stderr_stream.print_cr("HiMemoryReport: ... captured NMT baseline");
         }
       }
@@ -861,7 +860,7 @@ extern void initialize_himem_report_facility() {
     } else if (OSWrapper::syst_phys() != INVALID_VALUE) {
       // limit against total physical memory
       g_compare_what = compare_type::compare_rss_vs_phys;
-      limit = (size_t)OSWrapper::syst_phys();
+      limit = (size_t)OSWrapper::syst_phys() / 2;
       log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", (limit / K) / 2);
     }
   }

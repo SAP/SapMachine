@@ -23,11 +23,12 @@
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 public class CSVParser {
 
     public final static class CSVHeader {
-        ArrayList<String> columns = new ArrayList<>();
+        final List<String> columns = new ArrayList<>();
         Hashtable<String, Integer> columnPositions = new Hashtable<>();
 
         int size() {

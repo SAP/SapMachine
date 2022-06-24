@@ -286,6 +286,7 @@ public:
         log_info(os)("Vitals cgroup initialization: v2");
       } else {
         log_info(os)("Vitals cgroup initialization: no clue. Giving up.");
+        return false;
       }
     }
 
@@ -470,15 +471,12 @@ ALL_VALUES_DO(RESETVAL)
       do {
         en = ::readdir(d);
         if (en != NULL) {
-          if (::strcmp(".", en->d_name) == 0 || ::strcmp("..", en->d_name) == 0 ||
-              ::strcmp("0", en->d_name) == 0 || ::strcmp("1", en->d_name) == 0 || ::strcmp("2", en->d_name) == 0) {
-            // omit
-          } else {
-            v ++;
-          }
+          v ++;
         }
       } while(en != NULL);
       ::closedir(d);
+      assert(v >= 2, "should have read at least '.' and '..'");
+      v -= 2; // We discount . and ..
       _proc_io_of = v;
     }
   }
