@@ -55,7 +55,7 @@ jobs:
   select:
     name: 'Select platforms'
     # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
-    if: ${{ github.event_name != 'pull_request' || github.repository != 'SAP/SapMachine' }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
     runs-on: ubuntu-20.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
