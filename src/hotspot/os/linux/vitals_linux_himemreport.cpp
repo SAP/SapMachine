@@ -201,7 +201,7 @@ static const char* describe_maximum_by_compare_type(compare_type t) {
   const char* s = "";
   switch (g_compare_what) {
   case compare_type::compare_rss_vs_cgroup_limit: s = "cgroup memory limit"; break;
-  case compare_type::compare_rss_vs_phys: s = "total physical memory"; break;
+  case compare_type::compare_rss_vs_phys: s = "the half of total physical memory"; break;
   case compare_type::compare_rss_vs_manual_limit: s = "HiMemReportMaximum"; break;
   default: ShouldNotReachHere();
   }
@@ -861,7 +861,7 @@ extern void initialize_himem_report_facility() {
       // limit against total physical memory
       g_compare_what = compare_type::compare_rss_vs_phys;
       limit = (size_t)OSWrapper::syst_phys() / 2;
-      log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", (limit / K) / 2);
+      log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", limit / K);
     }
   }
 
