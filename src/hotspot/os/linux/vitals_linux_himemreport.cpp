@@ -867,7 +867,7 @@ extern void initialize_himem_report_facility() {
 
   if (limit == 0) {
     log_warning(vitals)("Vitals HiMemReport: limit could not be established; will disable high memory reports "
-                    "(specify HiMemReportMax to establish a manual limit).");
+                    "(specify -XX:HiMemReportMax=<size> to establish a manual limit).");
     FLAG_SET_ERGO(HiMemReport, false);
     return;
   }
@@ -879,7 +879,7 @@ extern void initialize_himem_report_facility() {
     g_report_dir = new ReportDir(HiMemReportDir);
     if (!g_report_dir->create_if_needed()) {
       log_warning(vitals)("Vitals: Cannot access HiMemReportDir %s.", g_report_dir->path());
-      vm_exit_during_initialization("Vitals HiMemReport: Failed to create or access HiMemReportDir.");
+      vm_exit_during_initialization("Vitals HiMemReport: Failed to create or access HiMemReportDir \"%s\".", g_report_dir->path());
       return;
     }
   }
