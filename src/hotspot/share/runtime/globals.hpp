@@ -1101,7 +1101,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
-  product(bool, UseHeavyMonitors, false,                                    \
+  develop(bool, UseHeavyMonitors, false,                                    \
           "(Deprecated) Use heavyweight instead of lightweight Java "       \
           "monitors")                                                       \
                                                                             \
@@ -2034,6 +2034,9 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, AllocateHeapAt, NULL,                                      \
           "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
+                                                                            \
+  product_pd(bool, VMContinuations, EXPERIMENTAL,                           \
+          "Enable VM continuations support")                                \
                                                                             \
   develop(bool, LoomDeoptAfterThaw, false,                                  \
           "Deopt stack after thaw")                                         \
