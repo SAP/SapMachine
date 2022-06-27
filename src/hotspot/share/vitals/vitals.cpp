@@ -1254,6 +1254,10 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
+  static bool initialized = false;
+  assert(initialized == false, "Vitals already initialized");
+  initialized = true;
+
   log_info(vitals)("Vitals v%x", vitals_version);
   log_info(vitals)("Initializing vitals...");
 

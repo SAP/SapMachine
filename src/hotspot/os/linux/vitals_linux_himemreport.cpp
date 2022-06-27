@@ -823,6 +823,10 @@ static bool initialize_reporter_thread() {
 
 extern void initialize_himem_report_facility() {
 
+  static bool initialized = false;
+  assert(initialized == false, "HiMemReport already initialized");
+  initialized = true;
+
   // Note:
   // unrecoverable errors:
   //  - errors the user can easily correct (bad arguments) cause exit right away
