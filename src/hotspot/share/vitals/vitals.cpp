@@ -40,6 +40,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "services/memTracker.hpp"
 #include "services/mallocTracker.hpp"
 #include "utilities/debug.hpp"
