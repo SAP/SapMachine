@@ -375,7 +375,8 @@ void OSWrapper::update_if_needed() {
 
   time_t t;
   time(&t);
-  if (t < (_last_update + num_seconds_until_update)) {
+  if (t != (time_t)-1 &&
+      t < (_last_update + num_seconds_until_update)) {
     return; // still good
   }
   _last_update = t;
