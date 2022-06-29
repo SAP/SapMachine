@@ -250,16 +250,16 @@ public:
     // containerized, since I like to know controller paths even for those cases.
 
     _containerized = OSContainer::is_containerized();
-    log_info(os)("Vitals cgroup initialization: containerized = %d", _containerized);
+    log_info(vitals)("Vitals cgroup initialization: containerized = %d", _containerized);
 
     const char* controller_path = sapmachine_get_memory_controller_path();
     if (controller_path == NULL) {
-      log_info(os)("Vitals cgroup initialization: controller path NULL");
+      log_info(vitals)("Vitals cgroup initialization: controller path NULL");
       return false;
     }
     size_t pathlen = ::strlen(controller_path);
     if (pathlen == 0) {
-      log_info(os)("Vitals cgroup initialization: controller path empty?");
+      log_info(vitals)("Vitals cgroup initialization: controller path empty?");
       return false;
     }
     stringStream path;
@@ -269,7 +269,7 @@ public:
       path.print("%s/", controller_path);
     }
 
-    log_info(os)("Vitals cgroup initialization: controller path: %s", path.base());
+    log_info(vitals)("Vitals cgroup initialization: controller path: %s", path.base());
 
     // V1 or V2?
     stringStream ss;
@@ -277,15 +277,15 @@ public:
     struct stat s;
     const bool isv1 = os::file_exists(ss.base());
     if (isv1) {
-      log_info(os)("Vitals cgroup initialization: v1");
+      log_info(vitals)("Vitals cgroup initialization: v1");
     } else  {
       ss.reset();
       ss.print("%smemory.current", path.base());
       if (os::file_exists(ss.base())) {
         // okay, its v2
-        log_info(os)("Vitals cgroup initialization: v2");
+        log_info(vitals)("Vitals cgroup initialization: v2");
       } else {
-        log_info(os)("Vitals cgroup initialization: no clue. Giving up.");
+        log_info(vitals)("Vitals cgroup initialization: no clue. Giving up.");
         return false;
       }
     }
@@ -311,7 +311,7 @@ public:
 #undef STORE_PATH
 
 #define LOG_PATH(variable) \
-    log_info(os)("Vitals: %s=%s", #variable, variable == NULL ? "<null>" : variable);
+    log_info(vitals)("Vitals: %s=%s", #variable, variable == NULL ? "<null>" : variable);
     LOG_PATH(_file_usg)
     LOG_PATH(_file_usgsw)
     LOG_PATH(_file_kusg)
