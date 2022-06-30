@@ -232,6 +232,52 @@ public:
   }
 };
 
+
+////// Legend ///////////////////////////////////////////////
+
+Legend* Legend::_the_legend = NULL;
+
+bool Legend::initialize() {
+  _the_legend = new Legend();
+  return _the_legend != NULL;
+}
+
+stringStream _legend;
+stringStream _footnote;
+static Legend* _the_legend;
+
+Legend::Legend() : _last_added_cat(NULL) {}
+
+void Legend::add_column_info(const char* const category, const char* const header,
+                       const char* const name, const char* const description) {
+  // Print category label if this column opens a new category
+  if (_last_added_cat != category) {
+    print_text_with_dashes(&_legend, category, 30);
+    _legend.cr();
+  }
+  _last_added_cat = category;
+  // print column name and description
+  const int min_width_column_label = 16;
+  char buf[32];
+  if (header != NULL) {
+    jio_snprintf(buf, sizeof(buf), "%s-%s", header, name);
+  } else {
+    jio_snprintf(buf, sizeof(buf), "%s", name);
+  }
+  _legend.print_cr("%*s: %s", min_width_column_label, buf, description);
+}
+
+void Legend::add_footnote(const char* text) {
+  _footnote.print_cr("%s", text);
+}
+
+void Legend::print_on(outputStream* st) const {
+  st->print_raw(_legend.base());
+  st->cr();
+  st->print_raw(_footnote.base());
+  st->print_cr("(Vitals version %X, pid: %d)", vitals_version, os::current_process_id());
+}
+
 ////// ColumnList: a singleton class holding all information about all columns
 
 ColumnList* ColumnList::_the_list = NULL;
@@ -361,50 +407,6 @@ static void print_column_names(outputStream* st, const ColumnWidths* widths, con
   st->cr();
 }
 
-static void print_legend(outputStream* st, const print_info_t* pi) {
-  const Column* c = ColumnList::the_list()->first();
-  const Column* c_prev = NULL;
-  while (c != NULL) {
-    // Print category label.
-    if (c->index_within_category_section() == 0) {
-      print_text_with_dashes(st, c->category(), 30);
-      st->cr();
-    }
-    // print column name and description
-    const int min_width_column_label = 16;
-    char buf[32];
-    if (c->header() != NULL) {
-      jio_snprintf(buf, sizeof(buf), "%s-%s", c->header(), c->name());
-    } else {
-      jio_snprintf(buf, sizeof(buf), "%s", c->name());
-    }
-    st->print("%*s: %s", min_width_column_label, buf, c->description());
-
-    // If column is a delta value, indicate so
-    if (c->is_delta()) {
-      st->print_raw(" [delta]");
-    }
-
-    st->cr();
-
-    c_prev = c;
-    c = c->next();
-  }
-  st->cr();
-  st->print_cr("[delta] values refer to the previous measurement.");
-  if (pi->scale != 0) {
-    const char* display_unit = NULL;
-    switch (pi->scale) {
-      case 1: display_unit = "  "; break;
-      case K: display_unit = "KB"; break;
-      case M: display_unit = "MB"; break;
-      case G: display_unit = "GB"; break;
-      default: ShouldNotReachHere();
-    }
-    st->print_cr("[mem] values are in %s.", display_unit);
-  }
-}
-
 // Print a human readable size.
 // byte_size: size, in bytes, to be printed.
 // scale: K,M,G or 0 (dynamic)
@@ -481,17 +483,14 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
 
 ///////// class Column and childs ///////////
 
-Column::Column(const char* category, const char* header, const char* name, const char* description, bool delta)
+Column::Column(const char* category, const char* header, const char* name, const char* description)
   : _category(category),
     _header(header), // may be NULL
     _name(name),
     _description(description),
-    _delta(delta),
     _next(NULL), _idx(-1),
     _idx_cat(-1), _idx_hdr(-1)
-{
-  ColumnList::the_list()->add_column(this);
-}
+{}
 
 void Column::print_value(outputStream* st, value_t value, value_t last_value,
     int last_value_age, int min_width, const print_info_t* pi) const {
@@ -546,7 +545,7 @@ int PlainValueColumn::do_print0(outputStream* st, value_t value,
 
 int DeltaValueColumn::do_print0(outputStream* st, value_t value,
     value_t last_value, int last_value_age, const print_info_t* pi) const {
-  if (_show_only_positive && last_value > value) {
+  if (last_value > value) {
     // we assume the underlying value to be monotonically raising, and that
     // any negative delta would be just a fluke (e.g. counter overflows)
     // we do not want to show
@@ -585,14 +584,6 @@ static void print_one_sample(outputStream* st, const Sample* sample,
   if (pi->csv) {
     st->print("\"");
   }
-
-  // For analysis, print sample numbers
-#ifdef ASSERT
-  if (pi->raw) {
-    st->print(",%d,%d", sample->num(),
-              last_sample != NULL ? last_sample->num() : -1);
-  }
-#endif
 
   if (pi->csv == false) {
     ostream_put_n(st, ' ', TIMESTAMP_DIVIDER_LEN);
@@ -979,18 +970,28 @@ static Column* g_col_heap_used = NULL;
 
 static Column* g_col_metaspace_committed = NULL;
 static Column* g_col_metaspace_used = NULL;
+
+static bool g_show_classspace_columns = false;
 static Column* g_col_classspace_committed = NULL;
 static Column* g_col_classspace_used = NULL;
+
 static Column* g_col_metaspace_cap_until_gc = NULL;
 
 static Column* g_col_codecache_committed = NULL;
 
+static bool g_show_nmt_columns = false;
 static Column* g_col_nmt_malloc = NULL;
 static Column* g_col_nmt_mmap = NULL;
+static Column* g_col_nmt_gc_overhead = NULL;
+static Column* g_col_nmt_other = NULL;
+static Column* g_col_nmt_overhead = NULL;
 
 static Column* g_col_number_of_java_threads = NULL;
 static Column* g_col_number_of_java_threads_non_demon = NULL;
+
+static bool g_show_size_thread_stacks_col = false;
 static Column* g_col_size_thread_stacks = NULL;
+
 static Column* g_col_number_of_java_threads_created = NULL;
 
 static Column* g_col_number_of_clds = NULL;
@@ -1000,67 +1001,91 @@ static Column* g_col_number_of_classes = NULL;
 static Column* g_col_number_of_class_loads = NULL;
 static Column* g_col_number_of_class_unloads = NULL;
 
-//...
+static bool is_nmt_enabled() {
+#if INCLUDE_NMT
+  // Note: JDK version dependency: Before JDK18, NMT had the ability to shut down operations
+  // at any point in time, and therefore we also had NMT_minimal tracking level. Therefore,
+  // to stay version independent, we never must compare against NMT_off or NMT_minimal directly,
+  // only always against NMT_summary/detail. And to be very safe, don't assume a numerical
+  // value either, since older JDKs had NMT_unknown as a very high numerical value.
+  const NMT_TrackingLevel lvl = MemTracker::tracking_level();
+  return (lvl == NMT_summary || lvl == NMT_detail);
+#else
+  return false;
+#endif
+}
 
 static bool add_jvm_columns() {
   // Order matters!
+  const char* const jvm_cat = "jvm";
 
-  g_col_heap_committed = new MemorySizeColumn("jvm",
-      "heap", "comm", "Java Heap Size, committed");
-  g_col_heap_used = new MemorySizeColumn("jvm",
-      "heap", "used", "Java Heap Size, used");
+  Legend::the_legend()->add_footnote("  [delta]: values refer to the previous measurement.");
+  Legend::the_legend()->add_footnote("    [nmt]: only shown if NMT is available and activated");
+  Legend::the_legend()->add_footnote("     [cs]: only shown on 64-bit if class space is active");
+  Legend::the_legend()->add_footnote("  [linux]: only on Linux");
 
-  g_col_metaspace_committed = new MemorySizeColumn("jvm",
-      "meta", "comm", "Meta Space Size (class+nonclass), committed");
+  g_col_heap_committed =
+      define_column<MemorySizeColumn>(jvm_cat, "heap", "comm", "Java Heap Size, committed", true);
+  g_col_heap_used =
+      define_column<MemorySizeColumn>(jvm_cat, "heap", "used", "Java Heap Size, used", true);
 
-  g_col_metaspace_used = new MemorySizeColumn("jvm",
-      "meta", "used", "Meta Space Size (class+nonclass), used");
+  g_col_metaspace_committed =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "comm", "Meta Space Size (class+nonclass), committed", true);
+  g_col_metaspace_used =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "used", "Meta Space Size (class+nonclass), used", true);
 
-  if (Metaspace::using_class_space()) {
-    g_col_classspace_committed = new MemorySizeColumn("jvm",
-        "meta", "csc", "Class Space Size, committed");
-    g_col_classspace_used = new MemorySizeColumn("jvm",
-        "meta", "csu", "Class Space Size, used");
-  }
+  // Class space columns only shown if class space is active
+  g_show_classspace_columns = Metaspace::using_class_space();
+  g_col_classspace_committed =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "csc", "Class Space Size, committed [cs]", g_show_classspace_columns);
+  g_col_classspace_used =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "csu", "Class Space Size, used [cs]",  g_show_classspace_columns);
 
-  g_col_metaspace_cap_until_gc = new MemorySizeColumn("jvm",
-      "meta", "gctr", "GC threshold");
+  g_col_metaspace_cap_until_gc =
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "gctr", "GC threshold", true);
 
-  g_col_codecache_committed = new MemorySizeColumn("jvm",
-      NULL, "code", "Code cache, committed");
+  g_col_codecache_committed =
+      define_column<MemorySizeColumn>(jvm_cat, NULL, "code", "Code cache, committed", true);
 
-  g_col_nmt_malloc = new MemorySizeColumn("jvm",
-      "nmt", "mlc", "Memory malloced by hotspot (requires NMT)");
+  // NMT columns only shown if NMT is at least at summary level
+  g_show_nmt_columns = is_nmt_enabled();
+  g_col_nmt_malloc =
+     define_column<MemorySizeColumn>(jvm_cat, "nmt", "mlc", "Memory malloced by hotspot [nmt]", g_show_nmt_columns);
+  g_col_nmt_mmap =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "map", "Memory mapped by hotspot [nmt]", g_show_nmt_columns);
+  g_col_nmt_gc_overhead =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "gc", "NMT \"gc\" (GC-overhead, malloc and mmap) [nmt]", g_show_nmt_columns);
+  g_col_nmt_other =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "oth", "NMT \"other\" (typically DBB or Unsafe.allocateMemory) [nmt]", g_show_nmt_columns);
+  g_col_nmt_overhead =
+      define_column<MemorySizeColumn>(jvm_cat, "nmt", "ovh", "NMT overhead [nmt]", g_show_nmt_columns);
 
-  g_col_nmt_mmap = new MemorySizeColumn("jvm",
-      "nmt", "map", "Memory mapped and committed by hotspot (requires NMT)");
+  g_col_number_of_java_threads =
+      define_column<PlainValueColumn>(jvm_cat, "jthr", "num", "Number of java threads", true);
+  g_col_number_of_java_threads_non_demon =
+      define_column<PlainValueColumn>(jvm_cat, "jthr", "nd", "Number of non-demon java threads", true);
+  g_col_number_of_java_threads_created =
+      define_column<DeltaValueColumn>(jvm_cat, "jthr", "cr", "Threads created [delta]", true);
 
-  g_col_number_of_java_threads = new PlainValueColumn("jvm",
-      "jthr", "num", "Number of java threads");
+  // Displaying thread stack size for now only implemented on Linux, and requires NMT
+  g_show_size_thread_stacks_col = LINUX_ONLY(g_show_nmt_columns) NOT_LINUX(false);
+  g_col_size_thread_stacks =
+      define_column<MemorySizeColumn>(jvm_cat, "jthr", "st", "Total reserved size of java thread stacks [nmt] [linux]",
+          g_show_size_thread_stacks_col);
 
-  g_col_number_of_java_threads_non_demon = new PlainValueColumn("jvm",
-      "jthr", "nd", "Number of non-demon java threads");
+  g_col_number_of_clds =
+      define_column<PlainValueColumn>(jvm_cat,  "cldg", "num", "Classloader Data", true);
+  g_col_number_of_anon_clds =
+      define_column<PlainValueColumn>(jvm_cat,  "cldg", "anon", "Anonymous CLD", true);
 
-  g_col_number_of_java_threads_created = new DeltaValueColumn("jvm",
-      "jthr", "cr", "Threads created");
+  g_col_number_of_classes =
+      define_column<PlainValueColumn>(jvm_cat, "cls", "num", "Classes (instance + array)", true);
 
-  g_col_size_thread_stacks = new MemorySizeColumn("jvm",
-      "jthr", "st", "Total reserved size of java thread stacks");
+  g_col_number_of_class_loads =
+        define_column<DeltaValueColumn>(jvm_cat, "cls", "ld", "Class loaded [delta]", true);
 
-  g_col_number_of_clds = new PlainValueColumn("jvm",
-      "cldg", "num", "Classloader Data");
-
-  g_col_number_of_anon_clds = new PlainValueColumn("jvm",
-      "cldg", "anon", "Anonymous CLD");
-
-  g_col_number_of_classes = new PlainValueColumn("jvm",
-      "cls", "num", "Classes (instance + array)");
-
-  g_col_number_of_class_loads = new DeltaValueColumn("jvm",
-      "cls", "ld", "Class loaded");
-
-  g_col_number_of_class_unloads = new DeltaValueColumn("jvm",
-      "cls", "uld", "Classes unloaded");
+  g_col_number_of_class_unloads =
+        define_column<DeltaValueColumn>(jvm_cat, "cls", "uld", "Classes unloaded [delta]", true);
 
   return true;
 }
@@ -1075,33 +1100,6 @@ static void set_value_in_sample(const Column* col, Sample* sample, T t) {
     assert(ColumnList::the_list()->is_valid_column_index(idx), "Invalid column index");
     sample->set_value(idx, (value_t)t);
   }
-}
-
-class AddStackSizeThreadClosure: public ThreadClosure {
-  size_t _l;
-public:
-  AddStackSizeThreadClosure() : ThreadClosure(), _l(0) {}
-  void do_thread(Thread* thread) {
-    _l += thread->stack_size();
-  }
-  size_t get() const { return _l; }
-};
-
-static uint64_t accumulate_thread_stack_size() {
-#if defined(LINUX)
-  // Do not iterate thread list and query stack size until 8212173 is completely solved. It is solved
-  // for Linux (possibly BSD); on the other platforms, one runs a miniscule but real risk of triggering
-  // the assert in Thread::stack_size().
-  size_t l = 0;
-  AddStackSizeThreadClosure tc;
-  {
-    MutexLocker ml(Threads_lock);
-    Threads::threads_do(&tc);
-  }
-  return (uint64_t)tc.get();
-#else
-  return INVALID_VALUE;
-#endif
 }
 
 // Count CLDs
@@ -1119,29 +1117,70 @@ public:
 };
 
 #if INCLUDE_NMT
-static value_t get_bytes_malloced_by_jvm_via_nmt() {
+struct nmt_values_t {
+  // How much memory, in total, was committed via mmap
+  value_t mapped_total;
+  // How much memory, in total, was malloced
+  value_t malloced_total;
+  // How many allocations from malloc, in total
+  value_t malloced_num;
+  // thread stack size; depending on NMT version this would
+  // be reserved (I believe up to and including jdk 8) or committed (9+)
+  value_t thread_stacks_committed;
+  // NMT "GC" category (both malloced and mapped)
+  value_t gc_overhead;
+  // NMT "other" category (both malloced and mapped). Usually dominated by DBB allocated with allocateDirect(),
+  // and Unsafe.allocateMemory.
+  value_t other_memory;
+  // NMT overhead  (both malloced and mapped)
+  value_t overhead;
+};
+
+static bool get_nmt_values(nmt_values_t* out) {
   value_t result = INVALID_VALUE;
-  if (MemTracker::tracking_level() != NMT_off) {
+  if (is_nmt_enabled()) {
     MutexLocker locker(MemTracker::query_lock());
-    result = MallocMemorySummary::as_snapshot()->total();
+    /*const*/MallocMemorySnapshot* mlc_snapshot = MallocMemorySummary::as_snapshot();
+    VirtualMemorySnapshot vm_snapshot;
+    VirtualMemorySummary::snapshot(&vm_snapshot);
+    out->malloced_total = mlc_snapshot->total();
+    out->mapped_total = vm_snapshot.total_committed();
+    out->thread_stacks_committed =
+        vm_snapshot.by_type(mtThreadStack)->committed();
+    out->thread_stacks_committed =
+        vm_snapshot.by_type(MEMFLAGS::mtThreadStack)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtThreadStack)->malloc_size();
+    out->gc_overhead =
+        vm_snapshot.by_type(MEMFLAGS::mtGC)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtGC)->malloc_size();
+    out->other_memory =
+        vm_snapshot.by_type(MEMFLAGS::mtOther)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtOther)->malloc_size();
+    out->overhead =
+        vm_snapshot.by_type(MEMFLAGS::mtNMT)->committed() +
+        mlc_snapshot->by_type(MEMFLAGS::mtNMT)->malloc_size() +
+        mlc_snapshot->malloc_overhead()->size();
+    out->malloced_num =
+        // I misuse the tracking overhead counter, since all malloc allocations should have been counted here
+        mlc_snapshot->malloc_overhead()->count();
+    return true;
   }
-  return result;
-}
-static value_t get_bytes_mmaped_by_jvm_via_nmt() {
-  value_t result = INVALID_VALUE;
-  if (MemTracker::tracking_level() != NMT_off) {
-    MutexLocker locker(MemTracker::query_lock());
-    VirtualMemorySnapshot snapshot;
-    VirtualMemorySummary::snapshot(&snapshot);
-    result = snapshot.total_committed();
-  }
-  return result;
+  return false;
 }
 #endif // INCLUDE_NMT
 
 void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
   // Note: if avoid_locking=true, skip values which need JVM-side locking.
+
+  nmt_values_t nmt_vals;
+  bool have_nmt_values = false;
+#if INCLUDE_NMT
+  if (!avoid_locking) {
+    have_nmt_values = get_nmt_values(&nmt_vals);
+  }
+#endif
+
 
   // Heap
   if (!avoid_locking) {
@@ -1177,12 +1216,13 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_codecache_committed, sample, codecache_committed);
 
   // NMT integration
-#if INCLUDE_NMT
-  if (!avoid_locking) {
-    set_value_in_sample(g_col_nmt_malloc, sample, get_bytes_malloced_by_jvm_via_nmt());
-    set_value_in_sample(g_col_nmt_mmap, sample, get_bytes_mmaped_by_jvm_via_nmt());
+  if (have_nmt_values) {
+    set_value_in_sample(g_col_nmt_malloc, sample, nmt_vals.malloced_total);
+    set_value_in_sample(g_col_nmt_mmap, sample, nmt_vals.mapped_total);
+    set_value_in_sample(g_col_nmt_gc_overhead, sample, nmt_vals.gc_overhead);
+    set_value_in_sample(g_col_nmt_other, sample, nmt_vals.other_memory);
+    set_value_in_sample(g_col_nmt_overhead, sample, nmt_vals.overhead);
   }
-#endif
 
   // Java threads
   set_value_in_sample(g_col_number_of_java_threads, sample, Threads::number_of_threads());
@@ -1190,8 +1230,8 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_number_of_java_threads_created, sample, counters::g_threads_created);
 
   // Java thread stack size
-  if (!avoid_locking) {
-    set_value_in_sample(g_col_size_thread_stacks, sample, accumulate_thread_stack_size());
+  if (have_nmt_values) {
+    set_value_in_sample(g_col_size_thread_stacks, sample, nmt_vals.thread_stacks_committed);
   }
 
   // CLDG
@@ -1214,16 +1254,26 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
+<<<<<<< HEAD
   log_info(os)("Initializing vitals...");
+=======
+  static bool initialized = false;
+  assert(initialized == false, "Vitals already initialized");
+  initialized = true;
+
+  log_info(vitals)("Vitals v%x", vitals_version);
+  log_info(vitals)("Initializing vitals...");
+>>>>>>> 2115f01f3f2... SapMachine #1124: Vitals: June 22 package
 
   // Adjust VitalsSampleInterval
   if (VitalsSampleInterval == 0) {
-    log_warning(os)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
+    log_warning(vitals)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
                     VitalsSampleInterval);
     return false;
   }
 
   bool success = ColumnList::initialize();
+  success &= Legend::initialize();
 
   // Order matters. First platform columns, then jvm columns.
   success &= platform_columns_initialize();
@@ -1237,12 +1287,12 @@ bool initialize() {
   success &= initialize_sampler_thread();
 
   if (success) {
-    log_info(os)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
+    log_info(vitals)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
   } else {
-    log_warning(os)("Failed to initialize Vitals.");
+    log_warning(vitals)("Failed to initialize Vitals.");
   }
 
-  return true;
+  return success;
 
 }
 
@@ -1281,13 +1331,25 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
 
   // Print legend at the top (omit if suppressed on command line, or in csv mode).
   if (info.no_legend == false && info.csv == false) {
-    print_legend(st, &info);
+    Legend::the_legend()->print_on(st);
+    if (info.scale != 0) {
+      const char* display_unit = NULL;
+      switch (info.scale) {
+        case 1: display_unit = "bytes"; break;
+        case K: display_unit = "KB"; break;
+        case M: display_unit = "MB"; break;
+        case G: display_unit = "GB"; break;
+        default: ShouldNotReachHere();
+      }
+      st->print_cr("[mem] values are in %s.", display_unit);
+    }
     st->cr();
   }
 
   // If we are to sample the current values at print time, do that and print them too.
+  // Note: we omit the "Now" sample for csv output.
   Sample* sample_now = NULL;
-  if (info.sample_now) {
+  if (info.sample_now && !info.csv) {
     sample_now = Sample::allocate();
     sample_values(sample_now, true /* never lock for now sample - be safe */ );
   }
