@@ -196,6 +196,7 @@ public class VitalsTestHelper {
                 + "|syst-si|syst-so" // deltas
                 + "|jvm-cls-ld" // delta
                 + "|jvm-cls-uld" // delta
+                + "|jvm-cldg-num|jvm-cldg-anon" // 11 only: can be empty
                 ;
 
         String colsThatCanBeEmpty_WINDOWS = "";

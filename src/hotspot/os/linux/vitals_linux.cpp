@@ -25,13 +25,9 @@
  */
 
 #include "precompiled.hpp"
-<<<<<<< HEAD
-=======
-#include "jvm_io.h"
 #include "osContainer_linux.hpp"
 #include "vitals_linux_oswrapper.hpp"
 #include "logging/log.hpp"
->>>>>>> 2115f01f3f2... SapMachine #1124: Vitals: June 22 package
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"

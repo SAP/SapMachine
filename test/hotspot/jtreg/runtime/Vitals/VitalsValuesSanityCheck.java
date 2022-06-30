@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm -XX:+UseSerialGC -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx64m -Xms64m -XX:NativeMemoryTracking=summary -XX:VitalsSampleInterval=1 VitalsValuesSanityCheck
  */
 
@@ -39,7 +39,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm -XX:+UseG1GC -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx64m -Xms64m -XX:NativeMemoryTracking=summary -XX:VitalsSampleInterval=1 VitalsValuesSanityCheck
  */
 
@@ -50,7 +50,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm -XX:+UseG1GC -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx64m -Xms64m -XX:NativeMemoryTracking=off -XX:VitalsSampleInterval=1 VitalsValuesSanityCheck
  */
 
@@ -229,11 +229,12 @@ public class VitalsValuesSanityCheck {
             checkValueIsBetween(csv, "jvm-jthr-cr", 0, 10000);
 
             // Classloaders:
+            /* Not in 11
             long min_expected_classloaders = 1; // probably more
             long max_expected_classloaders = 100000; // probably way less, not sure how many lambdas are active, dep. on jvm version they show up as cldg entries
             long jvm_clg_num = checkValueIsBetween(csv, "jvm-cldg-num", min_expected_classloaders, max_expected_classloaders);
             checkValueIsBetween(csv, "jvm-cldg-anon", 0, jvm_clg_num);
-
+            */
             // Classes:
             long min_expected_classes_base = 300; // probably more
             long max_expected_classes_base = 60000; // probably way less

@@ -51,7 +51,7 @@
 #include <time.h>
 
 // JDK-8280583: "Always build NMT" did away with INCLUDE_NMT for JDK19++
-#ifdef JDK_MAINLINE
+#if defined(JDK_MAINLINE) || defined(JDK19u)
 #define INCLUDE_NMT 1
 #endif
 
@@ -1014,66 +1014,7 @@ static bool is_nmt_enabled() {
 
 static bool add_jvm_columns() {
   // Order matters!
-<<<<<<< HEAD
 
-  g_col_heap_committed = new MemorySizeColumn("jvm",
-      "heap", "comm", "Java Heap Size, committed");
-  g_col_heap_used = new MemorySizeColumn("jvm",
-      "heap", "used", "Java Heap Size, used");
-
-  g_col_metaspace_committed = new MemorySizeColumn("jvm",
-      "meta", "comm", "Meta Space Size (class+nonclass), committed");
-
-  g_col_metaspace_used = new MemorySizeColumn("jvm",
-      "meta", "used", "Meta Space Size (class+nonclass), used");
-
-  if (Metaspace::using_class_space()) {
-    g_col_classspace_committed = new MemorySizeColumn("jvm",
-        "meta", "csc", "Class Space Size, committed");
-    g_col_classspace_used = new MemorySizeColumn("jvm",
-        "meta", "csu", "Class Space Size, used");
-  }
-
-  g_col_metaspace_cap_until_gc = new MemorySizeColumn("jvm",
-      "meta", "gctr", "GC threshold");
-
-  g_col_codecache_committed = new MemorySizeColumn("jvm",
-      NULL, "code", "Code cache, committed");
-
-  g_col_nmt_malloc = new MemorySizeColumn("jvm",
-      "nmt", "mlc", "Memory malloced by hotspot (requires NMT)");
-
-  g_col_nmt_mmap = new MemorySizeColumn("jvm",
-      "nmt", "map", "Memory mapped and committed by hotspot (requires NMT)");
-
-  g_col_number_of_java_threads = new PlainValueColumn("jvm",
-      "jthr", "num", "Number of java threads");
-
-  g_col_number_of_java_threads_non_demon = new PlainValueColumn("jvm",
-      "jthr", "nd", "Number of non-demon java threads");
-
-  g_col_number_of_java_threads_created = new DeltaValueColumn("jvm",
-      "jthr", "cr", "Threads created");
-
-  g_col_size_thread_stacks = new MemorySizeColumn("jvm",
-      "jthr", "st", "Total reserved size of java thread stacks");
-
-// Not in 11
-//  g_col_number_of_clds = new PlainValueColumn("jvm",
-//      "cldg", "num", "Classloader Data");
-//
-//  g_col_number_of_anon_clds = new PlainValueColumn("jvm",
-//      "cldg", "anon", "Anonymous CLD");
-
-  g_col_number_of_classes = new PlainValueColumn("jvm",
-      "cls", "num", "Classes (instance + array)");
-
-  g_col_number_of_class_loads = new DeltaValueColumn("jvm",
-      "cls", "ld", "Class loaded");
-
-  g_col_number_of_class_unloads = new DeltaValueColumn("jvm",
-      "cls", "uld", "Classes unloaded");
-=======
   const char* const jvm_cat = "jvm";
 
   Legend::the_legend()->add_footnote("  [delta]: values refer to the previous measurement.");
@@ -1143,7 +1084,6 @@ static bool add_jvm_columns() {
 
   g_col_number_of_class_unloads =
         define_column<DeltaValueColumn>(jvm_cat, "cls", "uld", "Classes unloaded [delta]", true);
->>>>>>> 2115f01f3f2... SapMachine #1124: Vitals: June 22 package
 
   return true;
 }
@@ -1207,17 +1147,17 @@ static bool get_nmt_values(nmt_values_t* out) {
     out->thread_stacks_committed =
         vm_snapshot.by_type(mtThreadStack)->committed();
     out->thread_stacks_committed =
-        vm_snapshot.by_type(MEMFLAGS::mtThreadStack)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtThreadStack)->malloc_size();
+        vm_snapshot.by_type(mtThreadStack)->committed() +
+        mlc_snapshot->by_type(mtThreadStack)->malloc_size();
     out->gc_overhead =
-        vm_snapshot.by_type(MEMFLAGS::mtGC)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtGC)->malloc_size();
+        vm_snapshot.by_type(mtGC)->committed() +
+        mlc_snapshot->by_type(mtGC)->malloc_size();
     out->other_memory =
-        vm_snapshot.by_type(MEMFLAGS::mtOther)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtOther)->malloc_size();
+        vm_snapshot.by_type(mtOther)->committed() +
+        mlc_snapshot->by_type(mtOther)->malloc_size();
     out->overhead =
-        vm_snapshot.by_type(MEMFLAGS::mtNMT)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtNMT)->malloc_size() +
+        vm_snapshot.by_type(mtNMT)->committed() +
+        mlc_snapshot->by_type(mtNMT)->malloc_size() +
         mlc_snapshot->malloc_overhead()->size();
     out->malloced_num =
         // I misuse the tracking overhead counter, since all malloc allocations should have been counted here
@@ -1314,16 +1254,12 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
-<<<<<<< HEAD
-  log_info(os)("Initializing vitals...");
-=======
   static bool initialized = false;
   assert(initialized == false, "Vitals already initialized");
   initialized = true;
 
   log_info(vitals)("Vitals v%x", vitals_version);
   log_info(vitals)("Initializing vitals...");
->>>>>>> 2115f01f3f2... SapMachine #1124: Vitals: June 22 package
 
   // Adjust VitalsSampleInterval
   if (VitalsSampleInterval == 0) {

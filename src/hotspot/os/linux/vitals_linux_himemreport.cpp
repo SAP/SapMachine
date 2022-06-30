@@ -26,17 +26,18 @@
 
 #include "precompiled.hpp"
 
-#include "jvm_io.h"
+#include "jvm.h"
 #include "vitals_linux_himemreport.hpp"
 #include "vitals_linux_oswrapper.hpp"
 #include "logging/log.hpp"
-#include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
 #include "services/memTracker.hpp"
@@ -57,6 +58,8 @@
 
 // We print to the stderr stream directly in this code (since we want to bypass ttylock)
 static fdStream stderr_stream(2);
+
+extern char** environ;
 
 namespace sapmachine_vitals {
 
@@ -188,21 +191,21 @@ const int AlertState::_alvl_perc[5] = { 0, 66, 75, 90, -1 };
 static AlertState* g_alert_state = NULL;
 
 // What do we test?
-enum class compare_type {
+enum compare_type {
   compare_rss_vs_phys = 0,          // We compare rss+swap vs total physical memory
   compare_rss_vs_cgroup_limit = 1,  // We compare rss+swap vs the cgroup limit
   compare_rss_vs_manual_limit = 2,  // HiMemReportMaximum is set, we compare rss+swap with that limit
   compare_none
 };
 
-static compare_type g_compare_what = compare_type::compare_none;
+static compare_type g_compare_what = compare_none;
 
 static const char* describe_maximum_by_compare_type(compare_type t) {
   const char* s = "";
   switch (g_compare_what) {
-  case compare_type::compare_rss_vs_cgroup_limit: s = "cgroup memory limit"; break;
-  case compare_type::compare_rss_vs_phys: s = "the half of total physical memory"; break;
-  case compare_type::compare_rss_vs_manual_limit: s = "HiMemReportMaximum"; break;
+  case compare_rss_vs_cgroup_limit: s = "cgroup memory limit"; break;
+  case compare_rss_vs_phys: s = "the half of total physical memory"; break;
+  case compare_rss_vs_manual_limit: s = "HiMemReportMaximum"; break;
   default: ShouldNotReachHere();
   }
   return s;
@@ -548,7 +551,7 @@ static bool spawn_command(const char** argv, const char* outFile, const char* er
   //  in the child process, except for those whose close-on- exec flag FD_CLOEXEC is set (see fcntl)."
   // (https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnp.html)
   // - which I assume means they get closed if we specify a file actions object, which we do.
-  rc &= (::posix_spawn(&child_pid, argv[0], &fa.v, &atr.v, (char**)argv, os::get_environ()) == 0);
+  rc &= (::posix_spawn(&child_pid, argv[0], &fa.v, &atr.v, (char**)argv, environ) == 0);
 
   if (rc) {
     int status;
@@ -654,7 +657,7 @@ class CallJCmdClosure : public JcmdClosure {
   const time_t _time;
 public:
   CallJCmdClosure(int pid, time_t time) : _pid(pid), _time(time) {}
-  bool do_it(const char* command_string) override {
+  bool do_it(const char* command_string) {
     ParsedCommand cmd(command_string);
     assert(cmd.is_valid(), "Invalid command");
     call_single_jcmd(&cmd, _pid, _time);
@@ -663,7 +666,7 @@ public:
 };
 
 struct VerifyJCmdClosure : public JcmdClosure {
-  bool do_it(const char* command_string) override {
+  bool do_it(const char* command_string) {
     log_info(vitals)("HiMemReportExec: storing command \"%s\".", command_string);
     if (!ParsedCommand(command_string).is_valid()) {
       // We print a warning here, fingerpointing the specific command that failed, then exit the VM later.
@@ -744,7 +747,7 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
 
 void pulse_himem_report() {
   assert(HiMemReport, "only call for +HiMemReport");
-  assert(g_compare_what != compare_type::compare_none && g_alert_state != NULL, "Not initialized");
+  assert(g_compare_what != compare_none && g_alert_state != NULL, "Not initialized");
 
   OSWrapper::update_if_needed();
 
@@ -800,7 +803,7 @@ public:
     record_stack_base_and_size();
     for (;;) {
       pulse_himem_report();
-      os::naked_sleep(interval_seconds * 1000);
+      os::sleep(this, interval_seconds * 1000, false);
     }
   }
 
@@ -835,7 +838,7 @@ extern void initialize_himem_report_facility() {
 
   assert(HiMemReport, "only call for +HiMemReport");
 
-  assert(g_compare_what == compare_type::compare_none && g_alert_state == NULL, "Only initialize once");
+  assert(g_compare_what == compare_none && g_alert_state == NULL, "Only initialize once");
 
   // Verify the exec string
   VerifyJCmdClosure closure;
@@ -851,19 +854,19 @@ extern void initialize_himem_report_facility() {
   //   physical memory of the machine.
   size_t limit = 0;
   if (HiMemReportMax != 0) {
-    g_compare_what = compare_type::compare_rss_vs_manual_limit;
+    g_compare_what = compare_rss_vs_manual_limit;
     limit = HiMemReportMax;
     log_info(vitals)("Vitals HiMemReport: Setting limit to HiMemReportMax (" SIZE_FORMAT " K).", limit / K);
   } else {
     OSWrapper::update_if_needed();
     if (OSWrapper::syst_cgro_lim() != INVALID_VALUE) {
       // limit against cgroup limit
-      g_compare_what = compare_type::compare_rss_vs_cgroup_limit;
+      g_compare_what = compare_rss_vs_cgroup_limit;
       limit = (size_t)OSWrapper::syst_cgro_lim();
       log_info(vitals)("Vitals HiMemReport: Setting limit to cgroup memory limit (" SIZE_FORMAT " K).", limit / K);
     } else if (OSWrapper::syst_phys() != INVALID_VALUE) {
       // limit against total physical memory
-      g_compare_what = compare_type::compare_rss_vs_phys;
+      g_compare_what = compare_rss_vs_phys;
       limit = (size_t)OSWrapper::syst_phys() / 2;
       log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", limit / K);
     }
@@ -872,7 +875,7 @@ extern void initialize_himem_report_facility() {
   if (limit == 0) {
     log_warning(vitals)("Vitals HiMemReport: limit could not be established; will disable high memory reports "
                     "(specify -XX:HiMemReportMax=<size> to establish a manual limit).");
-    FLAG_SET_ERGO(HiMemReport, false);
+    FLAG_SET_ERGO(bool, HiMemReport, false);
     return;
   }
 
@@ -892,7 +895,7 @@ extern void initialize_himem_report_facility() {
 
   if (!initialize_reporter_thread()) {
     log_warning(vitals)("Vitals HiMemReport: Failed to start monitor thread. Will disable.");
-    FLAG_SET_ERGO(HiMemReport, false);
+    FLAG_SET_ERGO(bool, HiMemReport, false);
     return;
   }
 

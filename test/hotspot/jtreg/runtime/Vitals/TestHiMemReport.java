@@ -224,7 +224,7 @@ public class TestHiMemReport {
                 ".*bootstrap.*",
                 "Total Usage.*",
                 "Virtual space.*",
-                "Settings.*",
+                // "Settings.*", (not in 11)
                 "MaxMetaspaceSize.*"
         });
 
@@ -287,7 +287,7 @@ public class TestHiMemReport {
                 ".*bootstrap.*",
                 "Total Usage.*",
                 "Virtual space.*",
-                "Settings.*",
+                // "Settings.*", (not in 11)
                 "MaxMetaspaceSize.*",
                 "HiMemReport: Successfully executed \"VM.metaspace show-loaders\""
         });
