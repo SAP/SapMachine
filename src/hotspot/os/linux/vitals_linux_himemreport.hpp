@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2021, SAP SE. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +21,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test TestVitalsOff
- * @summary Test verifies that -XX:-EnableVitals disables vitals
- * @library /test/lib
- * @run driver TestVitalsOff run
- */
+#ifndef OS_LINUX_VITALS_LINUX_HELPERS_HPP
+#define OS_LINUX_VITALS_LINUX_HELPERS_HPP
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+#include "vitals/vitals_internals.hpp"
 
-public class TestVitalsOff {
+namespace sapmachine_vitals {
 
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:-EnableVitals",
-                "-XX:MaxMetaspaceSize=16m",
-                "-Xlog:vitals",
-                "-Xmx128m",
-                "-version");
+void initialize_himem_report_facility();
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        output.shouldNotContain("Initializing Vitals");
-    }
+void print_himemreport_state(outputStream* st);
 
-}
+// For printing in thread lists only.
+extern const Thread* himem_reporter_thread();
+
+} // namespace sapmachine_vitals
+
+#endif // OS_LINUX_VITALS_LINUX_HELPERS_HPP
+
