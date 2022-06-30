@@ -70,7 +70,9 @@
 
 // SapMachine 2019-02-20 : vitals
 #include "vitals/vitals.hpp"
-
+#ifdef LINUX
+#include "vitals_linux_himemreport.hpp"
+#endif
 // SapMachine 2021-09-01: malloc-trace
 #ifdef LINUX
 #include "malloctrace/mallocTrace.hpp"
@@ -1197,6 +1199,13 @@ void VMError::report(outputStream* st, bool _verbose) {
        sapmachine_vitals::print_report(st, &info);
      }
 
+#ifdef LINUX
+  STEP("Vitals HiMemReport")
+    st->cr();
+  sapmachine_vitals::print_himemreport_state(st);
+    st->cr();
+#endif // LINUX
+
   STEP("printing system")
 
      if (_verbose) {
@@ -1396,9 +1405,16 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Vitals")
   sapmachine_vitals::print_info_t info;
   sapmachine_vitals::default_settings(&info);
-  info.sample_now = false;
+  info.sample_now = true;
   st->print_cr("Vitals:");
   sapmachine_vitals::print_report(st, &info);
+
+#ifdef LINUX
+  // STEP("Vitals HiMemReport")
+  st->cr();
+  sapmachine_vitals::print_himemreport_state(st);
+  st->cr();
+#endif // LINUX
 
   // STEP("printing system")
 
