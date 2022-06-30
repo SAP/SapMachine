@@ -37,6 +37,7 @@
 #include "runtime/os.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
 #include "services/memTracker.hpp"

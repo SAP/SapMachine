@@ -54,7 +54,7 @@
 #include <time.h>
 
 // JDK-8280583: "Always build NMT" did away with INCLUDE_NMT for JDK19++
-#ifdef JDK_MAINLINE
+#if defined(JDK_MAINLINE) || defined(JDK19u)
 #define INCLUDE_NMT 1
 #endif
 
@@ -1254,16 +1254,12 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
 bool initialize() {
 
-<<<<<<< HEAD
-  log_info(os)("Initializing vitals...");
-=======
   static bool initialized = false;
   assert(initialized == false, "Vitals already initialized");
   initialized = true;
 
   log_info(vitals)("Vitals v%x", vitals_version);
   log_info(vitals)("Initializing vitals...");
->>>>>>> 2115f01f3f2... SapMachine #1124: Vitals: June 22 package
 
   // Adjust VitalsSampleInterval
   if (VitalsSampleInterval == 0) {

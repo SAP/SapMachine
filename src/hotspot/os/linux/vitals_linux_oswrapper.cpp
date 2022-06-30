@@ -37,13 +37,23 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-
-
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define LOG_HERE_F(msg, ...)  { printf("[%d] ", (int)::getpid()); ::printf(msg, __VA_ARGS__); printf("\n"); fflush(stdout); }
 #define LOG_HERE(msg)         { printf("[%d] ", (int)::getpid()); ::printf("%s", msg); printf("\n"); fflush(stdout); }
 
 extern const char* sapmachine_get_memory_controller_path();
+
+// os::file_exists() does not exist in all JDK versions, so we avoid that
+static bool os_file_exists(const char* filename) {
+  struct stat statbuf;
+  if (filename == NULL || strlen(filename) == 0) {
+    return false;
+  }
+  return os::stat(filename, &statbuf) == 0;
+}
 
 namespace sapmachine_vitals {
 
@@ -275,13 +285,13 @@ public:
     stringStream ss;
     ss.print("%smemory.usage_in_bytes", path.base());
     struct stat s;
-    const bool isv1 = os::file_exists(ss.base());
+    const bool isv1 = os_file_exists(ss.base());
     if (isv1) {
       log_info(vitals)("Vitals cgroup initialization: v1");
     } else  {
       ss.reset();
       ss.print("%smemory.current", path.base());
-      if (os::file_exists(ss.base())) {
+      if (os_file_exists(ss.base())) {
         // okay, its v2
         log_info(vitals)("Vitals cgroup initialization: v2");
       } else {
