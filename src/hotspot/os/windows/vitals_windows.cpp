@@ -41,21 +41,19 @@ static Column* g_col_process_working_set_size = NULL;
 static Column* g_col_process_commit_charge = NULL;
 
 bool platform_columns_initialize() {
-  g_col_system_memoryload = new PlainValueColumn("system", NULL, "mload",
-      "Approximate percentage of physical memory that is in use.");
+  g_col_system_memoryload =
+      define_column<PlainValueColumn>("system", NULL, "mload", "Approximate percentage of physical memory that is in use.", true);
 
   // MEMORYSTATUSEX ullAvailPhys
-  g_col_system_avail_phys = new MemorySizeColumn("system", NULL, "avail-phys",
-      "Amount of physical memory currently available.");
-
+  g_col_system_avail_phys =
+      define_column<MemorySizeColumn>("system", NULL, "avail-phys", "Amount of physical memory currently available.", true);
   // PROCESS_MEMORY_COUNTERS_EX WorkingSetSize
-  g_col_process_working_set_size = new MemorySizeColumn("process", NULL, "wset",
-      "Working set size");
+  g_col_process_working_set_size =
+      define_column<MemorySizeColumn>("system", NULL, "wset", "Working set size", true);
 
   // PROCESS_MEMORY_COUNTERS_EX PrivateUsage
-  g_col_process_commit_charge = new MemorySizeColumn("process", NULL, "comch",
-      "Commit charge");
-
+  g_col_process_commit_charge =
+      define_column<MemorySizeColumn>("system", NULL, "comch", "Commit charge", true);
 
   return true;
 }
