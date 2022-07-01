@@ -1270,18 +1270,18 @@ bool initialize() {
   }
 
   bool success = ColumnList::initialize();
-  success &= Legend::initialize();
+  success = success && Legend::initialize();
 
   // Order matters. First platform columns, then jvm columns.
-  success &= platform_columns_initialize();
-  success &= add_jvm_columns();
+  success = success && platform_columns_initialize();
+  success = success && add_jvm_columns();
 
   // -- Now the number of columns is known (and fixed). --
 
   g_all_tables = new SampleTables();
-  success &= (g_all_tables != NULL);
+  success = success && (g_all_tables != NULL);
 
-  success &= initialize_sampler_thread();
+  success = success && initialize_sampler_thread();
 
   if (success) {
     log_info(vitals)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
