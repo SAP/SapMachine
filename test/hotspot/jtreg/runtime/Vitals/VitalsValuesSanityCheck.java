@@ -61,12 +61,31 @@ import jdk.test.lib.process.OutputAnalyzer;
 import org.testng.annotations.Test;
 import sun.hotspot.WhiteBox;
 
+// SapMachine 2022-07-01: Vitals: needed for isMusl
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class VitalsValuesSanityCheck {
+
+    // Platform.isMusl() is missing in 11. Hence this copy here. Cannot just add it to Platform class, since that
+    // breaks jdk/test/lib/TestMutuallyExclusivePlatformPredicates.java
+    public static boolean isMusl() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("ldd", "--version");
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String l = b.readLine();
+            if (l != null && l.contains("musl")) { return true; }
+        } catch(Exception e) {
+        }
+        return false;
+    }
 
     static WhiteBox wb = WhiteBox.getWhiteBox();
 
@@ -299,7 +318,7 @@ public class VitalsValuesSanityCheck {
                 checkValueIsBetween(csv, "proc-swdo", 0, proc_virt);
 
                 // -cheap--
-                if (!Platform.isMusl() && proc_rss_all < 4 * G) {
+                if (!isMusl() && proc_rss_all < 4 * G) {
                     // we expect to see what NMT sees, plus a bit, since glibc has overhead. If NMT is off, we use
                     // our initial ballpark number.
                     long min_c_heap_usage_glibc = (jvm_nmt_mlc == -1 ? jvm_nmt_mlc : expected_minimal_cheap_usage) + K;
