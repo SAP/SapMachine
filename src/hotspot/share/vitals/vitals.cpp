@@ -53,8 +53,10 @@
 #include <locale.h>
 #include <time.h>
 
-// JDK-8280583: "Always build NMT" did away with INCLUDE_NMT for JDK19++
-#if defined(JDK_MAINLINE) || defined(JDK19u)
+// Newer JDKS: NMT is always on and this macro does not exist
+// Older JDKs: NMT can be off at compile time; in that case INCLUDE_NMT
+//  will be defined=0 via CFLAGS; or on, in that case it will be defined=1 in macros.hpp.
+#ifndef INCLUDE_NMT
 #define INCLUDE_NMT 1
 #endif
 
@@ -1116,7 +1118,7 @@ public:
   }
 };
 
-#if INCLUDE_NMT
+
 struct nmt_values_t {
   // How much memory, in total, was committed via mmap
   value_t mapped_total;
@@ -1137,7 +1139,7 @@ struct nmt_values_t {
 };
 
 static bool get_nmt_values(nmt_values_t* out) {
-  value_t result = INVALID_VALUE;
+#if INCLUDE_NMT
   if (is_nmt_enabled()) {
     MutexLocker locker(MemTracker::query_lock());
     /*const*/MallocMemorySnapshot* mlc_snapshot = MallocMemorySummary::as_snapshot();
@@ -1165,9 +1167,9 @@ static bool get_nmt_values(nmt_values_t* out) {
         mlc_snapshot->malloc_overhead()->count();
     return true;
   }
+#endif // INCLUDE_NMT
   return false;
 }
-#endif // INCLUDE_NMT
 
 void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
@@ -1175,12 +1177,9 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
 
   nmt_values_t nmt_vals;
   bool have_nmt_values = false;
-#if INCLUDE_NMT
   if (!avoid_locking) {
     have_nmt_values = get_nmt_values(&nmt_vals);
   }
-#endif
-
 
   // Heap
   if (!avoid_locking) {
