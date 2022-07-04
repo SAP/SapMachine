@@ -42,6 +42,7 @@
 #include "services/memReporter.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "vitals/vitals_internals.hpp"
 
@@ -49,6 +50,13 @@
 #include <spawn.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+// Newer JDKS: NMT is always on and this macro does not exist
+// Older JDKs: NMT can be off at compile time; in that case INCLUDE_NMT
+//  will be defined=0 via CFLAGS; or on, in that case it will be defined=1 in macros.hpp.
+#ifndef INCLUDE_NMT
+#define INCLUDE_NMT 1
+#endif
 
 // Logging and output:
 // We log during initialization phase to UL using the "vitals" tag.
@@ -214,6 +222,7 @@ static const char* describe_maximum_by_compare_type(compare_type t) {
 // NMT is nice, but the interface is unnecessary convoluted. For now, to keep merge surface small,
 // we work with what we have
 
+#if INCLUDE_NMT
 class NMTStuff : public AllStatic {
 
   static MemBaseline _baseline;
@@ -300,7 +309,7 @@ public:
 
 MemBaseline NMTStuff::_baseline;
 time_t NMTStuff::_baseline_time = 0;
-
+#endif // INCLUDE_NMT
 
 //////////// Reporting //////////////////////////////////////////////
 
@@ -403,10 +412,12 @@ static void print_high_memory_report(outputStream* st) {
   st->cr();
   st->flush();
 
+#if INCLUDE_NMT
   st->cr();
   st->print_cr("--- NMT report ---");
   NMTStuff::report_as_best_as_possible(st);
   st->print_cr("--- /NMT report ---");
+#endif
 
   st->cr();
   st->cr();
@@ -772,6 +783,7 @@ void pulse_himem_report() {
       }
       // If the alert level increased to a new value, trigger a new report
       trigger_high_memory_report(new_alvl, spikeno, new_percentage, rss_swap);
+#if INCLUDE_NMT
       // Upon first alert, do a NMT baseline
       if (old_alvl == 0 && new_alvl > 0) {
         if (NMTStuff::is_enabled()) {
@@ -779,11 +791,14 @@ void pulse_himem_report() {
           stderr_stream.print_cr("HiMemoryReport: ... captured NMT baseline");
         }
       }
+#endif // INCLUDE_NMT
     } else if (old_alvl > 0 && new_alvl == 0){
       // Memory usage recovered, and we hit the decay time, and now all is well again.
       stderr_stream.print_cr("HiMemoryReport: rss+swap=" SIZE_FORMAT " K - seems we recovered. Resetting alert level.",
                              rss_swap / K);
+#if INCLUDE_NMT
       NMTStuff::reset();
+#endif
     }
   }
 }
