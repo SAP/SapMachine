@@ -151,6 +151,9 @@
 
 // SapMachine 2019-02-20 : vitals
 #include "vitals/vitals.hpp"
+#ifdef LINUX
+#include "vitals_linux_himemreport.hpp"
+#endif
 
 // Initialization after module runtime initialization
 void universe_post_module_init();  // must happen after call_initPhase2
@@ -3083,6 +3086,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (EnableVitals) {
     sapmachine_vitals::initialize();
   }
+#ifdef LINUX
+  if (HiMemReport) {
+    sapmachine_vitals::initialize_himem_report_facility();
+  }
+#endif // LINUX
 
   BiasedLocking::init();
 
@@ -3531,9 +3539,6 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   _number_of_threads++;
 
-  // SapMachine 2019-02-20 : vitals
-  sapmachine_vitals::counters::inc_threads_created(1);
-
   oop threadObj = p->threadObj();
   bool daemon = true;
   // Bootstrapping problem: threadObj can be null for initial
@@ -3556,6 +3561,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Make new thread known to active EscapeBarrier
   EscapeBarrier::thread_added(p);
+
+  // SapMachine 2019-02-20 : vitals
+  sapmachine_vitals::counters::inc_threads_created(1);
 
 }
 
@@ -3819,6 +3827,15 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     st->cr();
   }
 
+#ifdef LINUX
+  // SapMachine 2022-05-07 : HiMemReport
+  const Thread* himem_reporter_thread = sapmachine_vitals::himem_reporter_thread();
+  if (himem_reporter_thread != NULL) {
+    himem_reporter_thread->print_on(st);
+    st->cr();
+  }
+#endif
+
   st->flush();
 }
 
@@ -3876,6 +3893,11 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   // SapMachine 2019-11-07 : vitals
   print_on_error(const_cast<Thread*>(sapmachine_vitals::samplerthread()),
                  st, current, buf, buflen, &found_current);
+#ifdef LINUX
+  // SapMachine 2022-05-07 : HiMemReport
+  print_on_error(const_cast<Thread*>(sapmachine_vitals::himem_reporter_thread()),
+                 st, current, buf, buflen, &found_current);
+#endif
 
   if (Universe::heap() != NULL) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);

@@ -40,7 +40,7 @@ public class TestVitalsInvalidSampleInterval {
                 "-XX:VitalsSampleInterval=0",
                 "-XX:MaxMetaspaceSize=16m",
                 "-Xmx128m",
-                "-version"); // Note: explicitly omit Xlog:os, since the warning should always appear
+                "-version"); // Note: explicitly omit Xlog:vitals, since the warning should always appear
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("Invalid VitalsSampleInterval (0) specified. Vitals disabled.");

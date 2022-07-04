@@ -95,6 +95,9 @@ void VitalsDCmd::execute(DCmdSource source, TRAPS) {
   info.sample_now = _sample_now.value();
 
   output()->print_cr("Vitals:");
+  if (info.sample_now && info.csv) {
+    output()->print_cr("(\"now\" ignored in csv mode)");
+  }
   sapmachine_vitals::print_report(output(), &info);
 }
 
