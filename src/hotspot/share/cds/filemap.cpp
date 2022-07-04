@@ -166,9 +166,9 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   assert(header_version[JVM_IDENT_MAX-1] == 0, "must be");
 }
 
-FileMapInfo::FileMapInfo(bool is_static) {
-  memset((void*)this, 0, sizeof(FileMapInfo));
-  _is_static = is_static;
+FileMapInfo::FileMapInfo(bool is_static) :
+  _is_static(is_static), _file_open(false), _is_mapped(false), _fd(-1), _file_offset(0),
+  _full_path(nullptr), _base_archive_name(nullptr), _header(nullptr) {
   if (_is_static) {
     assert(_current_info == NULL, "must be singleton"); // not thread safe
     _current_info = this;
@@ -176,8 +176,6 @@ FileMapInfo::FileMapInfo(bool is_static) {
     assert(_dynamic_archive_info == NULL, "must be singleton"); // not thread safe
     _dynamic_archive_info = this;
   }
-  _file_offset = 0;
-  _file_open = false;
 }
 
 FileMapInfo::~FileMapInfo() {
@@ -187,6 +185,14 @@ FileMapInfo::~FileMapInfo() {
   } else {
     assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
     _dynamic_archive_info = NULL;
+  }
+
+  if (_header != nullptr) {
+    os::free(_header);
+  }
+
+  if (_file_open) {
+    ::close(_fd);
   }
 }
 
@@ -1057,6 +1063,9 @@ public:
   FileHeaderHelper() : _fd(-1), _is_valid(false), _header(nullptr), _base_archive_name(nullptr) {}
 
   ~FileHeaderHelper() {
+    if (_header != nullptr) {
+      FREE_C_HEAP_ARRAY(char, _header);
+    }
     if (_fd != -1) {
       os::close(_fd);
     }
@@ -2237,6 +2246,11 @@ void FileMapInfo::fixup_mapped_heap_regions() {
            "Null closed_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(closed_heap_regions,
                                                   num_closed_heap_regions);
+    // G1 marking uses the BOT for object chunking during marking in
+    // G1CMObjArrayProcessor::process_slice(); for this reason we need to
+    // initialize the BOT for closed archive regions too.
+    G1CollectedHeap::heap()->populate_archive_regions_bot_part(closed_heap_regions,
+                                                               num_closed_heap_regions);
   }
 
   // do the same for mapped open archive heap regions
@@ -2249,11 +2263,6 @@ void FileMapInfo::fixup_mapped_heap_regions() {
     // fast G1BlockOffsetTablePart::block_start operations for any given address
     // within the open archive regions when trying to find start of an object
     // (e.g. during card table scanning).
-    //
-    // This is only needed for open archive regions but not the closed archive
-    // regions, because objects in closed archive regions never reference objects
-    // outside the closed archive regions and they are immutable. So we never
-    // need their BOT during garbage collection.
     G1CollectedHeap::heap()->populate_archive_regions_bot_part(open_heap_regions,
                                                                num_open_heap_regions);
   }
