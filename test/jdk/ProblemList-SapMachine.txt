@@ -52,36 +52,18 @@
 # SapMachine 2019-07-16 Still fails
 java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
-# SapMachine 2018-08-22 Failures on sparc/linuxppc64le.
+# SapMachine 2018-08-22 Failures on linuxppc64le.
 # Some just fail sporadic.
 #
-com/sun/nio/sctp/SctpChannel/Bind.java                                               solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le
 #
-com/sun/nio/sctp/SctpChannel/Receive.java                                            solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le
 #
-com/sun/nio/sctp/SctpChannel/ReceiveIntoDirect.java                                  solaris-sparcv9
+com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le
 #
-com/sun/nio/sctp/SctpChannel/Shutdown.java                                           solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le
 #
-com/sun/nio/sctp/SctpServerChannel/Accept.java                                       solaris-sparcv9
-#
-com/sun/nio/sctp/SctpChannel/CommUp.java                                             solaris-sparcv9
-#
-com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java                            solaris-sparcv9
-#
-com/sun/nio/sctp/SctpChannel/Connect.java                                            solaris-sparcv9
-#
-com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le,solaris-sparcv9
-#
-com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le,solaris-sparcv9
-#
-com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le,solaris-sparcv9
-#
-com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le,solaris-sparcv9
-#
-com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le,solaris-sparcv9
-# SapMachine 2019-09-18 See if these still occur
-#com/sun/nio/sctp/SctpChannel/Branch.java                                             solaris-sparcv9
+com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le
 
 # SapMachine 2018-06-22, 2019-04-30
 # Fails only on recent Suse systems (e.g. SLES 12.2, 12.4, 15): "RuntimeException: Test failed for angle 15.0"
@@ -122,7 +104,9 @@ java/awt/print/PrinterJob/SameService.java                                   822
 #
 #
 # SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
-java/awt/FontClass/FontSize1Test.java                                                macosx-all
+# As of 2022-05-05 we support 10.14.5 and younger in 11 and 17.
+# So it should pass, reenable.
+#java/awt/FontClass/FontSize1Test.java                                                macosx-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
@@ -139,6 +123,12 @@ java/awt/FontClass/DrawStringWithInfiniteXform.java                             
 # SocketException: Cannot allocate memory
 #
 # Seen a lot on mac, also 7, 11 ...
+# In 15 https://bugs.openjdk.java.net/browse/JDK-8241786 addressed this, but we still see the
+# failure in 17.
+#
+#
+# A simple backport of 8241786 to 11 caused crashes:
+#
 java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     macosx-all
 
 ###############################################################################
@@ -164,16 +154,21 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java                               823
 
 # SapMachine 2019-02-08
 # times out.
-com/sun/jndi/ldap/LdapDnsProviderTest.java                                           macosx-all
+# 2022-05-05 Timeouts addressed by JDK-8251189 in 16, backported to 11.
+#com/sun/jndi/ldap/LdapDnsProviderTest.java                                           macosx-all
 
 # SapMachine 2019-02-08
 # Can't delete /priv/jvmtests/.../javax/security/auth/Subject/DoAs/NestedActions.d
 # SapMachine 2019-07-12 Still failing
-javax/security/auth/Subject/DoAs.java                                                macosx-all
+# SapMachine 2022-05-05 Let's give it a try
+#javax/security/auth/Subject/DoAs.java                                                macosx-all
 
 # SapMachine 2019-02-08
 # RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
 # SapMachine 2019-07-12 Still failing
+# SapMachine 2022-05-05 Still failing. Now:
+# RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
+#
 java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
 
 # SapMachine 2019-02-08
@@ -218,7 +213,9 @@ java/nio/file/WatchService/LotsOfCloses.java                                    
 # GC overhead limit exceeded, occurs very often
 #
 # Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8230349
-jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      8230349 macosx-all
+# SapMachine 2022-05-05 Pointless exclude in 17, test was moved to new location.
+# Also, 8230349 was closed as not reproducible.
+#jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      8230349 macosx-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
@@ -233,15 +230,13 @@ com/sun/jdi/EATests.java                                                        
 #
 java/nio/channels/DatagramChannel/AfterDisconnect.java                               aix-all
 #
-java/nio/channels/DatagramChannel/ChangingAddress.java                               aix-all,macosx-all
+# on mac: RuntimeException: Expected: 0.0.0.0/0.0.0.0, actual: /10.21.80.170
+#
+# SapMachine 2022-05-05 Let's give it a try
+#java/nio/channels/DatagramChannel/ChangingAddress.java                               aix-all,macosx-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
-
-# SapMachine 2019-02-27
-# Fails in nightly tests since middle of February 2020, cannot be reproduced locally
-#
-lib/testlibrary/OutputAnalyzerTest.java                                              generic-all
 
 # SapMachine 2020-04-01 fails in nightly tests sometimes
 # https://bugs.openjdk.java.net/browse/JDK-8227651
@@ -256,8 +251,13 @@ javax/net/ssl/ServerName/SSLEngineExplorerWithCli.java                       822
 javax/sound/sampled/Clip/ClipIsRunningAfterStop.java                                 linux-ppc64
 
 # SapMachine 2020-09-17
-# RuntimeException: '/net/usr.work': 13570272264192 != 13570272198656
-java/io/File/GetXSpace.java                                                          generic-all
+#
+# SapMachine 2022-01-24
+# Lets test if 8251466 is fixed with PR 7170 on windows.
+#
+# Seen again in 19 on 2022-02-06 on ppc and NTAMD64, e.g. "InvalidPathException: Illegal char <:> at index 0: :"
+#
+#java/io/File/GetXSpace.java                                                          generic-all
 
 # SapMachine 2020-09-17
 # Sporadic timeout on ls3876.  Exclude only here
@@ -282,6 +282,20 @@ java/net/MulticastSocket/Test.java                                              
 # Exception: ERROR: IsModifiableClass failed.
 # I'd assume this test should not be run on mac.
 java/lang/instrument/IsModifiableClassAgent.java                                     macosx-all
+
+# SapMachine 2022-04-01
+# java.lang.RuntimeException: Ratio of blue to red is too great: 0.1125
+#
+# Actually we see this only in 17+ currently, but I assume this is similar to the
+# other failures of tests rotating text in 11. We probably just don't run 11 tests
+# on a machine with the problematic fonts. Seen on ...
+# This was ProblemListed in 11 with 8199022, and de-listed without a fix in 15
+# with 8197797. Since then we see the failure again.
+# In 11, it also fails on s390
+# SapMachine 2022-06-23
+# Now we see it on linuxaarch64
+# Excluding on all linux.
+java/awt/Graphics2D/DrawString/RotTransText.java                             7043153 linux-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk16
@@ -318,14 +332,27 @@ tools/jpackage/share/AddLauncherTest.java#id1                                   
 tools/jpackage/share/ArgumentsTest.java                                              linux-s390x
 tools/jpackage/share/EmptyFolderTest.java                                            linux-s390x
 
-# SapMachine 2021-08-17
-# These tests do run several hours in a fastdebug build (seen 5 hours on linuxx86_64).
-# They will always hit the timeout value. Exclude them to save execution time.
-# Opened https://bugs.openjdk.java.net/browse/JDK-8271613.
-java/foreign/TestMatrix.java                                                         generic-all
-
 ###############################################################################
 # Failing new tests, unsupported new features in jdk18
+
+# SapMachine 2021-10-28: fails on Windows (at least with dbg binaries) since JDK-8269223,
+#
+#
+# see https://bugs.openjdk.java.net/browse/JDK-8276809
+# SapMachine 2022-05-05 I exclude this again as fix for 8276809 was not accepted.
+java/awt/font/JNICheck/FreeTypeScalerJNICheck.java                           8276809 windows-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk19
+
+# SapMachine 2022-06-15
+#Loom:
+java/beans/XMLDecoder/8028054/TestConstructorFinder.java                               linux-ppc64le
+java/beans/XMLDecoder/8028054/TestMethodFinder.java                                    linux-ppc64le
+
+#Panama:
+java/foreign/TestHandshake.java                                                        linux-ppc64le
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1                           linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
