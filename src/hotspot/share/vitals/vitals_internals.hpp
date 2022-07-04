@@ -30,9 +30,12 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "vitals/vitals.hpp"
 
 namespace sapmachine_vitals {
+
+  static const int vitals_version = 0x220600;
 
   typedef uint64_t value_t;
 #define INVALID_VALUE   ((value_t)UINT64_MAX)
@@ -65,7 +68,6 @@ namespace sapmachine_vitals {
     const char* const _header; // optional. May be NULL.
     const char* const _name;
     const char* const _description;
-    const bool _delta;
 
     // The following members are fixed by ColumnList when the Column is added to it.
     Column* _next;  // next column in table
@@ -78,7 +80,7 @@ namespace sapmachine_vitals {
 
   protected:
 
-    Column(const char* category, const char* header, const char* name, const char* description, bool delta);
+    Column(const char* category, const char* header, const char* name, const char* description);
 
     // Child classes implement this.
     // output stream can be NULL; in that case, method shall return number of characters it would have printed.
@@ -106,7 +108,6 @@ namespace sapmachine_vitals {
 
     const Column* next () const       { return _next; }
 
-    virtual bool is_delta() const         { return _delta; }
     virtual bool is_memory_size() const   { return false; }
 
   };
@@ -118,20 +119,17 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     PlainValueColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
   };
 
   class DeltaValueColumn: public Column {
-    const bool _show_only_positive;
     int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
     // only_positive: only positive deltas are shown, negative deltas are supressed
-    DeltaValueColumn(const char* category, const char* header, const char* name, const char* description,
-        bool show_only_positive = true)
-      : Column(category, header, name, description, true)
-      , _show_only_positive(show_only_positive)
+    DeltaValueColumn(const char* category, const char* header, const char* name, const char* description)
+      : Column(category, header, name, description)
     {}
   };
 
@@ -140,7 +138,7 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     MemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
     bool is_memory_size() const { return true; }
   };
@@ -150,7 +148,7 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     DeltaMemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
   };
 
@@ -159,8 +157,26 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     TimeStampColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description, false)
+      : Column(category, header, name, description)
     {}
+  };
+
+  ////// Legend: handles the legend
+
+  class Legend: public CHeapObj<mtInternal> {
+    stringStream _legend;
+    stringStream _footnote;
+    static Legend* _the_legend;
+    // needed during building the legend
+    const char* _last_added_cat;
+  public:
+    Legend();
+    void add_column_info(const char* const category, const char* const header,
+                         const char* const name, const char* const description);
+    void add_footnote(const char* text);
+    void print_on(outputStream* st) const;
+    static Legend* the_legend () { return _the_legend; }
+    static bool initialize();
   };
 
   ////// ColumnList: a singleton class holding all information about all columns
@@ -195,7 +211,25 @@ namespace sapmachine_vitals {
 
   };
 
-  // Implemented by platform specific
+  // Convenient method to define and register a possibly deactivated column
+  // (a deactivated column is not shown in the table, but still shown in the legend, to
+  //  given the user a hint about it)
+  template <class ColumnType>
+  Column* define_column (
+      const char* const category, const char* const header,
+      const char* const name, const char* const description,
+      bool is_active)
+  {
+    Column* c = NULL;
+    if (is_active) {
+      c = new ColumnType(category, header, name, description);
+      ColumnList::the_list()->add_column(c);
+    }
+    Legend::the_legend()->add_column_info(category, header, name, description);
+    return c;
+  }
+
+  // Ask platform to add platform specific columns
   bool platform_columns_initialize();
 
   void sample_platform_values(Sample* sample);

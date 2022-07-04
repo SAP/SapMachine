@@ -25,6 +25,9 @@
  */
 
 #include "precompiled.hpp"
+#include "osContainer_linux.hpp"
+#include "vitals_linux_oswrapper.hpp"
+#include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -32,110 +35,7 @@
 #include "utilities/ostream.hpp"
 #include "vitals/vitals_internals.hpp"
 
-#include <malloc.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
-
 namespace sapmachine_vitals {
-
-class ProcFile {
-  char* _buf;
-
-  // To keep the code simple, I just use a fixed sized buffer.
-  enum { bufsize = 64*K };
-
-public:
-
-  ProcFile() : _buf(NULL) {
-    _buf = (char*)os::malloc(bufsize, mtInternal);
-  }
-
-  ~ProcFile () {
-    os::free(_buf);
-  }
-
-  bool read(const char* filename) {
-
-    FILE* f = ::fopen(filename, "r");
-    if (f == NULL) {
-      return false;
-    }
-
-    size_t bytes_read = ::fread(_buf, 1, bufsize, f);
-    _buf[bufsize - 1] = '\0';
-
-    ::fclose(f);
-
-    return bytes_read > 0 && bytes_read < bufsize;
-  }
-
-  const char* text() const { return _buf; }
-
-  const char* get_prefixed_line(const char* prefix) const {
-    return ::strstr(_buf, prefix);
-  }
-
-  value_t parsed_prefixed_value(const char* prefix, size_t scale = 1) const {
-    value_t value = INVALID_VALUE;
-    const char* const s = get_prefixed_line(prefix);
-    if (s != NULL) {
-      errno = 0;
-      const char* p = s + ::strlen(prefix);
-      char* endptr = NULL;
-      value = (value_t)::strtoll(p, &endptr, 10);
-      if (p == endptr || errno != 0) {
-        value = INVALID_VALUE;
-      } else {
-        value *= scale;
-      }
-    }
-    return value;
-  }
-
-};
-
-struct cpu_values_t {
-  value_t user;
-  value_t nice;
-  value_t system;
-  value_t idle;
-  value_t iowait;
-  value_t steal;
-  value_t guest;
-  value_t guest_nice;
-};
-
-void parse_proc_stat_cpu_line(const char* line, cpu_values_t* out) {
-  // Note: existence of some of these values depends on kernel version
-  out->user = out->nice = out->system = out->idle = out->iowait = out->steal = out->guest = out->guest_nice =
-      INVALID_VALUE;
-  uint64_t user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
-  int num = ::sscanf(line,
-      "cpu "
-      UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
-      UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " ",
-      &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice);
-  if (num >= 4) {
-    out->user = user;
-    out->nice = nice;
-    out->system = system;
-    out->idle = idle;
-    if (num >= 5) { // iowait (5) (since Linux 2.5.41)
-      out->iowait = iowait;
-      if (num >= 8) { // steal (8) (since Linux 2.6.11)
-        out->steal = steal;
-        if (num >= 9) { // guest (9) (since Linux 2.6.24)
-          out->guest = guest;
-          if (num >= 10) { // guest (9) (since Linux 2.6.33)
-            out->guest_nice = guest_nice;
-          }
-        }
-      }
-    }
-  }
-}
-
 
 /////// Columns ////////
 
@@ -184,7 +84,7 @@ class CPUTimeColumn: public Column {
 
 public:
   CPUTimeColumn(const char* category, const char* header, const char* name, const char* description)
-    : Column(category, header, name, description, true)
+    : Column(category, header, name, description)
   {
     _clk_tck = ::sysconf(_SC_CLK_TCK);
     _num_cores = os::active_processor_count();
@@ -206,6 +106,12 @@ static Column* g_col_system_num_threads = NULL;
 static Column* g_col_system_num_procs_running = NULL;
 static Column* g_col_system_num_procs_blocked = NULL;
 
+static bool g_show_cgroup_info = false;
+static Column* g_col_system_cgrp_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_soft_limit_in_bytes = NULL;
+static Column* g_col_system_cgrp_usage_in_bytes = NULL;
+static Column* g_col_system_cgrp_kmem_usage_in_bytes = NULL;
+
 static Column* g_col_system_cpu_user = NULL;
 static Column* g_col_system_cpu_system = NULL;
 static Column* g_col_system_cpu_idle = NULL;
@@ -213,11 +119,15 @@ static Column* g_col_system_cpu_steal = NULL;
 static Column* g_col_system_cpu_guest = NULL;
 
 static Column* g_col_process_virt = NULL;
+
+static bool g_show_rss_detail_info = false;
 static Column* g_col_process_rss = NULL;
 static Column* g_col_process_rssanon = NULL;
 static Column* g_col_process_rssfile = NULL;
 static Column* g_col_process_rssshmem = NULL;
+
 static Column* g_col_process_swapped_out = NULL;
+
 static Column* g_col_process_chp_used = NULL;
 static Column* g_col_process_chp_free = NULL;
 
@@ -230,96 +140,114 @@ static Column* g_col_process_io_bytes_written = NULL;
 
 static Column* g_col_process_num_threads = NULL;
 
-
-// Try to obtain mallinfo2. That replacement of mallinf is 64-bit capable and its values won't wrap.
-// Only exists in glibc 2.33 and later.
-#ifdef __GLIBC__
-struct glibc_mallinfo2 {
-  size_t arena;
-  size_t ordblks;
-  size_t smblks;
-  size_t hblks;
-  size_t hblkhd;
-  size_t usmblks;
-  size_t fsmblks;
-  size_t uordblks;
-  size_t fordblks;
-  size_t keepcost;
-};
-typedef struct glibc_mallinfo2 (*mallinfo2_func_t)(void);
-static mallinfo2_func_t g_mallinfo2 = NULL;
-static void mallinfo2_init() {
-  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
-}
-#endif // __GLIBC__
-
 bool platform_columns_initialize() {
 
-  // Order matters!
+  const char* const system_cat = "system";
+  const char* const process_cat = "process";
 
-  g_col_system_memavail = new MemorySizeColumn("system", NULL, "avail", "Memory available without swapping");
-  g_col_system_memcommitted = new MemorySizeColumn("system", NULL, "comm", "Committed memory");
-  g_col_system_memcommitted_ratio = new PlainValueColumn("system", NULL, "crt", "Committed-to-Commit-Limit ratio (percent)");
-  g_col_system_swap = new MemorySizeColumn("system", NULL, "swap", "Swap space used");
+  Legend::the_legend()->add_footnote("   [host]: values are host-global (not containerized).");
+  Legend::the_legend()->add_footnote("   [cgrp]: if containerized or running in systemd slice");
+  Legend::the_legend()->add_footnote("    [krn]: depends on kernel version");
+  Legend::the_legend()->add_footnote("   [glibc]: only shown for glibc-based distros");
 
-  g_col_system_pages_swapped_in = new DeltaValueColumn("system", NULL, "si", "Number of pages swapped in");
-  g_col_system_pages_swapped_out = new DeltaValueColumn("system", NULL, "so", "Number of pages pages swapped out");
+  // Update values once, to get up-to-date readings. Some of those we need to decide whether to show or hide certain columns
+  OSWrapper::initialize();
+  OSWrapper::update_if_needed();
 
-  g_col_system_num_procs = new PlainValueColumn("system", NULL, "p", "Number of processes");
-  g_col_system_num_threads = new PlainValueColumn("system", NULL, "t", "Number of threads");
+  g_col_system_memavail =
+      define_column<MemorySizeColumn>(system_cat, NULL, "avail", "Memory available without swapping [host]", true);
+  g_col_system_memcommitted =
+      define_column<MemorySizeColumn>(system_cat, NULL, "comm", "Committed memory [host]", true);
+  g_col_system_memcommitted_ratio =
+      define_column<PlainValueColumn>(system_cat, NULL, "crt", "Committed-to-Commit-Limit ratio (percent) [host]", true);
+  g_col_system_swap =
+      define_column<MemorySizeColumn>(system_cat, NULL, "swap", "Swap space used [host]", true);
 
-  g_col_system_num_procs_running = new PlainValueColumn("system", NULL, "pr", "Number of processes running");
-  g_col_system_num_procs_blocked = new PlainValueColumn("system", NULL, "pb", "Number of processes blocked");
+  g_col_system_pages_swapped_in =
+      define_column<DeltaValueColumn>(system_cat, NULL, "si", "Number of pages swapped in [host] [delta]", true);
+  g_col_system_pages_swapped_out =
+      define_column<DeltaValueColumn>(system_cat, NULL, "so", "Number of pages pages swapped out [host] [delta]", true);
 
-  g_col_system_cpu_user =     new CPUTimeColumn("system", "cpu", "us", "Global cpu user time");
-  g_col_system_cpu_system =   new CPUTimeColumn("system", "cpu", "sy", "Global cpu system time");
-  g_col_system_cpu_idle =     new CPUTimeColumn("system", "cpu", "id", "Global cpu idle time");
-  g_col_system_cpu_steal =    new CPUTimeColumn("system", "cpu", "st", "Global cpu time stolen");
-  g_col_system_cpu_guest =    new CPUTimeColumn("system", "cpu", "gu", "Global cpu time spent on guest");
+  g_col_system_num_procs =
+      define_column<PlainValueColumn>(system_cat, NULL, "p", "Number of processes", true);
+  g_col_system_num_threads =
+      define_column<PlainValueColumn>(system_cat, NULL, "t", "Number of threads", true);
 
-  g_col_process_virt = new MemorySizeColumn("process", NULL, "virt", "Virtual size");
+  g_col_system_num_procs_running =
+      define_column<PlainValueColumn>(system_cat, NULL, "tr", "Number of threads running", true);
+  g_col_system_num_procs_blocked =
+      define_column<PlainValueColumn>(system_cat, NULL, "tb", "Number of threads blocked on disk IO", true);
 
-  bool have_rss_detail_info = false;
-  {
-    ProcFile bf;
-    if (bf.read("/proc/self/status")) {
-      have_rss_detail_info = bf.parsed_prefixed_value("RssAnon:", 1) != INVALID_VALUE;
-    }
-  }
-  if (have_rss_detail_info) {
-    // Linux 4.5 ++
-    g_col_process_rss = new MemorySizeColumn("process", "rss", "all", "Resident set size, total");
-    g_col_process_rssanon = new MemorySizeColumn("process", "rss", "anon", "Resident set size, anonymous memory (>=4.5)");
-    g_col_process_rssfile = new MemorySizeColumn("process", "rss", "file", "Resident set size, file mappings (>=4.5)");
-    g_col_process_rssshmem = new MemorySizeColumn("process", "rss", "shm", "Resident set size, shared memory (>=4.5)");
-  } else {
-    g_col_process_rss = new MemorySizeColumn("process", NULL, "rss", "Resident set size, total");
-  }
+  g_col_system_cpu_user =
+      define_column<CPUTimeColumn>(system_cat, "cpu", "us", "CPU user time [host]", true);
+  g_col_system_cpu_system =
+      define_column<CPUTimeColumn>(system_cat, "cpu", "sy", "CPU system time [host]", true);
+  g_col_system_cpu_idle =
+        define_column<CPUTimeColumn>(system_cat, "cpu", "id", "CPU idle time [host]", true);
+  g_col_system_cpu_steal =
+        define_column<CPUTimeColumn>(system_cat, "cpu", "st", "CPU time stolen [host]", true);
+  g_col_system_cpu_guest =
+        define_column<CPUTimeColumn>(system_cat, "cpu", "gu", "CPU time spent on guest [host]", true);
 
-  g_col_process_swapped_out = new MemorySizeColumn("process", NULL, "swdo", "Memory swapped out");
+  // I show cgroup information if the container layer thinks we are containerized OR we have limits established
+  // (which should come out as the same, but you never know
+  g_show_cgroup_info = OSContainer::is_containerized() || (OSWrapper::syst_cgro_lim() != INVALID_VALUE || OSWrapper::syst_cgro_limsw() != INVALID_VALUE);
+  g_col_system_cgrp_limit_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "lim", "cgroup memory limit [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_soft_limit_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "slim", "cgroup memory soft limit [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_usage_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "usg", "cgroup memory usage [cgrp]", g_show_cgroup_info);
+  g_col_system_cgrp_kmem_usage_in_bytes =
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "kusg", "cgroup kernel memory usage (cgroup v1 only) [cgrp]", g_show_cgroup_info);
 
+  // Process
+
+  g_col_process_virt =
+    define_column<MemorySizeColumn>(process_cat, NULL, "virt", "Virtual size", true);
+
+  // RSS detail needs kernel >= 4.5
+  g_show_rss_detail_info = OSWrapper::proc_rss_anon() != INVALID_VALUE;
+  g_col_process_rss =
+      define_column<MemorySizeColumn>(process_cat, "rss", "all", "Resident set size, total", true);
+  g_col_process_rssanon =
+      define_column<MemorySizeColumn>(process_cat, "rss", "anon", "Resident set size, anonymous memory [krn]", g_show_rss_detail_info);
+  g_col_process_rssfile =
+      define_column<MemorySizeColumn>(process_cat, "rss", "file", "Resident set size, file mappings [krn]", g_show_rss_detail_info);
+  g_col_process_rssshmem =
+      define_column<MemorySizeColumn>(process_cat, "rss", "shm", "Resident set size, shared memory [krn]", g_show_rss_detail_info);
+
+  g_col_process_swapped_out =
+      define_column<MemorySizeColumn>(process_cat, NULL, "swdo", "Memory swapped out", true);
+
+  // glibc heap info depends on, obviously, glibc.
 #ifdef __GLIBC__
-  mallinfo2_init();
-  g_col_process_chp_used = new MemorySizeColumn("process", "cheap", "usd",
-      g_mallinfo2 != NULL ? "C-Heap, in-use allocations" :
-                            "C-Heap, in-use allocations (unavailable if RSS > 4G)");
-  g_col_process_chp_free = new MemorySizeColumn("process", "cheap", "free",
-      g_mallinfo2 != NULL ? "C-Heap, bytes in free blocks" :
-                            "C-Heap, bytes in free blocks (unavailable if RSS > 4G)");
-#endif // __GLIBC__
+  const bool show_glibc_heap_info = true;
+#else
+  const bool show_glibc_heap_info = false;
+#endif
+  g_col_process_chp_used =
+      define_column<MemorySizeColumn>(process_cat, "cheap", "usd", "C-Heap, in-use allocations (may be unavailable if RSS > 4G) [glibc]", show_glibc_heap_info);
+  g_col_process_chp_free =
+      define_column<MemorySizeColumn>(process_cat, "cheap", "free", "C-Heap, bytes in free blocks (may be unavailable if RSS > 4G) [glibc]", show_glibc_heap_info);
 
-  g_col_process_cpu_user = new CPUTimeColumn("process", "cpu", "us", "Process cpu user time");
+  g_col_process_cpu_user =
+      define_column<CPUTimeColumn>(process_cat, "cpu", "us", "Process cpu user time", true);
 
-  g_col_process_cpu_system = new CPUTimeColumn("process", "cpu", "sy", "Process cpu system time");
+  g_col_process_cpu_system =
+    define_column<CPUTimeColumn>(process_cat, "cpu", "sy", "Process cpu system time", true);
 
-  g_col_process_num_of = new PlainValueColumn("process", "io", "of", "Number of open files");
+  g_col_process_num_of =
+      define_column<PlainValueColumn>(process_cat, "io", "of", "Number of open files", true);
 
-  g_col_process_io_bytes_read = new DeltaMemorySizeColumn("process", "io", "rd", "IO bytes read from storage or cache");
+  g_col_process_io_bytes_read =
+    define_column<DeltaMemorySizeColumn>(process_cat, "io", "rd", "IO bytes read from storage or cache", true);
 
-  g_col_process_io_bytes_written = new DeltaMemorySizeColumn("process", "io", "wr", "IO bytes written");
+  g_col_process_io_bytes_written =
+      define_column<DeltaMemorySizeColumn>(process_cat, "io", "wr", "IO bytes written", true);
 
-  g_col_process_num_threads = new PlainValueColumn("process", NULL, "thr", "Number of native threads");
-
+  g_col_process_num_threads =
+      define_column<PlainValueColumn>(process_cat, NULL, "thr", "Number of native threads", true);
 
   return true;
 }
@@ -331,179 +259,65 @@ static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
   }
 }
 
-// Helper function, returns true if string is a numerical id
-static bool is_numerical_id(const char* s) {
-  const char* p = s;
-  while(*p >= '0' && *p <= '9') {
-    p ++;
-  }
-  return *p == '\0' ? true : false;
-}
-
 void sample_platform_values(Sample* sample) {
 
   int idx = 0;
-  value_t v = 0;
 
-  value_t rss_all = 0;
+  OSWrapper::update_if_needed();
 
-  ProcFile bf;
-  if (bf.read("/proc/meminfo")) {
+  set_value_in_sample(g_col_system_memavail, sample, OSWrapper::syst_avail());
+  set_value_in_sample(g_col_system_swap, sample, OSWrapper::syst_swap());
 
-    // All values in /proc/meminfo are in KB
-    const size_t scale = K;
+  set_value_in_sample(g_col_system_memcommitted, sample, OSWrapper::syst_comm());
+  set_value_in_sample(g_col_system_memcommitted_ratio, sample, OSWrapper::syst_crt());
 
-    set_value_in_sample(g_col_system_memavail, sample,
-        bf.parsed_prefixed_value("MemAvailable:", scale));
+  set_value_in_sample(g_col_system_pages_swapped_in, sample, OSWrapper::syst_si());
+  set_value_in_sample(g_col_system_pages_swapped_out, sample, OSWrapper::syst_so());
 
-    value_t swap_total = bf.parsed_prefixed_value("SwapTotal:", scale);
-    value_t swap_free = bf.parsed_prefixed_value("SwapFree:", scale);
-    if (swap_total != INVALID_VALUE && swap_free != INVALID_VALUE) {
-      set_value_in_sample(g_col_system_swap, sample, swap_total - swap_free);
-    }
+  set_value_in_sample(g_col_system_cpu_user, sample, OSWrapper::syst_cpu_us());
+  set_value_in_sample(g_col_system_cpu_system, sample, OSWrapper::syst_cpu_sy());
+  set_value_in_sample(g_col_system_cpu_idle, sample, OSWrapper::syst_cpu_id());
+  set_value_in_sample(g_col_system_cpu_steal, sample, OSWrapper::syst_cpu_st());
+  set_value_in_sample(g_col_system_cpu_guest, sample, OSWrapper::syst_cpu_gu());
 
-    // Calc committed ratio. Values > 100% indicate overcommitment.
-    value_t commitlimit = bf.parsed_prefixed_value("CommitLimit:", scale);
-    value_t committed = bf.parsed_prefixed_value("Committed_AS:", scale);
-    if (commitlimit != INVALID_VALUE && commitlimit != 0 && committed != INVALID_VALUE) {
-      set_value_in_sample(g_col_system_memcommitted, sample, committed);
-      value_t ratio = (committed * 100) / commitlimit;
-      set_value_in_sample(g_col_system_memcommitted_ratio, sample, ratio);
-    }
+  set_value_in_sample(g_col_system_num_procs_running, sample, OSWrapper::syst_tr());
+  set_value_in_sample(g_col_system_num_procs_blocked, sample, OSWrapper::syst_tb());
+
+  // cgroups business
+  if (g_show_cgroup_info) {
+    set_value_in_sample(g_col_system_cgrp_usage_in_bytes, sample, OSWrapper::syst_cgro_usg());
+    // set_value_in_sample(g_col_system_cgrp_memsw_usage_in_bytes, sample, OSWrapper::syst_cgro_usgsw());
+    set_value_in_sample(g_col_system_cgrp_kmem_usage_in_bytes, sample, OSWrapper::syst_cgro_kusg());
+    set_value_in_sample(g_col_system_cgrp_limit_in_bytes, sample, OSWrapper::syst_cgro_lim());
+    set_value_in_sample(g_col_system_cgrp_soft_limit_in_bytes, sample, OSWrapper::syst_cgro_slim());
+    // set_value_in_sample(g_col_system_cgrp_memsw_limit_in_bytes, sample, OSWrapper::syst_cgro_limsw());
   }
 
-  if (bf.read("/proc/vmstat")) {
-    set_value_in_sample(g_col_system_pages_swapped_in, sample, bf.parsed_prefixed_value("pswpin"));
-    set_value_in_sample(g_col_system_pages_swapped_out, sample, bf.parsed_prefixed_value("pswpout"));
+  set_value_in_sample(g_col_system_num_procs, sample, OSWrapper::syst_p());
+  set_value_in_sample(g_col_system_num_threads, sample, OSWrapper::syst_t());
+
+  set_value_in_sample(g_col_process_virt, sample, OSWrapper::proc_virt());
+  set_value_in_sample(g_col_process_swapped_out, sample, OSWrapper::proc_swdo());
+  set_value_in_sample(g_col_process_rss, sample, OSWrapper::proc_rss_all());
+
+  if (g_show_rss_detail_info) {
+    set_value_in_sample(g_col_process_rssanon, sample, OSWrapper::proc_rss_anon());
+    set_value_in_sample(g_col_process_rssfile, sample, OSWrapper::proc_rss_file());
+    set_value_in_sample(g_col_process_rssshmem, sample, OSWrapper::proc_rss_shm());
   }
 
-  if (bf.read("/proc/stat")) {
-    // Read and parse global cpu values
-    cpu_values_t values;
-    const char* line = bf.get_prefixed_line("cpu");
-    parse_proc_stat_cpu_line(line, &values);
+  set_value_in_sample(g_col_process_num_threads, sample, OSWrapper::proc_thr());
+  set_value_in_sample(g_col_process_num_of, sample, OSWrapper::proc_io_of());
 
-    set_value_in_sample(g_col_system_cpu_user, sample, values.user + values.nice);
-    set_value_in_sample(g_col_system_cpu_system, sample, values.system);
-    set_value_in_sample(g_col_system_cpu_idle, sample, values.idle);
-    set_value_in_sample(g_col_system_cpu_steal, sample, values.steal);
-    set_value_in_sample(g_col_system_cpu_guest, sample, values.guest + values.guest_nice);
+  set_value_in_sample(g_col_process_io_bytes_read, sample, OSWrapper::proc_io_rd());
+  set_value_in_sample(g_col_process_io_bytes_written, sample, OSWrapper::proc_io_wr());
 
-    set_value_in_sample(g_col_system_num_procs_running, sample,
-        bf.parsed_prefixed_value("procs_running"));
-    set_value_in_sample(g_col_system_num_procs_blocked, sample,
-        bf.parsed_prefixed_value("procs_blocked"));
-  }
-
-  if (bf.read("/proc/self/status")) {
-
-    set_value_in_sample(g_col_process_virt, sample, bf.parsed_prefixed_value("VmSize:", K));
-    set_value_in_sample(g_col_process_swapped_out, sample, bf.parsed_prefixed_value("VmSwap:", K));
-    rss_all = bf.parsed_prefixed_value("VmRSS:", K);
-    set_value_in_sample(g_col_process_rss, sample, rss_all);
-
-    set_value_in_sample(g_col_process_rssanon, sample, bf.parsed_prefixed_value("RssAnon:", K));
-    set_value_in_sample(g_col_process_rssfile, sample, bf.parsed_prefixed_value("RssFile:", K));
-    set_value_in_sample(g_col_process_rssshmem, sample, bf.parsed_prefixed_value("RssShmem:", K));
-
-    set_value_in_sample(g_col_process_num_threads, sample,
-        bf.parsed_prefixed_value("Threads:"));
-
-  }
-
-  // Number of open files: iterate over /proc/self/fd and count.
-  {
-    DIR* d = ::opendir("/proc/self/fd");
-    if (d != NULL) {
-      value_t v = 0;
-      struct dirent* en = NULL;
-      do {
-        en = ::readdir(d);
-        if (en != NULL) {
-          if (::strcmp(".", en->d_name) == 0 || ::strcmp("..", en->d_name) == 0 ||
-              ::strcmp("0", en->d_name) == 0 || ::strcmp("1", en->d_name) == 0 || ::strcmp("2", en->d_name) == 0) {
-            // omit
-          } else {
-            v ++;
-          }
-        }
-      } while(en != NULL);
-      ::closedir(d);
-      set_value_in_sample(g_col_process_num_of, sample, v);
-    }
-  }
-
-  // Number of processes: iterate over /proc/<pid> and count.
-  // Number of threads: read "num_threads" from /proc/<pid>/stat
-  {
-    DIR* d = ::opendir("/proc");
-    if (d != NULL) {
-      value_t v_p = 0;
-      value_t v_t = 0;
-      struct dirent* en = NULL;
-      do {
-        en = ::readdir(d);
-        if (en != NULL) {
-          if (is_numerical_id(en->d_name)) {
-            v_p ++;
-            char tmp[128];
-            jio_snprintf(tmp, sizeof(tmp), "/proc/%s/stat", en->d_name);
-            if (bf.read(tmp)) {
-              const char* text = bf.text();
-              // See man proc(5)
-              // (20) num_threads  %ld
-              long num_threads = 0;
-              ::sscanf(text, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads);
-              v_t += num_threads;
-            }
-          }
-        }
-      } while(en != NULL);
-      ::closedir(d);
-      set_value_in_sample(g_col_system_num_procs, sample, v_p);
-      set_value_in_sample(g_col_system_num_threads, sample, v_t);
-    }
-  }
-
-  if (bf.read("/proc/self/io")) {
-    set_value_in_sample(g_col_process_io_bytes_read, sample,
-        bf.parsed_prefixed_value("rchar:"));
-    set_value_in_sample(g_col_process_io_bytes_written, sample,
-        bf.parsed_prefixed_value("wchar:"));
-  }
-
-  if (bf.read("/proc/self/stat")) {
-    const char* text = bf.text();
-    // See man proc(5)
-    // (14) utime  %lu
-    // (15) stime  %lu
-    long unsigned cpu_utime = 0;
-    long unsigned cpu_stime = 0;
-    ::sscanf(text, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &cpu_utime, &cpu_stime);
-    set_value_in_sample(g_col_process_cpu_user, sample, cpu_utime);
-    set_value_in_sample(g_col_process_cpu_system, sample, cpu_stime);
-  }
+  set_value_in_sample(g_col_process_cpu_user, sample, OSWrapper::proc_cpu_us());
+  set_value_in_sample(g_col_process_cpu_system, sample, OSWrapper::proc_cpu_sy());
 
 #ifdef __GLIBC__
-  // Collect some c-heap info using either one of mallinfo or mallinfo2.
-  if (g_mallinfo2 != NULL) {
-    struct glibc_mallinfo2 mi = g_mallinfo2();
-    // (from experiments and glibc source code reading: the closest to "used" would be adding the mmaped data area size
-    //  (contains large allocations) to the small block sizes
-    set_value_in_sample(g_col_process_chp_used, sample, mi.uordblks + mi.hblkhd);
-    set_value_in_sample(g_col_process_chp_free, sample, mi.fordblks);
-  } else {
-    struct mallinfo mi = mallinfo();
-    set_value_in_sample(g_col_process_chp_used, sample, (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd);
-    set_value_in_sample(g_col_process_chp_free, sample, (size_t)(unsigned)mi.fordblks);
-    // In 64-bit mode, omit printing values if we could conceivably have wrapped, since they are misleading.
-#ifdef _LP64
-    if (rss_all >= 4 * G) {
-      set_value_in_sample(g_col_process_chp_used, sample, INVALID_VALUE);
-      set_value_in_sample(g_col_process_chp_free, sample, INVALID_VALUE);
-    }
-#endif
-  }
+  set_value_in_sample(g_col_process_chp_used, sample, OSWrapper::proc_chea_usd());
+  set_value_in_sample(g_col_process_chp_free, sample, OSWrapper::proc_chea_free());
 #endif // __GLIBC__
 
 } // end: sample_platform_values
