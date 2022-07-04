@@ -3,12 +3,12 @@ name: Pre-submit tests
 on:
   push:
     branches-ignore:
-      # SapMachine 2020-11-04: Ignore sapmachine branch
-      - sapmachine
+      # SapMachine 2020-11-04: Ignore sapmachine19 branch
+      - sapmachine19
   # SapMachine 2020-11-04: Trigger on pull request
   pull_request:
     branches:
-      - sapmachine
+      - sapmachine19
   workflow_dispatch:
     inputs:
       platforms:
