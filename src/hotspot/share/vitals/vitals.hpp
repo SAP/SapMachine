@@ -31,12 +31,8 @@
 
 // Configure for different JDK versions
 //#define JDK_MAINLINE
-<<<<<<< HEAD
+//#define JDK19u
 #define JDK18u
-=======
-#define JDK19u
-//#define JDK18u
->>>>>>> 485e5731ef5... SapMachine #1124: Vitals: June 22 package (SapMachine 19)
 //#define JDK17u
 //#define JDK11u
 
