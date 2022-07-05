@@ -616,8 +616,11 @@ static void call_single_jcmd(const ParsedCommand* cmd, int pid, time_t t) {
   argv[3] = NULL;
 
   stringStream err_msg;
+  const jlong t1 = os::javaTimeNanos();
   if (spawn_command(argv, out_file, err_file, &err_msg)) {
-    stderr_stream.print("HiMemReport: Successfully executed \"%s\"", jcmd_command.base());
+    const jlong t2 = os::javaTimeNanos();
+    const int command_time_ms = (t2 - t1) / (1000 * 1000);
+    stderr_stream.print("HiMemReport: Successfully executed \"%s\" (%d ms)", jcmd_command.base(), command_time_ms);
     if (out_file != NULL) {
       stderr_stream.print(", output redirected to report dir");
     }
