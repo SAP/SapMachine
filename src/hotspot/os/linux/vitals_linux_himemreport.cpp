@@ -528,18 +528,16 @@ static bool spawn_command(const char** argv, const char* outFile, const char* er
 
   if (outFile != NULL) { // Redirect stdout, stderr to files
         assert(errFile != NULL, "Require both");
-    rc &= (::posix_spawn_file_actions_addopen(&fa.v, 1,
-        outFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0);
-    rc &= (::posix_spawn_file_actions_addopen(&fa.v, 2,
-        errFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0);
+    rc = rc && (::posix_spawn_file_actions_addopen(&fa.v, 1, outFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0) &&
+               (::posix_spawn_file_actions_addopen(&fa.v, 2, errFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0);
   } else { // Dup stdout to stderr
-    rc &= (::posix_spawn_file_actions_adddup2 (&fa.v, 2, 1) == 0);
+    rc = rc && (::posix_spawn_file_actions_adddup2 (&fa.v, 2, 1) == 0);
   }
   pid_t child_pid = -1;
 
   // Hint toward vfork. Note that newer glibcs (2.24+) will ignore this, but they use clone(),
   // so its alright.
-  rc &= (posix_spawnattr_setflags(&atr.v, POSIX_SPAWN_USEVFORK) == 0);
+  rc = rc && (posix_spawnattr_setflags(&atr.v, POSIX_SPAWN_USEVFORK) == 0);
 
   if (rc == false) {
     err_msg->print("Error during posix_spawn setup");
@@ -551,7 +549,7 @@ static bool spawn_command(const char** argv, const char* outFile, const char* er
   //  in the child process, except for those whose close-on- exec flag FD_CLOEXEC is set (see fcntl)."
   // (https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawnp.html)
   // - which I assume means they get closed if we specify a file actions object, which we do.
-  rc &= (::posix_spawn(&child_pid, argv[0], &fa.v, &atr.v, (char**)argv, environ) == 0);
+  rc = rc && (::posix_spawn(&child_pid, argv[0], &fa.v, &atr.v, (char**)argv, environ) == 0);
 
   if (rc) {
     int status;
