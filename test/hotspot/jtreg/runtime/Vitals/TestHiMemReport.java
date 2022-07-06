@@ -154,7 +154,7 @@ public class TestHiMemReport {
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
-                "sleep", "4" // num seconds to sleep to give the reporter thread time to generate output
+                "sleep", "12" // num seconds to sleep to give the reporter thread time to generate output
         );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -185,9 +185,9 @@ public class TestHiMemReport {
         // HiMemReportExec should have caused three jcmds to fire...
 
         line = VitalsUtils.matchPatterns(lines, line + 1,
-                new String[] { "HiMemReport: Successfully executed \"VM.flags -all\", output redirected to report dir",
-                        "HiMemReport: Successfully executed \"VM.metaspace show-loaders\", output redirected to report dir",
-                        "HiMemReport: Successfully executed \"GC.heap_dump .*himemreport-2/GC.heap_dump" + patterFileSuffix + ".dump\", output redirected to report dir" } );
+                new String[] { "HiMemReport: Successfully executed \"VM.flags -all\" \\(\\d+ ms\\), output redirected to report dir",
+                        "HiMemReport: Successfully executed \"VM.metaspace show-loaders\" \\(\\d+ ms\\), output redirected to report dir",
+                        "HiMemReport: Successfully executed \"GC.heap_dump .*himemreport-2/GC.heap_dump" + patterFileSuffix + ".dump\" \\(\\d+ ms\\), output redirected to report dir" } );
 
         // VM.flags:
 
@@ -260,7 +260,7 @@ public class TestHiMemReport {
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
-                "sleep", "4" // num seconds to sleep to give the reporter thread time to generate output
+                "sleep", "8" // num seconds to sleep to give the reporter thread time to generate output
         );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -277,7 +277,7 @@ public class TestHiMemReport {
         line = VitalsUtils.matchPatterns(lines, line + 1, new String [] {
                         ".*HiMemReport *= *true.*",
                         ".*HiMemReportMax *= *134217728.*",
-                        "HiMemReport: Successfully executed \"VM.flags -all\""
+                        "HiMemReport: Successfully executed \"VM.flags -all\" \\(\\d+ ms\\)"
         });
 
         // ... as well as the output of VM.metaspace
@@ -289,7 +289,7 @@ public class TestHiMemReport {
                 "Virtual space.*",
                 "Settings.*",
                 "MaxMetaspaceSize.*",
-                "HiMemReport: Successfully executed \"VM.metaspace show-loaders\""
+                "HiMemReport: Successfully executed \"VM.metaspace show-loaders\" \\(\\d+ ms\\)"
         });
 
     } // end: testDumpWithExecToReportDir
