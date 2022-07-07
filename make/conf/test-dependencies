@@ -30,14 +30,14 @@ JTREG_VERSION=6.1
 JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
-LINUX_X64_BOOT_JDK_FILENAME=openjdk-18_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=0f60aef7b8504983d6e374fe94d09a7bedcf05ec559e812d801a33bd4ebd23d0
+LINUX_X64_BOOT_JDK_FILENAME=sapmachine-18_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-18/sapmachine-jdk-18_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=65082c74154b7633007cf7573d26ea07820b38f84114720c896373b0a200a765
 
-WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-18_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_SHA256=a5b91d4c12752d44aa75df70ae3e2311287b3e60c288b07dade106376c688277
+WINDOWS_X64_BOOT_JDK_FILENAME=sapmachine-18_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-18/sapmachine-jdk-18_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_SHA256=769ae659cacdb227027078dac8e5c827064f895489f1c98377269e403eb662f5
 
-MACOS_X64_BOOT_JDK_FILENAME=openjdk-18_macos-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_macos-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=527b61b4265caf45cdcbacfcf8fbcd0b4b280bede1eff32a5b252d855ff0534b
+MACOS_X64_BOOT_JDK_FILENAME=sapmachine-18_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-18/sapmachine-jdk-18_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=930e6ab1d4452a16ef73aa519f4a47c1c06a5d21a1233a1e68e2459fb0a5d8cd
