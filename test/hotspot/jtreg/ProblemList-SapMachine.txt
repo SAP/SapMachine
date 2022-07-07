@@ -51,6 +51,11 @@
 #
 compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
 
+# SapMachine 2022-04-01
+# Expected that method with rtm lock elision was deoptimized after 1 lock attempts: expected 2 to equal 1
+#
+compiler/rtm/locking/TestRTMAbortThreshold.java                                      generic-ppc64,linux-ppc64le
+
 # SapMachine 2019-04-29
 # Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
 vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
@@ -81,22 +86,19 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # SapMachine 2020-04-09
 # We see some new failures on aarch64, 11u only. They probably aren't new but
 # we just started to run tests for 11u on that platform lately
+# SapMachine 2022-06-03 Let's give it a try. Local tests pass.
+# SapMachine 2022-06-20 We still see timeouts. Only in 11 on ...
 #
 #compiler/c2/cr6340864/TestIntVect.java                                               linux-aarch64
 #
+#
 #compiler/c2/cr6340864/TestLongVect.java                                              linux-aarch64
+#
 #
 #compiler/c2/cr6340864/TestShortVect.java                                             linux-aarch64
 #
+#
 #compiler/codegen/TestCharVect2.java                                                  linux-aarch64
-
-###############################################################################
-# New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
-
-# SapMachine 2020-07-31
-# Fails because UseShenandoahGC is not recognized if JDK is built without shenandoah (default).
-# https://bugs.openjdk.java.net/browse/JDK-8250888
-#vmTestbase/nsk/jvmti/scenarios/general_functions/GF08/gf08t001/TestDriver.java       generic-all
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -120,57 +122,47 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 # Some brand new shenandoah tests are failing.
 #
 # SapMachine 2019-07-25 Still around
-gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
+# SapMachine 2022-06-03 Let's give it a try.
+#gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
 
 # SapMachine 2019-08-02
 # Exception: Uncommitted too slow
 # In SapMachine, we also see this in 13.
-gc/z/TestUncommit.java                                                               generic-all
+# SapMachine 2022-06-03 Let's give it a try. Local test passes.
+#gc/z/TestUncommit.java                                                               generic-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk14
 
 # SapMachine 2019-08-02
 # Crash: Shenandoah assert_correct failed; Object klass pointer must go to metaspace
-gc/CriticalNativeArgs.java                                                           generic-all
-
-# SapMachine 2019-08-02
-# Test failed with -XX:+AdjustStackSizeForTLS
-runtime/TLS/testtls.sh                                                               generic-all
+# SapMachine 2022-06-03 Let's give it a try. Local test passes.
+# SapMachine 2022-06-03 Test removed in 18.
+#gc/CriticalNativeArgs.java                                                           generic-all
 
 # SapMachine 2019-08-29
 # Some aarch stuff, we don't really care. Do we?
 # Check later on whether it's fixed.
+# SapMachine 2022-06-03 Let's give it a try. Local test passes.
 #
-compiler/c2/aarch64/TestVolatilesG1.java                                             linux-aarch64
+#compiler/c2/aarch64/TestVolatilesG1.java                                             linux-aarch64
 #
-gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
+#gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
 
 # SapMachine 2019-01-02
 # This is failing currently on various places after https://bugs.openjdk.java.net/browse/JDK-8234277
 # It is tracked with https://bugs.openjdk.java.net/browse/JDK-8235220
 # We exclude it now until upstream bug is resolved to reduce noise in testing
 # SapMachine 2020-07-07 Re-enabling test in 15+, because JDK-8235220 is fixed in 15
-#serviceability/sa/ClhsdbScanOops.java                                                generic-all
+#serviceability/sa/ClhsdbScanOops.java                                        8235220 generic-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
-
-# SapMachine 2020-02-11
-# New test, fails on AIX due to primordial thread issue
-#
-#
-testlibrary_tests/process/TestNativeProcessBuilder.java                              aix-all
 
 # SapMachine 2020-09-17
 # Fails with: RuntimeException: 'Unloaded library with handle' missing from stdout/stderr
 # Recurring, 1-2 times a month.
 runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
-
-# SapMachine 2020-09-17
-# agent library failed to init: FieldAccessWatch
-# Failed to set capabilities, error: 98
-serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                          aix-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk16
@@ -178,9 +170,6 @@ serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                     
 # SapMachine 2020-10-05
 # This test consumes a lot of resourcess - exlcude it on all platforms to avoid issues with out of memory.
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java          generic-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk18
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

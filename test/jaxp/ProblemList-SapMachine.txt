@@ -47,10 +47,8 @@
 
 # SapMachine 2019-03-12
 # IOException: Unable to tunnel through proxy. Proxy returns "HTTP/1.1 503 Service Unavailable";
-javax/xml/jaxp/unittest/dom/DOMFeatureTest.java                     generic-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk18
+# SapMachine 2022-07-07: Give it another chance
+#javax/xml/jaxp/unittest/dom/DOMFeatureTest.java                     generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
