@@ -38,6 +38,14 @@
 
 #ifdef __GLIBC__
 
+// Since JDK-8289633 we forbid calling raw C-heap allocation functions using Kim's FORBID_C_FUNCTION.
+// Callers need to explicitly opt in with ALLOW_C_FUNCTION.
+// Since this code calls raw C-heap functions as a matter of course, instead of marking each call site
+// with ALLOW_C_FUNCTION(..), I just mark them wholesale.
+#if (__GNUC__ >= 10)
+PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")
+#endif
+
 using sap::MallocTracer;
 
 static void init_random_randomly() {

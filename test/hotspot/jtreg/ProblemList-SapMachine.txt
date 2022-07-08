@@ -101,15 +101,6 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #compiler/codegen/TestCharVect2.java                                                  linux-aarch64
 
 ###############################################################################
-# New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
-
-# SapMachine 2020-07-31
-# Fails because UseShenandoahGC is not recognized if JDK is built without shenandoah (default).
-# https://bugs.openjdk.java.net/browse/JDK-8250888
-# SapMachine 2022-05-12 8250888 is fixed in 11 now.
-#vmTestbase/nsk/jvmti/scenarios/general_functions/GF08/gf08t001/TestDriver.java       generic-all
-
-###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
 # SapMachine 2019-01-08
@@ -163,26 +154,15 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 # It is tracked with https://bugs.openjdk.java.net/browse/JDK-8235220
 # We exclude it now until upstream bug is resolved to reduce noise in testing
 # SapMachine 2020-07-07 Re-enabling test in 15+, because JDK-8235220 is fixed in 15
-#serviceability/sa/ClhsdbScanOops.java                                                generic-all
+#serviceability/sa/ClhsdbScanOops.java                                        8235220 generic-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
-
-# SapMachine 2020-02-11
-# New test, fails on AIX due to primordial thread issue
-#
-#
-testlibrary_tests/process/TestNativeProcessBuilder.java                              aix-all
 
 # SapMachine 2020-09-17
 # Fails with: RuntimeException: 'Unloaded library with handle' missing from stdout/stderr
 # Recurring, 1-2 times a month.
 runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
-
-# SapMachine 2020-09-17
-# agent library failed to init: FieldAccessWatch
-# Failed to set capabilities, error: 98
-serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                          aix-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk16
@@ -192,24 +172,18 @@ serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                     
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java          generic-all
 
 ###############################################################################
-# Failing new tests, unsupported new features in jdk17
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk18
+# Failing new tests, unsupported new features in jdk19
 
 # SapMachine 2022-01-19: test fails since 12/2021 (since 8259610 ?)
 compiler/vectorapi/reshape/TestVectorReinterpret.java                                linux-ppc64le
 
-###############################################################################
-# Failing new tests, unsupported new features in jdk19
-
 # SapMachine 2022-06-15
 #Vector API Timeout:
-compiler/vectorapi/VectorRebracket128Test.java                                         linux-ppc64le
+compiler/vectorapi/VectorRebracket128Test.java                                       linux-ppc64le
 
 #Loom:
-vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java                     linux-ppc64le
-vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineVirtual/StressRedefineVirtual.java  linux-ppc64le
+vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java                    linux-ppc64le
+vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineVirtual/StressRedefineVirtual.java linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
