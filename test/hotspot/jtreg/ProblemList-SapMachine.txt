@@ -159,21 +159,10 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
 
-# SapMachine 2020-02-11
-# New test, fails on AIX due to primordial thread issue
-#
-#
-testlibrary_tests/process/TestNativeProcessBuilder.java                              aix-all
-
 # SapMachine 2020-09-17
 # Fails with: RuntimeException: 'Unloaded library with handle' missing from stdout/stderr
 # Recurring, 1-2 times a month.
 runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
-
-# SapMachine 2020-09-17
-# agent library failed to init: FieldAccessWatch
-# Failed to set capabilities, error: 98
-serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                          aix-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk16
@@ -190,11 +179,11 @@ compiler/vectorapi/reshape/TestVectorReinterpret.java                           
 
 # SapMachine 2022-06-15
 #Vector API Timeout:
-compiler/vectorapi/VectorRebracket128Test.java                                         linux-ppc64le
+compiler/vectorapi/VectorRebracket128Test.java                                       linux-ppc64le
 
 #Loom:
-vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java                     linux-ppc64le
-vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineVirtual/StressRedefineVirtual.java  linux-ppc64le
+vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java                    linux-ppc64le
+vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineVirtual/StressRedefineVirtual.java linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.

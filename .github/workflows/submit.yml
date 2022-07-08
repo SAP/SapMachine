@@ -24,6 +24,8 @@ jobs:
   prerequisites:
     name: Prerequisites
     runs-on: "ubuntu-20.04"
+    # SapMachine 2022-07-08: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
@@ -1998,7 +2000,8 @@ jobs:
   artifacts:
     name: Post-process artifacts
     runs-on: "ubuntu-20.04"
-    if: always()
+    # SapMachine 2022-07-08: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     continue-on-error: true
     needs:
       - prerequisites

@@ -75,7 +75,7 @@ java/awt/font/Rotate/RotatedTextTest.java                                    821
 # SapMachine 2019-09-26
 # This seems to fail on RHEL 7: java.lang.RuntimeException: Font metrics differ for angle 165
 #
-java/awt/font/Rotate/RotatedFontMetricsTest.java                                     linux-all
+java/awt/font/Rotate/RotatedFontMetricsTest.java                             8219641 linux-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
@@ -87,7 +87,7 @@ java/awt/font/Rotate/RotatedFontMetricsTest.java                                
 #
 # SapMachine 2020-06-22
 # We give up on fixing this. We keep the test excldued.
-javax/swing/JFileChooser/4847375/bug4847375.java                                     windows-x64
+javax/swing/JFileChooser/4847375/bug4847375.java                             8227257 windows-x64
 
 # SapMachine 2019-07-15
 # Issue started occuring in 06/2019 but not related to JDK updates
@@ -107,14 +107,6 @@ java/awt/print/PrinterJob/SameService.java                                   822
 # As of 2022-05-05 we support 10.14.5 and younger in 11 and 17.
 # So it should pass, reenable.
 #java/awt/FontClass/FontSize1Test.java                                                macosx-all
-
-###############################################################################
-# New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
-
-# SapMachine 2020-09-04
-# This times out on AIX machines. don't fix, AIX is off-topic.  Seen in 11.0.8 and 16.
-#
-java/awt/FontClass/DrawStringWithInfiniteXform.java                                  aix-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.9 (e.g. seen only in jdk11u-dev after branching 11.0.9 to jdk11u)
@@ -171,25 +163,6 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java                               823
 #
 java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
 
-# SapMachine 2019-02-08
-# assertEquals: expected -1 to equal 53332
-tools/jlink/JLinkReproducibleTest.java                                               aix-ppc64
-
-# SapMachine 2019-02-08
-# java.lang.StackOverflowError
-java/lang/String/concat/WithSecurityManager.java                                     aix-ppc64
-# NoSuchElementException: No value present at java.base/java.util.Optional.get
-java/net/SocketPermission/SocketPermissionTest.java                                  aix-ppc64
-# NoSuchElementException: at java.base/java.util.Spliterators$1Adapter.next()
-java/nio/channels/DatagramChannel/BasicMulticastTests.java                           aix-ppc64
-# RuntimeException: IOException expected at DeleteOnClose.runTest(DeleteOnClose.java:92)
-java/nio/file/Files/DeleteOnClose.java                                               aix-ppc64
-# RuntimeException at SBC.noFollowLinksTests(SBC.java:238)
-java/nio/file/Files/SBC.java                                                         aix-ppc64
-# Happens sporadic:
-# SSLHandshakeException: PKIX path validation failed: CertPathValidatorException: Could not determine revocation status
-javax/net/ssl/Stapling/SSLEngineWithStapling.java                                    aix-ppc64
-
 # SapMachine 2019-02-16
 # timeout, on be a lot, on le once.
 java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
@@ -202,12 +175,6 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 # Another one of these flaky font things??
 #
 java/awt/font/FontNames/FCCompositeTest.java                                         linux-all
-
-# SapMachine 2019-08-09
-# This test fails only on ..., probably a configuration issue
-#
-#
-java/nio/file/WatchService/LotsOfCloses.java                                         linux-s390x
 
 # SapMachine 2019-08-29
 # GC overhead limit exceeded, occurs very often
@@ -224,31 +191,8 @@ java/nio/file/WatchService/LotsOfCloses.java                                    
 # Richard's new test unveils an aarch64 issue.
 com/sun/jdi/EATests.java                                                             linux-aarch64
 
-# SapMachine 2019-12-04
-# New failures on AIX after recent changes in jdk/jdk
-#
-#
-java/nio/channels/DatagramChannel/AfterDisconnect.java                               aix-all
-#
-# on mac: RuntimeException: Expected: 0.0.0.0/0.0.0.0, actual: /10.21.80.170
-#
-# SapMachine 2022-05-05 Let's give it a try
-#java/nio/channels/DatagramChannel/ChangingAddress.java                               aix-all,macosx-all
-
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
-
-# SapMachine 2020-04-01 fails in nightly tests sometimes
-# https://bugs.openjdk.java.net/browse/JDK-8227651
-#
-# The bug deals with a similar issue, our info has been added
-javax/net/ssl/ServerName/SSLEngineExplorerWithSrv.java                       8227651 linux-s390x, aix-all
-javax/net/ssl/ServerName/SSLEngineExplorerWithCli.java                       8227651 linux-s390x
-
-# SapMachine 2020-09-17
-# Seen only on this one machine -- machine issue?
-# *** glibc detected *** /bin/java: double free or corruption
-javax/sound/sampled/Clip/ClipIsRunningAfterStop.java                                 linux-ppc64
 
 # SapMachine 2020-09-17
 #
@@ -260,23 +204,9 @@ javax/sound/sampled/Clip/ClipIsRunningAfterStop.java                            
 #java/io/File/GetXSpace.java                                                          generic-all
 
 # SapMachine 2020-09-17
-# Sporadic timeout on ls3876.  Exclude only here
-java/net/Socket/AsyncShutdown.java                                                   linux-ppc64
-
-# SapMachine 2020-09-17
 # WARNING: Using incubator modules: jdk.incubator.foreign
 # Exclude, retry once foreign is no more incubator.
 java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java    linux-ppc64,linux-ppc64le
-
-# SapMachine 2020-09-17
-# IllegalArgumentException: IPv6 socket cannot join IPv4 multicast group
-# many aix machines
-# Added macosx-all to the tests that are in the original exclude list.
-java/net/MulticastSocket/B6427403.java                                               aix-all
-java/net/MulticastSocket/NoLoopbackPackets.java                                      aix-all,macosx-all
-java/net/MulticastSocket/Promiscuous.java                                            aix-all
-java/net/MulticastSocket/SetLoopbackMode.java                                        aix-all,macosx-all
-java/net/MulticastSocket/Test.java                                                   aix-all,macosx-all
 
 # SapMachine 2020-09-17
 # Exception: ERROR: IsModifiableClass failed.
@@ -310,29 +240,6 @@ sun/tools/jstat/jstatLineCounts3.sh                                          824
 sun/tools/jstat/jstatLineCounts4.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
 
 ###############################################################################
-# Failing new tests, unsupported new features in jdk17
-
-# SapMachine 2021-07-13
-# These tests create core files on linux-s390x when executing the packaged binary. Might be releated to usage
-# of jdk.incubator.foreign that is not implemented on s390. But could also be something compleetely different.
-tools/jpackage/share/jdk/jpackage/tests/AppVersionTest.java                          linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/BasicTest.java                               linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/CookedRuntimeTest.java                       linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/DotInNameTest.java                           linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/JavaOptionsEqualsTest.java#id0               linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/JavaOptionsEqualsTest.java#id1               linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/JLinkOptionsTest.java                        linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/MainClassTest.java                           linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/ModulePathTest.java                          linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/ModulePathTest2.java                         linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java                         linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/MultipleJarAppTest.java                      linux-s390x
-tools/jpackage/share/jdk/jpackage/tests/NoMPathRuntimeTest.java                      linux-s390x
-tools/jpackage/share/AddLauncherTest.java#id1                                        linux-s390x
-tools/jpackage/share/ArgumentsTest.java                                              linux-s390x
-tools/jpackage/share/EmptyFolderTest.java                                            linux-s390x
-
-###############################################################################
 # Failing new tests, unsupported new features in jdk18
 
 # SapMachine 2021-10-28: fails on Windows (at least with dbg binaries) since JDK-8269223,
@@ -347,12 +254,12 @@ java/awt/font/JNICheck/FreeTypeScalerJNICheck.java                           827
 
 # SapMachine 2022-06-15
 #Loom:
-java/beans/XMLDecoder/8028054/TestConstructorFinder.java                               linux-ppc64le
-java/beans/XMLDecoder/8028054/TestMethodFinder.java                                    linux-ppc64le
+java/beans/XMLDecoder/8028054/TestConstructorFinder.java                             linux-ppc64le
+java/beans/XMLDecoder/8028054/TestMethodFinder.java                                  linux-ppc64le
 
 #Panama:
-java/foreign/TestHandshake.java                                                        linux-ppc64le
-java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1                           linux-ppc64le
+java/foreign/TestHandshake.java                                                      linux-ppc64le
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1                         linux-ppc64le
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
