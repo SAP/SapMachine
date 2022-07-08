@@ -320,21 +320,28 @@ public:
 
   const char* path() const { return _dir.base(); }
 
-  ReportDir(const char* d) {
+  bool initialize(const char* d) {
+
     assert(d != NULL && strlen(d) > 0, "sanity");
-    if (d[0] != '/') { // relative?
-      char* p = ::get_current_dir_name();
-      _dir.print("%s/", p);
-      ::free(p); // [sic]
+    assert(_dir.size() == 0, "Only initialize once");
+
+    // Set _dir from d. Resolve relative path if d is relative, and ensure it always
+    // ends with "/"
+    if (d[0] != '/') {
+      char path[PATH_MAX];
+      const char* cwd = os::get_current_directory(path, sizeof(path));
+      if (cwd == NULL) {
+        log_warning(vitals)("HiMemReportDir: Failed to resolve current directory (%d)", errno);
+        return false;
+      }
+      _dir.print("%s/", cwd);
     }
     _dir.print_raw(d);
     const size_t l = ::strlen(d);
     if (d[l - 1] != '/') {
       _dir.put('/');
     }
-  }
 
-  bool create_if_needed() {
     // Create the report directory (just the leaf dir, I don't bother creating the whole hierarchy)
     struct stat s;
     if (::stat(path(), &s) == -1) {
@@ -432,18 +439,12 @@ static void print_high_memory_report(outputStream* st) {
 // Create a file name into the report directory: <reportdir or cwd>/<name>.<pid>_<spike>_<percentage>.<suffix>
 // (leave dir NULL to just get a file name)
 static void print_file_name(stringStream* ss, const char* name, int pid, time_t timestamp, const char* suffix) {
-  const char* dir = g_report_dir != NULL ? g_report_dir->path() : NULL;
-  if (dir != NULL) {
-    if (dir[0] != '/') {
-      char* cwd = ::get_current_dir_name(); // glibc speciality, return ptr is malloced
-      ss->print("%s/", cwd);
-      ::free(cwd); // yes, use raw free here
-    }
-    ss->print("%s", dir);
-    if (dir[::strlen(dir) - 1] != '/') {
-      ss->put('/');
-    }
-  }
+  assert(g_report_dir != NULL, "must be");
+  const char* dir = g_report_dir->path();
+  // Should already have been made absolute, and should end with / (see ReportDir::initialize()).
+  assert(dir[0] == '/' && dir[::strlen(dir) - 1] == '/',
+         "bad value for report dir? %s", dir);
+  ss->print("%s", dir);
   ss->print("%s_pid%d_", name, pid);
   print_date_and_time_underscored(ss, timestamp);
   ss->print("%s", suffix);
@@ -896,8 +897,8 @@ extern void initialize_himem_report_facility() {
   // We fix up the report directory when VM starts, so if its relative, it refers to the initial current directory.
   // If it cannot be established, we treat it as predictable argument error and exit the VM.
   if (HiMemReportDir != NULL && ::strlen(HiMemReportDir) > 0) {
-    g_report_dir = new ReportDir(HiMemReportDir);
-    if (!g_report_dir->create_if_needed()) {
+    g_report_dir = new ReportDir();
+    if (!g_report_dir->initialize(HiMemReportDir)) {
       log_warning(vitals)("Vitals: Cannot access HiMemReportDir %s.", g_report_dir->path());
       vm_exit_during_initialization("Vitals HiMemReport: Failed to create or access HiMemReportDir \"%s\".", g_report_dir->path());
       return;
