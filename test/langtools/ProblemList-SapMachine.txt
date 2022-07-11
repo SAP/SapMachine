@@ -59,10 +59,10 @@ jdk/jshell/JdiHangingLaunchExecutionControlTest.java                generic-all
 # SapMachine 2019-05-07
 # java.lang.AssertionError: ... lists don't have the same size expected [91] but found [92]
 # Seen in 11.0.3 and 11.0.4 very sporadic
-jdk/jshell/CommandCompletionTest.java                               macosx-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk17
+# SapMachine 2021-11-02: testUserHome error: Command: /env --class-path ~/3D Objects|, output: []: lists don't have the same size expected [1] but found [0]
+#
+# https://bugs.openjdk.java.net/browse/JDK-8277328
+#jdk/jshell/CommandCompletionTest.java                               macosx-all,windows-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
