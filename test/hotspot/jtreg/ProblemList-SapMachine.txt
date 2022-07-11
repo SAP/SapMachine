@@ -51,6 +51,11 @@
 #
 compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
 
+# SapMachine 2022-04-01
+# Expected that method with rtm lock elision was deoptimized after 1 lock attempts: expected 2 to equal 1
+#
+compiler/rtm/locking/TestRTMAbortThreshold.java                                      generic-ppc64,linux-ppc64le
+
 # SapMachine 2019-04-29
 # Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
 vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
@@ -81,25 +86,19 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # SapMachine 2020-04-09
 # We see some new failures on aarch64, 11u only. They probably aren't new but
 # we just started to run tests for 11u on that platform lately
+# SapMachine 2022-06-03 Let's give it a try. Local tests pass.
+# SapMachine 2022-06-20 We still see timeouts. Only in 11 on apollo008.
 #
 compiler/c2/cr6340864/TestIntVect.java                                               linux-aarch64
 #
+#
 compiler/c2/cr6340864/TestLongVect.java                                              linux-aarch64
+#
 #
 compiler/c2/cr6340864/TestShortVect.java                                             linux-aarch64
 #
+#
 compiler/codegen/TestCharVect2.java                                                  linux-aarch64
-
-###############################################################################
-# New failures detected after GA of 11.0.8 (e.g. seen only in jdk11u-dev after branching 11.0.8 to jdk11u)
-
-# SapMachine 2020-07-31
-# Fails because UseShenandoahGC is not recognized if JDK is built without shenandoah (default).
-# https://bugs.openjdk.java.net/browse/JDK-8250888
-vmTestbase/nsk/jvmti/scenarios/general_functions/GF08/gf08t001/TestDriver.java       generic-all
-
-###############################################################################
-# New failures detected after GA of 11.0.12 (e.g. seen only in jdk11u-dev after branching 11.0.12 to jdk11u)
 
 #############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
