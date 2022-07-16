@@ -506,7 +506,7 @@ public class XPathParser
    */
   private final void consumeExpected(String expected)
           throws TransformerException
-  {
+    {
 
     if (tokenIs(expected))
     {
@@ -521,7 +521,7 @@ public class XPathParser
           // this error and continue trying to parse, rather than throwing an exception.
           // Without the patch, that put us into an endless loop.
                 throw new XPathProcessorException(CONTINUE_AFTER_FATAL_ERROR);
-        }
+    }
   }
 
   /**
