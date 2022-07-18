@@ -25,12 +25,11 @@
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
 
 import java.util.ArrayList;
 import java.util.Random;
-
-import jtreg.SkippedException;
 
 // For now 64bit only, 32bit stack capturing still does not work that well
 
@@ -42,8 +41,8 @@ import jtreg.SkippedException;
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-EnableMallocTrace
  *      MallocTraceDcmdTest
