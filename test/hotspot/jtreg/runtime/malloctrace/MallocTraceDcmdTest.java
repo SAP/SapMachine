@@ -159,10 +159,14 @@ public class MallocTraceDcmdTest {
         return output.getStdout().contains("Not a glibc system");
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) throws Throwable {
 
         if (NotAGlibcSystem()) {
             throw new SkippedException("Not a glibc system, skipping test");
+        }
+
+        if (!MallocTraceTestHelpers.GlibcSupportsMallocHooks()) {
+            throw new SkippedException("Glibc has no malloc hooks. Skipping test.");
         }
 
         MallocStresser stresser = new MallocStresser(3);
