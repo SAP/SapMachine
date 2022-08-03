@@ -93,6 +93,7 @@ public:
 
 };
 
+static bool g_show_system_memavail = false;
 static Column* g_col_system_memavail = NULL;
 static Column* g_col_system_memcommitted = NULL;
 static Column* g_col_system_memcommitted_ratio = NULL;
@@ -155,8 +156,10 @@ bool platform_columns_initialize() {
   OSWrapper::initialize();
   OSWrapper::update_if_needed();
 
+  // syst-avail depends on kernel version.
+  g_show_system_memavail = OSWrapper::syst_avail() != INVALID_VALUE;
   g_col_system_memavail =
-      define_column<MemorySizeColumn>(system_cat, NULL, "avail", "Memory available without swapping [host]", true);
+      define_column<MemorySizeColumn>(system_cat, NULL, "avail", "Memory available without swapping [host] [krn]", g_show_system_memavail);
   g_col_system_memcommitted =
       define_column<MemorySizeColumn>(system_cat, NULL, "comm", "Committed memory [host]", true);
   g_col_system_memcommitted_ratio =
@@ -266,7 +269,9 @@ void sample_platform_values(Sample* sample) {
 
   OSWrapper::update_if_needed();
 
-  set_value_in_sample(g_col_system_memavail, sample, OSWrapper::syst_avail());
+  if (g_show_system_memavail) {
+    set_value_in_sample(g_col_system_memavail, sample, OSWrapper::syst_avail());
+  }
   set_value_in_sample(g_col_system_swap, sample, OSWrapper::syst_swap());
 
   set_value_in_sample(g_col_system_memcommitted, sample, OSWrapper::syst_comm());
