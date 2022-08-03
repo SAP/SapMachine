@@ -47,7 +47,12 @@ import jtreg.SkippedException;
 
 public class MallocTraceTest {
 
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) throws Throwable {
+
+        if (!MallocTraceTestHelpers.GlibcSupportsMallocHooks()) {
+            throw new SkippedException("Glibc has no malloc hooks. Skipping test.");
+        }
+
         if (args[0].equals("off") || args[0].equals("on")) {
             boolean active = args[0].equals("on");
             String option = active ? "-XX:+EnableMallocTrace" : "-XX:-EnableMallocTrace";
