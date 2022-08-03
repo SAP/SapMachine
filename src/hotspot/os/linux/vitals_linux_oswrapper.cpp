@@ -90,6 +90,7 @@ public:
 
     FILE* f = ::fopen(filename, "r");
     if (f == NULL) {
+      log_debug(vitals)("Failed to fopen %s (%d)", filename, errno);
       return false;
     }
 
@@ -391,14 +392,19 @@ void OSWrapper::update_if_needed() {
   }
   _last_update = t;
 
-  // Update Values from ProcFS (and elsewhere)
+  static bool first_call = true;
 
+  // Update Values from ProcFS (and elsewhere)
 #define RESETVAL(name) _ ## name = INVALID_VALUE;
 ALL_VALUES_DO(RESETVAL)
 #undef RESETVAL
 
   ProcFile bf;
   if (bf.read("/proc/meminfo")) {
+
+    if (first_call) {
+      log_debug(vitals)("Read /proc/meminfo: \n%s", bf.text());
+    }
 
     // All values in /proc/meminfo are in KB
     const size_t scale = K;
@@ -559,6 +565,8 @@ ALL_VALUES_DO(RESETVAL)
     }
   }
 #endif // __GLIBC__
+
+  first_call = false;
 
 }
 
