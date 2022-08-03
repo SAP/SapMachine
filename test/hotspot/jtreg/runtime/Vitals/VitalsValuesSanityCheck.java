@@ -305,9 +305,9 @@ public class VitalsValuesSanityCheck {
                     // our initial ballpark number.
                     long min_c_heap_usage_glibc = (jvm_nmt_mlc == -1 ? jvm_nmt_mlc : expected_minimal_cheap_usage) + K;
                     long max_c_heap_usage_glibc = min_c_heap_usage_glibc + (2 * G); // glibc has crazy overhead
-                    // but cannot be larger than rss ever was
-                    if (max_c_heap_usage_glibc > proc_rss_all) {
-                        max_c_heap_usage_glibc = proc_rss_all - M; // bit less since a lot of stuff is not malloc
+                    // but cannot be larger than virt ever was
+                    if (max_c_heap_usage_glibc > proc_virt) {
+                        max_c_heap_usage_glibc = proc_virt - M; // bit less since a lot of stuff is not malloc
                     }
                     checkValueIsBetween(csv, "proc-chea-usd", min_c_heap_usage_glibc, max_c_heap_usage_glibc);
                     checkValueIsBetween(csv, "proc-chea-free", 0, max_c_heap_usage_glibc);
