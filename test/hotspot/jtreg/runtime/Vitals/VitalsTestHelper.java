@@ -203,7 +203,8 @@ public class VitalsTestHelper {
         String colsThatCanBeEmpty_OSX = "";
 
         String colsThatCanBeEmpty_LINUX =
-                  "|syst-cpu.*" // CPU values may be omitted in containers; also they are all deltas
+                  "|syst-avail" // Older kernels < 3.14 miss this value
+                + "|syst-cpu.*" // CPU values may be omitted in containers; also they are all deltas
                 + "|syst-cgr.*" // Cgroup values may be omitted in root cgroup
                 + "|proc-chea-usd|proc-chea-free" // cannot be shown if RSS is > 4g and glibc is too old
                 + "|proc-io-rd|proc-io-wr" // deltas
