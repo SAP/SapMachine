@@ -33,6 +33,11 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+// SapMachine 2022-07-01: Vitals: needed for Platform.isMusl
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+
 public class Platform {
     public  static final String vmName      = privilegedGetProperty("java.vm.name");
     public  static final String vmInfo      = privilegedGetProperty("java.vm.info");
@@ -185,6 +190,20 @@ public class Platform {
 
     public static String getVMVersion() {
         return vmVersion;
+    }
+
+    // SapMachine 2022-07-01: Vitals: Platform.isMusl() cherry-picked from upstream since its needed for Vitals sanity tests.
+    public static boolean isMusl() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("ldd", "--version");
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String l = b.readLine();
+            if (l != null && l.contains("musl")) { return true; }
+        } catch(Exception e) {
+        }
+        return false;
     }
 
     public static boolean isAArch64() {
