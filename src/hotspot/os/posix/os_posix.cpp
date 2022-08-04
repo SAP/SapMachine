@@ -236,6 +236,25 @@ int os::create_file_for_heap(const char* dir) {
   return fd;
 }
 
+// Is a (classpath) directory empty?
+bool os::dir_is_empty(const char* path) {
+  DIR *dir = NULL;
+  struct dirent *ptr;
+
+  dir = ::opendir(path);
+  if (dir == NULL) return true;
+
+  // Scan the directory
+  bool result = true;
+  while (result && (ptr = ::readdir(dir)) != NULL) {
+    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
+      result = false;
+    }
+  }
+  ::closedir(dir);
+  return result;
+}
+
 static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
   char * addr;
   int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
@@ -633,8 +652,42 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
 #endif
 }
 
+void* os::get_default_process_handle() {
+#ifdef __APPLE__
+  // MacOS X needs to use RTLD_FIRST instead of RTLD_LAZY
+  // to avoid finding unexpected symbols on second (or later)
+  // loads of a library.
+  return (void*)::dlopen(NULL, RTLD_FIRST);
+#else
+  return (void*)::dlopen(NULL, RTLD_LAZY);
+#endif
+}
+
+void* os::dll_lookup(void* handle, const char* name) {
+  return dlsym(handle, name);
+}
+
 void os::dll_unload(void *lib) {
-  ::dlclose(lib);
+  const char* l_path = LINUX_ONLY(os::Linux::dll_path(lib))
+                       NOT_LINUX("<not available>");
+  if (l_path == NULL) l_path = "<not available>";
+  int res = ::dlclose(lib);
+
+  if (res == 0) {
+    Events::log_dll_message(NULL, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
+                            l_path, p2i(lib));
+    log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
+  } else {
+    const char* error_report = ::dlerror();
+    if (error_report == NULL) {
+      error_report = "dlerror returned no error description";
+    }
+
+    Events::log_dll_message(NULL, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
+                            l_path, p2i(lib), error_report);
+    log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
+                  l_path, p2i(lib), error_report);
+  }
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
@@ -771,6 +824,12 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
+// Sleep forever; naked call to OS-specific sleep; use with CAUTION
+void os::infinite_sleep() {
+  while (true) {    // sleep forever ...
+    ::sleep(100);   // ... 100 seconds at a time
+  }
+}
 
 void os::naked_short_nanosleep(jlong ns) {
   struct timespec req;

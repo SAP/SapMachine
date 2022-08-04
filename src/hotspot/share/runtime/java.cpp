@@ -430,7 +430,7 @@ void print_statistics() {
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
-void before_exit(JavaThread* thread) {
+void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_NOT_RUN 0
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
@@ -477,7 +477,7 @@ void before_exit(JavaThread* thread) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown();)
+  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
@@ -649,7 +649,7 @@ void vm_perform_shutdown_actions() {
       JavaThread* jt = thread->as_Java_thread();
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
-      jt->frame_anchor()->make_walkable(jt);
+      jt->frame_anchor()->make_walkable();
       jt->set_thread_state(_thread_in_native);
     }
   }
