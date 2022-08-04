@@ -26,18 +26,18 @@
 # Versions and download locations for dependencies used by pre-submit testing.
 
 BOOT_JDK_VERSION=11
-JTREG_VERSION=5.1
-JTREG_BUILD=b01
+JTREG_VERSION=6
+JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
-LINUX_X64_BOOT_JDK_FILENAME=sapmachine-11.0.14.1_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14.1/sapmachine-jdk-11.0.14.1_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=f9ec22c87c76671ee86bf5aecf5ea9fa1a5767c0d1fa96d331dd942215084ea9
+LINUX_X64_BOOT_JDK_FILENAME=sapmachine-11.0.16_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16/sapmachine-jdk-11.0.16_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=52dc3d35e683135bef651345c619ba42902b39897a655e9d1f3b2eb9385364cf
 
-WINDOWS_X64_BOOT_JDK_FILENAME=sapmachine-11.0.14.1_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14.1/sapmachine-jdk-11.0.14.1_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_SHA256=4d1b5a01cb8ed06620f9c96457bcb5b0637bd752eb6563c39781efc82e92731a
+WINDOWS_X64_BOOT_JDK_FILENAME=sapmachine-11.0.16_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16/sapmachine-jdk-11.0.16_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_SHA256=931ffd1235bb5788d430754b1ea94b7bfd7ec6f3de5bf5a4b60849f4bebb74ea
 
-MACOS_X64_BOOT_JDK_FILENAME=sapmachine-11.0.14.1_osx-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.14.1/sapmachine-jdk-11.0.14.1_osx-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=497c5d0e697867f44f62a6cf5a8caabe2ceb623dd6c229278a3d5c1d3d11d9fb
+MACOS_X64_BOOT_JDK_FILENAME=sapmachine-11.0.16_osx-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.16/sapmachine-jdk-11.0.16_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=183837bb7407fc0dca48cdfbe6af08b8ed85d1805fa223b05b8e61e2597d2652
