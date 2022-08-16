@@ -43,7 +43,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -1003,13 +1003,11 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-#ifndef _WIN32
   STEP("printing user info")
 
      if (ExtensiveErrorReports && _verbose) {
-       os::Posix::print_user_info(st);
+       os::print_user_info(st);
      }
-#endif
 
   STEP("printing all threads")
 
@@ -1171,14 +1169,12 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-#ifndef _WIN32
   STEP("printing locale settings")
 
      if (_verbose) {
-       os::Posix::print_active_locale(st);
+       os::print_active_locale(st);
        st->cr();
      }
-#endif
 
   STEP("printing signal handlers")
 
@@ -1390,10 +1386,10 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
   // STEP("printing locale settings")
-#ifndef _WIN32
-  os::Posix::print_active_locale(st);
+
+  os::print_active_locale(st);
   st->cr();
-#endif
+
 
   // STEP("printing signal handlers")
 
