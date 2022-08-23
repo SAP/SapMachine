@@ -207,10 +207,12 @@
                 {
                     "tag": "sapmachine-18.0.2.1+1",
                     "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.2.1%2B1/sapmachine-jdk-18.0.2.1-ea.1_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.2.1%2B1/sapmachine-jdk-18.0.2.1-ea.1_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.2.1%2B1/sapmachine-jdk-18.0.2.1-ea.1_macos-aarch64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.2.1%2B1/sapmachine-jre-18.0.2.1-ea.1_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.2.1%2B1/sapmachine-jre-18.0.2.1-ea.1_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-18.0.2.1%2B1/sapmachine-jre-18.0.2.1-ea.1_macos-aarch64_bin.tar.gz"
                     }
