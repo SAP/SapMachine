@@ -41,6 +41,7 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "services/memBaseline.hpp"
 #include "services/memTracker.hpp"
 #include "services/mallocTracker.hpp"
 #include "utilities/debug.hpp"
@@ -1143,7 +1144,9 @@ static bool get_nmt_values(nmt_values_t* out) {
 #if INCLUDE_NMT
   if (is_nmt_enabled()) {
     MutexLocker locker(MemTracker::query_lock());
-    /*const*/MallocMemorySnapshot* mlc_snapshot = MallocMemorySummary::as_snapshot();
+    MemBaseline baseline;
+    baseline.baseline(true);
+    MallocMemorySnapshot* mlc_snapshot = baseline.malloc_memory_snapshot();
     VirtualMemorySnapshot vm_snapshot;
     VirtualMemorySummary::snapshot(&vm_snapshot);
     out->malloced_total = mlc_snapshot->total();

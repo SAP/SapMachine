@@ -313,6 +313,18 @@ public class VitalsValuesSanityCheck {
                     checkValueIsBetween(csv, "proc-chea-free", 0, max_c_heap_usage_glibc);
                 }
 
+                // Counter-check NMT mlc vs rss
+                // "mlc" can be higher than RSS in release builds, since large malloc blocks may not be fully touched.
+                // However, in debug builds os::malloc inits all malloced blocks, so - apart from a few raw mallocs here and there -
+                // we should not see mlc > rss
+                if (jvm_nmt_mlc != -1) {
+                    if (Platform.isDebugBuild()) {
+                        if (proc_rss_all < jvm_nmt_mlc) {
+                            throw new RuntimeException("NMT mlc higher than RSS?");
+                        }
+                    }
+                }
+
                 checkValueIsBetween(csv, "proc-cpu-us", 0, 100000);
                 checkValueIsBetween(csv, "proc-cpu-sy", 0, 100000);
 
