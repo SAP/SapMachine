@@ -27,10 +27,11 @@
 #define OS_LINUX_MALLOCTRACE_LOCKER_HPP
 
 #include "malloctrace/assertHandling.hpp"
+#include "malloctrace/mallocTrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <pthread.h>
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 class outputStream;
 
@@ -73,6 +74,6 @@ public:
 
 } // namespace sap
 
-#endif // __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 
 #endif // OS_LINUX_MALLOCTRACE_LOCKER_HPP
