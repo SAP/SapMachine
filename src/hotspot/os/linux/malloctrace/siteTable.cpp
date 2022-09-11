@@ -27,6 +27,7 @@
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "malloctrace/assertHandling.hpp"
+#include "malloctrace/mallocTrace.hpp"
 #include "malloctrace/siteTable.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/debug.hpp"
@@ -35,7 +36,7 @@
 
 #include <malloc.h>
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 // Since JDK-8289633 we forbid calling raw C-heap allocation functions using Kim's FORBID_C_FUNCTION.
 // Callers need to explicitly opt in with ALLOW_C_FUNCTION.
@@ -243,4 +244,4 @@ void SiteTable::print_table(outputStream* st, bool all) const {
 
 } // namespace sap
 
-#endif // GLIBC
+#endif // HAVE_GLIBC_MALLOC_HOOKS

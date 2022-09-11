@@ -36,7 +36,7 @@
 #include "unittest.hpp"
 #include <malloc.h>
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 // Since JDK-8289633 we forbid calling raw C-heap allocation functions using Kim's FORBID_C_FUNCTION.
 // Callers need to explicitly opt in with ALLOW_C_FUNCTION.
@@ -179,6 +179,6 @@ TEST_VM(MallocTrace, tracer_mixed_all) {
 #endif
 }
 
-#endif // __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 
 #endif // LINUX

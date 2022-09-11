@@ -29,7 +29,7 @@
 #include "malloctrace/mallocTrace.hpp"
 #include "runtime/atomic.hpp"
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 namespace sap {
 
@@ -55,4 +55,4 @@ bool prepare_assert() {
 
 } // namespace sap
 
-#endif // #ifdef __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
