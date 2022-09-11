@@ -26,9 +26,10 @@
 #ifndef OS_LINUX_MALLOCTRACE_ASSERTHANDLING_HPP
 #define OS_LINUX_MALLOCTRACE_ASSERTHANDLING_HPP
 
+#include "malloctrace/mallocTrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 namespace sap {
 
