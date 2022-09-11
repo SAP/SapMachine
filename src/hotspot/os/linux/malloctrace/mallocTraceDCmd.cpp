@@ -32,7 +32,7 @@
 
 namespace sap {
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 // By default, lets use nmt-like capturing. I see (very rarely) crashes with backtrace(3)
 // on x86. backtrace(3) gives us better callstack but runs a (small) risk of crashing, especially
@@ -82,9 +82,13 @@ void MallocTraceDCmd::execute(DCmdSource source, TRAPS) {
 }
 #else
 void MallocTraceDCmd::execute(DCmdSource source, TRAPS) {
+#ifdef __GLIBC__
+  _output->print_cr("Glibc too new. Needs glibc version <= 2.31.");
+#else
   _output->print_cr("Not a glibc system.");
+#endif
 }
-#endif // __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 
 static const char* const usage_for_option =
   "Valid Values:\n"

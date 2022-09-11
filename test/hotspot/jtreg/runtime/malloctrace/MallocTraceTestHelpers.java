@@ -21,7 +21,7 @@ public class MallocTraceTestHelpers {
     }
 
     public static boolean GlibcSupportsMallocHooks() throws Throwable {
-        return GlibVersion() < 0x222; // 0x0223 aka 2.34
+        return GlibVersion() < 0x220; // 2.32
     }
 
 }
