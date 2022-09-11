@@ -36,7 +36,7 @@
 #include "unittest.hpp"
 #include <malloc.h>
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 using sap::MallocTracer;
 
@@ -171,6 +171,6 @@ TEST_VM(MallocTrace, tracer_mixed_all) {
 #endif
 }
 
-#endif // __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 
 #endif // LINUX

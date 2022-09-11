@@ -27,6 +27,7 @@
 #ifdef LINUX
 
 #include "jvm_io.h"
+#include "malloctrace/mallocTrace.hpp"
 #include "malloctrace/siteTable.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
@@ -34,7 +35,7 @@
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 using sap::SiteTable;
 using sap::Stack;
@@ -189,6 +190,6 @@ TEST_VM(MallocTrace, site_table_random) {
   destroy_site_table(table);
 }
 
-#endif // __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 
 #endif // LINUX
