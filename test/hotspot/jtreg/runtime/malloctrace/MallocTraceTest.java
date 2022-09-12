@@ -59,6 +59,7 @@ public class MallocTraceTest {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                     option, "-XX:+PrintMallocTraceAtExit", "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.reportDiagnosticSummary();
             output.shouldHaveExitValue(0);
 
             // Ignore output for Alpine

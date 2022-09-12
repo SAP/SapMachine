@@ -29,7 +29,17 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#ifdef __GLIBC__
+// MallocTracer needs glibc malloc hooks. Unfortunately, glibc removed them with 2.32.
+// If we built against a newer glibc, there is no point in even trying to resolve
+// them dynamically, since the binary will not run with older glibc's anyway. Therefore
+// we can just disable them at built time.
+#if defined(__GLIBC__)
+#if (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 31)
+#define HAVE_GLIBC_MALLOC_HOOKS
+#endif
+#endif
+
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 class outputStream;
 
@@ -47,6 +57,6 @@ public:
 
 }
 
-#endif // __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 
 #endif // OS_LINUX_MALLOCTRACE_MALLOCTRACE_HPP

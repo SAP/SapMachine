@@ -37,7 +37,7 @@
 
 #include <malloc.h>
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 // Since JDK-8289633 we forbid calling raw C-heap allocation functions using Kim's FORBID_C_FUNCTION.
 // Callers need to explicitly opt in with ALLOW_C_FUNCTION.
@@ -383,4 +383,4 @@ void MallocTracer::print_on_error(outputStream* st) {
 
 } // namespace sap
 
-#endif // GLIBC
+#endif // HAVE_GLIBC_MALLOC_HOOKS
