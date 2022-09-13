@@ -114,10 +114,12 @@
                 {
                     "tag": "sapmachine-20+14",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B14/sapmachine-jdk-20-ea.14_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B14/sapmachine-jdk-20-ea.14_linux-x64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B14/sapmachine-jdk-20-eabeta.14_linux-x64-musl_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B14/sapmachine-jre-20-ea.14_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B14/sapmachine-jre-20-ea.14_linux-x64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B14/sapmachine-jre-20-eabeta.14_linux-x64-musl_bin.tar.gz"
                     }
                 }
             ]
