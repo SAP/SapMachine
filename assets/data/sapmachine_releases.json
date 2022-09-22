@@ -232,10 +232,12 @@
                 {
                     "tag": "sapmachine-17.0.5+6",
                     "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.5%2B6/sapmachine-jdk-17.0.5-ea.6_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.5%2B6/sapmachine-jdk-17.0.5-ea.6_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.5%2B6/sapmachine-jdk-17.0.5-ea.6_macos-aarch64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.5%2B6/sapmachine-jre-17.0.5-ea.6_linux-x64_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.5%2B6/sapmachine-jre-17.0.5-ea.6_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.5%2B6/sapmachine-jre-17.0.5-ea.6_macos-aarch64_bin.tar.gz"
                     }
