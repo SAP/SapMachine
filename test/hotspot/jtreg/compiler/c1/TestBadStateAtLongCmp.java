@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,23 @@
  * questions.
  */
 
-
 /*
  * @test
- *
- * @key randomness
- *
- * @requires vm.jvmti & vm.continuations
- * @library /vmTestbase
- *          /test/lib
- * @build nsk.jvmti.RedefineClasses.StressRedefine
- * @run main/othervm/native ExecDriver --java
- *      --enable-preview
- *      -agentlib:stressRedefine
- *      nsk.jvmti.RedefineClasses.StressRedefine
- *      ./bin
- *      -corruptingBytecodeProbability 0.0
- *      -virtualThreads
+ * @bug 8290451
+ * @summary Incorrect result when switching to C2 OSR compilation from C1
+ * @compile BadStateAtLongCmp.jasm
+ * @run main/othervm -Xbatch TestBadStateAtLongCmp
  */
+
+public class TestBadStateAtLongCmp {
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            BadStateAtLongCmp.test();
+        }
+        int expected = 20_000 * 1000;
+        if (BadStateAtLongCmp.field != expected) {
+            throw new RuntimeException("test failed: " + BadStateAtLongCmp.field + " != " + expected);
+        }
+    }
+}

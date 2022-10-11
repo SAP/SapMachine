@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,29 @@
  * questions.
  */
 
-
 /*
  * @test
- *
- * @key randomness
- *
- * @requires vm.jvmti & vm.continuations
- * @library /vmTestbase
- *          /test/lib
- * @build nsk.jvmti.RedefineClasses.StressRedefine
- * @run main/othervm/native ExecDriver --java
- *      --enable-preview
- *      -agentlib:stressRedefine
- *      nsk.jvmti.RedefineClasses.StressRedefine
- *      ./bin
- *      -corruptingBytecodeProbability 0.0
- *      -virtualThreads
+ * @bug 8290705
+ * @summary Test correctness of the string concatenation optimization with
+ *          a store between StringBuffer allocation and constructor invocation.
+ * @compile SideEffectBeforeConstructor.jasm
+ * @run main/othervm -Xbatch compiler.stringopts.TestSideEffectBeforeConstructor
  */
+
+package compiler.stringopts;
+
+public class TestSideEffectBeforeConstructor {
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 100_000; ++i) {
+            try {
+                SideEffectBeforeConstructor.test(null);
+            } catch (NullPointerException npe) {
+                // Expected
+            }
+        }
+        if (SideEffectBeforeConstructor.result != 100_000) {
+            throw new RuntimeException("Unexpected result: " + SideEffectBeforeConstructor.result);
+        }
+    }
+}

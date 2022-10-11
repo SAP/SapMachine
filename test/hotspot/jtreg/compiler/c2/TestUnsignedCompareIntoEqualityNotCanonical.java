@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,26 @@
  * questions.
  */
 
-
 /*
  * @test
- *
- * @key randomness
- *
- * @requires vm.jvmti & vm.continuations
- * @library /vmTestbase
- *          /test/lib
- * @build nsk.jvmti.RedefineClasses.StressRedefine
- * @run main/othervm/native ExecDriver --java
- *      --enable-preview
- *      -agentlib:stressRedefine
- *      nsk.jvmti.RedefineClasses.StressRedefine
- *      ./bin
- *      -corruptingBytecodeProbability 0.0
- *      -virtualThreads
+ * @bug 8290529
+ * @summary C2: assert(BoolTest(btest).is_canonical()) failure
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:-TieredCompilation TestUnsignedCompareIntoEqualityNotCanonical
  */
+
+
+public class TestUnsignedCompareIntoEqualityNotCanonical {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(0);
+            test(1);
+        }
+    }
+
+    private static int test(int x) {
+        if (Integer.compareUnsigned(0, x) >= 0) {
+            return 42;
+        }
+        return -42;
+    }
+}

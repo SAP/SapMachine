@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,49 @@
  * questions.
  */
 
+super public class BadStateAtLongCmp
+	version 52:0
+{
+  public static Field field:I;
 
-/*
- * @test
- *
- * @key randomness
- *
- * @requires vm.jvmti & vm.continuations
- * @library /vmTestbase
- *          /test/lib
- * @build nsk.jvmti.RedefineClasses.StressRedefine
- * @run main/othervm/native ExecDriver --java
- *      --enable-preview
- *      -agentlib:stressRedefine
- *      nsk.jvmti.RedefineClasses.StressRedefine
- *      ./bin
- *      -corruptingBytecodeProbability 0.0
- *      -virtualThreads
- */
+  public Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+
+  /* Same as:
+     public static void test() {
+        long l = 0;
+        do {
+            l++;
+            field++;
+        } while (l < 1000);
+     }
+     but with field++ between the lcmp and iflt bytecodes.
+   */
+  public static Method test:"()V"
+	stack 4 locals 2
+  {
+		lconst_0;
+		lstore_0;
+	L2:	stack_frame_type append;
+		locals_map long;
+		lload_0;
+		lconst_1;
+		ladd;
+		lstore_0;
+		lload_0;
+		ldc2_w	long 1000l;
+		lcmp;
+		getstatic	Field field:"I";
+		iconst_1;
+		iadd;
+		putstatic	Field field:"I";
+		iflt	L2;
+		return;
+  }
+
+} // end Class BadStateAtLongCmp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,40 @@
  * questions.
  */
 
+package compiler.c2.irTests;
+
+import compiler.lib.ir_framework.*;
 
 /*
  * @test
- *
- * @key randomness
- *
- * @requires vm.jvmti & vm.continuations
- * @library /vmTestbase
- *          /test/lib
- * @build nsk.jvmti.RedefineClasses.StressRedefine
- * @run main/othervm/native ExecDriver --java
- *      --enable-preview
- *      -agentlib:stressRedefine
- *      nsk.jvmti.RedefineClasses.StressRedefine
- *      ./bin
- *      -corruptingBytecodeProbability 0.0
- *      -virtualThreads
+ * bug 8290529
+ * @summary verify that x <u 1 is transformed to x == 0
+ * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @library /test/lib /
+ * @requires vm.compiler2.enabled
+ * @run driver compiler.c2.irTests.CmpUWithZero
  */
+
+public class CmpUWithZero {
+    static volatile boolean field;
+
+    public static void main(String[] args) {
+        TestFramework.run();
+    }
+
+    @Test
+    public static void test(int x) {
+        if (Integer.compareUnsigned(x, 1) < 0) {
+            field = true;
+        } else {
+            field = false;
+        }
+    }
+
+    @Run(test = "test")
+    private void testRunner() {
+        test(0);
+        test(42);
+    }
+
+}
