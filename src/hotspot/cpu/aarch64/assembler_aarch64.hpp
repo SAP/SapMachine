@@ -476,16 +476,17 @@ class Address {
           assert(size == 0, "bad size");
           size = 0b100;
         }
+        assert(offset_ok_for_immed(_offset, size),
+               "must be, was: " INT64_FORMAT ", %d", _offset, size);
         unsigned mask = (1 << size) - 1;
-        if (_offset < 0 || _offset & mask)
-          {
-            i->f(0b00, 25, 24);
-            i->f(0, 21), i->f(0b00, 11, 10);
-            i->sf(_offset, 20, 12);
-          } else {
-            i->f(0b01, 25, 24);
-            i->f(_offset >> size, 21, 10);
-          }
+        if (_offset < 0 || _offset & mask) {
+          i->f(0b00, 25, 24);
+          i->f(0, 21), i->f(0b00, 11, 10);
+          i->sf(_offset, 20, 12);
+        } else {
+          i->f(0b01, 25, 24);
+          i->f(_offset >> size, 21, 10);
+        }
       }
       break;
 
@@ -3254,6 +3255,7 @@ public:
   static bool operand_valid_for_logical_immediate(bool is32, uint64_t imm);
   static bool operand_valid_for_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_float_immediate(double imm);
+  static int  operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement T);
 
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);

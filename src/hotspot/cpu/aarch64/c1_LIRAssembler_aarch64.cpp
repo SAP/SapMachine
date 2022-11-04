@@ -187,14 +187,13 @@ Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
       default:
         ShouldNotReachHere();
       }
-  } else  {
-    intptr_t addr_offset = intptr_t(addr->disp());
-    if (Address::offset_ok_for_immed(addr_offset, addr->scale()))
-      return Address(base, addr_offset, Address::lsl(addr->scale()));
-    else {
-      __ mov(tmp, addr_offset);
-      return Address(base, tmp, Address::lsl(addr->scale()));
-    }
+  } else {
+    assert(addr->scale() == 0,
+           "expected for immediate operand, was: %d", addr->scale());
+    ptrdiff_t offset = ptrdiff_t(addr->disp());
+    // NOTE: Does not handle any 16 byte vector access.
+    const uint type_size = type2aelembytes(addr->type(), true);
+    return __ legitimize_address(Address(base, offset), type_size, tmp);
   }
   return Address();
 }
@@ -283,10 +282,9 @@ void LIR_Assembler::osr_entry() {
         __ bind(L);
       }
 #endif
-      __ ldr(r19, Address(OSR_buf, slot_offset + 0));
+      __ ldp(r19, r20, Address(OSR_buf, slot_offset));
       __ str(r19, frame_map()->address_for_monitor_lock(i));
-      __ ldr(r19, Address(OSR_buf, slot_offset + 1*BytesPerWord));
-      __ str(r19, frame_map()->address_for_monitor_object(i));
+      __ str(r20, frame_map()->address_for_monitor_object(i));
     }
   }
 }

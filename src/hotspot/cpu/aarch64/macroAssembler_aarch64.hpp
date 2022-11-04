@@ -525,7 +525,7 @@ public:
 
   void movptr(Register r, uintptr_t imm64);
 
-  void mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32);
+  void mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64);
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
@@ -907,7 +907,6 @@ public:
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void zero_memory(Register addr, Register len, Register t1);
   void verify_tlab();
 
   // interface method calling
@@ -1087,13 +1086,18 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
+  // Check if branches to the the non nmethod section require a far jump
+  static bool codestub_branch_needs_far_jump() {
+    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+  }
+
   // Jumps that can reach anywhere in the code cache.
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
-  static int far_branch_size() {
-    if (far_branches()) {
+  static int far_codestub_branch_size() {
+    if (codestub_branch_needs_far_jump()) {
       return 3 * 4;  // adrp, add, br
     } else {
       return 4;
@@ -1258,7 +1262,7 @@ public:
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
-  void zero_words(Register base, uint64_t cnt);
+  address zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
 
