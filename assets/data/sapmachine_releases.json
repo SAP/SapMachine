@@ -220,10 +220,12 @@
                 {
                     "tag": "sapmachine-17.0.6+1",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B1/sapmachine-jdk-17.0.6-ea.1_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B1/sapmachine-jdk-17.0.6-ea.1_linux-x64_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B1/sapmachine-jdk-17.0.6-eabeta.1_linux-x64-musl_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B1/sapmachine-jre-17.0.6-ea.1_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B1/sapmachine-jre-17.0.6-ea.1_linux-x64_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B1/sapmachine-jre-17.0.6-eabeta.1_linux-x64-musl_bin.tar.gz"
                     }
@@ -264,9 +266,11 @@
                 {
                     "tag": "sapmachine-11.0.18+1",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.18%2B1/sapmachine-jdk-11.0.18-ea.1_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.18%2B1/sapmachine-jdk-11.0.18-ea.1_linux-x64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.18%2B1/sapmachine-jre-11.0.18-ea.1_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.18%2B1/sapmachine-jre-11.0.18-ea.1_linux-x64_bin.tar.gz"
                     }
                 }
