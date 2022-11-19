@@ -108,10 +108,14 @@
                 {
                     "tag": "sapmachine-20+24",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jdk-20-ea.24_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jdk-20-ea.24_linux-x64_bin.tar.gz",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jdk-20-ea.24_macos-aarch64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jdk-20-eabeta.24_linux-x64-musl_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jre-20-ea.24_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jre-20-ea.24_linux-x64_bin.tar.gz",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jre-20-ea.24_macos-aarch64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B24/sapmachine-jre-20-eabeta.24_linux-x64-musl_bin.tar.gz"
                     }
                 }
             ]
@@ -214,10 +218,12 @@
                 {
                     "tag": "sapmachine-17.0.6+3",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B3/sapmachine-jdk-17.0.6-ea.3_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B3/sapmachine-jdk-17.0.6-ea.3_linux-x64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B3/sapmachine-jdk-17.0.6-eabeta.3_linux-x64-musl_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B3/sapmachine-jre-17.0.6-ea.3_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B3/sapmachine-jre-17.0.6-ea.3_linux-x64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.6%2B3/sapmachine-jre-17.0.6-eabeta.3_linux-x64-musl_bin.tar.gz"
                     }
                 }
             ]
