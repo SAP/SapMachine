@@ -96,11 +96,13 @@
 }
 
 h2 {
-    padding-top: 60px;
+    padding-top: 100px;
+    margin-top: -40px;
 }
 
 .section h1 {
-    padding-top: 60px;
+    padding-top: 100px;
+    margin-top: -40px;
     margin-bottom: -30px;
 }
 
@@ -162,5 +164,8 @@ h2 {
 .object-value {
 }
 .value-truncated {
-
+    .font-family: sans-serif;
+}
+summary {
+    padding-bottom: 0.1cm;
 }
