@@ -1,0 +1,166 @@
+@media (max-width: 900px) {
+    .jdk-label {
+        display: none;
+    }
+}
+@media (max-width: 1024px) {
+    .container {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 95%;
+    }
+}
+
+.nav-scroller {
+    position: relative;
+    z-index: 2;
+    height: 2.75rem;
+    overflow-y: hidden;
+}
+
+.nav-scroller .nav {
+    display: flex;
+    flex-wrap: nowrap;
+    padding-bottom: 1rem;
+    margin-top: -1px;
+    overflow-x: auto;
+    text-align: center;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.description-missing {
+    font-size: small;
+    color: lightgray;
+}
+
+.description-missing a {
+    color: lightblue;
+}
+
+.source {
+    font-size: small;
+    color: gray;
+}
+
+.event-config, .types-table {
+    table-layout: fixed;
+}
+
+.inner, .sticky-top {
+    padding-top: 80px;
+}
+
+.inner {
+    padding-left: 1cm;
+}
+
+.navbar-nav > li {
+    margin-top: -0.2em;
+    margin-bottom: -0.2em;
+}
+#toc > ul > li > .nav-link:not(.active) {
+    height: 2.2em;
+}
+#toc .nav-link {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.field-label {
+    font-weight: 400;
+}
+
+.field-description {
+    font-weight: 300;
+    font-size: 0.9em;
+}
+
+.misses {
+    font-size: 0.9em;
+    margin-top: -1em;
+}
+.inner {
+    z-index: 100;
+    background-color: #ffffffad;
+}
+.toc {
+    z-index: 99;
+}
+
+.sapmachine-logo {
+    width: 2em;
+    height: 2em;
+    margin-top: -0.5em;
+    margin-bottom: -0.5em;
+}
+
+h2 {
+    padding-top: 60px;
+}
+
+.section h1 {
+    padding-top: 60px;
+    margin-bottom: -30px;
+}
+
+.type-link, .type-link:visited {
+    color: darkblue;
+    text-decoration: none;
+}
+.type-link:hover {
+    color: blue;
+    text-decoration: underline;
+}
+
+.type-link, .type-link:visited {
+    color: darkblue;
+    text-decoration: none;
+}
+.type-link:hover {
+    color: blue;
+    text-decoration: underline;
+}
+
+.table-header-row {
+    font-size: 0.9em;
+    font-weight: 700;
+}
+
+.intro-body {
+    padding-top: 60px;
+}
+.intro h1 {
+    margin-top: -140px;
+}
+
+.examples-tab {
+    padding: 0.3cm;
+}
+.examples-tab table tr {
+    table-layout: fixed;
+    font-size: calc(1em - 0.05em * var(--depth))
+}
+.examples-tab table th {
+    width: 200px;
+    padding-left: calc(15px * var(--depth));
+    word-break: break-all;
+}
+.null-value {
+    font-family: monospace;
+    font-style: italic;
+}
+.string-value {
+    font-family: monospace;
+    word-break: break-all;
+}
+.array-value, .object-value {
+    vertical-align: top;
+}
+.array-value {
+}
+.object-value {
+}
+.value-truncated {
+
+}
