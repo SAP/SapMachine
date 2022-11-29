@@ -21,7 +21,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 * Contributing as many of our features as possible to the OpenJDK project and keep the diff of this project as small as possible.
 
 * Creating tools for developers
-    * [JFR Event Collection](https://sap.github.io/SapMachine/jfrevents/): Information on all JFR events for a specific JDK
+    * [JFR Event Collection](https://sapmachine.io/jfrevents/): Information on all JFR events for a specific JDK
     * [AP-Loader](https://github.com/jvm-profiling-tools/ap-loader): AsyncProfiler in a single cross-platform JAR
 
 ## Download
