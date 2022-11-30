@@ -112456,6 +112456,14 @@ $('.period-badge').popover({
 });
 $(".popover-on").tooltip({ trigger: 'hover', placement: 'top' });
 new bootstrap.ScrollSpy(document.body, {target: '#toc'});
+$("details").each(function (i, el) {
+    el.addEventListener("toggle", function (e) {
+        if (e.target.open && e.target.tabAlready !== true) {
+            //new bootstrap.Tab(e.target.querySelector('div').id);
+            console.log("hallo");
+        }
+    });
+});
 });
 anchors.add();
 </script>
