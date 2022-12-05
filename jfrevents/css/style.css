@@ -1,8 +1,24 @@
-@media (max-width: 900px) {
+@media (max-width: 500px) {
     .jdk-label {
         display: none;
     }
 }
+
+.jdk-badge {
+    text-decoration: none;
+}
+
+.jdk-label {
+    display: none;
+}
+.relevant .jdk-label {
+    display: inline;
+}
+.relevant.active {
+    display: block;
+    color: rgba(255,255,255,.75);
+}
+
 @media (max-width: 1024px) {
     .container {
         margin-left: auto;
