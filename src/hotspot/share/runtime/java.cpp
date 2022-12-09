@@ -39,9 +39,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "jvm.h"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -92,6 +89,9 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
 #endif
 
 // SapMachine 2019-09-01: vitals.
