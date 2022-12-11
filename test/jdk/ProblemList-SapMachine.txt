@@ -320,3 +320,7 @@ java/lang/ProcessHandle/OnExitTest.java                                         
 # We see this test failing on our linux boxes
 # https://bugs.openjdk.java.net/browse/JDK-8249079
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java                 8249079 linux-all
+
+# SapMachine 2022-12-11
+java/lang/Thread/virtual/stress/Skynet.java#id0                                      generic-all
+java/lang/Thread/virtual/stress/Skynet.java#id1                                      generic-all
