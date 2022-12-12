@@ -154,7 +154,8 @@ void DCmdRegistrant::register_dcmds(){
 
   // Debug on cmd (only makes sense with JVMTI since the agentlib needs it).
 #if INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, true));
+  // SapMachine 2022-12-12 Revert JDK-8226608, we should show the VM.start_java_debugging command in jcmd help
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
 
 #if INCLUDE_CDS
