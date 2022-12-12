@@ -1,6 +1,12 @@
 {
     "majors": [
         {
+            "id": "21-ea",
+            "label": "SapMachine 21",
+            "lts": false,
+            "ea": true
+        },
+        {
             "id": "20-ea",
             "label": "SapMachine 20",
             "lts": false,
@@ -103,6 +109,19 @@
         }
     ],
     "assets": {
+        "21-ea": {
+            "releases": [
+                {
+                    "tag": "sapmachine-21+1",
+                    "jdk": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B1/sapmachine-jdk-21-ea.1_linux-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B1/sapmachine-jre-21-ea.1_linux-x64_bin.tar.gz"
+                    }
+                }
+            ]
+        },
         "20-ea": {
             "releases": [
                 {
