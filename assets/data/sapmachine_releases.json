@@ -114,10 +114,14 @@
                 {
                     "tag": "sapmachine-21+2",
                     "jdk": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jdk-21-ea.2_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jdk-21-ea.2_linux-x64_bin.tar.gz",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jdk-21-ea.2_macos-aarch64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jdk-21-eabeta.2_linux-x64-musl_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jre-21-ea.2_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jre-21-ea.2_linux-x64_bin.tar.gz",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jre-21-ea.2_macos-aarch64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B2/sapmachine-jre-21-eabeta.2_linux-x64-musl_bin.tar.gz"
                     }
                 }
             ]
