@@ -45,7 +45,7 @@ public class TestHiMemReportInHSerr {
                 "-Xmx100M",
                 "-XX:-CreateCoredumpOnCrash",
                 "-XX:ErrorHandlerTest=14", // sigsegv
-                "-XX:HiMemReportMax=10g", "-XX:+HiMemReport",
+                "-XX:HiMemReportMax=3g", "-XX:+HiMemReport",
                 "-XX:+ErrorFileToStdout",
                 "-version");
 
@@ -54,6 +54,6 @@ public class TestHiMemReportInHSerr {
 
         output.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
 
-        output.shouldMatch("HiMemReport: monitoring rss\\+swap vs HiMemReportMax.*\\(10485760 K\\), all is well, spikes: 0, alerts: 0.*");
+        output.shouldMatch("HiMemReport: monitoring rss\\+swap vs HiMemReportMax.*\\(3145728 K\\), all is well, spikes: 0, alerts: 0.*");
     }
 }
