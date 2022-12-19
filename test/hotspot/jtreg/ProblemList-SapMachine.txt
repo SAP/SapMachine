@@ -101,6 +101,15 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #compiler/codegen/TestCharVect2.java                                                  linux-aarch64
 
 ###############################################################################
+# New failures detected after GA of 11.0.17 (e.g. seen only in jdk11u-dev after branching 11.0.17 to jdk11u)
+
+# SapMachine 2022-10-17 Issues on ... zGC is not fully supported in 11, so excluding there
+#
+#compiler/gcbarriers/UnsafeIntrinsicsTest.java#z                                      linux-x64
+#
+#gc/stress/gcold/TestGCOldWithZ.java                                                  linux-x64
+
+###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
 # SapMachine 2019-01-08
@@ -165,23 +174,15 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
 
 ###############################################################################
-# Failing new tests, unsupported new features in jdk16
+# Failing new tests, unsupported new features in jdk19
 
-# SapMachine 2020-10-05
-# This test consumes a lot of resources - exlcude it on all platforms to avoid issues with out of memory.
-vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java          generic-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk18
-
-# SapMachine 2022-01-19: test fails since 12/2021 (since 8259610 ?)
+# SapMachine 2022-01-19 test fails since 12/2021 (since 8259610 ?)
 compiler/vectorapi/reshape/TestVectorReinterpret.java                                linux-ppc64le
 
-# SapMachine 2022-06-15
-#Vector API Timeout:
+# SapMachine 2022-06-15 Vector API Timeout
 compiler/vectorapi/VectorRebracket128Test.java                                       linux-ppc64le
 
-#Loom:
+# SapMachine 2022-06-15 Loom
 vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java                    linux-ppc64le
 vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineVirtual/StressRedefineVirtual.java linux-ppc64le
 

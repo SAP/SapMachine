@@ -142,18 +142,15 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java                               823
 #sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java                                 linux-s390x
 
 ###############################################################################
+# New failures detected after GA of 11.0.16 (e.g. seen only in jdk11u-dev after branching 11.0.16 to jdk11u)
+
+# SapMachine 2022-08-17
+# We see this issue occuring on our new Mac aarch64 VMs
+# Excluding now to reduce noise
+java/net/MulticastSocket/Promiscuous.java                                            macosx-aarch64
+
+###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
-
-# SapMachine 2019-02-08
-# times out.
-# 2022-05-05 Timeouts addressed by JDK-8251189 in 16, backported to 11.
-#com/sun/jndi/ldap/LdapDnsProviderTest.java                                           macosx-all
-
-# SapMachine 2019-02-08
-# Can't delete /priv/jvmtests/.../javax/security/auth/Subject/DoAs/NestedActions.d
-# SapMachine 2019-07-12 Still failing
-# SapMachine 2022-05-05 Let's give it a try
-#javax/security/auth/Subject/DoAs.java                                                macosx-all
 
 # SapMachine 2019-02-08
 # RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
@@ -252,12 +249,11 @@ java/awt/font/JNICheck/FreeTypeScalerJNICheck.java                           827
 ###############################################################################
 # Failing new tests, unsupported new features in jdk19
 
-# SapMachine 2022-06-15
-#Loom:
+# SapMachine 2022-06-15 Loom
 java/beans/XMLDecoder/8028054/TestConstructorFinder.java                             linux-ppc64le
 java/beans/XMLDecoder/8028054/TestMethodFinder.java                                  linux-ppc64le
 
-#Panama:
+# SapMachine 2022-06-15 Panama
 java/foreign/TestHandshake.java                                                      linux-ppc64le
 java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1                         linux-ppc64le
 

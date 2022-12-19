@@ -119,16 +119,28 @@ class StubGenerator: public StubCodeGenerator {
   // we don't need to save x6-x7 and x28-x31 which both C and Java treat as
   // volatile
   //
-  // we save x18-x27 which Java uses as temporary registers and C
-  // expects to be callee-save
+  // we save x9, x18-x27, f8-f9, and f18-f27 which Java uses as temporary
+  // registers and C expects to be callee-save
   //
   // so the stub frame looks like this when we enter Java code
   //
   //     [ return_from_Java     ] <--- sp
   //     [ argument word n      ]
   //      ...
-  // -22 [ argument word 1      ]
-  // -21 [ saved x27            ] <--- sp_after_call
+  // -34 [ argument word 1      ]
+  // -33 [ saved f27            ] <--- sp_after_call
+  // -32 [ saved f26            ]
+  // -31 [ saved f25            ]
+  // -30 [ saved f24            ]
+  // -29 [ saved f23            ]
+  // -28 [ saved f22            ]
+  // -27 [ saved f21            ]
+  // -26 [ saved f20            ]
+  // -25 [ saved f19            ]
+  // -24 [ saved f18            ]
+  // -23 [ saved f9             ]
+  // -22 [ saved f8             ]
+  // -21 [ saved x27            ]
   // -20 [ saved x26            ]
   // -19 [ saved x25            ]
   // -18 [ saved x24            ]
@@ -153,7 +165,20 @@ class StubGenerator: public StubCodeGenerator {
 
   // Call stub stack layout word offsets from fp
   enum call_stub_layout {
-    sp_after_call_off  = -21,
+    sp_after_call_off  = -33,
+
+    f27_off            = -33,
+    f26_off            = -32,
+    f25_off            = -31,
+    f24_off            = -30,
+    f23_off            = -29,
+    f22_off            = -28,
+    f21_off            = -27,
+    f20_off            = -26,
+    f19_off            = -25,
+    f18_off            = -24,
+    f9_off             = -23,
+    f8_off             = -22,
 
     x27_off            = -21,
     x26_off            = -20,
@@ -198,6 +223,19 @@ class StubGenerator: public StubCodeGenerator {
     const Address parameter_size(fp, parameter_size_off * wordSize);
 
     const Address thread        (fp, thread_off         * wordSize);
+
+    const Address f27_save      (fp, f27_off            * wordSize);
+    const Address f26_save      (fp, f26_off            * wordSize);
+    const Address f25_save      (fp, f25_off            * wordSize);
+    const Address f24_save      (fp, f24_off            * wordSize);
+    const Address f23_save      (fp, f23_off            * wordSize);
+    const Address f22_save      (fp, f22_off            * wordSize);
+    const Address f21_save      (fp, f21_off            * wordSize);
+    const Address f20_save      (fp, f20_off            * wordSize);
+    const Address f19_save      (fp, f19_off            * wordSize);
+    const Address f18_save      (fp, f18_off            * wordSize);
+    const Address f9_save       (fp, f9_off             * wordSize);
+    const Address f8_save       (fp, f8_off             * wordSize);
 
     const Address x27_save      (fp, x27_off            * wordSize);
     const Address x26_save      (fp, x26_off            * wordSize);
@@ -244,6 +282,19 @@ class StubGenerator: public StubCodeGenerator {
     __ sd(x25, x25_save);
     __ sd(x26, x26_save);
     __ sd(x27, x27_save);
+
+    __ fsd(f8,  f8_save);
+    __ fsd(f9,  f9_save);
+    __ fsd(f18, f18_save);
+    __ fsd(f19, f19_save);
+    __ fsd(f20, f20_save);
+    __ fsd(f21, f21_save);
+    __ fsd(f22, f22_save);
+    __ fsd(f23, f23_save);
+    __ fsd(f24, f24_save);
+    __ fsd(f25, f25_save);
+    __ fsd(f26, f26_save);
+    __ fsd(f27, f27_save);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -336,6 +387,19 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // restore callee-save registers
+    __ fld(f27, f27_save);
+    __ fld(f26, f26_save);
+    __ fld(f25, f25_save);
+    __ fld(f24, f24_save);
+    __ fld(f23, f23_save);
+    __ fld(f22, f22_save);
+    __ fld(f21, f21_save);
+    __ fld(f20, f20_save);
+    __ fld(f19, f19_save);
+    __ fld(f18, f18_save);
+    __ fld(f9,  f9_save);
+    __ fld(f8,  f8_save);
+
     __ ld(x27, x27_save);
     __ ld(x26, x26_save);
     __ ld(x25, x25_save);
@@ -805,7 +869,11 @@ class StubGenerator: public StubCodeGenerator {
   //
   /*
    * if (is_aligned) {
-   *   goto copy_8_bytes;
+   *   if (count >= 32)
+   *     goto copy32_loop;
+   *   if (count >= 8)
+   *     goto copy8_loop;
+   *   goto copy_small;
    * }
    * bool is_backwards = step < 0;
    * int granularity = uabs(step);
@@ -823,9 +891,12 @@ class StubGenerator: public StubCodeGenerator {
    *
    * if ((dst % 8) == (src % 8)) {
    *   aligned;
-   *   goto copy8;
+   *   goto copy_big;
    * }
    *
+   * copy_big:
+   * if the amount to copy is more than (or equal to) 32 bytes goto copy32_loop
+   *  else goto copy8_loop
    * copy_small:
    *   load element one by one;
    * done;
@@ -886,10 +957,10 @@ class StubGenerator: public StubCodeGenerator {
     bool is_backwards = step < 0;
     int granularity = uabs(step);
 
-    const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17;
+    const Register src = x30, dst = x31, cnt = x15, tmp3 = x16, tmp4 = x17, tmp5 = x14, tmp6 = x13;
 
     Label same_aligned;
-    Label copy8, copy_small, done;
+    Label copy_big, copy32_loop, copy8_loop, copy_small, done;
 
     copy_insn ld_arr = NULL, st_arr = NULL;
     switch (granularity) {
@@ -924,36 +995,69 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (is_aligned) {
+      __ addi(tmp, cnt, -32);
+      __ bgez(tmp, copy32_loop);
       __ addi(tmp, cnt, -8);
-      __ bgez(tmp, copy8);
+      __ bgez(tmp, copy8_loop);
       __ j(copy_small);
+    } else {
+      __ mv(tmp, 16);
+      __ blt(cnt, tmp, copy_small);
+
+      __ xorr(tmp, src, dst);
+      __ andi(tmp, tmp, 0b111);
+      __ bnez(tmp, copy_small);
+
+      __ bind(same_aligned);
+      __ andi(tmp, src, 0b111);
+      __ beqz(tmp, copy_big);
+      if (is_backwards) {
+        __ addi(src, src, step);
+        __ addi(dst, dst, step);
+      }
+      (_masm->*ld_arr)(tmp3, Address(src), t0);
+      (_masm->*st_arr)(tmp3, Address(dst), t0);
+      if (!is_backwards) {
+        __ addi(src, src, step);
+        __ addi(dst, dst, step);
+      }
+      __ addi(cnt, cnt, -granularity);
+      __ beqz(cnt, done);
+      __ j(same_aligned);
+
+      __ bind(copy_big);
+      __ mv(tmp, 32);
+      __ blt(cnt, tmp, copy8_loop);
     }
-
-    __ mv(tmp, 16);
-    __ blt(cnt, tmp, copy_small);
-
-    __ xorr(tmp, src, dst);
-    __ andi(tmp, tmp, 0b111);
-    __ bnez(tmp, copy_small);
-
-    __ bind(same_aligned);
-    __ andi(tmp, src, 0b111);
-    __ beqz(tmp, copy8);
+    __ bind(copy32_loop);
     if (is_backwards) {
-      __ addi(src, src, step);
-      __ addi(dst, dst, step);
+      __ addi(src, src, -wordSize * 4);
+      __ addi(dst, dst, -wordSize * 4);
     }
-    (_masm->*ld_arr)(tmp3, Address(src), t0);
-    (_masm->*st_arr)(tmp3, Address(dst), t0);
-    if (!is_backwards) {
-      __ addi(src, src, step);
-      __ addi(dst, dst, step);
-    }
-    __ addi(cnt, cnt, -granularity);
-    __ beqz(cnt, done);
-    __ j(same_aligned);
+    // we first load 32 bytes, then write it, so the direction here doesn't matter
+    __ ld(tmp3, Address(src));
+    __ ld(tmp4, Address(src, 8));
+    __ ld(tmp5, Address(src, 16));
+    __ ld(tmp6, Address(src, 24));
+    __ sd(tmp3, Address(dst));
+    __ sd(tmp4, Address(dst, 8));
+    __ sd(tmp5, Address(dst, 16));
+    __ sd(tmp6, Address(dst, 24));
 
-    __ bind(copy8);
+    if (!is_backwards) {
+      __ addi(src, src, wordSize * 4);
+      __ addi(dst, dst, wordSize * 4);
+    }
+    __ addi(tmp, cnt, -(32 + wordSize * 4));
+    __ addi(cnt, cnt, -wordSize * 4);
+    __ bgez(tmp, copy32_loop); // cnt >= 32, do next loop
+
+    __ beqz(cnt, done); // if that's all - done
+
+    __ addi(tmp, cnt, -8); // if not - copy the reminder
+    __ bltz(tmp, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8_loop
+
+    __ bind(copy8_loop);
     if (is_backwards) {
       __ addi(src, src, -wordSize);
       __ addi(dst, dst, -wordSize);
@@ -964,11 +1068,11 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(src, src, wordSize);
       __ addi(dst, dst, wordSize);
     }
+    __ addi(tmp, cnt, -(8 + wordSize));
     __ addi(cnt, cnt, -wordSize);
-    __ addi(tmp4, cnt, -8);
-    __ bgez(tmp4, copy8); // cnt >= 8, do next loop
+    __ bgez(tmp, copy8_loop); // cnt >= 8, do next loop
 
-    __ beqz(cnt, done);
+    __ beqz(cnt, done); // if that's all - done
 
     __ bind(copy_small);
     if (is_backwards) {
@@ -1714,7 +1818,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(t0, dst);
+      __ load_klass(t0, dst, t1);
       __ beqz(t0, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
     }
