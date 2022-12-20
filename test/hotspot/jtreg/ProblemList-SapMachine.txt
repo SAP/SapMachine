@@ -101,6 +101,15 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 #compiler/codegen/TestCharVect2.java                                                  linux-aarch64
 
 ###############################################################################
+# New failures detected after GA of 11.0.17 (e.g. seen only in jdk11u-dev after branching 11.0.17 to jdk11u)
+
+# SapMachine 2022-10-17 Issues on ... zGC is not fully supported in 11, so excluding there
+#
+#compiler/gcbarriers/UnsafeIntrinsicsTest.java#z                                      linux-x64
+#
+#gc/stress/gcold/TestGCOldWithZ.java                                                  linux-x64
+
+###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
 
 # SapMachine 2019-01-08
@@ -163,13 +172,6 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 # Fails with: RuntimeException: 'Unloaded library with handle' missing from stdout/stderr
 # Recurring, 1-2 times a month.
 runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk16
-
-# SapMachine 2020-10-05
-# This test consumes a lot of resources - exclude it on all platforms to avoid issues with out of memory.
-vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java          generic-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
