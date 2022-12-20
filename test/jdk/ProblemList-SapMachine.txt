@@ -142,6 +142,15 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java                               823
 sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java                                 linux-s390x
 
 ###############################################################################
+# New failures detected after GA of 11.0.16 (e.g. seen only in jdk11u-dev after branching 11.0.16 to jdk11u)
+
+# SapMachine 2022-08-17
+# We see this issue occuring on our new Mac aarch64 VMs
+# Excluding now to reduce noise
+#
+java/net/MulticastSocket/Promiscuous.java                                            macosx-aarch64
+
+###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
 # SapMachine 2018-10-05
