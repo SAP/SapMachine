@@ -175,9 +175,12 @@ All rights reserved. Confidential and proprietary.
 	  for (var key in source) {
 		if (typeof source[key] === 'object') {
 		  if (target[key] && !isNaN(target[key])) {
+			  // check for duplicate OS entries and skip already existing OSes. 
+			  // actually it's not known if this is OS section due to recursive call
+			  // so check for key/value attributes which are used for OS and imageType.
 			  var entryAlreadyExists = false;
 			  Object.entries(target).forEach(([k, v]) => {
-			    if (v['key'] === source[key]['key']) {
+			    if (v['key'] !== undefined && v['key'] === source[key]['key']) {
 			      entryAlreadyExists = true;
 			    }
 			  });
