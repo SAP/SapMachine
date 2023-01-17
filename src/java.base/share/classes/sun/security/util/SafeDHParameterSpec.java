@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,23 @@
  * questions.
  */
 
-package java.lang;
+package sun.security.util;
+
+import java.math.BigInteger;
+import javax.crypto.spec.DHParameterSpec;
 
 /**
- * Thrown to indicate that an attempt has been made to store the
- * wrong type of object into an array of objects. For example, the
- * following code generates an {@code ArrayStoreException}:
- * <blockquote><pre>
- *     Object x[] = new String[3];
- *     x[0] = Integer.valueOf(0);
- * </pre></blockquote>
- *
- * @since   1.0
+ * Internal marker class for well-known safe DH parameters. It should
+ * only be used with trusted callers since it does not have all the needed
+ * values for validation.
  */
-public class ArrayStoreException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -4522193890499838241L;
 
-    /**
-     * Constructs an {@code ArrayStoreException} with no detail message.
-     */
-    public ArrayStoreException() {
-        super();
+public final class SafeDHParameterSpec extends DHParameterSpec {
+    public SafeDHParameterSpec(BigInteger p, BigInteger g) {
+        super(p, g);
     }
 
-    /**
-     * Constructs an {@code ArrayStoreException} with the specified
-     * detail message.
-     *
-     * @param   s   the detail message.
-     */
-    public ArrayStoreException(String s) {
-        super(s);
+    public SafeDHParameterSpec(BigInteger p, BigInteger g, int l) {
+        super(p, g, l);
     }
 }
