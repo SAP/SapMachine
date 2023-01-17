@@ -990,7 +990,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: [ "lldb" ],
             environment_path: [
                 input.get("gnumake", "install_path") + "/bin",
-                input.get("lldb", "install_path") + "/Xcode.app/Contents/Developer/usr/bin",
+                input.get("lldb", "install_path") + "/Xcode/Contents/Developer/usr/bin",
             ],
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
@@ -1035,7 +1035,7 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
-        macosx: "Xcode12.4+1.0",
+        macosx: "Xcode12.4+1.1",
         windows_x64: "VS2022-17.1.0+1.0",
         linux_aarch64: "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
@@ -1126,7 +1126,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-macosx" + (input.build_cpu == "x64" ? "_x64" : ""),
-            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.1" : devkit_platform_revisions[devkit_platform])
+            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.2" : devkit_platform_revisions[devkit_platform])
         },
 
         cups: {
