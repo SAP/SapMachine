@@ -213,3 +213,7 @@ serviceability/jvmti/8036666/GetObjectLockCount.java                            
 # SapMachine 2022-12-16 Exclude some failing tests
 runtime/ErrorHandling/SecondaryErrorTest.java#id1                                    linux-ppc64le
 runtime/jni/daemonDestroy/TestDaemonDestroy.java                                     windows-all
+
+# SapMachine 2023-01-21 Exclude for the time being
+# Timeouts after https://bugs.openjdk.org/browse/JDK-8299074
+compiler/jsr292/ContinuousCallSiteTargetChange.java                                  generic-all
