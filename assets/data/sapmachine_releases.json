@@ -47,6 +47,12 @@
             "label": "SapMachine 11",
             "lts": true,
             "ea": true
+        },
+        {
+            "id": "0-ea",
+            "label": "SapMachine 0",
+            "lts": false,
+            "ea": true
         }
     ],
     "imageTypes": [
@@ -349,6 +355,25 @@
                         "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.18%2B9/sapmachine-jre-11.0.18-ea.9_macos-x64_bin.tar.gz",
                         "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.18%2B9/sapmachine-jre-11.0.18-ea.9_windows-x64_bin.msi",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.18%2B9/sapmachine-jre-11.0.18-ea.9_windows-x64_bin.zip"
+                    }
+                }
+            ]
+        },
+        "0-ea": {
+            "releases": [
+                {
+                    "tag": "sapmachine-0.0.0",
+                    "jdk": {
+                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jdk-0.0.0_osx-aarch64_bin.dmg",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jdk-0.0.0_osx-aarch64_bin.tar.gz",
+                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jdk-0.0.0_osx-x64_bin.dmg",
+                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jdk-0.0.0_osx-x64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jre-0.0.0_osx-aarch64_bin.dmg",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jre-0.0.0_osx-aarch64_bin.tar.gz",
+                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jre-0.0.0_osx-x64_bin.dmg",
+                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-0.0.0/sapmachine-jre-0.0.0_osx-x64_bin.tar.gz"
                     }
                 }
             ]
