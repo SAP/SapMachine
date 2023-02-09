@@ -126,10 +126,12 @@ ifeq ($(call isTargetOs, solaris), true)
   PLATFORM_MODULES += jdk.crypto.ucrypto
 endif
 
+# SapMachine 2021-09-28 : add jcmd to JRE
 JRE_TOOL_MODULES += \
     jdk.jdwp.agent \
     jdk.pack \
     jdk.scripting.nashorn.shell \
+    jdk.jcmd \
     #
 
 ################################################################################
