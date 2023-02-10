@@ -393,7 +393,7 @@ ALL_VALUES_DO(RESETVAL)
   if (bf.read("/proc/meminfo")) {
 
     if (first_call) {
-      log_debug(vitals)("Read /proc/meminfo: \n%s", bf.text());
+      log_trace(vitals)("Read /proc/meminfo: \n%s", bf.text());
     }
 
     // All values in /proc/meminfo are in KB
