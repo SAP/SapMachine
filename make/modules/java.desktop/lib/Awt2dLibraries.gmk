@@ -423,7 +423,7 @@ else
           $(BUILD_LIBFREETYPE_CFLAGS), \
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4018 4267 4244 4312 4819, \
-      DISABLED_WARNINGS_gcc := implicit-fallthrough cast-function-type bad-function-cast, \
+      DISABLED_WARNINGS_gcc := implicit-fallthrough cast-function-type bad-function-cast dangling-pointer stringop-overflow, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -460,7 +460,7 @@ else
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess unused-result extra
+        maybe-uninitialized class-memaccess unused-result extra use-after-free
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis \

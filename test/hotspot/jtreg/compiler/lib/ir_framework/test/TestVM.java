@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ public class TestVM {
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter.emit();
         }
-        TestFormat.reportIfAnyFailures();
+        TestFormat.throwIfAnyFailures();
         declaredTests.clear();
         testMethodMap.clear();
     }
@@ -630,13 +630,16 @@ public class TestVM {
         DeclaredTest test = declaredTests.get(testMethod);
         checkCheckedTest(m, checkAnno, runAnno, testMethod, test);
         test.setAttachedMethod(m);
+        TestFormat.check(getAnnotation(testMethod, Arguments.class) != null || testMethod.getParameterCount() == 0,
+                         "Missing @Arguments annotation to define arguments of " + testMethod + " required by "
+                         + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
         dontCompileAndDontInlineMethod(m);
         CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod.getName()));
         allTests.add(checkedTest);
         if (PRINT_VALID_IR_RULES) {
             // Only need to emit IR verification information if IR verification is actually performed.
-            irMatchRulePrinter.emitRuleEncoding(m, checkedTest.isSkipped());
+            irMatchRulePrinter.emitRuleEncoding(testMethod, checkedTest.isSkipped());
         }
     }
 

@@ -3440,7 +3440,8 @@ encode %{
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none, "unexpected reloc type");
-        if (con < (address)(uintptr_t)os::vm_page_size()) {
+        if (! __ is_valid_AArch64_address(con) ||
+            con < (address)(uintptr_t)os::vm_page_size()) {
           __ mov(dst_reg, con);
         } else {
           uint64_t offset;
@@ -3916,7 +3917,7 @@ encode %{
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
+    __ tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
 
     // Check if it is still a light weight lock, this is is true if we
     // see the stack address of the basicLock in the markWord of the
@@ -4922,7 +4923,7 @@ operand iRegP()
   match(iRegP_R0);
   //match(iRegP_R2);
   //match(iRegP_R4);
-  //match(iRegP_R5);
+  match(iRegP_R5);
   match(thread_RegP);
   op_cost(0);
   format %{ %}
