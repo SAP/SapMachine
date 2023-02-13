@@ -45,7 +45,7 @@ public class TestVitalsValidSampleInterval {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("Vitals initialized.");
-        output.shouldContain("Sample interval: " + interval + " sec");
+        output.shouldContain("Vitals sample interval: " + interval + " seconds");
     }
 
     public static void main(String[] args) throws Exception {
