@@ -1258,7 +1258,6 @@ bool initialize() {
   initialized = true;
 
   log_info(vitals)("Vitals v%x", vitals_version);
-  log_info(vitals)("Initializing vitals...");
 
   // Adjust VitalsSampleInterval
   if (VitalsSampleInterval == 0) {
@@ -1282,7 +1281,8 @@ bool initialize() {
   success = success && initialize_sampler_thread();
 
   if (success) {
-    log_info(vitals)("Vitals intialized. Sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
+    log_info(vitals)("Vitals initialized.");
+    log_debug(vitals)("Vitals sample interval: " UINTX_FORMAT " seconds.", VitalsSampleInterval);
   } else {
     log_warning(vitals)("Failed to initialize Vitals.");
   }
