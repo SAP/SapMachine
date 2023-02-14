@@ -145,10 +145,12 @@
                 {
                     "tag": "sapmachine-20+35",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B35/sapmachine-jdk-20-ea.35_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B35/sapmachine-jdk-20-ea.35_linux-x64_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B35/sapmachine-jdk-20-eabeta.35_linux-x64-musl_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B35/sapmachine-jre-20-ea.35_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B35/sapmachine-jre-20-ea.35_linux-x64_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20%2B35/sapmachine-jre-20-eabeta.35_linux-x64-musl_bin.tar.gz"
                     }
