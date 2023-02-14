@@ -39,12 +39,13 @@ public class TestVitalsValidSampleInterval {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:VitalsSampleInterval=" + interval,
                 "-XX:MaxMetaspaceSize=16m",
-                "-Xlog:vitals",
+                "-Xlog:vitals=debug",
                 "-Xmx128m",
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        output.shouldContain("Vitals intialized. Sample interval: " + interval + " sec");
+        output.shouldContain("Vitals initialized.");
+        output.shouldContain("Vitals sample interval: " + interval + " seconds");
     }
 
     public static void main(String[] args) throws Exception {
