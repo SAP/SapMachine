@@ -62,6 +62,7 @@ public class TestGetConfigurations {
     public static void main(String[] args) throws Throwable {
         List<Configuration> predefinedConfigs = Configuration.getConfigurations();
         Asserts.assertNotNull(predefinedConfigs, "List of predefined configs is null");
+        //SapMachine 2023-02-20 Add the two additional configs and checks
         Asserts.assertEquals(predefinedConfigs.size(), 4, "Expected exactly four predefined configurations");
 
         Configuration defaultConfig = findConfigByName(predefinedConfigs, DEFAULT_CONFIG_NAME);
@@ -76,6 +77,7 @@ public class TestGetConfigurations {
         Asserts.assertEquals(profileConfig.getDescription(), PROFILE_CONFIG_DESCRIPTION);
         Asserts.assertEquals(profileConfig.getProvider(), PROFILE_CONFIG_PROVIDER);
 
+        //SapMachine 2023-02-20 Add the two additional configs and checks
         Configuration gcConfig = findConfigByName(predefinedConfigs, GC_CONFIG_NAME);
         Asserts.assertNotNull(gcConfig, "Config '" + GC_CONFIG_NAME + "' not found");
         Asserts.assertEquals(gcConfig.getLabel(), GC_CONFIG_LABEL);
