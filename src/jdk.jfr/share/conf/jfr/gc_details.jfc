@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration version="2.0" label="gc_details" description="Configuration for all GC related events. Higher impact caused by heap inspection initiated GCs to get heap satistics. Large recording size." provider="SAP SE">
+<configuration version="2.0" label="gc_details" description="Configuration for all GC related events. Higher impact caused by heap inspection initiated GCs to get heap statistics. Large recording size." provider="SAP SE">
 
   <event name="jdk.ThreadAllocationStatistics">
     <setting name="enabled">true</setting>
