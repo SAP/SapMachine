@@ -2258,7 +2258,7 @@ static int check_matching_lines_from_file(const char* filename, const char* keyw
 
   while (fgets(line, sizeof(line), fp) != NULL) {
     int i = 0;
-    while (keywords_to_match[i] != NULL && line != NULL) {
+    while (keywords_to_match[i] != NULL) {
       if (strstr(line, keywords_to_match[i]) != NULL) {
         fclose(fp);
         return i;
