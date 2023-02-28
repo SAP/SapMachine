@@ -1449,11 +1449,9 @@ class CloneDumpTimeClassTable: public StackObj {
     assert(_cloned_table != NULL, "_cloned_table is NULL");
   }
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!info.is_excluded()) {
-      bool created;
-      _cloned_table->put_if_absent(k, info, &created);
-      assert(created, "must be");
-    }
+    bool created;
+    _cloned_table->put_if_absent(k, info, &created);
+    assert(created, "must be");
   }
 };
 
