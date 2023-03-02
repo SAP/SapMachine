@@ -42,7 +42,7 @@ import java.util.jar.Manifest;
 /**
  * Adds aliasing to ZipFileSystem to support multi-release jar files.  An alias map
  * is created by {@link JarFileSystem#createVersionedLinks(int)}.  The map is then
- * consulted when an entry is looked up in {@link JarFileSystem#getEntry(byte[])}
+ * consulted when an entry is looked up in {@link JarFileSystem#getInode(byte[])}
  * to determine if the entry has a corresponding versioned entry.  If so, the
  * versioned entry is returned.
  *
