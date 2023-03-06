@@ -129,7 +129,7 @@ compiler/runtime/cr6891750/Test6891750.java                                     
 serviceability/sa/ClhsdbJstackXcompStress.java                                       windows-all
 
 # SapMachine 2022-12-20
-# Excluding a few aot tests on Mac since they fail in our test systems due to issues with "/usr/bin/ld"
+# Excluding a few AOT tests on Mac since they fail in our test systems due to issues with "/usr/bin/ld"
 compiler/aot/DeoptimizationTest.java                                                 macosx-x64
 compiler/aot/RecompilationTest.java                                                  macosx-x64
 compiler/aot/SharedUsageTest.java                                                    macosx-x64
@@ -173,7 +173,7 @@ compiler/aot/cli/SingleAOTLibraryTest.java                                      
 compiler/aot/cli/SingleAOTOptionTest.java                                            macosx-x64
 compiler/aot/cli/jaotc/AtFileTest.java                                               macosx-x64
 compiler/aot/cli/jaotc/CompileClassTest.java                                         macosx-x64
-compiler/aot/cli/jaotc/CompileClassWithDebugTest.java                                macosx-x64
+compiler/aot/cli/jaotc/CompileClassWithDebugTest.java                        8303074 linux-aarch64,macosx-x64
 compiler/aot/cli/jaotc/CompileDirectoryTest.java                                     macosx-x64
 compiler/aot/cli/jaotc/CompileJarTest.java                                           macosx-x64
 compiler/aot/cli/jaotc/CompileModuleTest.java                                        macosx-x64
