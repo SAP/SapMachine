@@ -663,8 +663,8 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   ObjectLocker ol(lockObject, THREAD);
 
   bool super_load_in_progress  = false;
-  InstanceKlass* loaded_class = NULL;
-  Symbol* superclassname = NULL;
+  InstanceKlass* loaded_class = nullptr;
+  SymbolHandle superclassname; // Keep alive while loading in parallel thread.
 
   assert(THREAD->can_call_java(),
          "can not load classes with compiler thread: class=%s, classloader=%s",
