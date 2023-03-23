@@ -752,7 +752,7 @@ public:
   }
 };
 
-// sampleTables is a combination of two tables: a short term table, a long term table.
+// sampleTables is a combination of two tables: a short term table and a long term table.
 // It takes care to feed new samples into these tables at the appropriate intervals.
 class SampleTables: public CHeapObj<mtInternal> {
 
@@ -826,7 +826,6 @@ public:
     // only after an initial long term table interval has passed
     _count++;
     // Feed long term table
-    // SapMachine 2023-03-21 Consider VitalsSampleInterval for adding sample to the long term table
     if ((_count % (long_term_sample_interval / VitalsSampleInterval)) == 0) {
       _long_term_table.add_sample(sample);
     }
