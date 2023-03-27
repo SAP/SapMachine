@@ -9,38 +9,12 @@
 
     <link rel="stylesheet" type="text/css" media="screen" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
 
-    {% if site.google_analytics %}
       <script type="text/javascript">
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-        ga('create', '{{ site.google_analytics }}', 'auto');
-        ga('send', 'pageview');
-
         function sendDownloadEvent(target) {
-          function withTimeout(callback, timeout) {
-              var called = false;
-              function wrapper() {
-                  if (!called) {
-                      called = true;
-                      callback();
-                  }
-              }
-              setTimeout(wrapper, timeout || 1000);
-              return wrapper;
-          }
-
-            ga('send', 'pageview', {
-              location: target,
-              hitCallback: withTimeout(function gaHitCallback() {
-                  window.location.href = target
-              }, 500)
-            });
-        }
+            window.location.href = target;
+		};
       </script>
-    {% endif %}
-
+    
     {% for js in site.jsarr %}
       <script type="text/javascript">
         {% include {{ js }} %}

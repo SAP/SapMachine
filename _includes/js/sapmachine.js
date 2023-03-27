@@ -5,7 +5,7 @@ All rights reserved. Confidential and proprietary.
 
 "use strict";
 
-(function (window, document, $, ga, undefined) {
+(function (window, document, $, undefined) {
 
 	var _jsondata = [];
 	
@@ -593,4 +593,4 @@ All rights reserved. Confidential and proprietary.
 		const sapMachine = new SapMachine(_jsondata)
     });
 
-})(window, document, jQuery, ga)
+})(window, document, jQuery)
