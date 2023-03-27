@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,7 +23,6 @@
  * questions.
  *
  */
-
 
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
@@ -51,17 +50,6 @@ VitalsDCmd::VitalsDCmd(outputStream* output, bool heap)
   _dcmdparser.add_dcmd_option(&_reverse);
   _dcmdparser.add_dcmd_option(&_raw);
   _dcmdparser.add_dcmd_option(&_sample_now);
-}
-
-int VitalsDCmd::num_arguments() {
-  ResourceMark rm;
-  VitalsDCmd* dcmd = new VitalsDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 static bool scale_from_name(const char* scale, size_t* out) {
@@ -101,4 +89,4 @@ void VitalsDCmd::execute(DCmdSource source, TRAPS) {
   sapmachine_vitals::print_report(output(), &info);
 }
 
-}; // namespace sapmachine_vitals
+} // namespace sapmachine_vitals

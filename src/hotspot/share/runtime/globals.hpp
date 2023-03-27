@@ -713,10 +713,6 @@ const int ObjectAlignmentInBytes = 8;
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
                                                                             \
-  product(bool, EnableWaitForParallelLoad, false,                           \
-          "(Deprecated) Enable legacy parallel classloading logic for "     \
-          "class loaders not registered as parallel capable")               \
-                                                                            \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
@@ -890,9 +886,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceInlineCacheClearing, false,                            \
           "Trace clearing of inline caches in nmethods")                    \
-                                                                            \
-  develop(bool, TraceDependencies, false,                                   \
-          "Trace dependencies")                                             \
                                                                             \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \

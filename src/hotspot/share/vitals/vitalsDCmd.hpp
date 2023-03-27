@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-
 #ifndef HOTSPOT_SHARE_VITALS_VITALSDCMD_HPP
 #define HOTSPOT_SHARE_VITALS_VITALSDCMD_HPP
 
@@ -41,6 +40,7 @@ protected:
   DCmdArgument<bool> _raw;
   DCmdArgument<bool> _sample_now;
 public:
+  static int num_arguments() { return 6; }
   VitalsDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.vitals";
@@ -52,15 +52,12 @@ public:
     return "Low.";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+    JavaPermission p = { "java.lang.management.ManagementPermission", "monitor", NULL };
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-}; // namespace sapmachine_vitals
+} // namespace sapmachine_vitals
 
-#endif /* HOTSPOT_SHARE_VITALS_VITALSDCMD_HPP */
-
+#endif // HOTSPOT_SHARE_VITALS_VITALSDCMD_HPP

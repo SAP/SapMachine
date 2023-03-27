@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,9 +34,8 @@ namespace sap {
 
 #ifdef HAVE_GLIBC_MALLOC_HOOKS
 
-// By default, lets use nmt-like capturing. I see (very rarely) crashes with backtrace(3)
-// on x86. backtrace(3) gives us better callstack but runs a (small) risk of crashing, especially
-// on x86.
+// By default, let's use nmt-like capturing. I see (very rarely) crashes with backtrace(3) on x86.
+// backtrace(3) gives us better callstack but runs a (small) risk of crashing, especially on x86.
 const bool use_backtrace_default = false;
 
 void MallocTraceDCmd::execute(DCmdSource source, TRAPS) {

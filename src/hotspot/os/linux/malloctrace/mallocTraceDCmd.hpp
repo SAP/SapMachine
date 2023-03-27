@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@ class MallocTraceDCmd : public DCmdWithParser {
   DCmdArgument<char*> _option;
   DCmdArgument<char*>  _suboption;
 public:
+  static int num_arguments() { return 2; }
   MallocTraceDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "System.malloctrace";
@@ -55,6 +56,6 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-}
+} // namespace sap
 
 #endif // OS_LINUX_MALLOCTRACE_MALLOCTRACEDCMD_HPP
