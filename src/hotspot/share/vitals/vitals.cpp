@@ -750,14 +750,14 @@ public:
   }
 };
 
-// sampleTables is a combination of three tables: a short term table, a mid term table, a long term table.
+// sampleTables is a combination of two tables: a short term table and a long term table.
 // It takes care to feed new samples into these tables at the appropriate intervals.
 class SampleTables: public CHeapObj<mtInternal> {
 
   // Short term table: cover one hour, one sample per VitalsSampleInterval (default 10 seconds)
   static const int short_term_span_seconds = 3600;
 
-  // Mid term table: cover 14 days, one sample per hour
+  // Long term table: cover 14 days, one sample per hour
   static const int long_term_span_seconds = short_term_span_seconds * 24 * 14;
   static const int long_term_sample_interval = short_term_span_seconds;
 
@@ -824,7 +824,7 @@ public:
     // only after an initial long term table interval has passed
     _count++;
     // Feed long term table
-    if ((_count % long_term_sample_interval) == 0) {
+    if ((_count % (long_term_sample_interval / VitalsSampleInterval)) == 0) {
       _long_term_table.add_sample(sample);
     }
   }
