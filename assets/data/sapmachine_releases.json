@@ -41,6 +41,12 @@
             "label": "SapMachine 11",
             "lts": true,
             "ea": true
+        },
+        {
+            "id": "0-ea",
+            "label": "SapMachine 0",
+            "lts": false,
+            "ea": true
         }
     ],
     "imageTypes": [
@@ -313,6 +319,13 @@
                         "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.19%2B6/sapmachine-jre-11.0.19-ea.6_windows-x64_bin.msi",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.19%2B6/sapmachine-jre-11.0.19-ea.6_windows-x64_bin.zip"
                     }
+                }
+            ]
+        },
+        "0-ea": {
+            "releases": [
+                {
+                    "tag": "sapmachine-0.0.0"
                 }
             ]
         }
