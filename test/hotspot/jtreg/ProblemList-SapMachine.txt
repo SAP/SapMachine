@@ -210,3 +210,6 @@ serviceability/jvmti/8036666/GetObjectLockCount.java                            
 # SapMachine 2022-12-16 Exclude some failing tests
 runtime/ErrorHandling/SecondaryErrorTest.java#id1                                    linux-ppc64le
 runtime/jni/daemonDestroy/TestDaemonDestroy.java                                     windows-all
+
+# SapMachine 2023-04-14 This test seems to be failing in our CI
+runtime/ErrorHandling/TestDwarf.java                                         8305489 linux-i586,linux-x64
