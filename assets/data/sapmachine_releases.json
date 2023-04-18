@@ -137,7 +137,13 @@
         "20": {
             "releases": [
                 {
-                    "tag": "sapmachine-20.0.1"
+                    "tag": "sapmachine-20.0.1",
+                    "jdk": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.1/sapmachine-jdk-20.0.1_linux-x64-musl_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.1/sapmachine-jre-20.0.1_linux-x64-musl_bin.tar.gz"
+                    }
                 }
             ]
         },
@@ -175,7 +181,10 @@
         "17": {
             "releases": [
                 {
-                    "tag": "sapmachine-17.0.7"
+                    "tag": "sapmachine-17.0.7",
+                    "jdk": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.7/sapmachine-jdk-17.0.7_linux-x64-musl_bin.tar.gz"
+                    }
                 }
             ]
         },
