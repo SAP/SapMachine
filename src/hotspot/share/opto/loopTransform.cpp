@@ -2276,8 +2276,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 
     // Verify that policy_unroll result is still valid.
     const TypeInt* limit_type = _igvn.type(limit)->is_int();
-    assert(stride_con > 0 && ((limit_type->_hi - stride_con) < limit_type->_hi) ||
-           stride_con < 0 && ((limit_type->_lo - stride_con) > limit_type->_lo),
+    assert((stride_con > 0 && ((min_jint + stride_con) <= limit_type->_hi)) ||
+           (stride_con < 0 && ((max_jint + stride_con) >= limit_type->_lo)),
            "sanity");
 
     if (limit->is_Con()) {
@@ -3684,7 +3684,12 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   // counted loop has limit check predicate.
   Node* phi = cl->phi();
   Node* exact_limit = phase->exact_limit(this);
-  Node* final_iv = new SubINode(exact_limit, cl->stride());
+
+  // We need to pin the exact limit to prevent it from floating above the zero trip guard.
+  Node* cast_ii = ConstraintCastNode::make(cl->in(LoopNode::EntryControl), exact_limit, phase->_igvn.type(exact_limit), ConstraintCastNode::UnconditionalDependency, T_INT);
+  phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
+
+  Node* final_iv = new SubINode(cast_ii, cl->stride());
   phase->register_new_node(final_iv, cl->in(LoopNode::EntryControl));
   phase->_igvn.replace_node(phi, final_iv);
 
@@ -4242,6 +4247,19 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* len = new SubINode(head->limit(), head->init_trip());
   _igvn.register_new_node_with_optimizer(len);
 
+  // If the store is on the backedge, it is not executed in the last
+  // iteration, and we must subtract 1 from the len.
+  Node* backedge = head->loopexit()->proj_out(1);
+  if (store->in(0) == backedge) {
+    len = new SubINode(len, _igvn.intcon(1));
+    _igvn.register_new_node_with_optimizer(len);
+#ifndef PRODUCT
+    if (TraceOptimizeFill) {
+      tty->print_cr("ArrayFill store on backedge, subtract 1 from len.");
+    }
+#endif
+  }
+
   BasicType t = store->as_Mem()->memory_type();
   bool aligned = false;
   if (offset != NULL && head->init_trip()->is_Con()) {
@@ -4343,6 +4361,13 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     Node* n = lpt->_body.at(i);
     _igvn.replace_node(n, C->top());
   }
+
+#ifndef PRODUCT
+  if (TraceOptimizeFill) {
+    tty->print("ArrayFill call   ");
+    call->dump();
+  }
+#endif
 
   return true;
 }
