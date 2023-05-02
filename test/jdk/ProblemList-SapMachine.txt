@@ -332,3 +332,7 @@ java/lang/invoke/lambda/LambdaFileEncodingSerialization.java                 824
 # SapMachine 2022-12-11
 java/lang/Thread/virtual/stress/Skynet.java#id0                                      generic-all
 java/lang/Thread/virtual/stress/Skynet.java#id1                                      generic-all
+
+# SapMachine 2023-04-30
+# We see this failing in SapMachine Jenkins CI
+java/util/concurrent/forkjoin/AsyncShutdownNowInvokeAnyRace.java                     windows-x64
