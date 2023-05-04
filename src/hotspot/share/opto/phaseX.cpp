@@ -469,6 +469,14 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
   uint worklist_size = worklist->size();
 
+  GrowableArray<Node_Notes*>* old_node_note_array = C->node_note_array();
+  if (old_node_note_array != nullptr) {
+    int new_size = (_useful.size() >> 8) + 1; // The node note array uses blocks, see C->_log2_node_notes_block_size
+    new_size = MAX2(8, new_size);
+    C->set_node_note_array(new (C->comp_arena()) GrowableArray<Node_Notes*> (C->comp_arena(), new_size, 0, nullptr));
+    C->grow_node_notes(C->node_note_array(), new_size);
+  }
+
   // Iterate over the set of live nodes.
   for (uint current_idx = 0; current_idx < _useful.size(); current_idx++) {
     Node* n = _useful.at(current_idx);
@@ -483,6 +491,11 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
     assert(_old2new_map.at(n->_idx) == -1, "already seen");
     _old2new_map.at_put(n->_idx, current_idx);
+
+    if (old_node_note_array != nullptr) {
+      Node_Notes* nn = C->locate_node_notes(old_node_note_array, n->_idx);
+      C->set_node_notes_at(current_idx, nn);
+    }
 
     n->set_idx(current_idx); // Update node ID.
 
@@ -1642,6 +1655,16 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         if (imem != NULL)  add_users_to_worklist0(imem);
       }
     }
+    // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
+    // CatchNode::Value() is responsible for killing that path. The CatchNode has to be explicitly enqueued for igvn
+    // to guarantee the change is not missed.
+    if (use_op == Op_AllocateArray && n == use->in(AllocateNode::ValidLengthTest)) {
+      Node* p = use->as_AllocateArray()->proj_out_or_null(TypeFunc::Control);
+      if (p != NULL) {
+        add_users_to_worklist0(p);
+      }
+    }
+
     if (use_op == Op_Initialize) {
       Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
       if (imem != NULL)  add_users_to_worklist0(imem);
@@ -1808,6 +1831,7 @@ void PhaseCCP::analyze() {
         // the Catch following the call.  It's looking for a non-NULL
         // receiver to know when to enable the regular fall-through path
         // in addition to the NullPtrException path
+        // Same is true if the type of a ValidLengthTest input to an AllocateArrayNode changes.
         if (m->is_Call()) {
           for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
             Node* p = m->fast_out(i2);  // Propagate changes to uses

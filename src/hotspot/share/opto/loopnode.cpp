@@ -3123,6 +3123,17 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
             // Skip to head of inner loop
             assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
             n = nlpt->_head;
+            if (_head == n) {
+              // this and nlpt (inner loop) have the same loop head. This should not happen because
+              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+              // but then attached in the build_loop_tree afterwards, and so still have unmerged
+              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+              // since we have reached the loop head of this.
+              assert(_head->as_Region()->is_in_infinite_subgraph(),
+                     "only expect unmerged backedges in infinite loops");
+              break;
+            }
           }
         }
       }
@@ -3704,30 +3715,7 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
     assert(head->is_Region(), "");
     worklist.push(head);
   }
-  // BFS traversal down the CFG, except through NeverBranch exits
-  for (uint i = 0; i < worklist.size(); ++i) {
-    Node* n = worklist.at(i);
-    assert(n->is_CFG(), "only traverse CFG");
-    if (n->is_Root()) {
-      // Found root -> there was an exit!
-      return false;
-    } else if (n->is_NeverBranch()) {
-      // Only follow the loop-internal projection, not the NeverBranch exit
-      ProjNode* proj = n->as_NeverBranch()->proj_out_or_null(0);
-      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
-      worklist.push(proj);
-    } else {
-      // Traverse all CFG outputs
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* use = n->fast_out(i);
-        if (use->is_CFG()) {
-          worklist.push(use);
-        }
-      }
-    }
-  }
-  // No exit found for any loop -> all are infinite
-  return true;
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
 #endif
 

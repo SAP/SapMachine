@@ -921,7 +921,8 @@ class Compile : public Phase {
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
   Unique_Node_List* for_igvn()                  { return _for_igvn; }
-  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List.
+  inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
+  inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
   void          set_for_igvn(Unique_Node_List *for_igvn) { _for_igvn = for_igvn; }
 
@@ -1113,9 +1114,9 @@ class Compile : public Phase {
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
-  void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc);
-  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop);
-  void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc );
+  void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void eliminate_redundant_card_marks(Node* n);
 
   // Logic cone optimization.
