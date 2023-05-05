@@ -47,12 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 93;
+    private static final int COUNT = 94;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "E7:16:96:EB:83:D1:11:06:ED:47:61:6A:FF:C3:88:D7:D9:50:0B:67:9C:71:C4:AC:3D:DD:93:B0:91:B4:6C:CF";
+            = "9F:1A:61:9F:62:6F:E3:5B:43:15:94:95:DB:3E:AD:81:EB:F8:87:7B:E7:4A:47:22:97:E6:D7:3E:F2:B5:89:82";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -123,6 +123,8 @@ public class VerifyCACerts {
                     "B4:78:B8:12:25:0D:F8:78:63:5C:2A:A7:EC:7D:15:5E:AA:62:5E:E8:29:16:E2:CD:29:43:61:88:6C:D1:FB:D4");
             put("geotrustuniversalca [jdk]",
                     "A0:45:9B:9F:63:B2:25:59:F5:FA:5D:4C:6D:B3:F9:F7:2F:F1:93:42:03:35:78:F0:73:BF:1D:1B:46:CB:B9:12");
+            put("sapglobalrootca [jdk]",
+                    "56:53:9C:1E:7B:5E:D5:58:2B:79:68:00:61:CB:F2:14:86:A8:50:22:6B:2F:CF:30:B5:B1:52:A7:20:E1:34:DE");
             put("thawteprimaryrootca [jdk]",
                     "8D:72:2F:81:A9:C1:13:C0:79:1D:F1:36:A2:96:6D:B2:6C:95:0A:97:1D:B4:6B:41:99:F4:EA:54:B7:8B:FB:9F");
             put("thawteprimaryrootcag2 [jdk]",
