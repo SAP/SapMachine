@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1241,7 +1241,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
     CLDCounterClosure cl;
     {
       MutexLocker lck(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::cld_do(&cl);
+      ClassLoaderDataGraph::loaded_cld_do(&cl);
     }
     set_value_in_sample(g_col_number_of_clds, sample, cl._cnt);
     set_value_in_sample(g_col_number_of_anon_clds, sample, cl._anon_cnt);
