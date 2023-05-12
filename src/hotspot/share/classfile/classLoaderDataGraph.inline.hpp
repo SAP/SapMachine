@@ -31,6 +31,10 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 
+// SapMachine 2019-09-01: vitals.
+#include "runtime/globals.hpp"
+#include "vitals/vitals.hpp"
+
 inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
   guarantee(loader() != NULL && oopDesc::is_oop(loader()), "Loader must be oop");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
@@ -52,20 +56,36 @@ size_t ClassLoaderDataGraph::num_array_classes() {
 
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
   Atomic::add(&_num_instance_classes, count);
+  // SapMachine 2019-02-20 : vitals
+  if (EnableVitals) {
+    sapmachine_vitals::counters::inc_classes_loaded(count);
+  }
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
   assert(count <= _num_instance_classes, "Sanity");
   Atomic::sub(&_num_instance_classes, count);
+  // SapMachine 2019-02-20 : vitals
+  if (EnableVitals) {
+    sapmachine_vitals::counters::inc_classes_unloaded(count);
+  }
 }
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
   Atomic::add(&_num_array_classes, count);
+  // SapMachine 2019-02-20 : vitals
+  if (EnableVitals) {
+    sapmachine_vitals::counters::inc_classes_loaded(count);
+  }
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
   assert(count <= _num_array_classes, "Sanity");
   Atomic::sub(&_num_array_classes, count);
+  // SapMachine 2019-02-20 : vitals
+  if (EnableVitals) {
+    sapmachine_vitals::counters::inc_classes_unloaded(count);
+  }
 }
 
 bool ClassLoaderDataGraph::should_clean_metaspaces_and_reset() {
