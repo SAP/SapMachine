@@ -23,8 +23,10 @@
 
 package jdk.test.lib;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,11 +34,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-
-// SapMachine 2022-07-01: Vitals: needed for Platform.isMusl
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 
 public class Platform {
     public  static final String vmName      = privilegedGetProperty("java.vm.name");
@@ -192,7 +189,6 @@ public class Platform {
         return vmVersion;
     }
 
-    // SapMachine 2022-07-01: Vitals: Platform.isMusl() cherry-picked from upstream since its needed for Vitals sanity tests.
     public static boolean isMusl() {
         try {
             ProcessBuilder pb = new ProcessBuilder("ldd", "--version");
