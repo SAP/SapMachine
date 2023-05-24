@@ -64,7 +64,7 @@ void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
-  size_t old_count = Atomic::fetch_and_add(&_num_instance_classes, -count, memory_order_relaxed);
+  size_t old_count = Atomic::fetch_then_add(&_num_instance_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
   // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
@@ -81,7 +81,7 @@ void ClassLoaderDataGraph::inc_array_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
-  size_t old_count = Atomic::fetch_and_add(&_num_array_classes, -count, memory_order_relaxed);
+  size_t old_count = Atomic::fetch_then_add(&_num_array_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
   // SapMachine 2019-02-20 : vitals
   if (EnableVitals) {
