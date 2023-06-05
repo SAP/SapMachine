@@ -65,6 +65,7 @@ public:
   // Override as JavaThread::post_run() calls JavaThread::exit which
   // expects a valid thread object oop.
   virtual void post_run() {
+    unregister_thread_stack_with_NMT();
     Threads::remove(this, false);
     this->smr_delete();
   }
@@ -114,6 +115,7 @@ public:
   // Override as JavaThread::post_run() calls JavaThread::exit which
   // expects a valid thread object oop. And we need to call signal.
   void post_run() {
+    unregister_thread_stack_with_NMT();
     Threads::remove(this, false);
     _post->signal();
     this->smr_delete();
