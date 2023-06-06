@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,33 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.java.text;
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 
-import javax.swing.border.TitledBorder;
+import java.text.DateFormatSymbols;
+import java.util.Locale;
 
-/**
- * @test
- * @bug 8204963
- * @summary Verifies TitledBorder's memory leak
- * @library /javax/swing/regtesthelpers
- * @build Util
- * @run main/timeout=60/othervm -mx32m TestTitledBorderLeak
- */
-public final class TestTitledBorderLeak {
+@BenchmarkMode(Mode.SingleShotTime)
+@State(Scope.Thread)
+public class ZoneStrings {
 
-    public static void main(String[] args) throws Exception {
-        Reference<TitledBorder> border = getTitleBorder();
-        int attempt = 0;
-        while (border.get() != null) {
-            Util.generateOOME();
-            System.out.println("Not freed, attempt: " + attempt++);
+    @Benchmark
+    public void testZoneStrings() {
+        for (Locale l : Locale.getAvailableLocales()) {
+            new DateFormatSymbols(l).getZoneStrings();
         }
-    }
-
-    private static Reference<TitledBorder> getTitleBorder() {
-        TitledBorder tb = new TitledBorder("");
-        return new WeakReference<>(tb);
     }
 }
