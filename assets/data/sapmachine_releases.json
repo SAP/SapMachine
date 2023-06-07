@@ -317,13 +317,17 @@
                     "tag": "sapmachine-17.0.8+5",
                     "jdk": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jdk-17.0.8-ea.5_linux-aarch64_bin.tar.gz",
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jdk-17.0.8-ea.5_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jdk-17.0.8-ea.5_linux-x64-musl_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jdk-17.0.8-ea.5_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jdk-17.0.8-ea.5_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jdk-17.0.8-ea.5_windows-x64_bin.zip"
                     },
                     "jre": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-aarch64_bin.tar.gz",
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-x64-musl_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_windows-x64_bin.zip"
                     }
                 }
             ],
@@ -332,13 +336,17 @@
                     "tag": "sapmachine-17.0.8+5",
                     "jdk": {
                         "linux-aarch64": "sha256 2e41c987bb76a997be798abbda589111046690ef425fa02bc10c1c1131de6d06",
+                        "linux-ppc64le": "sha256 9bac2acf229496f33d36429f733d9e4ee77b15d5735a9c6d03db0adb5fa64d17",
                         "linux-x64-musl": "sha256 dec580551f63cca8021697a1338133848fe343bb924ab19f92f361d7587babfe",
-                        "linux-x64": "sha256 bb0e351af1975acee0c9c6c5e8ca0d225376b47e0b1ddad36776dce779efd760"
+                        "linux-x64": "sha256 bb0e351af1975acee0c9c6c5e8ca0d225376b47e0b1ddad36776dce779efd760",
+                        "windows-x64": "sha256 dff6191ffb1de61028d74582dc420e47401422a500a3fece18d76a49b8d3c148"
                     },
                     "jre": {
                         "linux-aarch64": "sha256 288c98565612e3c7b5f9629beb9492d69b4bfe7a1f4c4de900d7d4a0143a44ed",
+                        "linux-ppc64le": "sha256 5f08ea39ad92544c1e6eac0bdb05d07d1ab8b35ee2b50046b819ed0e34618481",
                         "linux-x64-musl": "sha256 dc429b93ef166c975e2ca876994f2a1dfa26048bcf80654d9eee5681a79d08a6",
-                        "linux-x64": "sha256 d008942fe3b0dc612ddf60d377ae43afccd04a8a9801467c79ebc503dd06e2f7"
+                        "linux-x64": "sha256 d008942fe3b0dc612ddf60d377ae43afccd04a8a9801467c79ebc503dd06e2f7",
+                        "windows-x64": "sha256 cc8b5bfd38cdef5f413b9e9792fa141f29a5fe8ddeb5e17b2891c1db3d15f6b2"
                     }
                 }
             ]
@@ -405,11 +413,13 @@
                     "tag": "sapmachine-11.0.20+5",
                     "jdk": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jdk-11.0.20-ea.5_linux-aarch64_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jdk-11.0.20-ea.5_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jdk-11.0.20-ea.5_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jdk-11.0.20-ea.5_windows-x64_bin.zip"
                     },
                     "jre": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jre-11.0.20-ea.5_linux-aarch64_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jre-11.0.20-ea.5_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jre-11.0.20-ea.5_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B5/sapmachine-jre-11.0.20-ea.5_windows-x64_bin.zip"
                     }
                 }
             ],
@@ -418,11 +428,13 @@
                     "tag": "sapmachine-11.0.20+5",
                     "jdk": {
                         "linux-aarch64": "sha256 854a1ad36c68c71887fe3f6cd842c89d6a20cee33999d045c5f1352fb8808d0e",
-                        "linux-x64": "sha256 803f215b1a3799447385fb9b1fe68766c8e85613cf15a6c88a4453cb636af5f5"
+                        "linux-x64": "sha256 803f215b1a3799447385fb9b1fe68766c8e85613cf15a6c88a4453cb636af5f5",
+                        "windows-x64": "sha256 5d0b68d5447bd12d70df2ce99bc42feb75870b3466d55d294ccfb0176cd5b902"
                     },
                     "jre": {
                         "linux-aarch64": "sha256 6521c7b615a3c157b211d370930c53df9606d316cd94c454aa787762eeffc5c3",
-                        "linux-x64": "sha256 c91313e467801e9593a509e2f8c63f0eb39b9d3ccf0403b74e195e2deb91843d"
+                        "linux-x64": "sha256 c91313e467801e9593a509e2f8c63f0eb39b9d3ccf0403b74e195e2deb91843d",
+                        "windows-x64": "sha256 298d0eafb4204e455d667f44e2ca1badf16e4cbcb0a259009ddf2cdd188619be"
                     }
                 }
             ]
