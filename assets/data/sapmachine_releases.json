@@ -108,10 +108,12 @@
                 {
                     "tag": "sapmachine-21+25",
                     "jdk": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jdk-21-ea.25_linux-x64-musl_bin.tar.gz"
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jdk-21-ea.25_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jdk-21-ea.25_linux-x64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jre-21-ea.25_linux-x64-musl_bin.tar.gz"
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jre-21-ea.25_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jre-21-ea.25_linux-x64_bin.tar.gz"
                     }
                 }
             ],
@@ -313,6 +315,7 @@
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jdk-17.0.8-ea.5_linux-x64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-aarch64_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-x64-musl_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.8%2B5/sapmachine-jre-17.0.8-ea.5_linux-x64_bin.tar.gz"
                     }
@@ -322,10 +325,12 @@
                 {
                     "tag": "sapmachine-17.0.8+5",
                     "jdk": {
+                        "linux-aarch64": "sha256 2e41c987bb76a997be798abbda589111046690ef425fa02bc10c1c1131de6d06",
                         "linux-x64-musl": "sha256 dec580551f63cca8021697a1338133848fe343bb924ab19f92f361d7587babfe",
                         "linux-x64": "sha256 bb0e351af1975acee0c9c6c5e8ca0d225376b47e0b1ddad36776dce779efd760"
                     },
                     "jre": {
+                        "linux-aarch64": "sha256 288c98565612e3c7b5f9629beb9492d69b4bfe7a1f4c4de900d7d4a0143a44ed",
                         "linux-x64-musl": "sha256 dc429b93ef166c975e2ca876994f2a1dfa26048bcf80654d9eee5681a79d08a6",
                         "linux-x64": "sha256 d008942fe3b0dc612ddf60d377ae43afccd04a8a9801467c79ebc503dd06e2f7"
                     }
