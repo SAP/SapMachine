@@ -109,12 +109,21 @@
                     "tag": "sapmachine-21+25",
                     "jdk": {
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jdk-21-ea.25_linux-x64-musl_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B25/sapmachine-jre-21-ea.25_linux-x64-musl_bin.tar.gz"
                     }
                 }
             ],
             "checksums": [
                 {
-                    "tag": "sapmachine-21+25"
+                    "tag": "sapmachine-21+25",
+                    "jdk": {
+                        "linux-x64-musl": "sha256 058efabdb59859f3ab5f99ce008c960f31e4b841d8c5b00530f351ccee0770ec"
+                    },
+                    "jre": {
+                        "linux-x64-musl": "sha256 1c91a6f632d3d7b467d4e465711547775b691a74fb458602599daaa3bda556a2"
+                    }
                 }
             ]
         },
