@@ -114,10 +114,14 @@
                 {
                     "tag": "sapmachine-22+1",
                     "jdk": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jdk-22-ea.1_linux-x64-musl_bin.tar.gz"
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jdk-22-ea.1_linux-aarch64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jdk-22-ea.1_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jdk-22-ea.1_linux-x64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jre-22-ea.1_linux-x64-musl_bin.tar.gz"
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jre-22-ea.1_linux-aarch64_bin.tar.gz",
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jre-22-ea.1_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B1/sapmachine-jre-22-ea.1_linux-x64_bin.tar.gz"
                     }
                 }
             ],
@@ -125,10 +129,13 @@
                 {
                     "tag": "sapmachine-22+1",
                     "jdk": {
-                        "linux-x64-musl": "sha256 9017829441e870f62188dd698abffeb8ab7f63b97129f10ddaf274334dd6c985"
+                        "linux-aarch64": "sha256 819de739ec8186c83fb7d322dda9eb009912e02caf0db19a0b13a7a5dbb716ed",
+                        "linux-x64-musl": "sha256 9017829441e870f62188dd698abffeb8ab7f63b97129f10ddaf274334dd6c985",
+                        "linux-x64": "sha256 04c10e42992433e0f1358f1ac92a820b185ddd4f0a114d6c80315bc7a9a8fc85"
                     },
                     "jre": {
-                        "linux-x64-musl": "sha256 ab7e46d98ba656b42ef5a0520455644e2bdb2b1a0a060ef9318afa2222307b6c"
+                        "linux-x64-musl": "sha256 ab7e46d98ba656b42ef5a0520455644e2bdb2b1a0a060ef9318afa2222307b6c",
+                        "linux-x64": "sha256 979b82fc6c363de82de3e586a8759a46dcb8cb5fc4a89175d5d652b86685b005"
                     }
                 }
             ]
