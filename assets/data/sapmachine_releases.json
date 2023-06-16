@@ -474,9 +474,11 @@
                 {
                     "tag": "sapmachine-11.0.20+6",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B6/sapmachine-jdk-11.0.20-ea.6_linux-aarch64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B6/sapmachine-jdk-11.0.20-ea.6_windows-x64_bin.zip"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B6/sapmachine-jre-11.0.20-ea.6_linux-aarch64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B6/sapmachine-jre-11.0.20-ea.6_windows-x64_bin.zip"
                     }
                 }
@@ -485,9 +487,11 @@
                 {
                     "tag": "sapmachine-11.0.20+6",
                     "jdk": {
+                        "linux-aarch64": "sha256 979e5a1ec5e88b4704ed364c39fb0049e915cc4f315b2d10e42b96929ba97157",
                         "windows-x64": "sha256 fdf6bd4f42cc053ddd6bebd71455cd396069eab7e2d6f315fe02a1bd71595beb"
                     },
                     "jre": {
+                        "linux-aarch64": "sha256 97cc2cc97f7f97aefe5a8fb59239e38d59d863c11325b88839b810853b10cbcb",
                         "windows-x64": "sha256 595777b35cf8f9a508aa1c14ce8c01040f264b249e3805b60b0f129566fe02dc"
                     }
                 }
