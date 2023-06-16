@@ -472,12 +472,24 @@
         "11-ea": {
             "releases": [
                 {
-                    "tag": "sapmachine-11.0.20+6"
+                    "tag": "sapmachine-11.0.20+6",
+                    "jdk": {
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B6/sapmachine-jdk-11.0.20-ea.6_windows-x64_bin.zip"
+                    },
+                    "jre": {
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20%2B6/sapmachine-jre-11.0.20-ea.6_windows-x64_bin.zip"
+                    }
                 }
             ],
             "checksums": [
                 {
-                    "tag": "sapmachine-11.0.20+6"
+                    "tag": "sapmachine-11.0.20+6",
+                    "jdk": {
+                        "windows-x64": "sha256 fdf6bd4f42cc053ddd6bebd71455cd396069eab7e2d6f315fe02a1bd71595beb"
+                    },
+                    "jre": {
+                        "windows-x64": "sha256 595777b35cf8f9a508aa1c14ce8c01040f264b249e3805b60b0f129566fe02dc"
+                    }
                 }
             ]
         }
