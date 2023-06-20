@@ -521,3 +521,9 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
 
   return obj;
 }
+
+void PSPromotionManager::push_array_region(objArrayOop arr, HeapWord* left, HeapWord* right) {
+  PushContentsClosure pcc(this);
+  arr->oop_oop_iterate_bounded(&pcc, MemRegion(left, right));
+  drain_stacks_cond_depth();
+}
