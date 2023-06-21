@@ -236,7 +236,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              uint stripe_index,
                                              uint n_stripes) {
   const size_t num_cards_in_stripe = 128;
-  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
+  const size_t stripe_size_in_words = num_cards_in_stripe * card_size_in_words;
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
   HeapWord* cur_stripe_addr = sp->bottom() + stripe_index * stripe_size_in_words;
