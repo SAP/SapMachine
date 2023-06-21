@@ -133,7 +133,7 @@ bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
     return false;
   }
 
-  assert(is_aligned(start_addr, _card_size), "precondition");
+  assert(is_aligned(start_addr, CardTable::card_size), "precondition");
 
   if (start_addr == end_addr) {
     // No objects in empty range.
