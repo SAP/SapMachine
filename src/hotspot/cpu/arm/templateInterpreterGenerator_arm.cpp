@@ -781,6 +781,8 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return NULL; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return NULL; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return NULL; }
 
 //
 // Interpreter stub for calling a native method. (asm interpreter)

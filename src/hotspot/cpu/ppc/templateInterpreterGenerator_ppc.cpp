@@ -972,10 +972,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   }
 
   // Compute top frame size.
-  __ addi(Rtop_frame_size, Rtop_frame_size, frame::abi_reg_args_size + frame::ijava_state_size);
+  __ addi(Rtop_frame_size, Rtop_frame_size, frame::top_ijava_frame_abi_size + frame::ijava_state_size);
 
   // Cut back area between esp and max_stack.
-  __ addi(Rparent_frame_resize, Rparent_frame_resize, frame::abi_minframe_size - Interpreter::stackElementSize);
+  __ addi(Rparent_frame_resize, Rparent_frame_resize, frame::parent_ijava_frame_abi_size - Interpreter::stackElementSize);
 
   __ round_to(Rtop_frame_size, frame::alignment_in_bytes);
   __ round_to(Rparent_frame_resize, frame::alignment_in_bytes);
@@ -1931,6 +1931,10 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 
   return NULL;
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 // =============================================================================
 // Exceptions
