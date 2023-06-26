@@ -47,10 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
+    // SapMachine 2021-09-23: Additional certificate for SAP
     private static final int COUNT = 98;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
+    // SapMachine 2021-09-23: Additional certificate for SAP
     private static final String CHECKSUM
             = "D1:B3:9E:4B:44:0B:EA:87:BE:75:88:7B:2E:C2:7E:51:55:43:43:01:2B:FB:0A:9C:EC:69:FC:A4:DE:97:F3:B7";
 
