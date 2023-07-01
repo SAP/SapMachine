@@ -115,12 +115,14 @@
                     "tag": "sapmachine-22+4",
                     "jdk": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jdk-22-ea.4_linux-aarch64_bin.tar.gz",
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jdk-22-ea.4_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jdk-22-ea.4_linux-x64-musl_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jdk-22-ea.4_linux-x64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jdk-22-ea.4_windows-x64_bin.zip"
                     },
                     "jre": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jre-22-ea.4_linux-aarch64_bin.tar.gz",
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jre-22-ea.4_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jre-22-ea.4_linux-x64-musl_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jre-22-ea.4_linux-x64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B4/sapmachine-jre-22-ea.4_windows-x64_bin.zip"
@@ -132,12 +134,14 @@
                     "tag": "sapmachine-22+4",
                     "jdk": {
                         "linux-aarch64": "sha256 7a3adfd91994899e22662dedbecb16579e10efa9a6af825d6ac94e901c33d135",
+                        "linux-ppc64le": "sha256 9a3216aa2549089f40cd2b7ab8aa21ddd0af2228f8a3b7b78976ed1ced4cb110",
                         "linux-x64-musl": "sha256 31bfd195dd6e99b080c2021c41358f7bd5463f900e7a1f0e1c80e9105edb171b",
                         "linux-x64": "sha256 528d7b843164efb8d0344750002de3d0e357bc9fb9856b7d2946eef0b157a3a3",
                         "windows-x64": "sha256 3bb3b490df035fdfca97d8cdfb3c2529892c344e3aa2eb5223d59d131470d57f"
                     },
                     "jre": {
                         "linux-aarch64": "sha256 67ef7c801eb43b43b75d3549187843110cf949c8f56b72026af4c5e40c89710c",
+                        "linux-ppc64le": "sha256 cdad638c95d6e41e9943eedf146ad02f47cde5789589e3e177d9eab2a2b1f16a",
                         "linux-x64-musl": "sha256 69bf60b99e49a1419bfb0aa79eec95e3988a9c91a2c92ca66706b0663984e4c6",
                         "linux-x64": "sha256 5ccb38c5a71996c396ea5358c33efe9f7d27a81eaa55653c1dfca02a41884555",
                         "windows-x64": "sha256 d44ba61151c0b619c3180ffad0b0b36733079e2bf011962a082ea364229d5b79"
@@ -151,12 +155,14 @@
                     "tag": "sapmachine-21+29",
                     "jdk": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jdk-21-ea.29_linux-aarch64_bin.tar.gz",
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jdk-21-ea.29_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jdk-21-ea.29_linux-x64-musl_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jdk-21-ea.29_linux-x64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jdk-21-ea.29_windows-x64_bin.zip"
                     },
                     "jre": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jre-21-ea.29_linux-aarch64_bin.tar.gz",
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jre-21-ea.29_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jre-21-ea.29_linux-x64-musl_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jre-21-ea.29_linux-x64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21%2B29/sapmachine-jre-21-ea.29_windows-x64_bin.zip"
@@ -168,12 +174,14 @@
                     "tag": "sapmachine-21+29",
                     "jdk": {
                         "linux-aarch64": "sha256 af522b6b21bc8e307941e04a1aa6c0f58c3d57942d01bb047328c577fdc41671",
+                        "linux-ppc64le": "sha256 7397f9926bece939b5514b7ae77edca6c454c7c17ac93022c142f7ef40d1185c",
                         "linux-x64-musl": "sha256 dc77ce94ee5daf28f9737b0d187463bfae956b96b8556c4750c34962f3cc12fe",
                         "linux-x64": "sha256 3e17467880dae20c0e36df23cfac7b2697fa77cb2f142d73b70025595b92b2fb",
                         "windows-x64": "sha256 0f1ad3cb90f4a76ce067f8589a64f2a6bcee7669f2915938947b3ebaff243282"
                     },
                     "jre": {
                         "linux-aarch64": "sha256 18ab7852a7675e2cea8f61a86308ca396ec9ded79340c00eca84c42f7f47aaa9",
+                        "linux-ppc64le": "sha256 966012b76f6bd0725de3dcfa6392992b9055597076bacd1caca43d127836534e",
                         "linux-x64-musl": "sha256 fe36e7dec8211af8bf3c290e75420e685fc726f21f207f75b633660bff0ab1cc",
                         "linux-x64": "sha256 de0d094f1548ed7911da25d19a5361bf3cdf3585a511b17ec6d8aea33df4ebf5",
                         "windows-x64": "sha256 c7b032776abad0d14933aea9f4024b0fba104f4a4fcee25b183516869fa99921"
