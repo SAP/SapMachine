@@ -183,6 +183,11 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
   NOT_PRODUCT(_dependency_count = 0); // number of class loader dependencies
 
   JFR_ONLY(INIT_ID(this);)
+
+  // SapMachine 2023-07-04 : vitals
+  if (EnableVitals) {
+      sapmachine_vitals::counters::inc_cld_count(has_class_mirror_holder);
+  }
 }
 
 ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
@@ -1400,6 +1405,10 @@ bool ClassLoaderDataGraph::do_unloading(bool clean_previous_versions) {
     }
     seen_dead_loader = true;
     loaders_removed++;
+    // SapMachine 2023-07-04 : vitals
+    if (EnableVitals) {
+      sapmachine_vitals::counters::dec_cld_count(data->has_class_mirror_holder());
+    }
     ClassLoaderData* dead = data;
     dead->unload();
     data = data->next();

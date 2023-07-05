@@ -73,6 +73,8 @@ namespace sapmachine_vitals {
   const Thread* samplerthread();
 
   namespace counters {
+    void inc_cld_count(bool is_anon_cld);
+    void dec_cld_count(bool is_anon_cld);
     void inc_classes_loaded(size_t count);
     void inc_classes_unloaded(size_t count);
     void inc_threads_created(size_t count);
