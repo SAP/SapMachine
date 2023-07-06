@@ -186,7 +186,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
 
   // SapMachine 2023-07-04 : vitals
   if (EnableVitals) {
-      sapmachine_vitals::counters::inc_cld_count(has_class_mirror_holder);
+      sapmachine_vitals::counters::inc_cld_count(is_anonymous);
   }
 }
 
@@ -1407,7 +1407,7 @@ bool ClassLoaderDataGraph::do_unloading(bool clean_previous_versions) {
     loaders_removed++;
     // SapMachine 2023-07-04 : vitals
     if (EnableVitals) {
-      sapmachine_vitals::counters::dec_cld_count(data->has_class_mirror_holder());
+      sapmachine_vitals::counters::dec_cld_count(data->is_anonymous());
     }
     ClassLoaderData* dead = data;
     dead->unload();
