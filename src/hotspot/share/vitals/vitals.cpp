@@ -202,7 +202,7 @@ public:
 
   ColumnWidths() {
     // Assert including the non-active columns, so we spot possible problems earlier.
-    assert(sizeof(_widths) / sizeof(_widths[0]) >= Legend::the_legend()->nr_of_columns(), "array to small");
+    assert(sizeof(_widths) / sizeof(_widths[0]) >= (size_t) Legend::the_legend()->nr_of_columns(), "array to small");
 
     // Allocate array; initialize with the minimum required column widths (which is the
     // size required to print the column header fully)
@@ -765,7 +765,7 @@ static void dump_buffer(stringStream* in, outputStream* out, int max_size) {
   out->print_raw(in->base());
   in->reset();
 
-  if (in->size() >= max_size - 1) {
+  if (in->size() >= (size_t) (max_size - 1)) {
     out->cr();
     out->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t) in->count());
   }
