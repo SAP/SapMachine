@@ -783,7 +783,7 @@ class SampleTables : public CHeapObj<mtInternal> {
 
   // A pre-allocated buffer for printing reports. We preallocate this since
   // when we want to print the report we may be in no condition to allocate memory.
-  char _temp_buffer[32 * K];
+  char _temp_buffer[96 * K];
 
   static void dump_stream(stringStream* in, outputStream* out) {
     g_vitals_lock.unlock();
