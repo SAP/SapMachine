@@ -179,12 +179,14 @@ namespace sapmachine_vitals {
     static Legend* _the_legend;
     // needed during building the legend
     const char* _last_added_cat;
+    int _nr_of_columns;
   public:
     Legend();
     void add_column_info(const char* const category, const char* const header,
                          const char* const name, const char* const description);
     void add_footnote(const char* text);
     void print_on(outputStream* st) const;
+    int  nr_of_columns() { return _nr_of_columns; }
     static Legend* the_legend () { return _the_legend; }
     static bool initialize();
   };
