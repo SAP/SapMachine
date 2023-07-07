@@ -760,19 +760,6 @@ public:
   }
 };
 
-static void dump_buffer(stringStream* in, outputStream* out, int max_size) {
-  g_vitals_lock.unlock();
-  out->print_raw(in->base());
-  in->reset();
-
-  if (in->size() >= (size_t) (max_size - 1)) {
-    out->cr();
-    out->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t) in->count());
-  }
-
-  g_vitals_lock.lock();
-}
-
 // sampleTables is a combination of two tables: a short term table and a long term table.
 // It takes care to feed new samples into these tables at the appropriate intervals.
 class SampleTables : public CHeapObj<mtInternal> {
@@ -797,6 +784,20 @@ class SampleTables : public CHeapObj<mtInternal> {
   // A pre-allocated buffer for printing reports. We preallocate this since
   // when we want to print the report we may be in no condition to allocate memory.
   char _temp_buffer[32 * K];
+
+  static void dump_stream(stringStream* in, outputStream* out) {
+    g_vitals_lock.unlock();
+    out->print_raw(in->base());
+
+    if (in->size() >= (size_t) (sizeof(_temp_buffer) - 1)) {
+      out->cr();
+      out->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t) in->count());
+      out->cr();
+    }
+
+    g_vitals_lock.lock();
+    in->reset();
+  }
 
   static void print_table(const SampleTable* table, outputStream* st,
     const ColumnWidths* widths, const print_info_t* pi) {
@@ -921,7 +922,7 @@ public:
         print_headers(st, &widths, pi);
         print_one_sample(st, sample_now, NULL, &widths, pi);
         st->cr();
-        dump_buffer(st, external_stream, sizeof(_temp_buffer));
+        dump_stream(st, external_stream);
       }
 
       if (!_short_term_table.is_empty()) {
@@ -935,7 +936,7 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_short_term_table, st, &widths, pi);
         st->cr();
-        dump_buffer(st, external_stream, sizeof(_temp_buffer));
+        dump_stream(st, external_stream);
       }
 
       if (!_long_term_table.is_empty()) {
@@ -946,7 +947,7 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_long_term_table, st, &widths, pi);
         st->cr();
-        dump_buffer(st, external_stream, sizeof(_temp_buffer));
+        dump_stream(st, external_stream);
       }
 
       if (StoreVitalsExtremas && (_extremum_samples != NULL) && (_last_extremum_samples != NULL)) {
@@ -972,7 +973,7 @@ public:
           }
         }
 
-        dump_buffer(st, external_stream, sizeof(_temp_buffer));
+        dump_stream(st, external_stream);
       }
 
       st->cr();
