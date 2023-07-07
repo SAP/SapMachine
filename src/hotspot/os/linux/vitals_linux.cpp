@@ -84,8 +84,8 @@ class CPUTimeColumn: public Column {
   }
 
 public:
-  CPUTimeColumn(const char* category, const char* header, const char* name, const char* description)
-    : Column(category, header, name, description)
+  CPUTimeColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+    : Column(category, header, name, description, extremum)
   {
     _clk_tck = ::sysconf(_SC_CLK_TCK);
     _num_cores = os::active_processor_count();
