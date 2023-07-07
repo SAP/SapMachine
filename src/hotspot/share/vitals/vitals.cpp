@@ -773,12 +773,13 @@ class SampleTables : public CHeapObj<mtInternal> {
   SampleTable _short_term_table;
   SampleTable _long_term_table;
   Sample*     _extremum_samples;
+  Sample*     _last_extremum_samples;
 
   int _count;
 
   // A pre-allocated buffer for printing reports. We preallocate this since
   // when we want to print the report we may be in no condition to allocate memory.
-  char _temp_buffer[196 * K];
+  char _temp_buffer[512 * K];
 
   static void print_table(const SampleTable* table, outputStream* st,
     const ColumnWidths* widths, const print_info_t* pi) {
@@ -823,6 +824,7 @@ public:
     : _short_term_table(short_term_tablesize()),
     _long_term_table(long_term_tablesize),
     _extremum_samples(NULL),
+    _last_extremum_samples(NULL),
     _count(0)
   {}
 
@@ -839,13 +841,21 @@ public:
       _long_term_table.add_sample(sample);
     }
 
-    // Update peak samples if needed.
-    if (StorePeakSamples) {
-      if (_extremum_samples == NULL) {
-        // For the first sample just initialize with the sample for all values we store peaks for.
+    // Update exetremum samples if needed.
+    if (StoreVitalsExtremas) {
+      static Sample* last_sample = NULL;
+
+      if (last_sample == NULL) {
+        // Nothing to do yet. We need at least two samples to handle all values in the sample. Just
+        // allocate the space for the last sample as a marker.
+        last_sample = (Sample*) NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes(), mtInternal);
+      } else if (_extremum_samples == NULL) {
+        // Allocate the two array and initialize it with the first possible samples.
         _extremum_samples = (Sample*)NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes() * Sample::num_values(), mtInternal);
+        _last_extremum_samples = (Sample*) NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes() * Sample::num_values(), mtInternal);
 
         for (int i = 0; i < Sample::num_values(); ++i) {
+          ::memcpy(i * Sample::size_in_bytes() + (char*) _last_extremum_samples, last_sample, Sample::size_in_bytes());
           ::memcpy(i * Sample::size_in_bytes() + (char*) _extremum_samples, sample, Sample::size_in_bytes());
         }
       }
@@ -854,17 +864,22 @@ public:
         for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
           if (column->extremum() != NONE) {
             int idx = column->index();
-            Sample* extremum_sample = (Sample*)(idx * Sample::size_in_bytes() + (char*) _extremum_samples);
+            Sample* extremum_sample = (Sample*) (idx * Sample::size_in_bytes() + (char*) _extremum_samples);
+            Sample* last_extremum_sample = (Sample*) (idx * Sample::size_in_bytes() + (char*) _last_extremum_samples);
 
             bool should_log = (column->extremum() == MAX) && (sample->value(idx) > extremum_sample->value(idx));
             should_log |= (column->extremum() == MIN) && (sample->value(idx) < extremum_sample->value(idx));
 
             if (should_log) {
+              ::memcpy(last_extremum_sample, last_sample, Sample::size_in_bytes());
               ::memcpy(extremum_sample, sample, Sample::size_in_bytes());
             }
           }
         }
       }
+
+      // Remember the last sample.
+      ::memcpy(last_sample, sample, Sample::size_in_bytes());
     }
   }
 
@@ -911,14 +926,15 @@ public:
         st->cr();
       }
 
-      if (StorePeakSamples) {
+      if (StoreVitalsExtremas && (_extremum_samples != NULL) && (_last_extremum_samples != NULL)) {
         st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
         print_headers(st, &widths, pi, 1); // Need more space for the mark to display.
 
         for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
           if (column->extremum() != NONE) {
-            Sample* peak_sample = (Sample*) (column->index() * Sample::size_in_bytes() + (char*) _extremum_samples);
-            print_one_sample(st, peak_sample, NULL, &widths, pi, column->index(), column->extremum() == MIN ? '-' : '+');
+            Sample* extremum_sample = (Sample*) (column->index() * Sample::size_in_bytes() + (char*) _extremum_samples);
+            Sample* last_extremum_sample = (Sample*) (column->index() * Sample::size_in_bytes() + (char*) _last_extremum_samples);
+            print_one_sample(st, extremum_sample, last_extremum_sample, &widths, pi, column->index(), column->extremum() == MIN ? '-' : '+');
           }
         }
       }
