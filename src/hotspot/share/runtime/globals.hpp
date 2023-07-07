@@ -522,6 +522,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintVitalsAtExit, false,                                   \
           "Prints vitals at VM exit to tty.")                               \
                                                                             \
+  product(bool, StorePeakSamples, true,                                     \
+          "If enabled we store the samples for peak values of selected "    \
+          "types.")                                                         \
+                                                                            \
   product(ccstr, VitalsFile, NULL,                                          \
           "When DumpVitalsAtExit is set, the file name prefix for the "     \
           "output files (default is sapmachine_vitals_<pid>).")             \

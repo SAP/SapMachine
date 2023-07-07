@@ -255,7 +255,7 @@ Legend::Legend() : _last_added_cat(NULL) {}
 void Legend::add_column_info(const char* const category, const char* const header,
                        const char* const name, const char* const description) {
   // Print category label if this column opens a new category
-  if (_last_added_cat != category) {
+  if ((_last_added_cat == NULL) || (::strcmp(_last_added_cat, category) != 0)) {
     print_text_with_dashes(&_legend, category, 30);
     _legend.cr();
   }
@@ -317,7 +317,7 @@ void ColumnList::add_column(Column* c) {
 
 ////////////////////
 
-static void print_category_line(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
+static void print_category_line(outputStream* st, const ColumnWidths* widths, const print_info_t* pi, int add_width) {
 
   assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
@@ -336,7 +336,7 @@ static void print_category_line(outputStream* st, const ColumnWidths* widths, co
       }
       width = 0;
     }
-    width += widths->at(c->index());
+    width += widths->at(c->index()) + add_width;
     width += 1; // divider between columns
     last_category_text = c->category();
     c = c->next();
@@ -345,7 +345,7 @@ static void print_category_line(outputStream* st, const ColumnWidths* widths, co
   st->cr();
 }
 
-static void print_header_line(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
+static void print_header_line(outputStream* st, const ColumnWidths* widths, const print_info_t* pi, int add_width) {
 
   assert(pi->csv == false, "Not in csv mode");
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
@@ -369,7 +369,7 @@ static void print_header_line(outputStream* st, const ColumnWidths* widths, cons
       }
       width = 0;
     }
-    width += widths->at(c->index());
+    width += widths->at(c->index()) + add_width;
     width += 1; // divider between columns
     last_header_text = c->header();
     c = c->next();
@@ -380,7 +380,7 @@ static void print_header_line(outputStream* st, const ColumnWidths* widths, cons
   st->cr();
 }
 
-static void print_column_names(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
+static void print_column_names(outputStream* st, const ColumnWidths* widths, const print_info_t* pi, int add_width) {
 
   // Leave space for timestamp column
   if (pi->csv == false) {
@@ -393,7 +393,7 @@ static void print_column_names(outputStream* st, const ColumnWidths* widths, con
   const Column* previous = NULL;
   while (c != NULL) {
     if (pi->csv == false) {
-      st->print("%-*s ", widths->at(c->index()), c->name());
+      st->print("%-*s ", widths->at(c->index()) + add_width, c->name());
     } else { // csv mode
       // csv: use comma as delimiter, don't pad, and precede name with category/header
       //  (limited to 4 chars).
@@ -487,11 +487,12 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
 
 ///////// class Column and childs ///////////
 
-Column::Column(const char* category, const char* header, const char* name, const char* description)
+Column::Column(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
   : _category(category),
     _header(header), // may be NULL
     _name(name),
     _description(description),
+    _extremum(extremum),
     _next(NULL), _idx(-1),
     _idx_cat(-1), _idx_hdr(-1)
 {}
@@ -578,7 +579,7 @@ int DeltaMemorySizeColumn::do_print0(outputStream* st, value_t value,
 
 // Print one sample.
 static void print_one_sample(outputStream* st, const Sample* sample,
-    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi) {
+    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi, int marked_index = -1, char mark = '*') {
 
   // Print timestamp and divider
   if (pi->csv) {
@@ -607,6 +608,9 @@ static void print_one_sample(outputStream* st, const Sample* sample,
     }
     const int min_width = widths->at(idx);
     c->print_value(st, v, v2, age, min_width, pi);
+    if (marked_index >= 0) {
+      st->put(marked_index == idx ? mark : ' ');
+    }
     st->put(pi->csv ? ',' : ' ');
     c = c->next();
   }
@@ -754,7 +758,7 @@ public:
 
 // sampleTables is a combination of two tables: a short term table and a long term table.
 // It takes care to feed new samples into these tables at the appropriate intervals.
-class SampleTables: public CHeapObj<mtInternal> {
+class SampleTables : public CHeapObj<mtInternal> {
 
   // Short term table: cover one hour, one sample per VitalsSampleInterval (default 10 seconds)
   static const int short_term_span_seconds = 3600;
@@ -763,11 +767,12 @@ class SampleTables: public CHeapObj<mtInternal> {
   static const int long_term_span_seconds = short_term_span_seconds * 24 * 14;
   static const int long_term_sample_interval = short_term_span_seconds;
 
-  static int short_term_tablesize()      { return (short_term_span_seconds / VitalsSampleInterval) + 1; }
+  static int short_term_tablesize() { return (short_term_span_seconds / VitalsSampleInterval) + 1; }
   static const int long_term_tablesize = (long_term_span_seconds / long_term_sample_interval) + 1;
 
   SampleTable _short_term_table;
   SampleTable _long_term_table;
+  Sample*     _extremum_samples;
 
   int _count;
 
@@ -776,7 +781,7 @@ class SampleTables: public CHeapObj<mtInternal> {
   char _temp_buffer[196 * K];
 
   static void print_table(const SampleTable* table, outputStream* st,
-                          const ColumnWidths* widths, const print_info_t* pi) {
+    const ColumnWidths* widths, const print_info_t* pi) {
     if (table->is_empty()) {
       st->print_cr("(no samples)");
       return;
@@ -785,12 +790,12 @@ class SampleTables: public CHeapObj<mtInternal> {
     table->walk_table_locked(&prclos, !pi->reverse_ordering);
   }
 
-  static void print_headers(outputStream* st, const ColumnWidths* widths, const print_info_t* pi) {
+  static void print_headers(outputStream* st, const ColumnWidths* widths, const print_info_t* pi, int add_width = 0) {
     if (pi->csv == false) {
-      print_category_line(st, widths, pi);
-      print_header_line(st, widths, pi);
+      print_category_line(st, widths, pi, add_width);
+      print_header_line(st, widths, pi, add_width);
     }
-    print_column_names(st, widths, pi);
+    print_column_names(st, widths, pi, add_width);
   }
 
   // Helper, print a time span given in seconds-
@@ -800,11 +805,14 @@ class SampleTables: public CHeapObj<mtInternal> {
     const int days = secs / (60 * 60 * 24);
     if (days > 1) {
       st->print_cr("Last %d days:", days);
-    } else if (hrs > 1) {
+    }
+    else if (hrs > 1) {
       st->print_cr("Last %d hours:", hrs);
-    } else if (mins > 1) {
+    }
+    else if (mins > 1) {
       st->print_cr("Last %d minutes:", mins);
-    } else {
+    }
+    else {
       st->print_cr("Last %d seconds:", secs);
     }
   }
@@ -813,8 +821,9 @@ public:
 
   SampleTables()
     : _short_term_table(short_term_tablesize()),
-      _long_term_table(long_term_tablesize),
-      _count(0)
+    _long_term_table(long_term_tablesize),
+    _extremum_samples(NULL),
+    _count(0)
   {}
 
   void add_sample(const Sample* sample) {
@@ -828,6 +837,34 @@ public:
     // Feed long term table
     if ((_count % (long_term_sample_interval / VitalsSampleInterval)) == 0) {
       _long_term_table.add_sample(sample);
+    }
+
+    // Update peak samples if needed.
+    if (StorePeakSamples) {
+      if (_extremum_samples == NULL) {
+        // For the first sample just initialize with the sample for all values we store peaks for.
+        _extremum_samples = (Sample*)NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes() * Sample::num_values(), mtInternal);
+
+        for (int i = 0; i < Sample::num_values(); ++i) {
+          ::memcpy(i * Sample::size_in_bytes() + (char*) _extremum_samples, sample, Sample::size_in_bytes());
+        }
+      }
+      else {
+        // Otherwise iterate columns and update if needed.
+        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+          if (column->extremum() != NONE) {
+            int idx = column->index();
+            Sample* extremum_sample = (Sample*)(idx * Sample::size_in_bytes() + (char*) _extremum_samples);
+
+            bool should_log = (column->extremum() == MAX) && (sample->value(idx) > extremum_sample->value(idx));
+            should_log |= (column->extremum() == MIN) && (sample->value(idx) < extremum_sample->value(idx));
+
+            if (should_log) {
+              ::memcpy(extremum_sample, sample, Sample::size_in_bytes());
+            }
+          }
+        }
+      }
     }
   }
 
@@ -872,6 +909,18 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_long_term_table, st, &widths, pi);
         st->cr();
+      }
+
+      if (StorePeakSamples) {
+        st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
+        print_headers(st, &widths, pi, 1); // Need more space for the mark to display.
+
+        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+          if (column->extremum() != NONE) {
+            Sample* peak_sample = (Sample*) (column->index() * Sample::size_in_bytes() + (char*) _extremum_samples);
+            print_one_sample(st, peak_sample, NULL, &widths, pi, column->index(), column->extremum() == MIN ? '-' : '+');
+          }
+        }
       }
 
       st->cr();
