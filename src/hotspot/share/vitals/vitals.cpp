@@ -196,7 +196,7 @@ static void print_timestamp(outputStream* st, time_t t) {
 // Keeps an array of ints, dynamically sized (since each platform has a different number of columns),
 // and offers methods of auto-sizeing them to fit given samples (via dry-printing).
 class ColumnWidths {
-  int _widths[128]; // Don't allocate dynamically, since we might not have enough memory when we use it.
+  int _widths[64]; // Don't allocate dynamically, since we might not have enough memory when we use it.
 
 public:
 
