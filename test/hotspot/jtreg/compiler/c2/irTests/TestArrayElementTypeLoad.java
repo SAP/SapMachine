@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,38 @@
  * questions.
  */
 
-/**
- * @test TestJmapCoreMetaspace
- * @summary Test verifies that jhsdb jmap could generate heap dump from core when metaspace is full
- * @requires vm.hasSA
- * @library /test/lib
- * @run driver/timeout=480 TestJmapCore run metaspace
+package compiler.c2.irTests;
+
+import compiler.lib.ir_framework.*;
+
+/*
+ * @test
+ * @library /test/lib /
+ * @run driver compiler.c2.irTests.TestArrayElementTypeLoad
  */
+
+public class TestArrayElementTypeLoad {
+    public static void main(String[] args) {
+        TestFramework.run();
+    }
+
+    static final A[] array = new A[1];
+
+    @Test
+    @IR(phase = { CompilePhase.ITER_GVN1 }, failOn = { IRNode.SUBTYPE_CHECK })
+    public static void test1(A a) {
+        array[0] = a;
+    }
+
+    @Run(test = "test1")
+    private void test1Runner() {
+        test1(new A());
+        test1(new B());
+    }
+
+    static class A {
+    }
+
+    static class B extends A {
+    }
+}

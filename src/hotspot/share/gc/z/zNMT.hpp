@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,33 @@
  * questions.
  */
 
-/**
- * @test TestJmapCoreMetaspace
- * @summary Test verifies that jhsdb jmap could generate heap dump from core when metaspace is full
- * @requires vm.hasSA
- * @library /test/lib
- * @run driver/timeout=480 TestJmapCore run metaspace
- */
+#ifndef SHARE_GC_Z_ZNMT_HPP
+#define SHARE_GC_Z_ZNMT_HPP
+
+#include "gc/z/zAddress.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zMemory.hpp"
+#include "gc/z/zVirtualMemory.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/nativeCallStack.hpp"
+
+class ZNMT : public AllStatic {
+private:
+  struct Reservation {
+    zaddress_unsafe _start;
+    size_t          _size;
+  };
+  static Reservation _reservations[ZMaxVirtualReservations];
+  static size_t      _num_reservations;
+
+  static size_t reservation_index(zoffset offset, size_t* offset_in_reservation);
+  static void process_fake_mapping(zoffset offset, size_t size, bool commit);
+
+public:
+  static void reserve(zaddress_unsafe start, size_t size);
+  static void commit(zoffset offset, size_t size);
+  static void uncommit(zoffset offset, size_t size);
+};
+
+#endif // SHARE_GC_Z_ZNMT_HPP
