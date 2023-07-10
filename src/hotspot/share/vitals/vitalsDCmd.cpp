@@ -81,6 +81,7 @@ void VitalsDCmd::execute(DCmdSource source, TRAPS) {
   info.reverse_ordering = _reverse.value();
   info.raw = _raw.value();
   info.sample_now = _sample_now.value();
+  info.no_alloc = false; // We don't block, since we copy the result to memory first.
 
   output()->print_cr("Vitals:");
   if (info.sample_now && info.csv) {

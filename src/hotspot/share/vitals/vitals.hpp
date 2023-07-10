@@ -49,7 +49,8 @@ namespace sapmachine_vitals {
     bool no_legend;
     // Reverse printing order (default: youngest-to-oldest; reversed: oldest-to-youngest)
     bool reverse_ordering;
-
+    // Do not allocate memory during printing
+    bool no_alloc;
     size_t scale;
 
     // if true, sample and print the current values too. If false,

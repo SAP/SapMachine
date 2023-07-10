@@ -903,8 +903,8 @@ public:
 
     // We are paranoid about blocking inside a lock. So we print to a preallocated buffer under
     // lock protection, and copy ot the outside stream when out of the lock.
-    stringStream sstrm(_temp_buffer, sizeof(_temp_buffer));
-    stringStream* st = &sstrm;
+    stringStream no_alloc_stream(_temp_buffer, sizeof(_temp_buffer));
+    outputStream* st = pi->no_alloc ? &no_alloc_stream : external_stream;
 
     { // lock start
       AutoLock autolock(&g_vitals_lock);
@@ -920,7 +920,10 @@ public:
         print_headers(st, &widths, pi);
         print_one_sample(st, sample_now, NULL, &widths, pi);
         st->cr();
-        dump_stream(st, external_stream);
+
+        if (pi->no_alloc) {
+          dump_stream(&no_alloc_stream, external_stream);
+        }
       }
 
       if (!_short_term_table.is_empty()) {
@@ -934,7 +937,10 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_short_term_table, st, &widths, pi);
         st->cr();
-        dump_stream(st, external_stream);
+
+        if (pi->no_alloc) {
+          dump_stream(&no_alloc_stream, external_stream);
+        }
       }
 
       if (!_long_term_table.is_empty()) {
@@ -945,7 +951,10 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_long_term_table, st, &widths, pi);
         st->cr();
-        dump_stream(st, external_stream);
+
+        if (pi->no_alloc) {
+          dump_stream(&no_alloc_stream, external_stream);
+        }
       }
 
       if (StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
@@ -971,22 +980,15 @@ public:
           }
         }
 
-        dump_stream(st, external_stream);
+        if (pi->no_alloc) {
+          dump_stream(&no_alloc_stream, external_stream);
+        }
       }
 
       st->cr();
 
     } // lock end
-
-    // If this fires, enlarge the buffer size. Since the table sizes are static, output here cannot be endless,
-    // so there must be a number large enough to fit every possible report.
-    external_stream->print_raw(_temp_buffer);
-    if (sstrm.size() >= sizeof(_temp_buffer) - 1) {
-      external_stream->cr();
-      external_stream->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t)sstrm.count());
-    }
   }
-
 };
 
 static SampleTables* g_all_tables = NULL;
@@ -1405,6 +1407,7 @@ void default_settings(print_info_t* out) {
   out->csv = false;
   out->no_legend = false;
   out->reverse_ordering = false;
+  out->no_alloc = true;
   out->scale = 0;
   out->sample_now = false;
 }
@@ -1481,6 +1484,7 @@ void dump_reports() {
         false, // csv
         false, // no_legend
         true,  // reverse_ordering
+        true,  // no_alloc
         0,     // scale
         true   // sample_now
     };
@@ -1500,6 +1504,7 @@ void dump_reports() {
         true,  // csv
         false, // no_legend
         true,  // reverse_ordering
+        true,  // no_alloc
         1 * K, // scale
         false  // sample_now
     };
