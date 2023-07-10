@@ -646,7 +646,7 @@ class SampleTable : public CHeapObj<mtInternal> {
   }
 #endif
 
-  const size_t sample_offset_in_bytes(int idx) const {
+  size_t sample_offset_in_bytes(int idx) const {
     assert(idx >= 0 && idx <= _num_entries, "invalid index: %d", idx);
     return Sample::size_in_bytes() * idx;
   }
