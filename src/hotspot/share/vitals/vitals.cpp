@@ -950,7 +950,7 @@ public:
         dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
-      if (StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
+      if (!pi->csv && StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
         st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
         ColumnWidths widths;
         MeasureColumnWidthsClosure mcwclos(pi, &widths);
