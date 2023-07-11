@@ -202,7 +202,7 @@ public:
 
   ColumnWidths() {
     // Assert including the non-active columns, so we spot possible problems earlier.
-    assert(sizeof(_widths) / sizeof(_widths[0]) >= (size_t) Legend::the_legend()->nr_of_columns(), "array to small");
+    assert(sizeof(_widths) / sizeof(_widths[0]) >= (size_t) Legend::the_legend()->nr_of_columns(), "array too small");
 
     // Allocate array; initialize with the minimum required column widths (which is the
     // size required to print the column header fully)
