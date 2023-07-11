@@ -786,18 +786,20 @@ class SampleTables: public CHeapObj<mtInternal> {
   // when we want to print the report we may be in no condition to allocate memory.
   char _temp_buffer[196 * K];
 
-  static void dump_stream(stringStream* in, outputStream* out) {
-    g_vitals_lock.unlock();
-    out->print_raw(in->base());
+  static void dump_stream(bool no_alloc, stringStream* in, outputStream* out) {
+    if (no_alloc) {
+      g_vitals_lock.unlock();
+      out->print_raw(in->base());
 
-    if (in->size() >= (size_t) (sizeof(_temp_buffer) - 1)) {
-      out->cr();
-      out->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t) in->count());
-      out->cr();
+      if (in->size() >= (size_t)(sizeof(_temp_buffer) - 1)) {
+        out->cr();
+        out->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t)in->count());
+        out->cr();
+      }
+
+      g_vitals_lock.lock();
+      in->reset();
     }
-
-    g_vitals_lock.lock();
-    in->reset();
   }
 
   static void print_table(const SampleTable* table, outputStream* st,
@@ -862,28 +864,31 @@ public:
       static Sample* last_sample = NULL;
 
       if (last_sample == NULL) {
-        // Nothing to do yet. We need at least two samples to handle all values in the sample. Just
-        // allocate the space for the last sample as a marker.
+        // Nothing to do yet. We need at least two samples, since some types need the
+        // previous sample to print. Just allocate the space for the last sample as a marker
+        // for seeing the first sample.
         last_sample = (Sample*) NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes(), mtInternal);
       } else if (_extremum_samples.is_empty()) {
-        //Initialize the extremum tables with the first possible samples.
+        // We already have a last sample and this is the second sample we see.
+        // We can initialize the two tables now to store the last sample and this sample
+        // for all extremas.
         for (int i = 0; i < Sample::num_values(); ++i) {
           _last_extremum_samples.add_sample(last_sample);
           _extremum_samples.add_sample(sample);
         }
       }
       else {
-        // Otherwise iterate columns and update if needed.
+        // Iterate columns and update if needed.
         for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
           if (column->extremum() != NONE) {
             int idx = column->index();
             Sample* extremum_sample = _extremum_samples.sample_at(idx);
-            Sample* last_extremum_sample = _last_extremum_samples.sample_at(idx);
 
             bool should_log = (column->extremum() == MAX) && (sample->value(idx) > extremum_sample->value(idx));
             should_log |= (column->extremum() == MIN) && (sample->value(idx) < extremum_sample->value(idx));
 
             if (should_log) {
+              Sample* last_extremum_sample = _last_extremum_samples.sample_at(idx);
               ::memcpy(last_extremum_sample, last_sample, Sample::size_in_bytes());
               ::memcpy(extremum_sample, sample, Sample::size_in_bytes());
             }
@@ -917,10 +922,7 @@ public:
         print_headers(st, &widths, pi);
         print_one_sample(st, sample_now, NULL, &widths, pi);
         st->cr();
-
-        if (pi->no_alloc) {
-          dump_stream(&no_alloc_stream, external_stream);
-        }
+        dump_stream(pi->no_alloc , &no_alloc_stream, external_stream);
       }
 
       if (!_short_term_table.is_empty()) {
@@ -934,10 +936,7 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_short_term_table, st, &widths, pi);
         st->cr();
-
-        if (pi->no_alloc) {
-          dump_stream(&no_alloc_stream, external_stream);
-        }
+        dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
       if (!_long_term_table.is_empty()) {
@@ -948,10 +947,7 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_long_term_table, st, &widths, pi);
         st->cr();
-
-        if (pi->no_alloc) {
-          dump_stream(&no_alloc_stream, external_stream);
-        }
+        dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
       if (StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
@@ -977,9 +973,7 @@ public:
           }
         }
 
-        if (pi->no_alloc) {
-          dump_stream(&no_alloc_stream, external_stream);
-        }
+        dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
       st->cr();
