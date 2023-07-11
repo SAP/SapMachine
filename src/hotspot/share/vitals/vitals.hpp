@@ -51,6 +51,7 @@ namespace sapmachine_vitals {
     bool reverse_ordering;
     // Do not allocate memory during printing
     bool no_alloc;
+
     size_t scale;
 
     // if true, sample and print the current values too. If false,

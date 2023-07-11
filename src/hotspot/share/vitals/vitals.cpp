@@ -763,7 +763,7 @@ public:
 
 // sampleTables is a combination of two tables: a short term table and a long term table.
 // It takes care to feed new samples into these tables at the appropriate intervals.
-class SampleTables : public CHeapObj<mtInternal> {
+class SampleTables: public CHeapObj<mtInternal> {
 
   // Short term table: cover one hour, one sample per VitalsSampleInterval (default 10 seconds)
   static const int short_term_span_seconds = 3600;
@@ -772,7 +772,7 @@ class SampleTables : public CHeapObj<mtInternal> {
   static const int long_term_span_seconds = short_term_span_seconds * 24 * 14;
   static const int long_term_sample_interval = short_term_span_seconds;
 
-  static int short_term_tablesize() { return (short_term_span_seconds / VitalsSampleInterval) + 1; }
+  static int short_term_tablesize()      { return (short_term_span_seconds / VitalsSampleInterval) + 1; }
   static const int long_term_tablesize = (long_term_span_seconds / long_term_sample_interval) + 1;
 
   SampleTable _short_term_table;
@@ -784,7 +784,7 @@ class SampleTables : public CHeapObj<mtInternal> {
 
   // A pre-allocated buffer for printing reports. We preallocate this since
   // when we want to print the report we may be in no condition to allocate memory.
-  char _temp_buffer[192 * K];
+  char _temp_buffer[196 * K];
 
   static void dump_stream(stringStream* in, outputStream* out) {
     g_vitals_lock.unlock();
@@ -801,7 +801,7 @@ class SampleTables : public CHeapObj<mtInternal> {
   }
 
   static void print_table(const SampleTable* table, outputStream* st,
-    const ColumnWidths* widths, const print_info_t* pi) {
+                          const ColumnWidths* widths, const print_info_t* pi) {
     if (table->is_empty()) {
       st->print_cr("(no samples)");
       return;
@@ -825,14 +825,11 @@ class SampleTables : public CHeapObj<mtInternal> {
     const int days = secs / (60 * 60 * 24);
     if (days > 1) {
       st->print_cr("Last %d days:", days);
-    }
-    else if (hrs > 1) {
+    } else if (hrs > 1) {
       st->print_cr("Last %d hours:", hrs);
-    }
-    else if (mins > 1) {
+    } else if (mins > 1) {
       st->print_cr("Last %d minutes:", mins);
-    }
-    else {
+    } else {
       st->print_cr("Last %d seconds:", secs);
     }
   }
@@ -841,10 +838,10 @@ public:
 
   SampleTables()
     : _short_term_table(short_term_tablesize()),
-    _long_term_table(long_term_tablesize),
-    _extremum_samples(Sample::num_values()),
-    _last_extremum_samples(Sample::num_values()),
-    _count(0)
+      _long_term_table(long_term_tablesize),
+      _extremum_samples(Sample::num_values()),
+      _last_extremum_samples(Sample::num_values()),
+      _count(0)
   {}
 
   void add_sample(const Sample* sample) {
