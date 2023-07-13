@@ -950,8 +950,13 @@ public:
         dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
-      if (!pi->csv && StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
-        st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
+      if (StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
+        if (pi->csv) {
+          st->print_cr("Samples at extremes");
+        } else {
+          st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
+        }
+
         ColumnWidths widths;
         MeasureColumnWidthsClosure mcwclos(pi, &widths);
 
@@ -959,7 +964,8 @@ public:
           if (column->extremum() != NONE) {
             Sample* extremum_sample = _extremum_samples.sample_at(column->index());
             Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
-            widths.update_from_sample(extremum_sample, last_extremum_sample, pi, 1);
+            // We don't include the min/max marker in csv output, so we don't need extra width.
+            widths.update_from_sample(extremum_sample, last_extremum_sample, pi, pi->csv ? 0 : 1);
           }
         }
 
@@ -969,7 +975,8 @@ public:
           if (column->extremum() != NONE) {
             Sample* extremum_sample = _extremum_samples.sample_at(column->index());
             Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
-            print_one_sample(st, extremum_sample, last_extremum_sample, &widths, pi, column->index(), column->extremum() == MIN ? '-' : '+');
+            print_one_sample(st, extremum_sample, last_extremum_sample, &widths, pi, pi->csv ? -1 : column->index(),
+                             column->extremum() == MIN ? '-' : '+');
           }
         }
 
