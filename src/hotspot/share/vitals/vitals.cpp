@@ -502,7 +502,7 @@ Column::Column(const char* category, const char* header, const char* name, const
 {}
 
 void Column::print_value(outputStream* st, value_t value, value_t last_value,
-    int last_value_age, int min_width, const print_info_t* pi) const {
+    int last_value_age, int min_width, const print_info_t* pi, char const* marker) const {
 
   // We print all values right aligned.
   int needed = calc_print_size(value, last_value, last_value_age, pi);
@@ -515,6 +515,7 @@ void Column::print_value(outputStream* st, value_t value, value_t last_value,
     st->put('"');
   }
   do_print(st, value, last_value, last_value_age, pi);
+  st->print(marker);
   if (pi->csv) {
     st->put('"');
   }
@@ -583,7 +584,7 @@ int DeltaMemorySizeColumn::do_print0(outputStream* st, value_t value,
 
 // Print one sample.
 static void print_one_sample(outputStream* st, const Sample* sample,
-    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi, int marked_index = -1, char mark = '*') {
+    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi, int marked_index = -1, char const* mark = NULL) {
 
   // Print timestamp and divider
   if (pi->csv) {
@@ -611,10 +612,8 @@ static void print_one_sample(outputStream* st, const Sample* sample,
       age = sample->timestamp() - last_sample->timestamp();
     }
     const int min_width = widths->at(idx) - (marked_index >= 0 ? 1 : 0);
-    c->print_value(st, v, v2, age, min_width, pi);
-    if (marked_index >= 0) {
-      st->put(marked_index == idx ? mark : ' ');
-    }
+    c->print_value(st, v, v2, age, min_width, pi,
+                  marked_index == idx ? mark : (marked_index >= 0 && !pi->csv ? " " : ""));
     st->put(pi->csv ? ',' : ' ');
     c = c->next();
   }
@@ -951,11 +950,7 @@ public:
       }
 
       if (StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
-        if (pi->csv) {
-          st->print_cr("Samples at extremes");
-        } else {
-          st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
-        }
+        st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
 
         ColumnWidths widths;
         MeasureColumnWidthsClosure mcwclos(pi, &widths);
@@ -964,8 +959,7 @@ public:
           if (column->extremum() != NONE) {
             Sample* extremum_sample = _extremum_samples.sample_at(column->index());
             Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
-            // We don't include the min/max marker in csv output, so we don't need extra width.
-            widths.update_from_sample(extremum_sample, last_extremum_sample, pi, pi->csv ? 0 : 1);
+            widths.update_from_sample(extremum_sample, last_extremum_sample, pi, 1);
           }
         }
 
@@ -975,8 +969,8 @@ public:
           if (column->extremum() != NONE) {
             Sample* extremum_sample = _extremum_samples.sample_at(column->index());
             Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
-            print_one_sample(st, extremum_sample, last_extremum_sample, &widths, pi, pi->csv ? -1 : column->index(),
-                             column->extremum() == MIN ? '-' : '+');
+            print_one_sample(st, extremum_sample, last_extremum_sample, &widths, pi, column->index(),
+                             column->extremum() == MIN ? "-" : "+");
           }
         }
 

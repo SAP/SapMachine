@@ -103,7 +103,8 @@ namespace sapmachine_vitals {
     Extremum    extremum() const      { return _extremum; }
 
     void print_value(outputStream* os, value_t value, value_t last_value,
-        int last_value_age, int min_width, const print_info_t* pi) const;
+        int last_value_age, int min_width, const print_info_t* pi,
+        char const* marker) const;
 
     // Returns the number of characters this value needs to be printed.
     int calc_print_size(value_t value, value_t last_value,
