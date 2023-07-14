@@ -515,7 +515,7 @@ void Column::print_value(outputStream* st, value_t value, value_t last_value,
     st->put('"');
   }
   do_print(st, value, last_value, last_value_age, pi);
-  st->print(marker);
+  st->print_raw(marker);
   if (pi->csv) {
     st->put('"');
   }
