@@ -995,6 +995,20 @@ var getJibProfilesProfiles = function (input, common, data) {
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    } else if (input.build_os == "windows") {
+        // On windows, add the devkit debugger to the path in all the run-test profiles
+        // to make them available to the jtreg failure handler.
+        var archDir = "x64";
+        if (input.build_arch == "aarch64") {
+            archDir = "arm64"
+        }
+        windowsRunTestExtra = {
+            environment_path: [
+                input.get("devkit", "install_path") + "/10/Debuggers/" + archDir
+            ]
+        }
+        profiles["run-test"] = concatObjects(profiles["run-test"], windowsRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], windowsRunTestExtra);
     }
 
     // The profile run-test-prebuilt defines src.conf as the src bundle. When

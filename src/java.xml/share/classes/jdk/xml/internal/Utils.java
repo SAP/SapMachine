@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- *
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +21,37 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-// -- This file was mechanically generated: Do not edit! -- //
+package jdk.xml.internal;
 
-package sun.nio.cs.ext;
+import java.util.Arrays;
 
 /**
- * Provider for extended charsets.
+ * General utility. Use JdkXmlUtils for XML processing related functions.
  */
-
-public class ExtendedCharsets extends AbstractCharsetProvider {
-
-    static volatile ExtendedCharsets instance = null;
-
-    public ExtendedCharsets() {
-
-        super("sun.nio.cs.ext");  // identify provider pkg name.
-
-        _CHARSETS_DEF_LIST_
-
-        instance = this;
-
-    }
-
-    public static String[] aliasesFor(String charsetName) {
-        if (instance == null)
+public class Utils {
+    /**
+     * Creates a new array with copies of the original array and additional items
+     * appended to the end of it.
+     *
+     * @param original the original array
+     * @param items items to be appended to the original array
+     * @return a new array with copies of the original array and additional items
+     */
+    public static Class<?>[] arraysAppend(final Class<?>[] original, final Class<?>... items) {
+        if (original == null && items == null) {
             return null;
-        return instance.aliases(charsetName);
-    }
+        }
+        if (items == null) {
+            return Arrays.copyOf(original, original.length);
+        }
+        if (original == null) {
+            return Arrays.copyOf(items, items.length);
+        }
 
+        Class<?>[] result = Arrays.copyOf(original, original.length + items.length);
+        System.arraycopy(items, 0, result, original.length, items.length);
+        return result;
+    }
 }
