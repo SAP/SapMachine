@@ -781,26 +781,6 @@ class SampleTables: public CHeapObj<mtInternal> {
 
   int _count;
 
-  // A pre-allocated buffer for printing reports. We preallocate this since
-  // when we want to print the report we may be in no condition to allocate memory.
-  char _temp_buffer[196 * K];
-
-  static void dump_stream(bool no_alloc, stringStream* in, outputStream* out) {
-    if (no_alloc) {
-      g_vitals_lock.unlock();
-      out->print_raw(in->base());
-
-      if (in->size() >= (size_t)(sizeof(_temp_buffer) - 1)) {
-        out->cr();
-        out->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t)in->count());
-        out->cr();
-      }
-
-      g_vitals_lock.lock();
-      in->reset();
-    }
-  }
-
   static void print_table(const SampleTable* table, outputStream* st,
                           const ColumnWidths* widths, const print_info_t* pi) {
     if (table->is_empty()) {
@@ -900,19 +880,11 @@ public:
     }
   }
 
-  void print_all(outputStream* external_stream, const print_info_t* pi, const Sample* sample_now) {
-
-    // We are paranoid about blocking inside a lock. So we print to a preallocated buffer under
-    // lock protection, and copy ot the outside stream when out of the lock.
-    stringStream no_alloc_stream(_temp_buffer, sizeof(_temp_buffer));
-    outputStream* st = pi->no_alloc ? &no_alloc_stream : external_stream;
+  void print_all(outputStream* st, const print_info_t* pi, const Sample* sample_now) {
 
     { // lock start
       AutoLock autolock(&g_vitals_lock);
 
-      // We dump each table seperately to save memory in our preallocated buffer. Since we have
-      // to give up the lock for a short time, we don't get a consistent snapshot, but it should
-      // not be a big deal.
       if (sample_now != NULL) {
         ColumnWidths widths;
         MeasureColumnWidthsClosure mcwclos(pi, &widths);
@@ -921,7 +893,6 @@ public:
         print_headers(st, &widths, pi);
         print_one_sample(st, sample_now, NULL, &widths, pi);
         st->cr();
-        dump_stream(pi->no_alloc , &no_alloc_stream, external_stream);
       }
 
       if (!_short_term_table.is_empty()) {
@@ -935,7 +906,6 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_short_term_table, st, &widths, pi);
         st->cr();
-        dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
       if (!_long_term_table.is_empty()) {
@@ -946,7 +916,6 @@ public:
         print_headers(st, &widths, pi);
         print_table(&_long_term_table, st, &widths, pi);
         st->cr();
-        dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
       if (StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
@@ -973,8 +942,6 @@ public:
                              column->extremum() == MIN ? "-" : "+");
           }
         }
-
-        dump_stream(pi->no_alloc, &no_alloc_stream, external_stream);
       }
 
       st->cr();
