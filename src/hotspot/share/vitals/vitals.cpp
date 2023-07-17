@@ -1366,7 +1366,6 @@ void default_settings(print_info_t* out) {
   out->csv = false;
   out->no_legend = false;
   out->reverse_ordering = false;
-  out->no_alloc = true;
   out->scale = 0;
   out->sample_now = false;
 }
@@ -1443,7 +1442,6 @@ void dump_reports() {
         false, // csv
         false, // no_legend
         true,  // reverse_ordering
-        true,  // no_alloc
         0,     // scale
         true   // sample_now
     };
@@ -1463,7 +1461,6 @@ void dump_reports() {
         true,  // csv
         false, // no_legend
         true,  // reverse_ordering
-        true,  // no_alloc
         1 * K, // scale
         false  // sample_now
     };
