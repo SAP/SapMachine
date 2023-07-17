@@ -112,12 +112,24 @@
         "22-ea": {
             "releases": [
                 {
-                    "tag": "sapmachine-22+6"
+                    "tag": "sapmachine-22+6",
+                    "jdk": {
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B6/sapmachine-jdk-22-ea.6_linux-ppc64le_bin.tar.gz"
+                    },
+                    "jre": {
+                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B6/sapmachine-jre-22-ea.6_linux-ppc64le_bin.tar.gz"
+                    }
                 }
             ],
             "checksums": [
                 {
-                    "tag": "sapmachine-22+6"
+                    "tag": "sapmachine-22+6",
+                    "jdk": {
+                        "linux-ppc64le": "sha256 3cf59a80fe1b48e681e7e0534cee821e052da9911f6518136b4c3e68119cfbf2"
+                    },
+                    "jre": {
+                        "linux-ppc64le": "sha256 34467911e7febf2b18e56b81355442e645dfd103ca408f3dcb072dce97246038"
+                    }
                 }
             ]
         },
