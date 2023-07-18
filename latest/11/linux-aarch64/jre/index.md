@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 11 Release for linux-aarch64
-checksum: sha256 742b93811fa3c2ef1d164aa42386816c031156d8095b1e3f0b51afce042d0bbd
+checksum: sha256 cdc5b7a2afd6020dd9b1e3ab1e383d2fd749df19db0f17fcbe230558e63b0cdb
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.19/sapmachine-jre-11.0.19_linux-aarch64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jre-11.0.20_linux-aarch64_bin.tar.gz
 ---
