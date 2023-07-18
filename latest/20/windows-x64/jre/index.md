@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 20 Release for windows-x64
-checksum: sha256 44fe3cfd9dd37608c7b4ed938efabeac91c7dc29f60c45b361c72f6f72910d90
+checksum: sha256 3c432706827719710d6e26d7f8acf24b686d1dbd1e10d75ab94493459ec87601
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.1/sapmachine-jre-20.0.1_windows-x64_bin.zip
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.2/sapmachine-jre-20.0.2_windows-x64_bin.zip
 ---
