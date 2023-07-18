@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 20 Release for linux-aarch64
-checksum: sha256 eb5c0ee77bd9121cc4a4c9c80b86bbfe6bb061c71c5d918727ce33cee3887743
+checksum: sha256 2632998967a16de48e89e944d1ed1a4f35372f980455868e564eadafb207ead1
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.1/sapmachine-jdk-20.0.1_linux-aarch64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.2/sapmachine-jdk-20.0.2_linux-aarch64_bin.tar.gz
 ---
