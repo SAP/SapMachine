@@ -411,11 +411,13 @@
                     "tag": "sapmachine-11.0.20",
                     "jdk": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jdk-11.0.20_linux-aarch64_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jdk-11.0.20_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jdk-11.0.20_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jdk-11.0.20_windows-x64_bin.zip"
                     },
                     "jre": {
                         "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jre-11.0.20_linux-aarch64_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jre-11.0.20_linux-x64_bin.tar.gz"
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jre-11.0.20_linux-x64_bin.tar.gz",
+                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jre-11.0.20_windows-x64_bin.zip"
                     }
                 }
             ],
@@ -424,11 +426,13 @@
                     "tag": "sapmachine-11.0.20",
                     "jdk": {
                         "linux-aarch64": "sha256 8c2de32f2843a62d49b0b14d1c14fc66eb3a3f15634e0dd52457a8ed04f532b6",
-                        "linux-x64": "sha256 d62f1cfff22c0800a03ae645ab91fee0aefaf6538337c6cb81e9c2a2476433bc"
+                        "linux-x64": "sha256 d62f1cfff22c0800a03ae645ab91fee0aefaf6538337c6cb81e9c2a2476433bc",
+                        "windows-x64": "sha256 c167388103efebb5a930981f909e21c48140d25d9a9631e311f91d44d0d0d582"
                     },
                     "jre": {
                         "linux-aarch64": "sha256 cdc5b7a2afd6020dd9b1e3ab1e383d2fd749df19db0f17fcbe230558e63b0cdb",
-                        "linux-x64": "sha256 c97e0697bc27d1a1a57e1aa23a0f5a6a9a951844e36b255b90c944b30e8aa45f"
+                        "linux-x64": "sha256 c97e0697bc27d1a1a57e1aa23a0f5a6a9a951844e36b255b90c944b30e8aa45f",
+                        "windows-x64": "sha256 ab25dcdef5dfff50497e21a76d25e80d3be5021d690ac5945c6d01d95a8857c2"
                     }
                 }
             ]
