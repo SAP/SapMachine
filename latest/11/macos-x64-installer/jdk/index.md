@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 11 Release for macos-x64-installer
-checksum: sha256 47fa3722ee0b4fa65a95607719743ddee45e115ac624ceec9dbe9739e044a70a
+checksum: sha256 016c4622d57d4110189d73df8061dd5bde5f5632fc0e092e40076a64b6fcb591
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.19/sapmachine-jdk-11.0.19_macos-x64_bin.dmg
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jdk-11.0.20_macos-x64_bin.dmg
 ---
