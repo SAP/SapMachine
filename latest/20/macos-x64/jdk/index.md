@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 20 Release for macos-x64
-checksum: sha256 2140c1c35966c5202e4ded8e3a22b2e2114ad011cd49ea561b529dfd2b4257ab
+checksum: sha256 3565914dffecafbccb31c7768b8efd804ee47144cff8a593685d06f6945ece94
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.1/sapmachine-jdk-20.0.1_macos-x64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-20.0.2/sapmachine-jdk-20.0.2_macos-x64_bin.tar.gz
 ---
