@@ -52,7 +52,7 @@ class PSCardTable: public CardTable {
   };
 
   static const size_t num_cards_in_stripe = 128;
-  static size_t large_obj_arr_min_words() { return 2 * num_cards_in_stripe * _card_size_in_words + 1; }
+  static int large_obj_arr_min_words() { return 2 * num_cards_in_stripe * card_size_in_words + 1; }
 
   CardValue* find_first_dirty_card(CardValue* const start_card,
                                    CardValue* const end_card);
