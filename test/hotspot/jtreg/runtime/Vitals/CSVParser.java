@@ -181,6 +181,10 @@ public class CSVParser {
             while (lineno < lines.length) {
                 CSVDataLine dataLine = new CSVDataLine();
                 parts = lines[lineno].split(",");
+		if (parts.length == 1 && parts[0].isEmpty()) {
+			// We start a new section here. Skip the rest.
+			break;
+		}
                 for (String s : parts) {
                     dataLine.addData(s);
                 }
