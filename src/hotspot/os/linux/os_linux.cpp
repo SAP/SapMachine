@@ -29,6 +29,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "hugepages.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -77,6 +78,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // SapMachine 2021-09-01: malloc-trace
 #include "malloctrace/mallocTrace.hpp"
@@ -113,6 +117,7 @@
 # include <inttypes.h>
 # include <sys/ioctl.h>
 # include <linux/elf-em.h>
+# include <sys/prctl.h>
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -169,7 +174,6 @@ pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
-size_t os::Linux::_default_large_page_size = 0;
 
 #ifdef __GLIBC__
 // We want to be buildable and runnable on older and newer glibcs, so resolve both
@@ -219,15 +223,8 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::available_memory() {
-  return Linux::available_memory();
-}
-
-julong os::Linux::available_memory() {
-  // values in struct sysinfo are "unsigned long"
-  struct sysinfo si;
-  julong avail_mem;
-
+julong os::Linux::available_memory_in_container() {
+  julong avail_mem = static_cast<julong>(-1L);
   if (OSContainer::is_containerized()) {
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
     jlong mem_usage;
@@ -236,15 +233,57 @@ julong os::Linux::available_memory() {
     }
     if (mem_limit > 0 && mem_usage > 0) {
       avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-      log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-      return avail_mem;
     }
+  }
+  return avail_mem;
+}
+
+julong os::available_memory() {
+  return Linux::available_memory();
+}
+
+julong os::Linux::available_memory() {
+  julong avail_mem = available_memory_in_container();
+  if (avail_mem != static_cast<julong>(-1L)) {
+    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+    return avail_mem;
+  }
+
+  FILE *fp = os::fopen("/proc/meminfo", "r");
+  if (fp != nullptr) {
+    char buf[80];
+    do {
+      if (fscanf(fp, "MemAvailable: " JULONG_FORMAT " kB", &avail_mem) == 1) {
+        avail_mem *= K;
+        break;
+      }
+    } while (fgets(buf, sizeof(buf), fp) != nullptr);
+    fclose(fp);
+  }
+  if (avail_mem == static_cast<julong>(-1L)) {
+    avail_mem = free_memory();
+  }
+  log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
+  return avail_mem;
+}
+
+julong os::free_memory() {
+  return Linux::free_memory();
+}
+
+julong os::Linux::free_memory() {
+  // values in struct sysinfo are "unsigned long"
+  struct sysinfo si;
+  julong free_mem = available_memory_in_container();
+  if (free_mem != static_cast<julong>(-1L)) {
+    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+    return free_mem;
   }
 
   sysinfo(&si);
-  avail_mem = (julong)si.freeram * si.mem_unit;
-  log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  return avail_mem;
+  free_mem = (julong)si.freeram * si.mem_unit;
+  log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
+  return free_mem;
 }
 
 julong os::physical_memory() {
@@ -763,20 +802,14 @@ static void *thread_native_entry(Thread *thread) {
 // As a workaround, we call a private but assumed-stable glibc function,
 // __pthread_get_minstack() to obtain the minstack size and derive the
 // static TLS size from it. We then increase the user requested stack
-// size by this TLS size.
+// size by this TLS size. The same function is used to determine whether
+// adjustStackSizeForGuardPages() needs to be true.
 //
 // Due to compatibility concerns, this size adjustment is opt-in and
 // controlled via AdjustStackSizeForTLS.
 typedef size_t (*GetMinStack)(const pthread_attr_t *attr);
 
-GetMinStack _get_minstack_func = nullptr;
-
-static void get_minstack_init() {
-  _get_minstack_func =
-        (GetMinStack)dlsym(RTLD_DEFAULT, "__pthread_get_minstack");
-  log_info(os, thread)("Lookup of __pthread_get_minstack %s",
-                       _get_minstack_func == nullptr ? "failed" : "succeeded");
-}
+GetMinStack _get_minstack_func = nullptr;  // Initialized via os::init_2()
 
 // Returns the size of the static TLS area glibc puts on thread stacks.
 // The value is cached on first use, which occurs when the first thread
@@ -789,8 +822,8 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
 
     // Remove non-TLS area size included in minstack size returned
     // by __pthread_get_minstack() to get the static TLS size.
-    // In glibc before 2.27, minstack size includes guard_size.
-    // In glibc 2.27 and later, guard_size is automatically added
+    // If adjustStackSizeForGuardPages() is true, minstack size includes
+    // guard_size. Otherwise guard_size is automatically added
     // to the stack size by pthread_create and is no longer included
     // in minstack size. In both cases, the guard_size is taken into
     // account, so there is no need to adjust the result for that.
@@ -819,12 +852,48 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
   return tls_size;
 }
 
+// In glibc versions prior to 2.27 the guard size mechanism
+// was not implemented properly. The POSIX standard requires adding
+// the size of the guard pages to the stack size, instead glibc
+// took the space out of 'stacksize'. Thus we need to adapt the requested
+// stack_size by the size of the guard pages to mimic proper behaviour.
+// The fix in glibc 2.27 has now been backported to numerous earlier
+// glibc versions so we need to do a dynamic runtime check.
+static bool _adjustStackSizeForGuardPages = true;
+bool os::Linux::adjustStackSizeForGuardPages() {
+  return _adjustStackSizeForGuardPages;
+}
+
+#ifdef __GLIBC__
+static void init_adjust_stacksize_for_guard_pages() {
+  assert(_get_minstack_func == nullptr, "initialization error");
+  _get_minstack_func =(GetMinStack)dlsym(RTLD_DEFAULT, "__pthread_get_minstack");
+  log_info(os, thread)("Lookup of __pthread_get_minstack %s",
+                       _get_minstack_func == nullptr ? "failed" : "succeeded");
+
+  if (_get_minstack_func != nullptr) {
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    size_t min_stack = _get_minstack_func(&attr);
+    size_t guard = 16 * K; // Actual value doesn't matter as it is not examined
+    pthread_attr_setguardsize(&attr, guard);
+    size_t min_stack2 = _get_minstack_func(&attr);
+    pthread_attr_destroy(&attr);
+    // If the minimum stack size changed when we added the guard page space
+    // then we need to perform the adjustment.
+    _adjustStackSizeForGuardPages = (min_stack2 != min_stack);
+    log_info(os)("Glibc stack size guard page adjustment is %sneeded",
+                 _adjustStackSizeForGuardPages ? "" : "not ");
+  }
+}
+#endif // GLIBC
+
 bool os::create_thread(Thread* thread, ThreadType thr_type,
                        size_t req_stack_size) {
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -844,23 +913,18 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
-  // In glibc versions prior to 2.27 the guard size mechanism
-  // is not implemented properly. The posix standard requires adding
-  // the size of the guard pages to the stack size, instead Linux
-  // takes the space out of 'stacksize'. Thus we adapt the requested
-  // stack_size by the size of the guard pages to mimic proper
-  // behaviour. However, be careful not to end up with a size
-  // of zero due to overflow. Don't add the guard page in that case.
   size_t guard_size = os::Linux::default_guard_size(thr_type);
   // Configure glibc guard page. Must happen before calling
   // get_static_tls_area_size(), which uses the guard_size.
   pthread_attr_setguardsize(&attr, guard_size);
 
+  // Apply stack size adjustments if needed. However, be careful not to end up
+  // with a size of zero due to overflow. Don't add the adjustment in that case.
   size_t stack_adjust_size = 0;
   if (AdjustStackSizeForTLS) {
     // Adjust the stack_size for on-stack TLS - see get_static_tls_area_size().
     stack_adjust_size += get_static_tls_area_size(&attr);
-  } else {
+  } else if (os::Linux::adjustStackSizeForGuardPages()) {
     stack_adjust_size += guard_size;
   }
 
@@ -869,6 +933,15 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     stack_size += stack_adjust_size;
   }
   assert(is_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
+
+  // Add an additional page to the stack size to reduce its chances of getting large page aligned
+  // so that the stack does not get backed by a transparent huge page.
+  size_t default_large_page_size = HugePages::default_static_hugepage_size();
+  if (default_large_page_size != 0 &&
+      stack_size >= default_large_page_size &&
+      is_aligned(stack_size, default_large_page_size)) {
+    stack_size += os::vm_page_size();
+  }
 
   int status = pthread_attr_setstacksize(&attr, stack_size);
   if (status != 0) {
@@ -898,6 +971,16 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     if (ret == 0) {
       log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
                            thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+
+      // Print current timer slack if override is enabled and timer slack value is available.
+      // Avoid calling prctl otherwise for extra safety.
+      if (TimerSlack >= 0) {
+        int slack = prctl(PR_GET_TIMERSLACK);
+        if (slack >= 0) {
+          log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
+                               thread->name(), (uintx) tid, slack);
+        }
+      }
     } else {
       log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
                               thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
@@ -953,7 +1036,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;
@@ -1003,9 +1086,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
-                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
 }
@@ -1329,7 +1412,7 @@ void os::Linux::fast_thread_clock_init() {
   // Note, that some kernels may support the current thread
   // clock (CLOCK_THREAD_CPUTIME_ID) but not the clocks
   // returned by the pthread_getcpuclockid().
-  // If the fast Posix clocks are supported then the clock_getres()
+  // If the fast POSIX clocks are supported then the clock_getres()
   // must return at least tp.tv_sec == 0 which means a resolution
   // better than 1 sec. This is extra check for reliability.
 
@@ -1767,7 +1850,16 @@ const char* os::Linux::dll_path(void* lib) {
   return l_path;
 }
 
-static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = nullptr) {
+static unsigned count_newlines(const char* s) {
+  unsigned n = 0;
+  for (const char* s2 = strchr(s, '\n');
+       s2 != nullptr; s2 = strchr(s2 + 1, '\n')) {
+    n++;
+  }
+  return n;
+}
+
+static bool _print_ascii_file(const char* filename, outputStream* st, unsigned* num_lines = nullptr, const char* hdr = nullptr) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
     return false;
@@ -1780,8 +1872,17 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   char buf[33];
   int bytes;
   buf[32] = '\0';
+  unsigned lines = 0;
   while ((bytes = ::read(fd, buf, sizeof(buf)-1)) > 0) {
     st->print_raw(buf, bytes);
+    // count newlines
+    if (num_lines != nullptr) {
+      lines += count_newlines(buf);
+    }
+  }
+
+  if (num_lines != nullptr) {
+    (*num_lines) = lines;
   }
 
   ::close(fd);
@@ -1803,9 +1904,11 @@ void os::print_dll_info(outputStream *st) {
   pid_t pid = os::Linux::gettid();
 
   jio_snprintf(fname, sizeof(fname), "/proc/%d/maps", pid);
-
-  if (!_print_ascii_file(fname, st)) {
+  unsigned num = 0;
+  if (!_print_ascii_file(fname, st, &num)) {
     st->print_cr("Can not get library information for pid = %d", pid);
+  } else {
+    st->print_cr("Total number of mappings: %u", num);
   }
 }
 
@@ -2156,7 +2259,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
 }
 
 bool os::Linux::print_ld_preload_file(outputStream* st) {
-  return _print_ascii_file("/etc/ld.so.preload", st, "/etc/ld.so.preload:");
+  return _print_ascii_file("/etc/ld.so.preload", st, nullptr, "/etc/ld.so.preload:");
 }
 
 void os::Linux::print_uptime_info(outputStream* st) {
@@ -2467,6 +2570,28 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   st->cr();
   print_sys_devices_cpu_info(st);
 }
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {
+  os::Linux::meminfo_t info;
+  if (os::Linux::query_process_memory_info(&info)) {
+    // Send the RSS JFR event
+    EventResidentSetSize event;
+    event.set_size(info.vmrss * K);
+    event.set_peak(info.vmhwm * K);
+    event.commit();
+  } else {
+    // Log a warning
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(jfr)("Error fetching RSS values: query_process_memory_info failed");
+      first_warning = false;
+    }
+  }
+}
+
+#endif // INCLUDE_JFR
 
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
@@ -3518,7 +3643,7 @@ bool os::Linux::transparent_huge_pages_sanity_check(bool warn,
 }
 
 int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
-  if (page_size != default_large_page_size()) {
+  if (page_size != HugePages::default_static_hugepage_size()) {
     return (exact_log2(page_size) << MAP_HUGE_SHIFT);
   }
   return 0;
@@ -3626,79 +3751,6 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 
 static size_t _large_page_size = 0;
 
-static size_t scan_default_large_page_size() {
-  size_t default_large_page_size = 0;
-
-  // large_page_size on Linux is used to round up heap size. x86 uses either
-  // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
-  // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. IA64 can use
-  // page as large as 1G.
-  //
-  // Here we try to figure out page size by parsing /proc/meminfo and looking
-  // for a line with the following format:
-  //    Hugepagesize:     2048 kB
-  //
-  // If we can't determine the value (e.g. /proc is not mounted, or the text
-  // format has been changed), we'll set largest page size to 0
-
-  FILE *fp = os::fopen("/proc/meminfo", "r");
-  if (fp) {
-    while (!feof(fp)) {
-      int x = 0;
-      char buf[16];
-      if (fscanf(fp, "Hugepagesize: %d", &x) == 1) {
-        if (x && fgets(buf, sizeof(buf), fp) && strcmp(buf, " kB\n") == 0) {
-          default_large_page_size = x * K;
-          break;
-        }
-      } else {
-        // skip to next line
-        for (;;) {
-          int ch = fgetc(fp);
-          if (ch == EOF || ch == (int)'\n') break;
-        }
-      }
-    }
-    fclose(fp);
-  }
-
-  return default_large_page_size;
-}
-
-static os::PageSizes scan_multiple_page_support() {
-  // Scan /sys/kernel/mm/hugepages
-  // to discover the available page sizes
-  const char* sys_hugepages = "/sys/kernel/mm/hugepages";
-  os::PageSizes page_sizes;
-
-  DIR *dir = opendir(sys_hugepages);
-
-  struct dirent *entry;
-  size_t page_size;
-  while ((entry = readdir(dir)) != nullptr) {
-    if (entry->d_type == DT_DIR &&
-        sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
-      // The kernel is using kB, hotspot uses bytes
-      // Add each found Large Page Size to page_sizes
-      page_sizes.add(page_size * K);
-    }
-  }
-  closedir(dir);
-
-  LogTarget(Debug, pagesize) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Large Page sizes: ");
-    page_sizes.print_on(&ls);
-  }
-
-  return page_sizes;
-}
-
-size_t os::Linux::default_large_page_size() {
-  return _default_large_page_size;
-}
-
 void warn_no_large_pages_configured() {
   if (!FLAG_IS_DEFAULT(UseLargePages)) {
     log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
@@ -3751,9 +3803,31 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
   return false;
 }
 
+struct LargePageInitializationLoggerMark {
+  ~LargePageInitializationLoggerMark() {
+    LogTarget(Info, pagesize) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      if (UseLargePages) {
+        ls.print_cr("UseLargePages=1, UseTransparentHugePages=%d, UseHugeTLBFS=%d, UseSHM=%d",
+                    UseTransparentHugePages, UseHugeTLBFS, UseSHM);
+        ls.print("Large page support enabled. Usable page sizes: ");
+        os::page_sizes().print_on(&ls);
+        ls.print_cr(". Default large page size: " EXACTFMT ".", EXACTFMTARGS(os::large_page_size()));
+      } else {
+        ls.print("Large page support disabled.");
+      }
+    }
+  }
+};
+
 void os::large_page_init() {
-  // 1) Handle the case where we do not want to use huge pages and hence
-  //    there is no need to scan the OS for related info
+  LargePageInitializationLoggerMark logger;
+
+  // Query OS information first.
+  HugePages::initialize();
+
+  // 1) Handle the case where we do not want to use huge pages
   if (!UseLargePages &&
       !UseTransparentHugePages &&
       !UseHugeTLBFS &&
@@ -3771,10 +3845,9 @@ void os::large_page_init() {
     return;
   }
 
-  // 2) Scan OS info
-  size_t default_large_page_size = scan_default_large_page_size();
-  os::Linux::_default_large_page_size = default_large_page_size;
-  if (default_large_page_size == 0) {
+  // 2) check if large pages are configured
+  if ( ( UseTransparentHugePages && HugePages::supports_thp() == false) ||
+       (!UseTransparentHugePages && HugePages::supports_static_hugepages() == false) ) {
     // No large pages configured, return.
     warn_no_large_pages_configured();
     UseLargePages = false;
@@ -3783,57 +3856,64 @@ void os::large_page_init() {
     UseSHM = false;
     return;
   }
-  os::PageSizes all_large_pages = scan_multiple_page_support();
 
-  // 3) Consistency check and post-processing
+  if (UseTransparentHugePages) {
+    // In THP mode:
+    // - os::large_page_size() is the *THP page size*
+    // - os::pagesizes() has two members, the THP page size and the system page size
+    assert(HugePages::supports_thp() && HugePages::thp_pagesize() > 0, "Missing OS info");
+    _large_page_size = HugePages::thp_pagesize();
+    _page_sizes.add(_large_page_size);
+    _page_sizes.add(os::vm_page_size());
 
-  // It is unclear if /sys/kernel/mm/hugepages/ and /proc/meminfo could disagree. Manually
-  // re-add the default page size to the list of page sizes to be sure.
-  all_large_pages.add(default_large_page_size);
-
-  // Check LargePageSizeInBytes matches an available page size and if so set _large_page_size
-  // using LargePageSizeInBytes as the maximum allowed large page size. If LargePageSizeInBytes
-  // doesn't match an available page size set _large_page_size to default_large_page_size
-  // and use it as the maximum.
- if (FLAG_IS_DEFAULT(LargePageSizeInBytes) ||
-      LargePageSizeInBytes == 0 ||
-      LargePageSizeInBytes == default_large_page_size) {
-    _large_page_size = default_large_page_size;
-    log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
-                       byte_size_in_exact_unit(_large_page_size),
-                       exact_unit_for_byte_size(_large_page_size));
   } else {
-    if (all_large_pages.contains(LargePageSizeInBytes)) {
-      _large_page_size = LargePageSizeInBytes;
-      log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
-                         "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
-                         byte_size_in_exact_unit(default_large_page_size),
-                         exact_unit_for_byte_size(default_large_page_size),
+
+    // In static hugepage mode:
+    // - os::large_page_size() is the default static hugepage size (/proc/meminfo "Hugepagesize")
+    // - os::pagesizes() contains all hugepage sizes the kernel supports, regardless whether there
+    //   are pages configured in the pool or not (from /sys/kernel/hugepages/hugepage-xxxx ...)
+    os::PageSizes all_large_pages = HugePages::static_info().pagesizes();
+    const size_t default_large_page_size = HugePages::default_static_hugepage_size();
+
+    // 3) Consistency check and post-processing
+
+    // Check LargePageSizeInBytes matches an available page size and if so set _large_page_size
+    // using LargePageSizeInBytes as the maximum allowed large page size. If LargePageSizeInBytes
+    // doesn't match an available page size set _large_page_size to default_large_page_size
+    // and use it as the maximum.
+   if (FLAG_IS_DEFAULT(LargePageSizeInBytes) ||
+        LargePageSizeInBytes == 0 ||
+        LargePageSizeInBytes == default_large_page_size) {
+      _large_page_size = default_large_page_size;
+      log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
                          byte_size_in_exact_unit(_large_page_size),
                          exact_unit_for_byte_size(_large_page_size));
     } else {
-      _large_page_size = default_large_page_size;
-      log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
-                         "using the default large page size: " SIZE_FORMAT "%s",
-                         byte_size_in_exact_unit(LargePageSizeInBytes),
-                         exact_unit_for_byte_size(LargePageSizeInBytes),
-                         byte_size_in_exact_unit(_large_page_size),
-                         exact_unit_for_byte_size(_large_page_size));
+      if (all_large_pages.contains(LargePageSizeInBytes)) {
+        _large_page_size = LargePageSizeInBytes;
+        log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
+                           "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
+                           byte_size_in_exact_unit(default_large_page_size),
+                           exact_unit_for_byte_size(default_large_page_size),
+                           byte_size_in_exact_unit(_large_page_size),
+                           exact_unit_for_byte_size(_large_page_size));
+      } else {
+        _large_page_size = default_large_page_size;
+        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
+                           "using the default large page size: " SIZE_FORMAT "%s",
+                           byte_size_in_exact_unit(LargePageSizeInBytes),
+                           exact_unit_for_byte_size(LargePageSizeInBytes),
+                           byte_size_in_exact_unit(_large_page_size),
+                           exact_unit_for_byte_size(_large_page_size));
+      }
     }
-  }
 
-  // Populate _page_sizes with large page sizes less than or equal to
-  // _large_page_size.
-  for (size_t page_size = _large_page_size; page_size != 0;
-         page_size = all_large_pages.next_smaller(page_size)) {
-    _page_sizes.add(page_size);
-  }
-
-  LogTarget(Info, pagesize) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("Usable page sizes: ");
-    _page_sizes.print_on(&ls);
+    // Populate _page_sizes with large page sizes less than or equal to
+    // _large_page_size.
+    for (size_t page_size = _large_page_size; page_size != 0;
+           page_size = all_large_pages.next_smaller(page_size)) {
+      _page_sizes.add(page_size);
+    }
   }
 
   // Now determine the type of large pages to use:
@@ -4586,10 +4666,6 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
-  if (AdjustStackSizeForTLS) {
-    get_minstack_init();
-  }
-
   // Check and sets minimum stack sizes against command line options
   if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
@@ -4611,6 +4687,11 @@ jint os::init_2(void) {
   Linux::sched_getcpu_init();
   log_info(os)("HotSpot is running with %s, %s",
                Linux::libc_version(), Linux::libpthread_version());
+
+#ifdef __GLIBC__
+  // Check if we need to adjust the stack size for glibc guard pages.
+  init_adjust_stacksize_for_guard_pages();
+#endif
 
   if (UseNUMA || UseNUMAInterleaving) {
     Linux::numa_init();
@@ -4670,6 +4751,15 @@ jint os::init_2(void) {
     // Disable code cache flushing to ensure the map file written at
     // exit contains all nmethods generated during execution.
     FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
+  }
+
+  // Override the timer slack value if needed. The adjustment for the main
+  // thread will establish the setting for child threads, which would be
+  // most threads in JDK/JVM.
+  if (TimerSlack >= 0) {
+    if (prctl(PR_SET_TIMERSLACK, TimerSlack) < 0) {
+      vm_exit_during_initialization("Setting timer slack failed: %s", os::strerror(errno));
+    }
   }
 
 #ifdef HAVE_GLIBC_MALLOC_HOOKS
@@ -5346,9 +5436,9 @@ bool os::start_debugging(char *buf, int buflen) {
 //
 // ** P1 (aka bottom) and size (P2 = P1 - size) are the address and stack size
 //    returned from pthread_attr_getstack().
-// ** Due to NPTL implementation error, linux takes the glibc guard page out
-//    of the stack size given in pthread_attr. We work around this for
-//    threads created by the VM. (We adapt bottom to be P1 and size accordingly.)
+// ** If adjustStackSizeForGuardPages() is true the guard pages have been taken
+//    out of the stack size given in pthread_attr. We work around this for
+//    threads created by the VM. We adjust bottom to be P1 and size accordingly.
 //
 #ifndef ZERO
 static void current_stack_region(address * bottom, size_t * size) {
@@ -5375,14 +5465,15 @@ static void current_stack_region(address * bottom, size_t * size) {
       fatal("Cannot locate current stack attributes!");
     }
 
-    // Work around NPTL stack guard error.
-    size_t guard_size = 0;
-    rslt = pthread_attr_getguardsize(&attr, &guard_size);
-    if (rslt != 0) {
-      fatal("pthread_attr_getguardsize failed with error = %d", rslt);
+    if (os::Linux::adjustStackSizeForGuardPages()) {
+      size_t guard_size = 0;
+      rslt = pthread_attr_getguardsize(&attr, &guard_size);
+      if (rslt != 0) {
+        fatal("pthread_attr_getguardsize failed with error = %d", rslt);
+      }
+      *bottom += guard_size;
+      *size   -= guard_size;
     }
-    *bottom += guard_size;
-    *size   -= guard_size;
 
     pthread_attr_destroy(&attr);
 

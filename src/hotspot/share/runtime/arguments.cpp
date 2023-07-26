@@ -41,6 +41,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
@@ -512,7 +513,6 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
@@ -520,9 +520,10 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
 
-  { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1148,7 +1149,7 @@ bool Arguments::process_argument(const char* arg,
     JVMFlag* fuzzy_matched = JVMFlag::fuzzy_match((const char*)argname, arg_len, true);
     if (fuzzy_matched != nullptr) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Did you mean '%s%s%s'? ",
+                  "Did you mean '%s%s%s'?\n",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
                   fuzzy_matched->name(),
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
@@ -1475,44 +1476,15 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
     }
   }
 #endif // _LP64
 }
 
-
-// NOTE: set_use_compressed_klass_ptrs() must be called after calling
-// set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifdef _LP64
-  // On some architectures, the use of UseCompressedClassPointers implies the use of
-  // UseCompressedOops. The reason is that the rheap_base register of said platforms
-  // is reused to perform some optimized spilling, in order to use rheap_base as a
-  // temp register. But by treating it as any other temp register, spilling can typically
-  // be completely avoided instead. So it is better not to perform this trick. And by
-  // not having that reliance, large heaps, or heaps not supporting compressed oops,
-  // can still use compressed class pointers.
-  if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS && !UseCompressedOops) {
-    if (UseCompressedClassPointers) {
-      warning("UseCompressedClassPointers requires UseCompressedOops");
-    }
-    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-  } else {
-    // Turn on UseCompressedClassPointers too
-    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
-      FLAG_SET_ERGO(UseCompressedClassPointers, true);
-    }
-    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
-    if (UseCompressedClassPointers) {
-      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
-        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
-    }
-  }
+  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
+         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
 #endif // _LP64
 }
 
@@ -1534,9 +1506,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-
-  // set_use_compressed_klass_ptrs() must be called after calling
-  // set_use_compressed_oops().
   set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
@@ -1675,9 +1644,6 @@ void Arguments::set_heap_size() {
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
-          if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-            FLAG_SET_ERGO(UseCompressedClassPointers, false);
-          }
         } else {
           reasonable_max = MIN2(reasonable_max, max_coop_heap);
         }
@@ -1937,27 +1903,43 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64)
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
+    warning("New lightweight locking not supported on this platform");
+  }
+#endif
+
   if (UseHeavyMonitors) {
+    if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags\n", LockingMode);
+      return false;
+    }
+    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
+  }
+
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
+  if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "UseHeavyMonitors is not fully implemented on this architecture");
+                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture\n");
     return false;
   }
 #endif
-#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
-  if (UseHeavyMonitors && UseRTMForStackLocks) {
+#if defined(X86) && !defined(ZERO)
+  if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive\n");
 
     return false;
   }
 #endif
-  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)\n");
     return false;
   }
-
   return status;
 }
 
@@ -2677,7 +2659,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       set_xdebug_mode(true);
     // -Xnoagent
     } else if (match_option(option, "-Xnoagent")) {
-      // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
+      warning("Option -Xnoagent was deprecated in JDK 22 and will likely be removed in a future release.");
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
@@ -2844,28 +2826,42 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
 #if INCLUDE_JVMCI
-    } else if (match_option(option, "-XX:-EnableJVMCIProduct")) {
+    } else if (match_option(option, "-XX:-EnableJVMCIProduct") || match_option(option, "-XX:-UseGraalJIT")) {
       if (EnableJVMCIProduct) {
         jio_fprintf(defaultStream::error_stream(),
-                  "-XX:-EnableJVMCIProduct cannot come after -XX:+EnableJVMCIProduct\n");
+                  "-XX:-EnableJVMCIProduct or -XX:-UseGraalJIT cannot come after -XX:+EnableJVMCIProduct or -XX:+UseGraalJIT\n");
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
-      // Just continue, since "-XX:+EnableJVMCIProduct" has been specified before
+    } else if (match_option(option, "-XX:+EnableJVMCIProduct") || match_option(option, "-XX:+UseGraalJIT")) {
+      bool use_graal_jit = match_option(option, "-XX:+UseGraalJIT");
+      if (use_graal_jit) {
+        const char* jvmci_compiler = get_property("jvmci.Compiler");
+        if (jvmci_compiler != nullptr) {
+          if (strncmp(jvmci_compiler, "graal", strlen("graal")) != 0) {
+            jio_fprintf(defaultStream::error_stream(),
+              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s\n", jvmci_compiler);
+            return JNI_ERR;
+          }
+        } else if (!add_property("jvmci.Compiler=graal")) {
+            return JNI_ENOMEM;
+        }
+      }
+
+      // Just continue, since "-XX:+EnableJVMCIProduct" or "-XX:+UseGraalJIT" has been specified before
       if (EnableJVMCIProduct) {
         continue;
       }
       JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
       // Allow this flag if it has been unlocked.
       if (jvmciFlag != nullptr && jvmciFlag->is_unlocked()) {
-        if (!JVMCIGlobals::enable_jvmci_product_mode(origin)) {
+        if (!JVMCIGlobals::enable_jvmci_product_mode(origin, use_graal_jit)) {
           jio_fprintf(defaultStream::error_stream(),
-            "Unable to enable JVMCI in product mode");
+            "Unable to enable JVMCI in product mode\n");
           return JNI_ERR;
         }
       }
       // The flag was locked so process normally to report that error
-      else if (!process_argument("EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
+      else if (!process_argument(use_graal_jit ? "UseGraalJIT" : "EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
         return JNI_EINVAL;
       }
 #endif // INCLUDE_JVMCI
@@ -3047,6 +3043,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     // class metadata instead of modifying them in place. The copy is inaccessible to the compiler.
     // TODO: revisit the following for the static archive case.
     set_mode_flags(_int);
+
+    // String deduplication may cause CDS to iterate the strings in different order from one
+    // run to another which resulting in non-determinstic CDS archives.
+    // Disable UseStringDeduplication while dumping CDS archive.
+    UseStringDeduplication = false;
   }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
@@ -3953,7 +3954,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
   if (lvl == NMT_unknown) {
     jio_fprintf(defaultStream::error_stream(),
-                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", nullptr);
+                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]\n");
     return JNI_ERR;
   }
   if (PrintNMTStatistics && lvl == NMT_off) {
@@ -3964,6 +3965,12 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   bool trace_dependencies = log_is_enabled(Debug, dependencies);
   if (trace_dependencies && VerifyDependencies) {
     warning("dependency logging results may be inflated by VerifyDependencies");
+  }
+
+  bool log_class_load_cause = log_is_enabled(Info, class, load, cause, native) ||
+                              log_is_enabled(Info, class, load, cause);
+  if (log_class_load_cause && LogClassLoadingCauseFor == nullptr) {
+    warning("class load cause logging will not produce output without LogClassLoadingCauseFor");
   }
 
   apply_debugger_ergo();

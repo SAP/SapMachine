@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -68,9 +68,25 @@ static Lock g_vitals_lock("VitalsLock");
 
 namespace counters {
 
+static volatile size_t g_number_of_clds = 0;
+static volatile size_t g_number_of_anon_clds = 0;
 static volatile size_t g_classes_loaded = 0;
 static volatile size_t g_classes_unloaded = 0;
 static volatile size_t g_threads_created = 0;
+
+void inc_cld_count(bool is_anon_cld) {
+  Atomic::inc(&g_number_of_clds);
+  if (is_anon_cld) {
+    Atomic::inc(&g_number_of_anon_clds);
+  }
+}
+
+void dec_cld_count(bool is_anon_cld) {
+  Atomic::dec(&g_number_of_clds);
+  if (is_anon_cld) {
+    Atomic::dec(&g_number_of_anon_clds);
+  }
+}
 
 void inc_classes_loaded(size_t count) {
   Atomic::add(&g_classes_loaded, count);
@@ -637,7 +653,7 @@ class SampleTable : public CHeapObj<mtInternal> {
   }
 #endif
 
-  const size_t sample_offset_in_bytes(int idx) const {
+  size_t sample_offset_in_bytes(int idx) const {
     assert(idx >= 0 && idx <= _num_entries, "invalid index: %d", idx);
     return Sample::size_in_bytes() * idx;
   }
@@ -1167,21 +1183,6 @@ static void set_value_in_sample(const Column* col, Sample* sample, T t) {
   }
 }
 
-// Count CLDs
-class CLDCounterClosure: public CLDClosure {
-public:
-  int _cnt;
-  int _anon_cnt;
-  CLDCounterClosure() : _cnt(0), _anon_cnt(0) {}
-  void do_cld(ClassLoaderData* cld) {
-    _cnt ++;
-    if (cld->has_class_mirror_holder()) {
-      _anon_cnt ++;
-    }
-  }
-};
-
-
 struct nmt_values_t {
   // How much memory, in total, was committed via mmap
   value_t mapped_total;
@@ -1298,15 +1299,8 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   }
 
   // CLDG
-  if (!avoid_locking) {
-    CLDCounterClosure cl;
-    {
-      MutexLocker lck(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::cld_do(&cl);
-    }
-    set_value_in_sample(g_col_number_of_clds, sample, cl._cnt);
-    set_value_in_sample(g_col_number_of_anon_clds, sample, cl._anon_cnt);
-  }
+  set_value_in_sample(g_col_number_of_clds, sample, counters::g_number_of_clds);
+  set_value_in_sample(g_col_number_of_anon_clds, sample, counters::g_number_of_anon_clds);
 
   // Classes
   set_value_in_sample(g_col_number_of_classes, sample,
