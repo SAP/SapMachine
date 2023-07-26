@@ -42,11 +42,11 @@ static Column* g_col_process_commit_charge = NULL;
 
 bool platform_columns_initialize() {
   g_col_system_memoryload =
-      define_column<PlainValueColumn>("system", NULL, "mload", "Approximate percentage of physical memory that is in use.", true);
+      define_column<PlainValueColumn>("system", NULL, "mload", "Approximate percentage of physical memory that is in use.", true, MAX);
 
   // MEMORYSTATUSEX ullAvailPhys
   g_col_system_avail_phys =
-      define_column<MemorySizeColumn>("system", NULL, "avail-phys", "Amount of physical memory currently available.", true);
+      define_column<MemorySizeColumn>("system", NULL, "avail-phys", "Amount of physical memory currently available.", true, MIN);
   // PROCESS_MEMORY_COUNTERS_EX WorkingSetSize
   g_col_process_working_set_size =
       define_column<MemorySizeColumn>("system", NULL, "wset", "Working set size", true);
