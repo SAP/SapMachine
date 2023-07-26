@@ -871,8 +871,7 @@ public:
           _last_extremum_samples.add_sample(last_sample);
           _extremum_samples.add_sample(sample);
         }
-      }
-      else {
+      } else {
         // Iterate columns and update if needed.
         for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
           if (column->extremum() != NONE) {
@@ -1410,7 +1409,6 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
   g_all_tables->print_all(st, &info, sample_now);
 
   os::free(sample_now);
-
 }
 
 // Dump both textual and csv style reports to two files, "sapmachine_vitals_<pid>.txt" and "sapmachine_vitals_<pid>.csv".
@@ -1460,7 +1458,6 @@ void dump_reports() {
     };
     print_report(&fs, &settings);
   }
-
 }
 
 // For printing in thread lists only.

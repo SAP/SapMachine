@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -103,8 +103,7 @@ namespace sapmachine_vitals {
     Extremum    extremum() const      { return _extremum; }
 
     void print_value(outputStream* os, value_t value, value_t last_value,
-        int last_value_age, int min_width, const print_info_t* pi,
-        char const* marker) const;
+        int last_value_age, int min_width, const print_info_t* pi, char const* marker) const;
 
     // Returns the number of characters this value needs to be printed.
     int calc_print_size(value_t value, value_t last_value,
@@ -187,7 +186,7 @@ namespace sapmachine_vitals {
                          const char* const name, const char* const description);
     void add_footnote(const char* text);
     void print_on(outputStream* st) const;
-    int  nr_of_columns() { return _nr_of_columns; }
+    int nr_of_columns() { return _nr_of_columns; }
     static Legend* the_legend () { return _the_legend; }
     static bool initialize();
   };
