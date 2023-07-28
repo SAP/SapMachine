@@ -1311,13 +1311,6 @@ bool initialize() {
 
   log_info(vitals)("Vitals v%x", vitals_version);
 
-  // Adjust VitalsSampleInterval
-  if (VitalsSampleInterval == 0) {
-    log_warning(vitals)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
-                    VitalsSampleInterval);
-    return false;
-  }
-
   bool success = ColumnList::initialize();
   success = success && Legend::initialize();
 

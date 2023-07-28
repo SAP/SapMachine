@@ -511,15 +511,19 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(uintx, VitalsSampleInterval, 10,                                  \
           "Vitals sample rate interval in seconds (default 10)")            \
+          range(1, 24 * 3600)                                               \
                                                                             \
   product(uintx, VitalsShortTermTableHours, 1,                              \
           "The size of the short term vitals table in hours")               \
+          range(1, 365 * 24)                                                \
                                                                             \
   product(uintx, VitalsLongTernSampleIntervalMinutes, 60,                   \
           "Vitals sample interval for the long term table in minutes")      \
+          range(1, 365 * 24 * 60)                                           \
                                                                             \
   product(uintx, VitalsLongTermTableDays, 14,                               \
           "The size of the long term vitals table in days")                 \
+          range(1, 10 * 365)                                                \
                                                                             \
   product(bool, VitalsLockFreeSampling, false, DIAGNOSTIC,                  \
           "When sampling vitals, omit any actions which require locking.")  \
