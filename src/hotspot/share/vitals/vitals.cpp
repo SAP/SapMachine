@@ -780,7 +780,7 @@ public:
 // It takes care to feed new samples into these tables at the appropriate intervals.
 class SampleTables: public CHeapObj<mtInternal> {
 
-  static int short_term_tablesize() { return (VitalsShortTermTableMinutes * 60 / VitalsSampleInterval) + 1; }
+  static int short_term_tablesize() { return (VitalsShortTermTableHours * 3600 / VitalsSampleInterval) + 1; }
   static int long_term_tablesize()  { return (VitalsLongTermTableDays * 24 * 60 / VitalsLongTernSampleIntervalMinutes) + 1; }
 
   SampleTable _short_term_table;
@@ -911,7 +911,7 @@ public:
         _short_term_table.walk_table_locked(&mcwclos);
 
         if (pi->csv == false) {
-          print_time_span(st, VitalsShortTermTableMinutes * 60);
+          print_time_span(st, VitalsShortTermTableHours * 3600);
         }
         print_headers(st, &widths, pi);
         print_table(&_short_term_table, st, &widths, pi);
