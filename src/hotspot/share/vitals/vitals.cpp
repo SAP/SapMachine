@@ -833,7 +833,7 @@ public:
       _extremum_samples(Sample::num_values()),
       _last_extremum_samples(Sample::num_values()),
       _count(0),
-      _large_table_count(VitalsLongTernSampleIntervalMinutes * 60 / VitalsSampleInterval)
+      _large_table_count(MAX2(1, (int) (VitalsLongTernSampleIntervalMinutes * 60 / VitalsSampleInterval)))
   {}
 
   void add_sample(const Sample* sample) {
