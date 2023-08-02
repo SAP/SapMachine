@@ -47,17 +47,24 @@ void print_cr(char const* str) {
 
 void* __libc_malloc(size_t size);
 void* __libc_calloc(size_t elems, size_t size);
+void* __libc_realloc(void* ptr, size_t size);
 
 static void __attribute__((constructor)) init(void) {
+	// Could be used to get to the real malloc implementation
+	// via dlsym when relying on __libc_malloc and friends
+	// is not feasible.
 }
 
 typedef void* real_malloc_t(size_t size);
 typedef void* malloc_hook_t(size_t size, void* caller, real_malloc_t* real_malloc);
 typedef void* real_calloc_t(size_t elems, size_t size);
 typedef void* calloc_hook_t(size_t elems, size_t size, void* caller, real_calloc_t* real_calloc);
+typedef void* real_realloc_t(void* ptr, size_t size);
+typedef void* realloc_hook_t(void* ptr, size_t size, void* caller, real_realloc_t* real_realloc);
 
 static volatile malloc_hook_t* malloc_hook = NULL;
 static volatile calloc_hook_t* calloc_hook = NULL;
+static volatile realloc_hook_t* realloc_hook = NULL;
 
 void register_new_malloc_hook(malloc_hook_t* new_malloc_hook) {
 	malloc_hook = (volatile malloc_hook_t*) new_malloc_hook;
@@ -65,6 +72,10 @@ void register_new_malloc_hook(malloc_hook_t* new_malloc_hook) {
 
 void register_new_calloc_hook(calloc_hook_t* new_calloc_hook) {
 	calloc_hook = (volatile calloc_hook_t*) new_calloc_hook;
+}
+
+void register_new_realloc_hook(realloc_hook_t* new_realloc_hook) {
+	realloc_hook = (volatile realloc_hook_t*) new_realloc_hook;
 }
 
 void* malloc(size_t size) {
@@ -83,7 +94,6 @@ void* malloc(size_t size) {
 	return __libc_malloc(size);
 }
 
-
 void* calloc(size_t elems, size_t size) {
 	calloc_hook_t* tmp_hook = calloc_hook;
 
@@ -99,5 +109,24 @@ void* calloc(size_t elems, size_t size) {
 		return result;
 	}
 
-	return __libc_malloc(size);
+	return __libc_calloc(elems, size);
 }
+
+void* realloc(void* ptr, size_t size) {
+	realloc_hook_t* tmp_hook = realloc_hook;
+
+	if (tmp_hook != NULL) {
+		void* result = tmp_hook(ptr, size, __builtin_return_address(0), __libc_realloc);
+		print("realloc of ");
+		print_ptr(ptr);
+		print(" of size ");
+		print_size(size);
+		print(" allocated at ");
+		print_ptr(result);
+		print_cr(" with hook");
+		return result;
+	}
+
+	return __libc_realloc(ptr, size);
+}
+
