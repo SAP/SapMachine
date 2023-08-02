@@ -88,54 +88,63 @@ void register_new_free_hook(malloc_hook_t* new_free_hook) {
 
 void* malloc(size_t size) {
 	malloc_hook_t* tmp_hook = malloc_hook;
+	void* result;
 
 	if (tmp_hook != NULL) {
-		void* result = tmp_hook(size, __builtin_return_address(0), __libc_malloc);
-		print("malloc size ");
-		print_size(size);
-		print(" allocated at ");
-		print_ptr(result);
-		print_cr(" with hook");
-		return result;
+		result = tmp_hook(size, __builtin_return_address(0), __libc_malloc);
+	} else {
+		result = __libc_malloc(size);
 	}
 
-	return __libc_malloc(size);
+	print("malloc size ");
+	print_size(size);
+	print(" allocated at ");
+	print_ptr(result);
+	print_cr(tmp_hook ? " with hook" : " without hook");
+
+	return result;
 }
 
 void* calloc(size_t elems, size_t size) {
 	calloc_hook_t* tmp_hook = calloc_hook;
+	void* result;
 
 	if (tmp_hook != NULL) {
-		void* result = tmp_hook(elems, size, __builtin_return_address(0), __libc_calloc);
-		print("calloc size ");
-		print_size(elems);
-		print("x");
-		print_size(size);
-		print(" allocated at ");
-		print_ptr(result);
-		print_cr(" with hook");
-		return result;
+		result = tmp_hook(elems, size, __builtin_return_address(0), __libc_calloc);
+	} else {
+		result = __libc_calloc(elems, size);
 	}
 
-	return __libc_calloc(elems, size);
+	print("calloc size ");
+	print_size(elems);
+	print("x");
+	print_size(size);
+	print(" allocated at ");
+	print_ptr(result);
+ 	print_cr(tmp_hook ? " with hook" : " without hook");
+
+	return result;
 }
 
 void* realloc(void* ptr, size_t size) {
 	realloc_hook_t* tmp_hook = realloc_hook;
+	void* result;
 
 	if (tmp_hook != NULL) {
-		void* result = tmp_hook(ptr, size, __builtin_return_address(0), __libc_realloc);
-		print("realloc of ");
-		print_ptr(ptr);
-		print(" of size ");
-		print_size(size);
-		print(" allocated at ");
-		print_ptr(result);
-		print_cr(" with hook");
-		return result;
+		result = tmp_hook(ptr, size, __builtin_return_address(0), __libc_realloc);
+	} else {
+		result = __libc_realloc(ptr, size);
 	}
 
-	return __libc_realloc(ptr, size);
+	print("realloc of ");
+	print_ptr(ptr);
+	print(" of size ");
+	print_size(size);
+	print(" allocated at ");
+	print_ptr(result);
+	print_cr(tmp_hook ? " with hook" : " without hook");
+
+	return result;
 }
 
 void free(void* ptr) {
@@ -143,11 +152,12 @@ void free(void* ptr) {
 
 	if (tmp_hook != NULL) {
 		tmp_hook(ptr, __builtin_return_address(0), __libc_free);
-		print("free of ");
-		print_ptr(ptr);
-		print_cr(" with hook");
 	} else {
-	  __libc_free(ptr);
+		__libc_free(ptr);
 	}
+
+	print("free of ");
+	print_ptr(ptr);
+	print_cr(tmp_hook ? " with hook" : " without hook");
 }
 
