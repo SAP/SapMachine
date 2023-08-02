@@ -1,6 +1,8 @@
 #include <sys/types.h>
 #include <stddef.h>
 
+#include "mallochook.h"
+
 #define WITH_DEBUG_OUTPUT 1
 
 #if WITH_DEBUG_OUTPUT
@@ -50,48 +52,42 @@ void* __libc_calloc(size_t elems, size_t size);
 void* __libc_realloc(void* ptr, size_t size);
 void  __libc_free(void* ptr);
 
+static real_funcs_t real_funcs = {
+	__libc_malloc,
+	__libc_calloc,
+	__libc_realloc,
+	__libc_free
+};
+
 static void __attribute__((constructor)) init(void) {
 	// Could be used to get to the real malloc implementation
 	// via dlsym when relying on __libc_malloc and friends
 	// is not feasible.
 }
 
-typedef void* real_malloc_t(size_t size);
-typedef void* malloc_hook_t(size_t size, void* caller, real_malloc_t* real_malloc);
-typedef void* real_calloc_t(size_t elems, size_t size);
-typedef void* calloc_hook_t(size_t elems, size_t size, void* caller, real_calloc_t* real_calloc);
-typedef void* real_realloc_t(void* ptr, size_t size);
-typedef void* realloc_hook_t(void* ptr, size_t size, void* caller, real_realloc_t* real_realloc);
-typedef void  real_free_t(void* ptr);
-typedef void  free_hook_t(void* ptr, void* caller, real_free_t* real_free);
+static registered_hooks_t empty_registered_hooks = {
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
 
-static volatile malloc_hook_t* malloc_hook = NULL;
-static volatile calloc_hook_t* calloc_hook = NULL;
-static volatile realloc_hook_t* realloc_hook = NULL;
-static volatile free_hook_t* free_hook = NULL;
+static volatile registered_hooks_t* registered_hooks = &empty_registered_hooks;
 
-void register_new_malloc_hook(malloc_hook_t* new_malloc_hook) {
-	malloc_hook = (volatile malloc_hook_t*) new_malloc_hook;
-}
-
-void register_new_calloc_hook(calloc_hook_t* new_calloc_hook) {
-	calloc_hook = (volatile calloc_hook_t*) new_calloc_hook;
-}
-
-void register_new_realloc_hook(realloc_hook_t* new_realloc_hook) {
-	realloc_hook = (volatile realloc_hook_t*) new_realloc_hook;
-}
-
-void register_new_free_hook(malloc_hook_t* new_free_hook) {
-	free_hook = (volatile free_hook_t*) new_free_hook;
+void register_hooks(registered_hooks_t* hooks) {
+	if (hooks == NULL) {
+		registered_hooks = &empty_registered_hooks;
+	} else {
+		registered_hooks = hooks;
+	}
 }
 
 void* malloc(size_t size) {
-	malloc_hook_t* tmp_hook = malloc_hook;
+	malloc_hook_t* tmp_hook = registered_hooks->malloc_hook;
 	void* result;
 
 	if (tmp_hook != NULL) {
-		result = tmp_hook(size, __builtin_return_address(0), __libc_malloc);
+		result = tmp_hook(size, __builtin_return_address(0), &real_funcs);
 	} else {
 		result = __libc_malloc(size);
 	}
@@ -106,11 +102,11 @@ void* malloc(size_t size) {
 }
 
 void* calloc(size_t elems, size_t size) {
-	calloc_hook_t* tmp_hook = calloc_hook;
+	calloc_hook_t* tmp_hook = registered_hooks->calloc_hook;
 	void* result;
 
 	if (tmp_hook != NULL) {
-		result = tmp_hook(elems, size, __builtin_return_address(0), __libc_calloc);
+		result = tmp_hook(elems, size, __builtin_return_address(0), &real_funcs);
 	} else {
 		result = __libc_calloc(elems, size);
 	}
@@ -127,11 +123,11 @@ void* calloc(size_t elems, size_t size) {
 }
 
 void* realloc(void* ptr, size_t size) {
-	realloc_hook_t* tmp_hook = realloc_hook;
+	realloc_hook_t* tmp_hook = registered_hooks->realloc_hook;
 	void* result;
 
 	if (tmp_hook != NULL) {
-		result = tmp_hook(ptr, size, __builtin_return_address(0), __libc_realloc);
+		result = tmp_hook(ptr, size, __builtin_return_address(0), &real_funcs);
 	} else {
 		result = __libc_realloc(ptr, size);
 	}
@@ -148,10 +144,10 @@ void* realloc(void* ptr, size_t size) {
 }
 
 void free(void* ptr) {
-	free_hook_t* tmp_hook = free_hook;
+	free_hook_t* tmp_hook = registered_hooks->free_hook;
 
 	if (tmp_hook != NULL) {
-		tmp_hook(ptr, __builtin_return_address(0), __libc_free);
+		tmp_hook(ptr, __builtin_return_address(0), &real_funcs);
 	} else {
 		__libc_free(ptr);
 	}
