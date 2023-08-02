@@ -8,13 +8,16 @@
 
 typedef void* real_malloc_t(size_t size);
 typedef void* malloc_hook_t(size_t size, void* caller_address, real_malloc_t* real_malloc);
-typedef void register_new_malloc_hook_t(malloc_hook_t* new_malloc_hook);
+typedef void  register_new_malloc_hook_t(malloc_hook_t* new_malloc_hook);
 typedef void* real_calloc_t(size_t elems, size_t size);
 typedef void* calloc_hook_t(size_t elems, size_t size, void* caller_address, real_calloc_t* real_calloc);
-typedef void register_new_calloc_hook_t(calloc_hook_t* new_calloc_hook);
+typedef void  register_new_calloc_hook_t(calloc_hook_t* new_calloc_hook);
 typedef void* real_realloc_t(void* ptr, size_t size);
 typedef void* realloc_hook_t(void* ptr, size_t size, void* caller_address, real_realloc_t* real_realloc);
-typedef void register_new_realloc_hook_t(realloc_hook_t* new_realloc_hook);
+typedef void  register_new_realloc_hook_t(realloc_hook_t* new_realloc_hook);
+typedef void  real_free_t(void* ptr);
+typedef void  free_hook_t(void* ptr, void* caller_address, real_free_t* real_free);
+typedef void  register_new_free_hook_t(free_hook_t* new_free_hook);
 
 #define PRINT_CALLER_ADDRESS 0
 
@@ -61,10 +64,18 @@ static void* my_realloc_hook(void* ptr, size_t size, void* caller_address, real_
 	return real_realloc(ptr, size);
 }
 
+static void my_free_hook(void* ptr, void* caller_address, real_free_t* real_free) {
+	print("caller address 0x");
+	print_address(caller_address);
+	print("\n");
+	real_free(ptr);
+}
+
 int main(int argc, char** argv) {
 	register_new_malloc_hook_t* register_malloc_hook = dlsym((void*) RTLD_DEFAULT, "register_new_malloc_hook");
 	register_new_calloc_hook_t* register_calloc_hook = dlsym((void*) RTLD_DEFAULT, "register_new_calloc_hook");
 	register_new_realloc_hook_t* register_realloc_hook = dlsym((void*) RTLD_DEFAULT, "register_new_realloc_hook");
+	register_new_free_hook_t* register_free_hook = dlsym((void*) RTLD_DEFAULT, "register_new_free_hook");
 
 	for (int i = 0; i < 3; ++i) {
 		void* p1 = malloc(1);
@@ -83,17 +94,27 @@ int main(int argc, char** argv) {
 		p6 = realloc(p6, 0);
 		p7 = realloc(p7, 0);
 	  p8 = realloc(p8, 10);
+		free(p1);
+		free(p2);
+		free(p3);
+		free(p4);
+		free(p5);
+		free(p6);
+		free(p7);
+		free(p8);
 
 		if (i == 0) {
 			print("Registered\n");
 			if (register_malloc_hook) register_malloc_hook(my_malloc_hook);
 			if (register_calloc_hook) register_calloc_hook(my_calloc_hook);
 			if (register_realloc_hook) register_realloc_hook(my_realloc_hook);
+			if (register_free_hook) register_free_hook(my_free_hook);
 		} else if (i == 1) {
 			print("Deregistered\n");
 			if (register_malloc_hook) register_malloc_hook(NULL);
 			if (register_calloc_hook) register_calloc_hook(NULL);
 			if (register_realloc_hook) register_realloc_hook(NULL);
+			if (register_free_hook) register_free_hook(NULL);
 		}
 	}
 }

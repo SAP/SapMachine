@@ -48,6 +48,7 @@ void print_cr(char const* str) {
 void* __libc_malloc(size_t size);
 void* __libc_calloc(size_t elems, size_t size);
 void* __libc_realloc(void* ptr, size_t size);
+void  __libc_free(void* ptr);
 
 static void __attribute__((constructor)) init(void) {
 	// Could be used to get to the real malloc implementation
@@ -61,10 +62,13 @@ typedef void* real_calloc_t(size_t elems, size_t size);
 typedef void* calloc_hook_t(size_t elems, size_t size, void* caller, real_calloc_t* real_calloc);
 typedef void* real_realloc_t(void* ptr, size_t size);
 typedef void* realloc_hook_t(void* ptr, size_t size, void* caller, real_realloc_t* real_realloc);
+typedef void  real_free_t(void* ptr);
+typedef void  free_hook_t(void* ptr, void* caller, real_free_t* real_free);
 
 static volatile malloc_hook_t* malloc_hook = NULL;
 static volatile calloc_hook_t* calloc_hook = NULL;
 static volatile realloc_hook_t* realloc_hook = NULL;
+static volatile free_hook_t* free_hook = NULL;
 
 void register_new_malloc_hook(malloc_hook_t* new_malloc_hook) {
 	malloc_hook = (volatile malloc_hook_t*) new_malloc_hook;
@@ -76,6 +80,10 @@ void register_new_calloc_hook(calloc_hook_t* new_calloc_hook) {
 
 void register_new_realloc_hook(realloc_hook_t* new_realloc_hook) {
 	realloc_hook = (volatile realloc_hook_t*) new_realloc_hook;
+}
+
+void register_new_free_hook(malloc_hook_t* new_free_hook) {
+	free_hook = (volatile free_hook_t*) new_free_hook;
 }
 
 void* malloc(size_t size) {
@@ -128,5 +136,18 @@ void* realloc(void* ptr, size_t size) {
 	}
 
 	return __libc_realloc(ptr, size);
+}
+
+void free(void* ptr) {
+	free_hook_t* tmp_hook = free_hook;
+
+	if (tmp_hook != NULL) {
+		tmp_hook(ptr, __builtin_return_address(0), __libc_free);
+		print("free of ");
+		print_ptr(ptr);
+		print_cr(" with hook");
+	} else {
+	  __libc_free(ptr);
+	}
 }
 
