@@ -514,10 +514,12 @@
                 {
                     "tag": "sapmachine-11.0.21+1",
                     "jdk": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.21%2B1/sapmachine-jdk-11.0.21-ea.1_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.21%2B1/sapmachine-jdk-11.0.21-ea.1_linux-x64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.21%2B1/sapmachine-jdk-11.0.21-ea.1_windows-x64_bin.zip"
                     },
                     "jre": {
+                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.21%2B1/sapmachine-jre-11.0.21-ea.1_linux-aarch64_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.21%2B1/sapmachine-jre-11.0.21-ea.1_linux-x64_bin.tar.gz",
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.21%2B1/sapmachine-jre-11.0.21-ea.1_windows-x64_bin.zip"
                     }
@@ -527,10 +529,12 @@
                 {
                     "tag": "sapmachine-11.0.21+1",
                     "jdk": {
+                        "linux-aarch64": "sha256 831dad1ffe95c065bff7b106c53e652df93e206b10583a13908cb207a08916a2",
                         "linux-x64": "sha256 9c1092de948f45c63899e0328af8b2bbd98bf57d7a33fa429c1bc6f09ea1735a",
                         "windows-x64": "sha256 ddf71b51fb7c5040692692b16107d4f9b40fa265c2460302f106a30bd8f04436"
                     },
                     "jre": {
+                        "linux-aarch64": "sha256 de6fea3d6d468a841ce613a56f709a629f5516c4e45ee70f53a029ea889c9259",
                         "linux-x64": "sha256 8227bf471c410375bc70cc0049fef63ff941480cdbcfe54de7bee6824fc49576",
                         "windows-x64": "sha256 41fb2bbfea3b96716ca3fcdc14f69c71deba1c710dd32081fe182cb8572f1642"
                     }
