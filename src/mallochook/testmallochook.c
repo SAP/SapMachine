@@ -84,10 +84,10 @@ int main(int argc, char** argv) {
 		p2 = realloc(p2, 0);
 		p3 = realloc(p3, 0);
 		p4 = realloc(p4, 10);
-		p5 = realloc(p5, 4);
-		p6 = realloc(p6, 0);
-		p7 = realloc(p7, 0);
-		p8 = realloc(p8, 10);
+		p5 = reallocarray(p5, 1, 4);
+		p6 = reallocarray(p6, 2, 0);
+		p7 = reallocarray(p7, 3, 0);
+		p8 = reallocarray(p8, 4, 10);
 		p9 = realloc(p9, 10);
 		free(p1);
 		free(p2);
