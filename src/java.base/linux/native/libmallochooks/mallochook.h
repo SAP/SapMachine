@@ -1,18 +1,18 @@
 #ifndef __SAPMACHINE_MALLOC_HOOK
 #define __SAPMACHINE_MALLOC_HOOK
 
-typedef void* real_malloc_t(size_t size);
-typedef void* real_calloc_t(size_t elems, size_t size);
-typedef void* real_realloc_t(void* ptr, size_t size);
-typedef void  real_free_t(void* ptr);
-typedef int   real_posix_memalign_t(void** ptr, size_t align, size_t size);
+typedef void* malloc_func_t(size_t size);
+typedef void* calloc_func_t(size_t elems, size_t size);
+typedef void* realloc_func_t(void* ptr, size_t size);
+typedef void  free_func_t(void* ptr);
+typedef int   posix_memalign_func_t(void** ptr, size_t align, size_t size);
 
 typedef struct {
-	real_malloc_t* real_malloc;
-	real_calloc_t* real_calloc;
-	real_realloc_t* real_realloc;
-	real_free_t* real_free;
-        real_posix_memalign_t* real_posix_memalign;
+	malloc_func_t* real_malloc;
+	calloc_func_t* real_calloc;
+	realloc_func_t* real_realloc;
+	free_func_t* real_free;
+        posix_memalign_func_t* real_posix_memalign;
 } real_funcs_t;
 
 typedef void* malloc_hook_t(size_t size, void* caller, real_funcs_t* real_funcs);
