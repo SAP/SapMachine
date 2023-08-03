@@ -121,7 +121,7 @@ static registered_hooks_t empty_registered_hooks = {
 
 static volatile registered_hooks_t* registered_hooks = &empty_registered_hooks;
 
-EXPORT void register_hooks(registered_hooks_t* hooks) {
+EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 	if (hooks == NULL) {
                 print("Deregistered hooks\n");
 		registered_hooks = &empty_registered_hooks;
@@ -129,6 +129,8 @@ EXPORT void register_hooks(registered_hooks_t* hooks) {
                 print("Registered hooks\n");
 		registered_hooks = hooks;
 	}
+
+	return &real_funcs;
 }
 
 EXPORT void* malloc(size_t size) {

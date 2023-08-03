@@ -29,7 +29,7 @@ typedef struct {
 	posix_memalign_hook_t* posix_memalign_hook;
 } registered_hooks_t;
 
-typedef void register_hooks_t(registered_hooks_t* registered_hooks);
+typedef real_funcs_t* register_hooks_t(registered_hooks_t* registered_hooks);
 
 #define REGISTER_HOOKS_NAME "register_hooks"
 
