@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <sys/types.h>
 #include <stddef.h>
 #include <dlfcn.h>
@@ -10,13 +8,16 @@
 
 #include "mallochook.h"
 
-#define WITH_DEBUG_OUTPUT 0
+#define EXPORT __attribute__((visibility("default")))
+
+#define WITH_DEBUG_OUTPUT 1
+#define DEBUG_FD 2
 #define ALWAYS_USE_POSIX_MEMALIGN_FALLBACK 1
 
 #if WITH_DEBUG_OUTPUT
 
 void print(char const* str) {
-	write(1, str, strlen(str));
+	write(DEBUG_FD, str, strlen(str));
 }
 
 void print_ptr(void* ptr) {
@@ -24,8 +25,8 @@ void print_ptr(void* ptr) {
 	print("0x");
 
 	do {
-		shift -= 1;
-		write(1, "0123456789abcdef" + ((((size_t) ptr) >> shift) & 15), 1);
+		shift -= 4;
+		write(DEBUG_FD, "0123456789abcdef" + ((((size_t) ptr) >> shift) & 15), 1);
 		
 	} while (shift > 0);
 }
@@ -39,18 +40,16 @@ void print_size(size_t size) {
 		size /= 10;
 	}  while (size > 0);
 
-	write(1, buf + pos, sizeof(buf) - pos);
+	write(DEBUG_FD, buf + pos, sizeof(buf) - pos);
 }
 
-void print_cr(char const* str) {
-	print(str);
-	print("\n");
-}
 #else
+
 #define print_ptr(x)
 #define print_size(x)
 #define print(x)
 #define print_cr(x)
+
 #endif
 
 void* __libc_malloc(size_t size);
@@ -122,15 +121,17 @@ static registered_hooks_t empty_registered_hooks = {
 
 static volatile registered_hooks_t* registered_hooks = &empty_registered_hooks;
 
-void register_hooks(registered_hooks_t* hooks) {
+EXPORT void register_hooks(registered_hooks_t* hooks) {
 	if (hooks == NULL) {
+                print("Deregistered hooks\n");
 		registered_hooks = &empty_registered_hooks;
 	} else {
+                print("Registered hooks\n");
 		registered_hooks = hooks;
 	}
 }
 
-void* malloc(size_t size) {
+EXPORT void* malloc(size_t size) {
 	malloc_hook_t* tmp_hook = registered_hooks->malloc_hook;
 	void* result;
 
@@ -144,12 +145,12 @@ void* malloc(size_t size) {
 	print_size(size);
 	print(" allocated at ");
 	print_ptr(result);
-	print_cr(tmp_hook ? " with hook" : " without hook");
+	print(tmp_hook ? " with hook\n" : " without hook\n");
 
 	return result;
 }
 
-void* calloc(size_t elems, size_t size) {
+EXPORT void* calloc(size_t elems, size_t size) {
 	calloc_hook_t* tmp_hook = registered_hooks->calloc_hook;
 	void* result;
 
@@ -165,12 +166,12 @@ void* calloc(size_t elems, size_t size) {
 	print_size(size);
 	print(" allocated at ");
 	print_ptr(result);
- 	print_cr(tmp_hook ? " with hook" : " without hook");
+	print(tmp_hook ? " with hook\n" : " without hook\n");
 
 	return result;
 }
 
-void* realloc(void* ptr, size_t size) {
+EXPORT void* realloc(void* ptr, size_t size) {
 	realloc_hook_t* tmp_hook = registered_hooks->realloc_hook;
 	void* result;
 
@@ -186,12 +187,12 @@ void* realloc(void* ptr, size_t size) {
 	print_size(size);
 	print(" allocated at ");
 	print_ptr(result);
-	print_cr(tmp_hook ? " with hook" : " without hook");
+	print(tmp_hook ? " with hook\n" : " without hook\n");
 
 	return result;
 }
 
-void free(void* ptr) {
+EXPORT void free(void* ptr) {
 	free_hook_t* tmp_hook = registered_hooks->free_hook;
 
 	if (tmp_hook != NULL) {
@@ -202,10 +203,10 @@ void free(void* ptr) {
 
 	print("free of ");
 	print_ptr(ptr);
-	print_cr(tmp_hook ? " with hook" : " without hook");
+	print(tmp_hook ? " with hook\n" : " without hook\n");
 }
 
-int posix_memalign(void** ptr, size_t align, size_t size) {
+EXPORT int posix_memalign(void** ptr, size_t align, size_t size) {
 	posix_memalign_hook_t* tmp_hook = registered_hooks->posix_memalign_hook;
 	int result;
 
@@ -227,7 +228,7 @@ int posix_memalign(void** ptr, size_t align, size_t size) {
 		print(" failed");
 	}
 
-	print_cr(tmp_hook ? " with hook" : " without hook");
+	print(tmp_hook ? " with hook\n" : " without hook\n");
 
 	return result;
 }

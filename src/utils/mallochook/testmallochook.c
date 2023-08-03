@@ -8,14 +8,14 @@
 
 #include "mallochook.h"
 
-#define PRINT_CALLER_ADDRESS 0
+#define PRINT_CALLER_ADDRESS 1
 
 #if PRINT_CALLER_ADDRESS
 static void print_address(void* addr) {
 	int shift = 32;
 
 	do {
-		shift -= 1;
+		shift -= 4;
 		write(1, "0123456789abcdef" + ((((size_t) addr) >> shift) & 15), 1);
 		
 	} while (shift > 0);
@@ -126,6 +126,9 @@ int main(int argc, char** argv) {
 	};
 
 	register_hooks_t* register_hooks = dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+	print("Regsiter func: ");
+	print_address(register_hooks);
+	print("\n");
 
 	test_hooks(&hooks, register_hooks);
 

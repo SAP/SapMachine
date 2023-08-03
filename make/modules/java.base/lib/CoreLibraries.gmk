@@ -210,3 +210,21 @@ ifeq ($(call isTargetOs, aix), true)
   TARGETS += $(BUILD_LIBJLI_STATIC)
 
 endif
+
+##########################################################################################
+
+ifeq ($(call isTargetOs, linux), true)
+  LIBJLI_SRC_DIRS := $(call FindSrcDirsForComponent, java.base, libmallochooks)
+
+  $(eval $(call SetupJdkLibrary, BUILD_MALLOCHOOKS, \
+      NAME := mallochooks, \
+      SRC := $(TOPDIR)/src/java.base/linux/native/libmallochooks, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := -ldl, \
+  ))
+
+  TARGETS += $(BUILD_MALLOCHOOKS)
+endif
