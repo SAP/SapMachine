@@ -67,7 +67,7 @@ static int my_posix_memalign_hook(void** ptr, size_t align, size_t size, void* c
 	return real_funcs->real_posix_memalign(ptr, align, size);
 }
 
-int test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
+void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 	for (int i = 0; i < 3; ++i) {
 		void* p1 = malloc(1);
 		void* p2 = malloc(10000);

@@ -5,15 +5,15 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 #include "mallochook.h"
 
-#define WITH_DEBUG_OUTPUT 1
+#define WITH_DEBUG_OUTPUT 0
 #define ALWAYS_USE_POSIX_MEMALIGN_FALLBACK 1
 
 #if WITH_DEBUG_OUTPUT
-#include <unistd.h>
-#include <string.h>
 
 void print(char const* str) {
 	write(1, str, strlen(str));
@@ -113,6 +113,7 @@ static void __attribute__((constructor)) init(void) {
 }
 
 static registered_hooks_t empty_registered_hooks = {
+	NULL,
 	NULL,
 	NULL,
 	NULL,

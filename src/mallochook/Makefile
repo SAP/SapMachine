@@ -16,5 +16,5 @@ test: libmallochook.so testmallochook
 	LD_PRELOAD=./libmallochook.so ./testmallochook
 
 clean:
-	rm -f libmallochook.so mallochook.o testmallochook *.c~ *.h~
+	rm -f libmallochook.so mallochook.o testmallochook *.c~ *.h~ Makefile~
 
