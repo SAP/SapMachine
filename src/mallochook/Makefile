@@ -4,7 +4,7 @@ LDFLAGS =
 all: libmallochook.so malloctest
 
 libmallochook.so: mallochook.o
-	$(CC) -shared -o $@ $^ $(LDFLAGS)
+	$(CC) -shared -o $@ $^ $(LDFLAGS) -ldl
 
 mallochook.o: mallochook.c
 	$(CC) -c $(CFLAGS) mallochook.c

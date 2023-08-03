@@ -60,16 +60,14 @@ static void my_free_hook(void* ptr, void* caller_address, real_funcs_t* real_fun
 	real_funcs->real_free(ptr);
 }
 
-int main(int argc, char** argv) {
-	registered_hooks_t hooks = {
-		my_malloc_hook,
-		my_calloc_hook,
-		my_realloc_hook,
-		my_free_hook
-	};
-	
-	register_hooks_t* register_hooks = dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+static int my_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, real_funcs_t* real_funcs) {
+	print("caller address 0x");
+	print_address(caller_address);
+	print("\n");
+	return real_funcs->real_posix_memalign(ptr, align, size);
+}
 
+int test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 	for (int i = 0; i < 3; ++i) {
 		void* p1 = malloc(1);
 		void* p2 = malloc(10000);
@@ -80,6 +78,11 @@ int main(int argc, char** argv) {
 		void* p7 = calloc(0, 12);
 		void* p8 = calloc(3, 3);
 		void* p9 = strdup("test");
+		void* pa, *pb, *pc, *pd;
+		posix_memalign(&pa, 4, 1028);
+		posix_memalign(&pb, 32, 513);
+		posix_memalign(&pc, 65536 * 4, 65536 * 27);
+		posix_memalign(&pd, 65536 * 4, 0);
 		p1 = realloc(p1, 4);
 		p2 = realloc(p2, 0);
 		p3 = realloc(p3, 0);
@@ -98,13 +101,42 @@ int main(int argc, char** argv) {
 		free(p7);
 		free(p8);
 		free(p9);
+		free(pa);
+		free(pb);
+		free(pc);
+		free(pd);
 
 		if (i == 0) {
 			print("Registered\n");
-			if (register_hooks) register_hooks(&hooks);
+			if (register_hooks) register_hooks(hooks);
 		} else if (i == 1) {
 			print("Deregistered\n");
 			if (register_hooks) register_hooks(NULL);
 		}
 	}
+}
+
+int main(int argc, char** argv) {
+	registered_hooks_t hooks = {
+		my_malloc_hook,
+		my_calloc_hook,
+		my_realloc_hook,
+		my_free_hook,
+		my_posix_memalign_hook
+	};
+
+	register_hooks_t* register_hooks = dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+
+	test_hooks(&hooks, register_hooks);
+
+	// Remove some hooks and see if it still works
+	hooks.realloc_hook = NULL;
+	hooks.calloc_hook = NULL;
+	test_hooks(&hooks, register_hooks);
+
+	// Remove all hooks and see if it still works
+	hooks.malloc_hook = NULL;
+	hooks.free_hook = NULL;
+	hooks.posix_memalign_hook = NULL;
+	test_hooks(&hooks, register_hooks);
 }

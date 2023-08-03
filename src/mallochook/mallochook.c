@@ -1,9 +1,15 @@
+#define _GNU_SOURCE
+
 #include <sys/types.h>
 #include <stddef.h>
+#include <dlfcn.h>
+#include <errno.h>
+#include <stdlib.h>
 
 #include "mallochook.h"
 
 #define WITH_DEBUG_OUTPUT 1
+#define ALWAYS_USE_POSIX_MEMALIGN_FALLBACK 1
 
 #if WITH_DEBUG_OUTPUT
 #include <unistd.h>
@@ -52,17 +58,58 @@ void* __libc_calloc(size_t elems, size_t size);
 void* __libc_realloc(void* ptr, size_t size);
 void  __libc_free(void* ptr);
 
+int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
+	// We don't expect this to ever be called, since we assume the
+	// posix_memalign method of the glibc to be found during the init
+	// function.
+	// Since this should be at most used during initialization, we don't
+	// check for overflow in allocation size or other invalid arguments.
+	void* raw = __libc_malloc(size);
+	*ptr = NULL;
+
+	if (raw == NULL) {
+		return ENOMEM;
+	}
+
+	// Allocate larger and larger chunks and hope we somehow find an aligned
+	// allocation.
+	size_t alloc_size = size + align;
+
+	while ((((intptr_t) raw) & (align - 1)) != 0) {
+		void* new_raw = __libc_malloc(alloc_size);
+		__libc_free(raw);
+		raw = new_raw;
+
+		if (raw == NULL) {
+			return ENOMEM;
+		}
+
+		alloc_size += 8;
+	}
+
+	*ptr = raw;
+	return 0;
+}
+
 static real_funcs_t real_funcs = {
 	__libc_malloc,
 	__libc_calloc,
 	__libc_realloc,
-	__libc_free
+	__libc_free,
+        fallback_posix_memalign
 };
 
 static void __attribute__((constructor)) init(void) {
-	// Could be used to get to the real malloc implementation
-	// via dlsym when relying on __libc_malloc and friends
-	// is not feasible.
+	real_posix_memalign_t* real_posix_memalign = dlsym(RTLD_NEXT, "posix_memalign");
+
+	if (real_posix_memalign != NULL) {
+#if !ALWAYS_USE_POSIX_MEMALIGN_FALLBACK
+		real_funcs.real_posix_memalign = real_posix_memalign;
+#endif
+	} else {
+		// This should not happen. On the other hand it should be no probelm
+		// to have overwritten posix_memalign, so we just run with it.
+	}
 }
 
 static registered_hooks_t empty_registered_hooks = {
@@ -89,7 +136,7 @@ void* malloc(size_t size) {
 	if (tmp_hook != NULL) {
 		result = tmp_hook(size, __builtin_return_address(0), &real_funcs);
 	} else {
-		result = __libc_malloc(size);
+		result = real_funcs.real_malloc(size);
 	}
 
 	print("malloc size ");
@@ -108,7 +155,7 @@ void* calloc(size_t elems, size_t size) {
 	if (tmp_hook != NULL) {
 		result = tmp_hook(elems, size, __builtin_return_address(0), &real_funcs);
 	} else {
-		result = __libc_calloc(elems, size);
+		result = real_funcs.real_calloc(elems, size);
 	}
 
 	print("calloc size ");
@@ -129,7 +176,7 @@ void* realloc(void* ptr, size_t size) {
 	if (tmp_hook != NULL) {
 		result = tmp_hook(ptr, size, __builtin_return_address(0), &real_funcs);
 	} else {
-		result = __libc_realloc(ptr, size);
+		result = real_funcs.real_realloc(ptr, size);
 	}
 
 	print("realloc of ");
@@ -149,11 +196,38 @@ void free(void* ptr) {
 	if (tmp_hook != NULL) {
 		tmp_hook(ptr, __builtin_return_address(0), &real_funcs);
 	} else {
-		__libc_free(ptr);
+		real_funcs.real_free(ptr);
 	}
 
 	print("free of ");
 	print_ptr(ptr);
 	print_cr(tmp_hook ? " with hook" : " without hook");
+}
+
+int posix_memalign(void** ptr, size_t align, size_t size) {
+	posix_memalign_hook_t* tmp_hook = registered_hooks->posix_memalign_hook;
+	int result;
+
+	if (tmp_hook != NULL) {
+		result = tmp_hook(ptr, align, size, __builtin_return_address(0), &real_funcs);
+	} else {
+		result = real_funcs.real_posix_memalign(ptr, align, size);
+	}
+
+	print("posix_memalign with alignment ");
+	print_size(align);
+	print(" and size ");
+	print_size(size);
+
+	if (result == 0) {
+	        print(" allocated at ");
+		print_ptr(*ptr);
+	} else {
+		print(" failed");
+	}
+
+	print_cr(tmp_hook ? " with hook" : " without hook");
+
+	return result;
 }
 
