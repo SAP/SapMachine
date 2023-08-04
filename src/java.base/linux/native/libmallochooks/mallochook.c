@@ -18,7 +18,7 @@
 #if WITH_DEBUG_OUTPUT
 
 #if defined(__GLIBC__)
-#define USE_LIBC_FALLBACKS
+//#define USE_LIBC_FALLBACKS
 #endif
 
 void print(char const* str) {
@@ -64,8 +64,8 @@ void* __libc_calloc(size_t elems, size_t size);
 void* __libc_realloc(void* ptr, size_t size);
 void  __libc_free(void* ptr);
 
-static malloc_func_t* malloc_for_posix_memalign = __libc_malloc;
-static free_func_t* free_for_posix_memalign = __libc_free;
+static malloc_func_t* malloc_for_fallback = __libc_malloc;
+static free_func_t* free_for_fallback = __libc_free;
 
 #else
 
@@ -87,8 +87,15 @@ void* fallback_malloc(size_t size) {
 	return result;
 }
 
+void  fallback_free(void* ptr) {
+	// Nothing to do.
+}
+
+static malloc_func_t* malloc_for_fallback = fallback_malloc;
+static free_func_t* free_for_fallback = fallback_free;
+
 void* fallback_calloc(size_t elems, size_t size) {
-	void* result = fallback_malloc(elems * size);
+	void* result = malloc_for_fallback(elems * size);
 
 	if (result != NULL) {
 		bzero(result, elems * size);
@@ -106,15 +113,10 @@ void* fallback_realloc(void* ptr, size_t size) {
 		memcpy(result, ptr, size);
 	}
 
+	fallback_free(ptr);
+
 	return result;
 }
-
-void  fallback_free(void* ptr) {
-	// Nothing to do.
-}
-
-static malloc_func_t* malloc_for_posix_memalign = fallback_malloc;
-static free_func_t* free_for_posix_memalign = fallback_free;
 
 #endif
 
@@ -129,7 +131,7 @@ int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
 	//
 	// Allocate larger and larger chunks and hope we somehow find an aligned
 	// allocation.
-	void* raw = malloc_for_posix_memalign(size);
+	void* raw = malloc_for_fallback(size);
 	*ptr = NULL;
 
 	if (raw == NULL) {
@@ -139,8 +141,8 @@ int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
 	size_t alloc_size = size + align;
 
 	while ((((intptr_t) raw) & (align - 1)) != 0) {
-		void* new_raw = malloc_for_posix_memalign(alloc_size);
-		free_for_posix_memalign(raw);
+		void* new_raw = malloc_for_fallback(alloc_size);
+		free_for_fallback(raw);
 		raw = new_raw;
 
 		if (raw == NULL) {
@@ -185,12 +187,19 @@ static void __attribute__((constructor)) init(void) {
 #ifndef USE_LIBC_FALLBACKS
 	assign_function((void**) &real_funcs.real_malloc, "malloc");
 	assign_function((void**) &real_funcs.real_free, "free");
-	// Assign now, since it really hurts to use the fallback malloc/frees i
-	// the fallback posix_memalign.
-	malloc_for_posix_memalign = real_funcs.real_malloc;
-	free_for_posix_memalign = real_funcs.real_free;
-	assign_function((void**) &real_funcs.real_calloc, "calloc");
 	assign_function((void**) &real_funcs.real_realloc, "realloc");
+
+	// Assign now, since it really hurts to use the fallback malloc/frees i
+	// the fallback calloc/posix_memalign.
+	malloc_for_fallback = real_funcs.real_malloc;
+	free_for_fallback = real_funcs.real_free;
+
+	print_size(fallback_buffer_pos - fallback_buffer);
+	print(" bytes used for fallback\n");
+	print_size(fallback_buffer_end - fallback_buffer_pos);
+	print(" bytes not used for fallback\n");
+
+	assign_function((void**) &real_funcs.real_calloc, "calloc");
 #endif
 
 #if ALWAYS_USE_POSIX_MEMALIGN_FALLBACK
@@ -282,6 +291,13 @@ EXPORT void* realloc(void* ptr, size_t size) {
 }
 
 EXPORT void free(void* ptr) {
+#ifndef USE_LIBC_FALLBACKS
+	// We might see remnants of the fallback allocations here.
+	if ((ptr >= (void*) fallback_buffer) && (ptr < (void*) fallback_buffer_end)) {
+		return;
+	}
+#endif
+
 	free_hook_t* tmp_hook = registered_hooks->free_hook;
 
 	if (tmp_hook != NULL) {
