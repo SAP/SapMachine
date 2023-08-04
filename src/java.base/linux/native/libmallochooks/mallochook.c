@@ -19,7 +19,7 @@
 #define CALLOC_REPLACEMENT         calloc
 #define REALLOC_REPLACEMENT        realloc
 #define FREE_REPLACEMENT           free
-#define POSIX_MEMALIGN_REPLACEMENT posix_memaign
+#define POSIX_MEMALIGN_REPLACEMENT posix_memalign
 
 #define REPLACE_NAME(x) x##_interpose
 
