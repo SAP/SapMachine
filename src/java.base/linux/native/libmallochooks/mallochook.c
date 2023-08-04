@@ -96,7 +96,7 @@ void print_size(size_t size) {
 
 #endif
 
-#ifdef NEEDS_FALLBACK_MALLOC
+#if defined(NEEDS_FALLBACK_MALLOC)
 
 static char  fallback_buffer[1024 * 1024];
 static char* fallback_buffer_pos = fallback_buffer;
@@ -121,10 +121,11 @@ void  fallback_free(void* ptr) {
 }
 #endif
 
+// The baisc malloc/free to be used in other fallback methods.
 static malloc_func_t* malloc_for_fallback = MALLOC_REPLACEMENT;
 static free_func_t* free_for_fallback = FREE_REPLACEMENT;
 
-#ifdef NEEDS_FALLBACK_MALLOC
+#if defined(NEEDS_FALLBACK_MALLOC)
 void* fallback_calloc(size_t elems, size_t size) {
 	void* result = malloc_for_fallback(elems * size);
 
@@ -151,7 +152,7 @@ void* fallback_realloc(void* ptr, size_t size) {
 
 #endif
 
-#ifdef NEEDS_FALLBACK_POSIX_MEMALIGN
+#if defined(NEEDS_FALLBACK_POSIX_MEMALIGN)
 
 int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
 	// We don't expect this to ever be called, since we assume the
@@ -211,7 +212,7 @@ static void assign_function(void** dest, char const* symbol) {
 }
 
 static void __attribute__((constructor)) init(void) {
-#ifdef NEEDS_FALLBACK_MALLOC
+#if defined(NEEDS_FALLBACK_MALLOC)
 	assign_function((void**) &real_funcs.real_malloc, "malloc");
 	assign_function((void**) &real_funcs.real_free, "free");
 	assign_function((void**) &real_funcs.real_realloc, "realloc");
@@ -229,7 +230,7 @@ static void __attribute__((constructor)) init(void) {
 	assign_function((void**) &real_funcs.real_calloc, "calloc");
 #endif
 
-#ifdef NEEDS_FALLBACK_POSIX_MEMALIGN
+#if defined(NEEDS_FALLBACK_POSIX_MEMALIGN)
 	assign_function((void**) &real_funcs.real_posix_memalign, "posix_memalign");
 #endif
 }
@@ -318,7 +319,7 @@ EXPORT void* REPLACE_NAME(realloc)(void* ptr, size_t size) {
 }
 
 EXPORT void REPLACE_NAME(free)(void* ptr) {
-#ifdef NEEDS_FALLBACK_MALLOC
+#if defined(NEEDS_FALLBACK_MALLOC)
 	// We might see remnants of the fallback allocations here.
 	if ((ptr >= (void*) fallback_buffer) && (ptr < (void*) fallback_buffer_end)) {
 		return;
@@ -365,7 +366,7 @@ EXPORT int REPLACE_NAME(posix_memalign)(void** ptr, size_t align, size_t size) {
 	return result;
 }
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 
 #define DYLD_INTERPOSE(_replacement,_replacee) \
    __attribute__((used)) static struct{ const void* replacement; const void* replacee; } _interpose_##_replacee \
