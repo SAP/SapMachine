@@ -6,33 +6,59 @@
 #include <unistd.h>
 #include <string.h>
 
-#ifdef __APPLE__
-
-#define DYLD_INTERPOSE(_replacement,_replacee) \
-   __attribute__((used)) static struct{ const void* replacement; const void* replacee; } _interpose_##_replacee \
-   __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacement, (const void*)(unsigned long)&_replacee };
-#define REPLACE_NAME(x) x##_interpos
-
-#else
-
-#define REPLACE_NAME(x) x
-
-#endif
-
 #include "mallochook.h"
-
-#define EXPORT __attribute__((visibility("default")))
-
 
 #define WITH_DEBUG_OUTPUT 1
 #define DEBUG_FD 2
 #define ALWAYS_USE_POSIX_MEMALIGN_FALLBACK 1
 
-#if WITH_DEBUG_OUTPUT
 
-#if defined(__GLIBC__)
-//#define USE_LIBC_FALLBACKS
+#if defined(__APPLE__)
+
+#define MALLOC_REPLACEMENT         malloc
+#define CALLOC_REPLACEMENT         calloc
+#define REALLOC_REPLACEMENT        realloc
+#define FREE_REPLACEMENT           free
+#define POSIX_MEMALIGN_REPLACEMENT posix_memaign
+
+#define REPLACE_NAME(x) x##_interpose
+
+#elif defined(__GLIBC__)
+
+void* __libc_malloc(size_t size);
+void* __libc_calloc(size_t elems, size_t size);
+void* __libc_realloc(void* ptr, size_t size);
+void  __libc_free(void* ptr);
+
+#define MALLOC_REPLACEMENT         __libc_malloc
+#define CALLOC_REPLACEMENT         __libc_calloc
+#define REALLOC_REPLACEMENT        __libc_realloc
+#define FREE_REPLACEMENT           __libc_free
+#define POSIX_MEMALIGN_REPLACEMENT fallback_posix_memalign
+
+#define NEEDS_FALLBACK_POSIX_MEMALIGN
+
+#else
+
+#define MALLOC_REPLACEMENT         fallback_malloc
+#define CALLOC_REPLACEMENT         fallback_calloc
+#define REALLOC_REPLACEMENT        fallback_realloc
+#define FREE_REPLACEMENT           fallback_free
+#define POSIX_MEMALIGN_REPLACEMENT fallback_posix_memaign
+
+#define NEEDS_FALLBACK_MALLOC
+#define NEEDS_FALLBACK_POSIX_MEMALIGN
+
 #endif
+
+#ifndef REPLACE_NAME
+#define REPLACE_NAME(x) x
+#endif
+
+#define EXPORT __attribute__((visibility("default")))
+
+
+#if WITH_DEBUG_OUTPUT
 
 void print(char const* str) {
 	write(DEBUG_FD, str, strlen(str));
@@ -70,22 +96,7 @@ void print_size(size_t size) {
 
 #endif
 
-#ifdef USE_LIBC_FALLBACKS
-
-void* __libc_malloc(size_t size);
-void* __libc_calloc(size_t elems, size_t size);
-void* __libc_realloc(void* ptr, size_t size);
-void  __libc_free(void* ptr);
-
-static malloc_func_t* malloc_for_fallback = __libc_malloc;
-static free_func_t* free_for_fallback = __libc_free;
-
-#elif defined(__APPLE__)
-
-static malloc_func_t* malloc_for_fallback = malloc;
-static free_func_t* free_for_fallback = free;
-
-#else
+#ifdef NEEDS_FALLBACK_MALLOC
 
 static char  fallback_buffer[1024 * 1024];
 static char* fallback_buffer_pos = fallback_buffer;
@@ -108,10 +119,12 @@ void* fallback_malloc(size_t size) {
 void  fallback_free(void* ptr) {
 	// Nothing to do.
 }
+#endif
 
-static malloc_func_t* malloc_for_fallback = fallback_malloc;
-static free_func_t* free_for_fallback = fallback_free;
+static malloc_func_t* malloc_for_fallback = MALLOC_REPLACEMENT;
+static free_func_t* free_for_fallback = FREE_REPLACEMENT;
 
+#ifdef NEEDS_FALLBACK_MALLOC
 void* fallback_calloc(size_t elems, size_t size) {
 	void* result = malloc_for_fallback(elems * size);
 
@@ -138,6 +151,7 @@ void* fallback_realloc(void* ptr, size_t size) {
 
 #endif
 
+#ifdef NEEDS_FALLBACK_POSIX_MEMALIGN
 
 int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
 	// We don't expect this to ever be called, since we assume the
@@ -174,24 +188,14 @@ int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
 	return 0;
 }
 
-static real_funcs_t real_funcs = {
-#ifdef USE_LIBC_FALLBACKS
-	__libc_malloc,
-	__libc_calloc,
-	__libc_realloc,
-	__libc_free,
-#elif defined(__APPLE__)
-	malloc,
-	calloc,
-	realloc,
-	free,
-#else
-	fallback_malloc,
-	fallback_calloc,
-	fallback_realloc,
-	fallback_free,
 #endif
-        fallback_posix_memalign
+
+static real_funcs_t real_funcs = {
+	MALLOC_REPLACEMENT,
+	CALLOC_REPLACEMENT,
+	REALLOC_REPLACEMENT,
+	FREE_REPLACEMENT,
+        POSIX_MEMALIGN_REPLACEMENT
 };
 
 static void assign_function(void** dest, char const* symbol) {
@@ -207,7 +211,7 @@ static void assign_function(void** dest, char const* symbol) {
 }
 
 static void __attribute__((constructor)) init(void) {
-#if !defined(USE_LIBC_FALLBACKS) && !defined(__APPLE__)
+#ifdef NEEDS_FALLBACK_MALLOC
 	assign_function((void**) &real_funcs.real_malloc, "malloc");
 	assign_function((void**) &real_funcs.real_free, "free");
 	assign_function((void**) &real_funcs.real_realloc, "realloc");
@@ -225,7 +229,7 @@ static void __attribute__((constructor)) init(void) {
 	assign_function((void**) &real_funcs.real_calloc, "calloc");
 #endif
 
-#if ALWAYS_USE_POSIX_MEMALIGN_FALLBACK
+#ifdef NEEDS_FALLBACK_POSIX_MEMALIGN
 	assign_function((void**) &real_funcs.real_posix_memalign, "posix_memalign");
 #endif
 }
@@ -314,7 +318,7 @@ EXPORT void* REPLACE_NAME(realloc)(void* ptr, size_t size) {
 }
 
 EXPORT void REPLACE_NAME(free)(void* ptr) {
-#if !defined(USE_LIBC_FALLBACKS) && !defined(__APPLE__)
+#ifdef NEEDS_FALLBACK_MALLOC
 	// We might see remnants of the fallback allocations here.
 	if ((ptr >= (void*) fallback_buffer) && (ptr < (void*) fallback_buffer_end)) {
 		return;
@@ -362,6 +366,10 @@ EXPORT int REPLACE_NAME(posix_memalign)(void** ptr, size_t align, size_t size) {
 }
 
 #ifdef __APPLE__
+
+#define DYLD_INTERPOSE(_replacement,_replacee) \
+   __attribute__((used)) static struct{ const void* replacement; const void* replacee; } _interpose_##_replacee \
+   __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacement, (const void*)(unsigned long)&_replacee };
 
 DYLD_INTERPOSE(REPLACE_NAME(malloc), malloc)
 DYLD_INTERPOSE(REPLACE_NAME(calloc), calloc)
