@@ -6,6 +6,19 @@
 #include <unistd.h>
 #include <string.h>
 
+#ifdef __APPLE__
+
+#define DYLD_INTERPOSE(_replacement,_replacee) \
+   __attribute__((used)) static struct{ const void* replacement; const void* replacee; } _interpose_##_replacee \
+   __attribute__ ((section ("__DATA,__interpose"))) = { (const void*)(unsigned long)&_replacement, (const void*)(unsigned long)&_replacee };
+#define REPLACE_NAME(x) x##_interpos
+
+#else
+
+#define REPLACE_NAME(x) x
+
+#endif
+
 #include "mallochook.h"
 
 #define EXPORT __attribute__((visibility("default")))
@@ -31,7 +44,7 @@ void print_ptr(void* ptr) {
 
 	do {
 		shift -= 4;
-		write(DEBUG_FD, "0123456789abcdef" + ((((size_t) ptr) >> shift) & 15), 1);
+		write(DEBUG_FD, &("0123456789abcdef"[((((size_t) ptr) >> shift) & 15)]), 1);
 		
 	} while (shift > 0);
 }
@@ -66,6 +79,11 @@ void  __libc_free(void* ptr);
 
 static malloc_func_t* malloc_for_fallback = __libc_malloc;
 static free_func_t* free_for_fallback = __libc_free;
+
+#elif defined(__APPLE__)
+
+static malloc_func_t* malloc_for_fallback = malloc;
+static free_func_t* free_for_fallback = free;
 
 #else
 
@@ -162,6 +180,11 @@ static real_funcs_t real_funcs = {
 	__libc_calloc,
 	__libc_realloc,
 	__libc_free,
+#elif defined(__APPLE__)
+	malloc,
+	calloc,
+	realloc,
+	free,
 #else
 	fallback_malloc,
 	fallback_calloc,
@@ -184,7 +207,7 @@ static void assign_function(void** dest, char const* symbol) {
 }
 
 static void __attribute__((constructor)) init(void) {
-#ifndef USE_LIBC_FALLBACKS
+#if !defined(USE_LIBC_FALLBACKS) && !defined(__APPLE__)
 	assign_function((void**) &real_funcs.real_malloc, "malloc");
 	assign_function((void**) &real_funcs.real_free, "free");
 	assign_function((void**) &real_funcs.real_realloc, "realloc");
@@ -229,7 +252,7 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 	return &real_funcs;
 }
 
-EXPORT void* malloc(size_t size) {
+EXPORT void* REPLACE_NAME(malloc)(size_t size) {
 	malloc_hook_t* tmp_hook = registered_hooks->malloc_hook;
 	void* result;
 
@@ -248,7 +271,7 @@ EXPORT void* malloc(size_t size) {
 	return result;
 }
 
-EXPORT void* calloc(size_t elems, size_t size) {
+EXPORT void* REPLACE_NAME(calloc)(size_t elems, size_t size) {
 	calloc_hook_t* tmp_hook = registered_hooks->calloc_hook;
 	void* result;
 
@@ -269,7 +292,7 @@ EXPORT void* calloc(size_t elems, size_t size) {
 	return result;
 }
 
-EXPORT void* realloc(void* ptr, size_t size) {
+EXPORT void* REPLACE_NAME(realloc)(void* ptr, size_t size) {
 	realloc_hook_t* tmp_hook = registered_hooks->realloc_hook;
 	void* result;
 
@@ -290,8 +313,8 @@ EXPORT void* realloc(void* ptr, size_t size) {
 	return result;
 }
 
-EXPORT void free(void* ptr) {
-#ifndef USE_LIBC_FALLBACKS
+EXPORT void REPLACE_NAME(free)(void* ptr) {
+#if !defined(USE_LIBC_FALLBACKS) && !defined(__APPLE__)
 	// We might see remnants of the fallback allocations here.
 	if ((ptr >= (void*) fallback_buffer) && (ptr < (void*) fallback_buffer_end)) {
 		return;
@@ -311,7 +334,7 @@ EXPORT void free(void* ptr) {
 	print(tmp_hook ? " with hook\n" : " without hook\n");
 }
 
-EXPORT int posix_memalign(void** ptr, size_t align, size_t size) {
+EXPORT int REPLACE_NAME(posix_memalign)(void** ptr, size_t align, size_t size) {
 	posix_memalign_hook_t* tmp_hook = registered_hooks->posix_memalign_hook;
 	int result;
 
@@ -337,4 +360,14 @@ EXPORT int posix_memalign(void** ptr, size_t align, size_t size) {
 
 	return result;
 }
+
+#ifdef __APPLE__
+
+DYLD_INTERPOSE(REPLACE_NAME(malloc), malloc)
+DYLD_INTERPOSE(REPLACE_NAME(calloc), calloc)
+DYLD_INTERPOSE(REPLACE_NAME(realloc), realloc)
+DYLD_INTERPOSE(REPLACE_NAME(free), free)
+DYLD_INTERPOSE(REPLACE_NAME(posix_memalign), posix_memalign)
+
+#endif
 
