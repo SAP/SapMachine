@@ -44,7 +44,7 @@ void  __libc_free(void* ptr);
 #define CALLOC_REPLACEMENT         fallback_calloc
 #define REALLOC_REPLACEMENT        fallback_realloc
 #define FREE_REPLACEMENT           fallback_free
-#define POSIX_MEMALIGN_REPLACEMENT fallback_posix_memaign
+#define POSIX_MEMALIGN_REPLACEMENT fallback_posix_memalign
 
 #define NEEDS_FALLBACK_MALLOC
 #define NEEDS_FALLBACK_POSIX_MEMALIGN
@@ -55,7 +55,17 @@ void  __libc_free(void* ptr);
 #define REPLACE_NAME(x) x
 #endif
 
+#if !defined(_AIX)
+
+#define LIB_INIT __attribute__((constructor))
 #define EXPORT __attribute__((visibility("default")))
+
+#else
+
+#define LIB_INIT
+#define EXPORT
+
+#endif
 
 
 #if WITH_DEBUG_OUTPUT
@@ -211,7 +221,7 @@ static void assign_function(void** dest, char const* symbol) {
 	}
 }
 
-static void __attribute__((constructor)) init(void) {
+static void LIB_INIT init(void) {
 #if defined(NEEDS_FALLBACK_MALLOC)
 	assign_function((void**) &real_funcs.real_malloc, "malloc");
 	assign_function((void**) &real_funcs.real_free, "free");
