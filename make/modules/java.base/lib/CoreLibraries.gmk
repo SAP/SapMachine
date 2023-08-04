@@ -218,7 +218,7 @@ ifeq ($(call isTargetOs, linux macosx), true)
 
   $(eval $(call SetupJdkLibrary, BUILD_MALLOCHOOKS, \
       NAME := mallochooks, \
-      SRC := $(TOPDIR)/src/java.base/linux/native/libmallochooks, \
+      SRC := $(TOPDIR)/src/java.base/unix/native/libmallochooks, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB), \
