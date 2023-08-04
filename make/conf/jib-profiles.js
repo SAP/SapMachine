@@ -457,7 +457,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "macosx",
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
+            configure_args: concat(common.configure_args_64bit,
                 "--with-macosx-version-max=11.00.00"),
         },
 
@@ -1477,7 +1477,7 @@ var getVersionNumbers = function () {
 var isWsl = function (input) {
     return ( input.build_osenv == "wsl"
              || (input.build_os == "linux"
-                 && java.lang.System.getProperty("os.version").contains("Microsoft")));
+                 && java.lang.System.getProperty("os.version").toLowerCase().contains("microsoft")));
 }
 
 var error = function (s) {

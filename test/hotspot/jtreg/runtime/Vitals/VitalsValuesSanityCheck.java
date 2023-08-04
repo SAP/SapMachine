@@ -27,8 +27,8 @@
  * @requires os.family == "linux"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run testng/othervm -XX:+UseSerialGC -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx64m -Xms64m -XX:NativeMemoryTracking=summary -XX:VitalsSampleInterval=1 VitalsValuesSanityCheck
  */
 
@@ -38,8 +38,8 @@
  * @requires os.family == "linux"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run testng/othervm -XX:+UseG1GC -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx64m -Xms64m -XX:NativeMemoryTracking=summary -XX:VitalsSampleInterval=1 VitalsValuesSanityCheck
  */
 
@@ -49,8 +49,8 @@
  * @requires os.family == "linux"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc java.compiler java.management jdk.internal.jvmstat/sun.jvmstat.monitor
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run testng/othervm -XX:+UseG1GC -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx64m -Xms64m -XX:NativeMemoryTracking=off -XX:VitalsSampleInterval=1 VitalsValuesSanityCheck
  */
 
@@ -58,8 +58,8 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
 import org.testng.annotations.Test;
-import sun.hotspot.WhiteBox;
 
 import java.io.File;
 import java.io.IOException;

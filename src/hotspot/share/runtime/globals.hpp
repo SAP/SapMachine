@@ -67,21 +67,22 @@
 //    option, you must first specify +UnlockDiagnosticVMOptions.
 //    (This master switch also affects the behavior of -Xprintflags.)
 //
-// EXPERIMENTAL flags are in support of features that are not
-//    part of the officially supported product, but are available
+// EXPERIMENTAL flags are in support of features that may not be
+//    an officially supported part of a product, but may be available
 //    for experimenting with. They could, for example, be performance
 //    features that may not have undergone full or rigorous QA, but which may
 //    help performance in some cases and released for experimentation
 //    by the community of users and developers. This flag also allows one to
 //    be able to build a fully supported product that nonetheless also
 //    ships with some unsupported, lightly tested, experimental features.
+//    Refer to the documentation of any products using this code for details
+//    on support and fitness for production.
 //    Like the UnlockDiagnosticVMOptions flag above, there is a corresponding
 //    UnlockExperimentalVMOptions flag, which allows the control and
 //    modification of the experimental flags.
 //
 // Nota bene: neither diagnostic nor experimental options should be used casually,
-//    and they are not supported on production loads, except under explicit
-//    direction from support engineers.
+//    Refer to the documentation of any products using this code for details.
 //
 // MANAGEABLE flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
@@ -954,10 +955,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, FLSVerifyDictionary, false,                                 \
           "Do lots of (expensive) FLS dictionary verification")             \
                                                                             \
-                                                                            \
-  notproduct(bool, CheckMemoryInitialization, false,                        \
-          "Check memory initialization")                                    \
-                                                                            \
   product(uintx, ProcessDistributionStride, 4,                              \
           "Stride through processors when distributing processes")          \
           range(0, max_juint)                                               \
@@ -1022,9 +1019,6 @@ const intx ObjectAlignmentInBytes = 8;
           "instruction raising SIGTRAP.  This is only used if an access to" \
           "null (+offset) will not raise a SIGSEGV, i.e.,"                  \
           "ImplicitNullChecks don't work (PPC64).")                         \
-                                                                            \
-  product(bool, EnableThreadSMRExtraValidityChecks, true, DIAGNOSTIC,       \
-             "Enable Thread SMR extra validity checks")                     \
                                                                             \
   product(bool, EnableThreadSMRStatistics, trueInDebug, DIAGNOSTIC,         \
              "Enable Thread SMR Statistics")                                \
@@ -1417,6 +1411,10 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(intx, StackPrintLimit, 100,                                       \
           "number of stack frames to print in VM-level stack dump")         \
+                                                                            \
+  product(int, ErrorLogPrintCodeLimit, 3, DIAGNOSTIC,                       \
+          "max number of compiled code units to print in error log")        \
+          range(0, VMError::max_error_log_print_code)                       \
                                                                             \
   notproduct(intx, MaxElementPrintSize, 256,                                \
           "maximum number of elements to print")                            \

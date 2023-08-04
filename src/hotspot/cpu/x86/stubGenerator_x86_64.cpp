@@ -3829,46 +3829,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry,
-                          address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   c_rarg0 = adr
-    //   c_rarg1 = errValue
-    //
-    // result:
-    //   PPC_RET  = *adr or errValue
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    // Load *adr into c_rarg1, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t
-        __ movl(c_rarg1, Address(c_rarg0, 0));
-        break;
-      case 8:
-        // int64_t
-        __ movq(c_rarg1, Address(c_rarg0, 0));
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ movq(rax, c_rarg1);
-    __ ret(0);
-  }
-
   // This is a version of CBC/AES Decrypt which does 4 blocks in a loop at a time
   // to hide instruction latency
   //
@@ -6506,26 +6466,38 @@ address generate_avx_ghash_processBlocks() {
 
       BLOCK_COMMENT("Entry:");
       __ enter(); // required for proper stackwalking of RuntimeStub frame
+      Label L_continue;
+
       if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
           VM_Version::supports_avx512bw() &&
           VM_Version::supports_avx512vl()) {
+        Label L_doSmall;
+
+        __ cmpl(len, 384);
+        __ jcc(Assembler::lessEqual, L_doSmall);
+
         __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
         __ kernel_crc32_avx512(crc, buf, len, j, l, k);
-      } else {
-#ifdef _WIN64
-        __ push(y);
-        __ push(z);
-#endif
-        __ crc32c_ipl_alg2_alt2(crc, buf, len,
-                                a, j, k,
-                                l, y, z,
-                                c_farg0, c_farg1, c_farg2,
-                                is_pclmulqdq_supported);
-#ifdef _WIN64
-        __ pop(z);
-        __ pop(y);
-#endif
+
+        __ jmp(L_continue);
+
+        __ bind(L_doSmall);
       }
+#ifdef _WIN64
+      __ push(y);
+      __ push(z);
+#endif
+      __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                              a, j, k,
+                              l, y, z,
+                              c_farg0, c_farg1, c_farg2,
+                              is_pclmulqdq_supported);
+#ifdef _WIN64
+      __ pop(z);
+      __ pop(y);
+#endif
+
+      __ bind(L_continue);
       __ movl(rax, crc);
       __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -7569,14 +7541,6 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::_dtan = generate_libmTan();
       }
     }
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
   void generate_all() {

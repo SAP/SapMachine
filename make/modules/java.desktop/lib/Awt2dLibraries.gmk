@@ -265,7 +265,7 @@ endif
 ################################################################################
 
 # The fast floor code loses precision.
-LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
+LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT
 
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
@@ -458,10 +458,13 @@ else
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
-   HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
+   HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing \
+        array-bounds
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
+   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess unused-result extra use-after-free noexcept-type
+        maybe-uninitialized class-memaccess unused-result extra use-after-free noexcept-type \
+        expansion-to-defined dangling-reference
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis \

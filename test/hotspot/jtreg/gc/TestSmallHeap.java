@@ -29,8 +29,8 @@ package gc;
  * @summary Verify that starting the VM with a small heap works
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.TestSmallHeap
  */
 
@@ -64,8 +64,8 @@ import jdk.test.lib.process.ProcessTools;
 import java.util.LinkedList;
 
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
 
 public class TestSmallHeap {
 

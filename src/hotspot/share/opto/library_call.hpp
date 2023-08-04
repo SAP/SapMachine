@@ -75,7 +75,7 @@ class LibraryCallKit : public GraphKit {
   LibraryCallKit(JVMState* jvms, LibraryIntrinsic* intrinsic)
     : GraphKit(jvms),
       _intrinsic(intrinsic),
-      _result(NULL)
+      _result(nullptr)
   {
     // Check if this is a root compile.  In that case we don't have a caller.
     if (!jvms->has_method()) {
@@ -85,7 +85,7 @@ class LibraryCallKit : public GraphKit {
       // and save the stack pointer value so it can used by uncommon_trap.
       // We find the argument count by looking at the declared signature.
       bool ignored_will_link;
-      ciSignature* declared_signature = NULL;
+      ciSignature* declared_signature = nullptr;
       ciMethod* ignored_callee = caller()->get_method_at_bci(bci(), ignored_will_link, &declared_signature);
       const int nargs = declared_signature->arg_size_for_bc(caller()->java_code_at_bci(bci()));
       _reexecute_sp = sp() + nargs;  // "push" arguments back on stack
@@ -105,7 +105,7 @@ class LibraryCallKit : public GraphKit {
 
   void push_result() {
     // Push the result onto the stack.
-    if (!stopped() && result() != NULL) {
+    if (!stopped() && result() != nullptr) {
       BasicType bt = result()->bottom_type()->basic_type();
       push_node(bt, result());
     }
@@ -116,7 +116,7 @@ class LibraryCallKit : public GraphKit {
     fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
   }
 
-  void  set_result(Node* n) { assert(_result == NULL, "only set once"); _result = n; }
+  void  set_result(Node* n) { assert(_result == nullptr, "only set once"); _result = n; }
   void  set_result(RegionNode* region, PhiNode* value);
   Node*     result() { return _result; }
 
@@ -128,7 +128,7 @@ class LibraryCallKit : public GraphKit {
   Node* generate_fair_guard(Node* test, RegionNode* region);
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
-                                Node* *pos_index = NULL);
+                                Node* *pos_index = nullptr);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
                              RegionNode* region);
@@ -173,13 +173,9 @@ class LibraryCallKit : public GraphKit {
   Node* generate_array_guard_common(Node* kls, RegionNode* region,
                                     bool obj_array, bool not_array);
   Node* generate_virtual_guard(Node* obj_klass, RegionNode* slow_region);
-  CallJavaNode* generate_method_call(vmIntrinsics::ID method_id,
-                                     bool is_virtual = false, bool is_static = false);
-  CallJavaNode* generate_method_call_static(vmIntrinsics::ID method_id) {
-    return generate_method_call(method_id, false, true);
-  }
-  CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
-    return generate_method_call(method_id, true, false);
+  CallJavaNode* generate_method_call(vmIntrinsicID method_id, bool is_virtual, bool is_static, bool res_not_null);
+  CallJavaNode* generate_method_call_static(vmIntrinsicID method_id, bool res_not_null) {
+    return generate_method_call(method_id, false, true, res_not_null);
   }
   Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators, bool is_static, ciInstanceKlass* fromKls);
   Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass* fromKls);
@@ -285,9 +281,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
-                                        const char* state_type, address stubAddr, const char *stubName,
+                                        BasicType elem_type, address stubAddr, const char *stubName,
                                         Node* src_start, Node* ofs, Node* limit);
-  Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
+  Node* get_state_from_digest_object(Node *digestBase_object, BasicType elem_type);
   Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray(bool ascii);

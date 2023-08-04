@@ -55,11 +55,12 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
@@ -1946,7 +1947,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   }
 
   size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)proc_count;
-  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
+  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, nullptr, 0, buf, (ULONG) buflen);
   int max_mhz = -1, current_mhz = -1, mhz_limit = -1;
   bool same_vals_for_all_cpus = true;
 
@@ -2583,11 +2584,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   address pc = (address) exceptionInfo->ContextRecord->Eip;
 #endif
   Thread* t = Thread::current_or_null_safe();
-
-  // Handle SafeFetch32 and SafeFetchN exceptions.
-  if (StubRoutines::is_safefetch_fault(pc)) {
-    return Handle_Exception(exceptionInfo, StubRoutines::continuation_for_safefetch_fault(pc));
-  }
 
 #ifndef _WIN64
   // Execution protection violation - win32 running on AMD64 only

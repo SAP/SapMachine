@@ -110,6 +110,18 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   st.print_cr("}");
 }
 
+ParallelObjectIterator::ParallelObjectIterator(uint thread_num) :
+  _impl(Universe::heap()->parallel_object_iterator(thread_num))
+{}
+
+ParallelObjectIterator::~ParallelObjectIterator() {
+  delete _impl;
+}
+
+void ParallelObjectIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
+  _impl->object_iterate(cl, worker_id);
+}
+
 size_t CollectedHeap::unused() const {
   MutexLocker ml(Heap_lock);
   return capacity() - used();
@@ -370,17 +382,6 @@ void CollectedHeap::set_gc_cause(GCCause::Cause v) {
   }
   _gc_cause = v;
 }
-
-#ifndef PRODUCT
-void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
-  if (CheckMemoryInitialization && ZapUnusedHeapArea) {
-    // please note mismatch between size (in 32/64 bit words), and ju_addr that always point to a 32 bit word
-    for (juint* ju_addr = reinterpret_cast<juint*>(addr); ju_addr < reinterpret_cast<juint*>(addr + size); ++ju_addr) {
-      assert(*ju_addr == badHeapWordVal, "Found non badHeapWordValue in pre-allocation check");
-    }
-  }
-}
-#endif // PRODUCT
 
 size_t CollectedHeap::max_tlab_size() const {
   // TLABs can't be bigger than we can fill with a int[Integer.MAX_VALUE].
