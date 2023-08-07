@@ -5,6 +5,7 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 
 #include "mallochook.h"
 
@@ -67,6 +68,13 @@ static int my_posix_memalign_hook(void** ptr, size_t align, size_t size, void* c
 	return real_funcs->real_posix_memalign(ptr, align, size);
 }
 
+static void* my_memalign_hook(size_t align, size_t size, void* caller_address, real_funcs_t* real_funcs) {
+	print("caller address 0x");
+	print_address(caller_address);
+	print("\n");
+	return real_funcs->real_memalign(align, size);
+}
+
 void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 	for (int i = 0; i < 3; ++i) {
 		void* p1 = malloc(1);
@@ -83,6 +91,10 @@ void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 		posix_memalign(&pb, 32, 513);
 		posix_memalign(&pc, 65536 * 4, 65536 * 27);
 		posix_memalign(&pd, 65536 * 4, 0);
+		void* pe = memalign(4, 1028);
+		void* pf = memalign(32, 513);
+		void* pg = memalign(65536 * 4, 65536 * 27);
+		void* ph = memalign(65536 * 4, 0);
 		p1 = realloc(p1, 4);
 		p2 = realloc(p2, 0);
 		p3 = realloc(p3, 0);
@@ -105,6 +117,10 @@ void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 		free(pb);
 		free(pc);
 		free(pd);
+		free(pe);
+		free(pf);
+		free(pg);
+		free(ph);
 
 		if (i == 0) {
 			print("Registered\n");
@@ -122,7 +138,8 @@ int main(int argc, char** argv) {
 		my_calloc_hook,
 		my_realloc_hook,
 		my_free_hook,
-		my_posix_memalign_hook
+		my_posix_memalign_hook,
+		my_memalign_hook
 	};
 
 	register_hooks_t* register_hooks = dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);

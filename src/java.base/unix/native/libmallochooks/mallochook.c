@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "mallochook.h"
 
@@ -20,6 +21,7 @@
 #define REALLOC_REPLACEMENT        realloc
 #define FREE_REPLACEMENT           free
 #define POSIX_MEMALIGN_REPLACEMENT posix_memalign
+#define MEMALIGN_REPLACEMENT       NULL
 
 #define REPLACE_NAME(x) x##_interpose
 
@@ -38,7 +40,8 @@ void* __libc_memalign(size_t aligm, size_t size);
 #define POSIX_MEMALIGN_REPLACEMENT fallback_posix_memalign
 #define MEMALIGN_REPLACEMENT        __libc_memalign
 
-#define NEEDS_FALLBACK_POSIX_MEMALIGN
+#define NEEDS_FALLBACK_ALIGNED_MALLOC
+#define HAS_MEMLIGN
 
 #else
 
@@ -47,9 +50,14 @@ void* __libc_memalign(size_t aligm, size_t size);
 #define REALLOC_REPLACEMENT        fallback_realloc
 #define FREE_REPLACEMENT           fallback_free
 #define POSIX_MEMALIGN_REPLACEMENT fallback_posix_memalign
+#define MEMALIGN_REPLACEMENT       fallback_memalign
 
 #define NEEDS_FALLBACK_MALLOC
-#define NEEDS_FALLBACK_POSIX_MEMALIGN
+#define NEEDS_FALLBACK_ALIGNED_MALLOC
+
+#if !defined(AIX)
+#define HAS_MEMALIGN
+#endif
 
 #endif
 
@@ -133,9 +141,10 @@ void  fallback_free(void* ptr) {
 }
 #endif
 
-// The baisc malloc/free to be used in other fallback methods.
+// The baisc malloc/free/memalign to be used in other fallback methods.
 static malloc_func_t* malloc_for_fallback = MALLOC_REPLACEMENT;
 static free_func_t* free_for_fallback = FREE_REPLACEMENT;
+static memalign_func_t* memalign_for_fallback = MEMALIGN_REPLACEMENT;
 
 #if defined(NEEDS_FALLBACK_MALLOC)
 void* fallback_calloc(size_t elems, size_t size) {
@@ -164,16 +173,12 @@ void* fallback_realloc(void* ptr, size_t size) {
 
 #endif
 
-#if defined(NEEDS_FALLBACK_POSIX_MEMALIGN)
+#if defined(NEEDS_FALLBACK_ALIGNED_MALLOC)
 
-int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
-	// If we have a generic memalign, we can just use this.
+void* fallback_memalign(size_t align, size_t size) {
 #ifdef MEMALIGN_REPLACEMENT
-	*ptr = MEMALIGN_REPLACEMENT(align, size);
-
-	return *ptr != NULL ? 0 : ENOMEM;
-#endif
-
+	return MEMALIGN_REPLACEMENT(align, size);
+#else
 	// We don't expect this to ever be called, since we assume the
 	// posix_memalign method of the glibc to be found during the init
 	// function.
@@ -183,28 +188,35 @@ int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
 	//
 	// Allocate larger and larger chunks and hope we somehow find an aligned
 	// allocation.
-	void* raw = malloc_for_fallback(size);
-	*ptr = NULL;
+	void* result = NULL;
+	size_t alloc_size = size;
 
-	if (raw == NULL) {
-		return ENOMEM;
-	}
+	while (true) {
+		void* new_result = malloc_for_fallback(alloc_size);
+		free_for_fallback(result);
+		result = new_result;
 
-	size_t alloc_size = size + align;
+		if (result == NULL) {
+			return NULL
+		}
 
-	while ((((intptr_t) raw) & (align - 1)) != 0) {
-		void* new_raw = malloc_for_fallback(alloc_size);
-		free_for_fallback(raw);
-		raw = new_raw;
-
-		if (raw == NULL) {
-			return ENOMEM;
+		// Check if aligned by chance.
+		if ((((intptr_t) result) & (align - 1)) == 0) {
+			return result;
 		}
 
 		alloc_size += 8;
 	}
+#endif
+}
 
-	*ptr = raw;
+int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
+	*ptr = memalign_for_fallback(align, size);
+
+	if (*ptr == NULL) {
+		return ENOMEM;
+	}
+
 	return 0;
 }
 
@@ -215,17 +227,21 @@ static real_funcs_t real_funcs = {
 	CALLOC_REPLACEMENT,
 	REALLOC_REPLACEMENT,
 	FREE_REPLACEMENT,
-        POSIX_MEMALIGN_REPLACEMENT
+        POSIX_MEMALIGN_REPLACEMENT,
+#if defined(MEMALIGN_REPLACEMENT)
+	MEMALIGN_REPLACEMENT
+#else
+	NULL
+#endif
 };
 
 static void assign_function(void** dest, char const* symbol) {
-	void* func = dlsym(RTLD_NEXT, symbol);
+	*dest = dlsym(RTLD_NEXT, symbol);
 
-	if (func != NULL) {
-		*dest = func;
-	} else {
+	if (*dest == NULL) {
+		char const* not_found = " not found\n";
 		write(DEBUG_FD, symbol, strlen(symbol));
-		write(DEBUG_FD, "not found\n", 8);
+		write(DEBUG_FD, not_found, strlen(not_found));
 		exit(1);
 	}
 }
@@ -234,27 +250,34 @@ static void LIB_INIT init(void) {
 #if defined(NEEDS_FALLBACK_MALLOC)
 	assign_function((void**) &real_funcs.real_malloc, "malloc");
 	assign_function((void**) &real_funcs.real_free, "free");
-	assign_function((void**) &real_funcs.real_realloc, "realloc");
 
 	// Assign now, since it really hurts to use the fallback malloc/frees i
 	// the fallback calloc/posix_memalign.
 	malloc_for_fallback = real_funcs.real_malloc;
 	free_for_fallback = real_funcs.real_free;
 
+#if defined(HAS_MEMALIGN)
+	assign_function((void**) &real_funcs.real_memalign, "memalign");
+	memalign_for_fallback = real_funcs.real_memalign;
+#endif
+
 	print_size(fallback_buffer_pos - fallback_buffer);
 	print(" bytes used for fallback\n");
 	print_size(fallback_buffer_end - fallback_buffer_pos);
 	print(" bytes not used for fallback\n");
 
-	assign_function((void**) &real_funcs.real_calloc, "calloc");
+	assign_function((void**) &real_funcs.real_realloc, "realloc");
+	assign_function((void**) &real_funcs.real_calloc, "calloc",);
 #endif
 
-#if defined(NEEDS_FALLBACK_POSIX_MEMALIGN)
+#if defined(NEEDS_FALLBACK_ALIGNED_MALLOC)
 	assign_function((void**) &real_funcs.real_posix_memalign, "posix_memalign");
+
 #endif
 }
 
 static registered_hooks_t empty_registered_hooks = {
+	NULL,
 	NULL,
 	NULL,
 	NULL,
@@ -384,6 +407,37 @@ EXPORT int REPLACE_NAME(posix_memalign)(void** ptr, size_t align, size_t size) {
 
 	return result;
 }
+
+#if defined(HAS_MEMLIGN)
+
+EXPORT void* REPLACE_NAME(memalign)(size_t align, size_t size) {
+	memalign_hook_t* tmp_hook = registered_hooks->memalign_hook;
+	void* result;
+
+	if (tmp_hook != NULL) {
+		result = tmp_hook(align, size, __builtin_return_address(0), &real_funcs);
+	} else {
+		result = real_funcs.real_memalign(align, size);
+	}
+
+	print("memalign with alignment ");
+	print_size(align);
+	print(" and size ");
+	print_size(size);
+
+	if (result != NULL) {
+	        print(" allocated at ");
+		print_ptr(result);
+	} else {
+		print(" failed");
+	}
+
+	print(tmp_hook ? " with hook\n" : " without hook\n");
+
+	return result;
+}
+
+#endif
 
 #if defined(__APPLE__)
 
