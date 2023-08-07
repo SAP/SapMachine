@@ -29,12 +29,14 @@ void* __libc_malloc(size_t size);
 void* __libc_calloc(size_t elems, size_t size);
 void* __libc_realloc(void* ptr, size_t size);
 void  __libc_free(void* ptr);
+void* __libc_memalign(size_t aligm, size_t size);
 
 #define MALLOC_REPLACEMENT         __libc_malloc
 #define CALLOC_REPLACEMENT         __libc_calloc
 #define REALLOC_REPLACEMENT        __libc_realloc
 #define FREE_REPLACEMENT           __libc_free
 #define POSIX_MEMALIGN_REPLACEMENT fallback_posix_memalign
+#define MEMALIGN_REPLACEMENT        __libc_memalign
 
 #define NEEDS_FALLBACK_POSIX_MEMALIGN
 
@@ -165,6 +167,13 @@ void* fallback_realloc(void* ptr, size_t size) {
 #if defined(NEEDS_FALLBACK_POSIX_MEMALIGN)
 
 int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
+	// If we have a generic memalign, we can just use this.
+#ifdef MEMALIGN_REPLACEMENT
+	*ptr = MEMALIGN_REPLACEMENT(align, size);
+
+	return *ptr != NULL ? 0 : ENOMEM;
+#endif
+
 	// We don't expect this to ever be called, since we assume the
 	// posix_memalign method of the glibc to be found during the init
 	// function.
