@@ -7,22 +7,15 @@ typedef void* realloc_func_t(void* ptr, size_t size);
 typedef void  free_func_t(void* ptr);
 typedef int   posix_memalign_func_t(void** ptr, size_t align, size_t size);
 typedef void* memalign_func_t(size_t align, size_t size);
+typedef void* valloc_func_t(size_t size);
 
-typedef struct {
-	malloc_func_t* real_malloc;
-	calloc_func_t* real_calloc;
-	realloc_func_t* real_realloc;
-	free_func_t* real_free;
-        posix_memalign_func_t* real_posix_memalign;
-	memalign_func_t* real_memalign;
-} real_funcs_t;
-
-typedef void* malloc_hook_t(size_t size, void* caller, real_funcs_t* real_funcs);
-typedef void* calloc_hook_t(size_t elems, size_t size, void* caller, real_funcs_t* real_funcs);
-typedef void* realloc_hook_t(void* ptr, size_t size, void* caller, real_funcs_t* real_funcs);
-typedef void  free_hook_t(void* ptr, void* caller, real_funcs_t* real_funcs);
-typedef int   posix_memalign_hook_t(void** ptr, size_t align, size_t size, void* caller, real_funcs_t* real_funcs);
-typedef void* memalign_hook_t(size_t align, size_t size, void* caller, real_funcs_t* real_funcs);
+typedef void* malloc_hook_t(size_t size, void* caller, malloc_func_t* real_malloc);
+typedef void* calloc_hook_t(size_t elems, size_t size, void* caller, calloc_func_t* real_calloc);
+typedef void* realloc_hook_t(void* ptr, size_t size, void* caller, realloc_func_t* real_realloc);
+typedef void  free_hook_t(void* ptr, void* caller, free_func_t* real_free);
+typedef int   posix_memalign_hook_t(void** ptr, size_t align, size_t size, void* caller, posix_memalign_func_t* real_posix_memalign);
+typedef void* memalign_hook_t(size_t align, size_t size, void* caller, memalign_func_t* real_memalign);
+typedef void* valloc_hook_t(size_t size, void* caller, valloc_func_t* real_valloc);
 
 typedef struct {
 	malloc_hook_t* malloc_hook;
@@ -31,7 +24,18 @@ typedef struct {
 	free_hook_t* free_hook;
 	posix_memalign_hook_t* posix_memalign_hook;
 	memalign_hook_t* memalign_hook;
+	valloc_hook_t* valloc_hook;
 } registered_hooks_t;
+
+typedef struct {
+	malloc_func_t* real_malloc;
+	calloc_func_t* real_calloc;
+	realloc_func_t* real_realloc;
+	free_func_t* real_free;
+        posix_memalign_func_t* real_posix_memalign;
+	memalign_func_t* real_memalign;
+	valloc_func_t* real_valloc;
+} real_funcs_t;
 
 typedef real_funcs_t* register_hooks_t(registered_hooks_t* registered_hooks);
 

@@ -30,49 +30,56 @@ static void print(char const* str) {
 #define print(x)
 #endif
 
-static void* my_malloc_hook(size_t size, void* caller_address, real_funcs_t* real_funcs) {
+static void* my_malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
 	if (size == 3) return NULL;
-	return real_funcs->real_malloc(size);
+	return real_malloc(size);
 }
 
-static void* my_calloc_hook(size_t elems, size_t size, void* caller_address, real_funcs_t* real_funcs) {
+static void* my_calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
 	if (size == 3) return NULL;
-	return real_funcs->real_calloc(elems, size);
+	return real_calloc(elems, size);
 }
 
-static void* my_realloc_hook(void* ptr, size_t size, void* caller_address, real_funcs_t* real_funcs) {
+static void* my_realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
 	if (size == 3) return NULL;
-	return real_funcs->real_realloc(ptr, size);
+	return real_realloc(ptr, size);
 }
 
-static void my_free_hook(void* ptr, void* caller_address, real_funcs_t* real_funcs) {
+static void my_free_hook(void* ptr, void* caller_address, free_func_t* real_free) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
-	real_funcs->real_free(ptr);
+	real_free(ptr);
 }
 
-static int my_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, real_funcs_t* real_funcs) {
+static int my_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
-	return real_funcs->real_posix_memalign(ptr, align, size);
+	return real_posix_memalign(ptr, align, size);
 }
 
-static void* my_memalign_hook(size_t align, size_t size, void* caller_address, real_funcs_t* real_funcs) {
+static void* my_memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
-	return real_funcs->real_memalign(align, size);
+	return real_memalign(align, size);
+}
+
+static void* my_valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc) {
+	print("caller address 0x");
+	print_address(caller_address);
+	print("\n");
+	return real_valloc(size);
 }
 
 void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
@@ -95,6 +102,9 @@ void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 		void* pf = memalign(32, 513);
 		void* pg = memalign(65536 * 4, 65536 * 27);
 		void* ph = memalign(65536 * 4, 0);
+		void* pi = valloc(0);
+		void* pj = valloc(3);
+		void* pk = valloc(4097);
 		p1 = realloc(p1, 4);
 		p2 = realloc(p2, 0);
 		p3 = realloc(p3, 0);
@@ -121,6 +131,9 @@ void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 		free(pf);
 		free(pg);
 		free(ph);
+		free(pi);
+		free(pj);
+		free(pk);
 
 		if (i == 0) {
 			print("Registered\n");
@@ -139,7 +152,8 @@ int main(int argc, char** argv) {
 		my_realloc_hook,
 		my_free_hook,
 		my_posix_memalign_hook,
-		my_memalign_hook
+		my_memalign_hook,
+		my_valloc_hook
 	};
 
 	register_hooks_t* register_hooks = dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
