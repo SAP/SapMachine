@@ -30,7 +30,7 @@ static void print(char const* str) {
 #define print(x)
 #endif
 
-static void* my_malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc) {
+static void* my_malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
@@ -38,7 +38,7 @@ static void* my_malloc_hook(size_t size, void* caller_address, malloc_func_t* re
 	return real_malloc(size);
 }
 
-static void* my_calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc) {
+static void* my_calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
@@ -46,7 +46,7 @@ static void* my_calloc_hook(size_t elems, size_t size, void* caller_address, cal
 	return real_calloc(elems, size);
 }
 
-static void* my_realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc) {
+static void* my_realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
@@ -54,28 +54,28 @@ static void* my_realloc_hook(void* ptr, size_t size, void* caller_address, reall
 	return real_realloc(ptr, size);
 }
 
-static void my_free_hook(void* ptr, void* caller_address, free_func_t* real_free) {
+static void my_free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
 	real_free(ptr);
 }
 
-static int my_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign) {
+static int my_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
 	return real_posix_memalign(ptr, align, size);
 }
 
-static void* my_memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign) {
+static void* my_memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
 	return real_memalign(align, size);
 }
 
-static void* my_valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc) {
+static void* my_valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
 	print("\n");
