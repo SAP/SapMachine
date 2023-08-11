@@ -68,46 +68,15 @@ void* __libc_valloc(size_t size);
 
 #if defined(DEBUG_FD)
 
-void print(char const* str) {
-	int errno_backup = errno;
-	write(DEBUG_FD, str, strlen(str));
-	errno = errno_backup;
-}
-
-void print_ptr(void* ptr) {
-	int errno_backup = errno;
-	int shift = 64;
-	print("0x");
-
-	do {
-		shift -= 4;
-		write(DEBUG_FD, &("0123456789abcdef"[((((size_t) ptr) >> shift) & 15)]), 1);
-		
-	} while (shift > 0);
-
-	errno = errno_backup;
-}
-
-void print_size(size_t size) {
-	int errno_backup = errno;
-	char buf[20];
-	size_t pos = sizeof(buf);
-	
-	do {
-		buf[--pos] = '0' + (size % 10);
-		size /= 10;
-	}  while (size > 0);
-
-	write(DEBUG_FD, buf + pos, sizeof(buf) - pos);
-	errno = errno_backup;
-}
+static void print(char const* str);
+static void print_ptr(void* ptr);
+static void print_size(size_t size);
 
 #else
 
 #define print_ptr(x)
 #define print_size(x)
 #define print(x)
-#define print_cr(x)
 
 #endif
 
@@ -307,15 +276,17 @@ static size_t get_allocated_size(void* ptr) {
 
 #if TEST_LEVEL > 0
 static void* g1, *g2, *g3, *ag1, *ag2, *ag3;
-static bool allow_aligned_malloc_in_test;
+static void allow_aligned_malloc_in_test();
 static void assign_function_test(char const* symbol);
 static void assign_function_post_test();
+#else
+#define allow_aligned_malloc_in_test
+#define assign_function_test(symbol)
+#define assign_function_pos_test
 #endif
 
 static void assign_function(void** dest, char const* symbol) {
-#if TEST_LEVEL > 0
 	assign_function_test(symbol);
-#endif
 
 	print("Resolving '");
 	print(symbol);
@@ -366,9 +337,7 @@ static void LIB_INIT init(void) {
 	free_for_fallback = (free_func_t*) real_free;
 	memalign_for_fallback = (memalign_func_t*) real_memalign;
 
-#if TEST_LEVEL > 0
-	allow_aligned_malloc_in_test = true;
-#endif
+	allow_aligned_malloc_in_test();
 
 	print_size(fallback_buffer_pos - fallback_buffer);
 	print(" bytes used for fallback\n");
@@ -388,9 +357,7 @@ static void LIB_INIT init(void) {
 	assign_function((void**) &valloc_for_fallback, "valloc");
 #endif
 
-#if TEST_LEVEL > 0
 	assign_function_post_test();
-#endif
 }
 
 static registered_hooks_t empty_registered_hooks = {
@@ -649,6 +616,48 @@ DYLD_INTERPOSE(REPLACE_NAME(valloc), valloc)
 
 #endif
 
+
+// D E B U G   C O D E
+
+
+#if defined(DEBUG_FD)
+
+static void print(char const* str) {
+	int errno_backup = errno;
+	write(DEBUG_FD, str, strlen(str));
+	errno = errno_backup;
+}
+
+static void print_ptr(void* ptr) {
+	int errno_backup = errno;
+	int shift = 64;
+	print("0x");
+
+	do {
+		shift -= 4;
+		write(DEBUG_FD, &("0123456789abcdef"[((((size_t) ptr) >> shift) & 15)]), 1);
+	} while (shift > 0);
+
+	errno = errno_backup;
+}
+
+static void print_size(size_t size) {
+	int errno_backup = errno;
+	char buf[20];
+	size_t pos = sizeof(buf);
+
+	do {
+		buf[--pos] = '0' + (size % 10);
+		size /= 10;
+	}  while (size > 0);
+
+	write(DEBUG_FD, buf + pos, sizeof(buf) - pos);
+	errno = errno_backup;
+}
+
+#endif
+
+
 #if TEST_LEVEL > 0
 
 static void* memalign_for_test(size_t align, size_t size) {
@@ -675,6 +684,11 @@ static void* valloc_for_test(size_t size) {
 #endif
 }
 
+static bool allow_aligned_malloc;
+
+static void allow_aligned_malloc_in_test() {
+	allow_aligned_malloc = true;
+}
 
 static void assign_function_test(char const* symbol) {
 	// Simulate having to malloc for dlsym. Only use the most likely called
@@ -697,7 +711,7 @@ static void assign_function_test(char const* symbol) {
 
 	// For higher test levels test the aligned allocations too.
 #if TEST_LEVEL > 1
-	if (allow_aligned_malloc_in_test) {
+	if (allow_aligned_malloc) {
 		REPLACE_NAME(posix_memalign)(&p1, 64, 256);
 		p2 = memalign_for_test(32, 128);
 		p3 = valloc_for_test(7);
