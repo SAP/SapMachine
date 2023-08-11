@@ -75,6 +75,13 @@ static void* my_memalign_hook(size_t align, size_t size, void* caller_address, m
 	return real_memalign(align, size);
 }
 
+static void* my_aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size) {
+	print("caller address 0x");
+	print_address(caller_address);
+	print("\n");
+	return real_aligned_alloc(align, size);
+}
+
 static void* my_valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size) {
 	print("caller address 0x");
 	print_address(caller_address);
@@ -105,6 +112,8 @@ void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 		void* pi = valloc(0);
 		void* pj = valloc(3);
 		void* pk = valloc(4097);
+		void* pl = aligned_alloc(16, 31);
+		void* pm = aligned_alloc(64, 128);
 		p1 = realloc(p1, 4);
 		p2 = realloc(p2, 0);
 		p3 = realloc(p3, 0);
@@ -134,6 +143,8 @@ void test_hooks(registered_hooks_t* hooks, register_hooks_t* register_hooks) {
 		free(pi);
 		free(pj);
 		free(pk);
+		free(pl);
+		free(pm);
 
 		if (i == 0) {
 			print("Registered\n");
@@ -153,6 +164,7 @@ int main(int argc, char** argv) {
 		my_free_hook,
 		my_posix_memalign_hook,
 		my_memalign_hook,
+		my_aligned_alloc_hook,
 		my_valloc_hook
 	};
 

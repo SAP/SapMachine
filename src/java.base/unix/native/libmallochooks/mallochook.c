@@ -32,6 +32,7 @@
 #define FREE_REPLACEMENT           free
 #define POSIX_MEMALIGN_REPLACEMENT posix_memalign
 #define MEMALIGN_REPLACEMENT       NULL
+#define ALIGNED_ALLOC_REPLACEMENT  NULL
 #define VALLOC_REPLACEMENT         valloc
 
 #define REPLACE_NAME(x) x##_interpose
@@ -230,6 +231,29 @@ static posix_memalign_func_t* fallback_posix_memalign = NULL;
 static posix_memalign_func_t* posix_memalign_for_fallback = POSIX_MEMALIGN_REPLACEMENT;
 #endif
 
+#if !defined(ALIGNED_ALLOC_REPLACEMENT)
+static void* fallback_aligned_alloc(size_t align, size_t size) {
+	if ((align == 0) || ((size & align) != 0)) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	return memalign(align, size);
+}
+
+static aligned_alloc_func_t* aligned_alloc_for_fallback = fallback_aligned_alloc;
+#else
+static aligned_alloc_func_t* fallback_aligned_alloc = NULL;
+#if defined(__APPLE__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+#endif
+static aligned_alloc_func_t* aligned_alloc_for_fallback = ALIGNED_ALLOC_REPLACEMENT;
+#if defined(__APPLE__)
+#pragma clang diagnostic pop
+#endif
+#endif
+
 #if !defined(VALLOC_REPLACEMENT)
 static size_t page_size = 0;
 
@@ -353,6 +377,9 @@ static void LIB_INIT init(void) {
 #if !defined(POSIX_MEMALIGN_REPLACEMENT)
 	assign_function((void**) &posix_memalign_for_fallback, "posix_memalign");
 #endif
+#if !defined(ALIGNED_ALLOC_REPLACEMENT)
+	assign_function((void**) &aligned_alloc_for_fallback, "aligned_alloc");
+#endif
 #if !defined(VALLOC_REPLACEMENT) && !defined(__THIS_IS_MUSL__)
 	assign_function((void**) &valloc_for_fallback, "valloc");
 #endif
@@ -361,6 +388,7 @@ static void LIB_INIT init(void) {
 }
 
 static registered_hooks_t empty_registered_hooks = {
+	NULL,
 	NULL,
 	NULL,
 	NULL,
@@ -389,6 +417,7 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 	real_funcs.real_free = free_for_fallback;
 	real_funcs.real_posix_memalign = posix_memalign_for_fallback;
 	real_funcs.real_memalign = memalign_for_fallback;
+	real_funcs.real_aligned_alloc = aligned_alloc_for_fallback;
 	real_funcs.real_valloc = valloc_for_fallback;
 	real_funcs.real_malloc_size = get_allocated_size;
 
@@ -580,6 +609,26 @@ EXPORT void* REPLACE_NAME(memalign)(size_t align, size_t size) {
 }
 #endif
 
+EXPORT void* REPLACE_NAME(aligned_alloc)(size_t align, size_t size) {
+	memalign_hook_t* tmp_hook = registered_hooks->aligned_alloc_hook;
+	void* result;
+
+	LOG_FUNC(aligned_alloc);
+	LOG_ALIGN(align);
+	LOG_SIZE(size);
+
+	if (tmp_hook != NULL) {
+		result = tmp_hook(align, size, __builtin_return_address(0), aligned_alloc_for_fallback, get_allocated_size);
+	} else {
+		result = aligned_alloc_for_fallback(align, size);
+	}
+
+	LOG_ALLOCATION_RESULT(result);
+	LOG_HOOK;
+
+	return result;
+}
+
 #if !defined(__THIS_IS_MUSL__)
 EXPORT void* REPLACE_NAME(valloc)(size_t size) {
 	valloc_hook_t* tmp_hook = registered_hooks->valloc_hook;
@@ -612,6 +661,13 @@ DYLD_INTERPOSE(REPLACE_NAME(calloc), calloc)
 DYLD_INTERPOSE(REPLACE_NAME(realloc), realloc)
 DYLD_INTERPOSE(REPLACE_NAME(free), free)
 DYLD_INTERPOSE(REPLACE_NAME(posix_memalign), posix_memalign)
+
+// We compile for 10.12 but aligned_alloc is only available in 10.15 and up
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+DYLD_INTERPOSE(REPLACE_NAME(aligned_alloc), aligned_alloc)
+#pragma clang diagnostic pop
+
 DYLD_INTERPOSE(REPLACE_NAME(valloc), valloc)
 
 #endif
