@@ -9,6 +9,7 @@ typedef int   posix_memalign_func_t(void** ptr, size_t align, size_t size);
 typedef void* memalign_func_t(size_t align, size_t size);
 typedef void* aligned_alloc_func_t(size_t align, size_t size);
 typedef void* valloc_func_t(size_t size);
+typedef void* pvalloc_func_t(size_t size);
 
 typedef size_t malloc_size_func_t(void* ptr);
 typedef void* malloc_hook_t(size_t size, void* caller, malloc_func_t* real_malloc,
@@ -26,6 +27,8 @@ typedef void* aligned_alloc_hook_t(size_t align, size_t size, void* caller, alig
                                    malloc_size_func_t real_malloc_size);
 typedef void* valloc_hook_t(size_t size, void* caller, valloc_func_t* real_valloc,
                             malloc_size_func_t real_malloc_size);
+typedef void* pvalloc_hook_t(size_t size, void* caller, pvalloc_func_t* real_pvalloc,
+                             malloc_size_func_t real_malloc_size);
 
 typedef struct {
 	malloc_hook_t* malloc_hook;
@@ -36,6 +39,7 @@ typedef struct {
 	memalign_hook_t* memalign_hook;
 	aligned_alloc_hook_t* aligned_alloc_hook;
 	valloc_hook_t* valloc_hook;
+	pvalloc_hook_t* pvalloc_hook;
 } registered_hooks_t;
 
 typedef struct {
@@ -47,6 +51,7 @@ typedef struct {
 	memalign_func_t* real_memalign;
 	aligned_alloc_func_t* real_aligned_alloc;
 	valloc_func_t* real_valloc;
+	pvalloc_func_t* real_pvalloc;
 	malloc_size_func_t* real_malloc_size;
 } real_funcs_t;
 

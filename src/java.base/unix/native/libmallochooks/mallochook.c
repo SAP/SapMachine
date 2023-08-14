@@ -15,14 +15,11 @@
 
 #include "mallochook.h"
 
-// Define to get debug output to the file descriptor
-#define DEBUG_FD 2
+// The level of testing (0: none, 1: just debug output, 2: additional normal allocations
+// during startup, 3: additional aligned allocations during startup, 4: use fallbacks
+// whenever possible
+#define TEST_LEVEL 1
 
-// The level of self testing during startup.
-#define TEST_LEVEL 2
-
-// Define to always use the fallback_* methods initially when possible
-#define ALLWAYS_USE_FALLBACKS
 
 #if defined(__APPLE__)
 
@@ -34,6 +31,7 @@
 #define MEMALIGN_REPLACEMENT       NULL
 #define ALIGNED_ALLOC_REPLACEMENT  NULL
 #define VALLOC_REPLACEMENT         valloc
+#define PVALLOC_REPLACEMENT        NULL
 
 #define REPLACE_NAME(x) x##_interpose
 #define NO_SYMBOL_LOADING
@@ -46,14 +44,16 @@ void* __libc_realloc(void* ptr, size_t size);
 void  __libc_free(void* ptr);
 void* __libc_memalign(size_t align, size_t size);
 void* __libc_valloc(size_t size);
+void* __libc_pvalloc(size_t size);
 
-#if !defined(ALLWAYS_USE_FALLBACKS)
+#if TEST_LEVEL < 4
 #define MALLOC_REPLACEMENT   __libc_malloc
 #define CALLOC_REPLACEMENT   __libc_calloc
 #define REALLOC_REPLACEMENT  __libc_realloc
 #define FREE_REPLACEMENT     __libc_free
 #define MEMALIGN_REPLACEMENT __libc_memalign
 #define VALLOC_REPLACEMENT   __libc_valloc
+#define PVALLOC_REPLACEMENT  __libc_pvalloc
 #endif
 
 #elif defined(_AIX)
@@ -63,11 +63,12 @@ void* __libc_valloc(size_t size);
 #define __THIS_IS_MUSL__
 
 #define VALLOC_REPLACEMENT NULL
+#define PVALLOC_REPLACEMENT NULL
 
 #endif
 
 
-#if defined(DEBUG_FD)
+#if TEST_LEVEL > 0
 
 static void print(char const* str);
 static void print_ptr(void* ptr);
@@ -91,7 +92,7 @@ static void print_error(char const* msg, int error_code) {
 
 #if !defined(MALLOC_REPLACEMENT)
 
-#if TEST_LEVEL > 0
+#if TEST_LEVEL > 1
 static char  fallback_buffer[32 * 1024 * 1024];
 #else
 static char  fallback_buffer[1024 * 1024];
@@ -254,9 +255,11 @@ static aligned_alloc_func_t* aligned_alloc_for_fallback = ALIGNED_ALLOC_REPLACEM
 #endif
 #endif
 
-#if !defined(VALLOC_REPLACEMENT)
+#if !defined(VALLOC_REPLACEMENT) || !defined(PVALLOC_REPLACEMENT)
 static size_t page_size = 0;
+#endif
 
+#if !defined(VALLOC_REPLACEMENT)
 static void* fallback_valloc(size_t size) {
 	if (page_size == 0) {
 		page_size = (size_t) getpagesize();
@@ -269,6 +272,22 @@ static valloc_func_t* valloc_for_fallback = fallback_valloc;
 #else
 static valloc_func_t* fallback_valloc = NULL;
 static valloc_func_t* valloc_for_fallback = VALLOC_REPLACEMENT;
+#endif
+
+#if !defined(PVALLOC_REPLACEMENT)
+static void* fallback_pvalloc(size_t size) {
+	if (page_size == 0) {
+		page_size = (size_t) getpagesize();
+	}
+
+	size_t real_size = 1 + ((size - 1) | page_size);
+	return fallback_memalign(page_size, real_size);
+}
+
+static pvalloc_func_t* pvalloc_for_fallback = fallback_pvalloc;
+#else
+static pvalloc_func_t* fallback_pvalloc = NULL;
+static pvalloc_func_t* pvalloc_for_fallback = PVALLOC_REPLACEMENT;
 #endif
 
 static size_t get_allocated_size(void* ptr) {
@@ -298,15 +317,19 @@ static size_t get_allocated_size(void* ptr) {
 #define REPLACE_NAME(x) x
 #endif
 
-#if TEST_LEVEL > 0
+#if TEST_LEVEL > 1
 static void* g1, *g2, *g3, *ag1, *ag2, *ag3;
-static void allow_aligned_malloc_in_test();
 static void assign_function_test(char const* symbol);
 static void assign_function_post_test();
 #else
-#define allow_aligned_malloc_in_test
 #define assign_function_test(symbol)
-#define assign_function_pos_test
+#define assign_function_post_test()
+#endif
+
+#if TEST_LEVEL > 2
+static void allow_aligned_malloc_in_test();
+#else
+#define allow_aligned_malloc_in_test()
 #endif
 
 static void assign_function(void** dest, char const* symbol) {
@@ -318,7 +341,7 @@ static void assign_function(void** dest, char const* symbol) {
 
 	*dest = dlsym(RTLD_NEXT, symbol);
 
-	if (dest == NULL) {
+	if (*dest == NULL) {
 		print_error(symbol, 0);
 		print_error(" not found!\n", 1);
 	}
@@ -341,11 +364,12 @@ static void assign_function(void** dest, char const* symbol) {
 #endif
 
 static void LIB_INIT init(void) {
-#if !defined(MALLOC_REPLACEMENT) || !defined(REALLOC_REPLACEMENT) || !defined(FREE_REPLACEMENT) || !defined(MEMALIGN_REPLACEMENT)
+#if !defined(MALLOC_REPLACEMENT) || !defined(REALLOC_REPLACEMENT) || !defined(FREE_REPLACEMENT) || !defined(MEMALIGN_REPLACEMENT) || !defined(ALIGNED_ALLOC_REPLACEMENT)
 	void* real_malloc;
 	void* real_realloc;
 	void* real_free;
 	void* real_memalign;
+	void* real_aligned_alloc;
 
 	// malloc/realloc/free are the most important ones, so we get them
 	// first. We cannot run with only a part being the real ones and a
@@ -354,19 +378,27 @@ static void LIB_INIT init(void) {
 	assign_function(&real_malloc, "malloc");
 	assign_function(&real_realloc, "realloc");
 	assign_function(&real_free, "free");
+
+	// Resolved memalign and aligned_alloc at the same time, since on
+	// MUSL at least memalign just forwards to aligned_alloc.
 	assign_function(&real_memalign, "memalign");
+	assign_function(&real_aligned_alloc, "aligned_alloc");
 
 	malloc_for_fallback = (malloc_func_t*) real_malloc;
 	realloc_for_fallback = (realloc_func_t*) real_realloc;
 	free_for_fallback = (free_func_t*) real_free;
 	memalign_for_fallback = (memalign_func_t*) real_memalign;
+	aligned_alloc_for_fallback = (aligned_alloc_func_t*) real_aligned_alloc;
 
 	allow_aligned_malloc_in_test();
 
+#if !defined(MALLOC_REPLACEMENT)
 	print_size(fallback_buffer_pos - fallback_buffer);
 	print(" bytes used for fallback\n");
 	print_size(fallback_buffer_end - fallback_buffer_pos);
 	print(" bytes not used for fallback\n");
+#endif
+
 #endif
 
 	// Now the rest can be assigned, since even the fallack methods are not
@@ -377,17 +409,18 @@ static void LIB_INIT init(void) {
 #if !defined(POSIX_MEMALIGN_REPLACEMENT)
 	assign_function((void**) &posix_memalign_for_fallback, "posix_memalign");
 #endif
-#if !defined(ALIGNED_ALLOC_REPLACEMENT)
-	assign_function((void**) &aligned_alloc_for_fallback, "aligned_alloc");
-#endif
-#if !defined(VALLOC_REPLACEMENT) && !defined(__THIS_IS_MUSL__)
+#if !defined(VALLOC_REPLACEMENT)
 	assign_function((void**) &valloc_for_fallback, "valloc");
+#endif
+#if !defined(PVALLOC_REPLACEMENT)
+	assign_function((void**) &pvalloc_for_fallback, "pvalloc");
 #endif
 
 	assign_function_post_test();
 }
 
 static registered_hooks_t empty_registered_hooks = {
+	NULL,
 	NULL,
 	NULL,
 	NULL,
@@ -419,6 +452,7 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 	real_funcs.real_memalign = memalign_for_fallback;
 	real_funcs.real_aligned_alloc = aligned_alloc_for_fallback;
 	real_funcs.real_valloc = valloc_for_fallback;
+	real_funcs.real_pvalloc = pvalloc_for_fallback;
 	real_funcs.real_malloc_size = get_allocated_size;
 
 	return &real_funcs;
@@ -650,6 +684,27 @@ EXPORT void* REPLACE_NAME(valloc)(size_t size) {
 }
 #endif
 
+#if !defined(__THIS_IS_MUSL__)
+EXPORT void* REPLACE_NAME(pvalloc)(size_t size) {
+	pvalloc_hook_t* tmp_hook = registered_hooks->pvalloc_hook;
+	void* result;
+
+	LOG_FUNC(pvalloc);
+	LOG_SIZE(size);
+
+	if (tmp_hook != NULL) {
+		result = tmp_hook(size, __builtin_return_address(0), pvalloc_for_fallback, get_allocated_size);
+	} else {
+		result = pvalloc_for_fallback(size);
+	}
+
+	LOG_ALLOCATION_RESULT(result);
+	LOG_HOOK;
+
+	return result;
+}
+#endif
+
 #if defined(__APPLE__)
 
 #define DYLD_INTERPOSE(_replacement,_replacee) \
@@ -676,7 +731,9 @@ DYLD_INTERPOSE(REPLACE_NAME(valloc), valloc)
 // D E B U G   C O D E
 
 
-#if defined(DEBUG_FD)
+#if TEST_LEVEL > 0
+
+#define DEBUG_FD 2
 
 static void print(char const* str) {
 	int errno_backup = errno;
@@ -714,7 +771,7 @@ static void print_size(size_t size) {
 #endif
 
 
-#if TEST_LEVEL > 0
+#if TEST_LEVEL > 2
 
 static void* memalign_for_test(size_t align, size_t size) {
 #if defined(__APPLE__)
@@ -740,12 +797,24 @@ static void* valloc_for_test(size_t size) {
 #endif
 }
 
+static void* pvalloc_for_test(size_t size) {
+#if defined(__THIS_IS_MUSL__)
+	// musl has no pvalloc
+	return REPLACE_NAME(memalign)(getpagesize(), size);
+#else
+	return REPLACE_NAME(pvalloc)(size);
+#endif
+}
+
 static bool allow_aligned_malloc;
 
 static void allow_aligned_malloc_in_test() {
 	allow_aligned_malloc = true;
 }
 
+#endif
+
+#if TEST_LEVEL > 1
 static void assign_function_test(char const* symbol) {
 	// Simulate having to malloc for dlsym. Only use the most likely called
 	// allocation methods at this level, so no aligned allocations.
@@ -766,7 +835,7 @@ static void assign_function_test(char const* symbol) {
 	}
 
 	// For higher test levels test the aligned allocations too.
-#if TEST_LEVEL > 1
+#if TEST_LEVEL > 2
 	if (allow_aligned_malloc) {
 		REPLACE_NAME(posix_memalign)(&p1, 64, 256);
 		p2 = memalign_for_test(32, 128);
@@ -774,6 +843,9 @@ static void assign_function_test(char const* symbol) {
 		p1 = REPLACE_NAME(realloc)(p1, 2048);
 		REPLACE_NAME(free)(p2);
 		REPLACE_NAME(free)(p3);
+		REPLACE_NAME(free)(p1);
+
+		p1 = pvalloc_for_test(127);
 		REPLACE_NAME(free)(p1);
 
 		if (ag1 == NULL) {
@@ -814,7 +886,7 @@ void assign_function_post_test() {
 	REPLACE_NAME(free)(p);
 #endif
 
-#if TEST_LEVEL > 1
+#if TEST_LEVEL > 2
 	ag1 = REPLACE_NAME(realloc)(ag1, 128);
 	ag1 = REPLACE_NAME(realloc)(ag1, 0);
 	REPLACE_NAME(free)(ag1);
