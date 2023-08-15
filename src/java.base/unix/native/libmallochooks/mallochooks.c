@@ -18,7 +18,7 @@
 // The level of testing (0: none, 1: just debug output, 2: additional normal allocations
 // during startup, 3: additional aligned allocations during startup, 4: use fallbacks
 // whenever possible
-#define TEST_LEVEL 1
+#define TEST_LEVEL 0
 
 
 #if defined(__APPLE__)

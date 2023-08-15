@@ -68,6 +68,8 @@
 #include "mallocInfoDcmd.hpp"
 // SapMachine 2021-09-01: malloc-trace
 #include "malloctrace/mallocTraceDCmd.hpp"
+// SapMachine 2023-08-15: malloc trace2
+#include "malloctrace/mallocTrace2.hpp"
 #endif
 
 // SapMachine 2019-02-20 : vitals
@@ -139,6 +141,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
   // SapMachine 2021-09-01: malloc-trace
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
+  // SapMachine 2023-08-15: malloc trace2
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocStatisticDCmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 

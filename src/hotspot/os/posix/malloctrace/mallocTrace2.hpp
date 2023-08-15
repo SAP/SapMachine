@@ -1,6 +1,7 @@
 #ifndef OS_POSIX_MALLOCTRACE_MALLOCTRACE_HPP
 #define OS_POSIX_MALLOCTRACE_MALLOCTRACE_HPP
 
+#include "services/diagnosticCommand.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -28,6 +29,40 @@ public:
 
 	// Prints the statistic
 	static void print(outputStream* st);
+};
+
+
+class MallocStatisticDCmd : public DCmdWithParser {
+private:
+
+	DCmdArgument<char*> _option;
+	DCmdArgument<char*> _suboption;
+
+public:
+	static int num_arguments() {
+		return 2;
+	}
+
+	MallocStatisticDCmd(outputStream* output, bool heap);
+
+	static const char* name() {
+		return "System.mallocstatistic";
+	}
+
+	static const char* description() {
+		return "Trace malloc call sites";
+	}
+
+	static const char* impact() {
+		return "Low";
+	}
+
+	static const JavaPermission permission() {
+		JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+		return p;
+	}
+
+	virtual void execute(DCmdSource source, TRAPS);
 };
 
 }

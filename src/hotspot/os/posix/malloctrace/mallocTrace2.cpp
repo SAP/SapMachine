@@ -124,7 +124,7 @@ public:
 
 MallocHooksSafeAllocator::MallocHooksSafeAllocator(size_t allocation_size, real_funcs_t* funcs) :
 	_funcs(funcs),
-	_allocation_size(align_up(allocation_size, 16)),
+	_allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
 	_entries_per_chunk(16384),
 	_chunks(NULL),
 	_nr_of_chunks(0),
@@ -138,12 +138,11 @@ MallocHooksSafeAllocator::~MallocHooksSafeAllocator() {
 }
 
 void* MallocHooksSafeAllocator::allocate() {
-	void** as_array = (void**) _free_list[0];
+	if (_free_list != NULL) {
+		void* result = _free_list;
+		_free_list = (void**) ((void**) result)[0];
 
-	if (as_array != NULL) {
-		_free_list = (void**) as_array[0];
-
-		return (void*) as_array;
+		return result;
 	}
 
 	// We need a new chunk.
@@ -171,9 +170,11 @@ void* MallocHooksSafeAllocator::allocate() {
 }
 
 void MallocHooksSafeAllocator::free(void* ptr) {
-	void** as_array = (void**) ptr;
-	as_array[0] = (void*) _free_list;
-	_free_list = as_array;
+	if (ptr != NULL) {
+		void** as_array = (void**) ptr;
+		as_array[0] = (void*) _free_list;
+		_free_list = as_array;
+	}
 }
 
 
@@ -336,6 +337,50 @@ void MallocStatistic::reset(outputStream* st) {
 
 void MallocStatistic::print(outputStream* st) {
 	MallocStatisticImpl::print(st);
+}
+
+
+//
+//
+//
+//
+// Class MallocStatisticDCmd
+//
+//
+//
+//
+MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
+	DCmdWithParser(output, heap),
+	_option("option", "dummy", "STRING", true),
+	_suboption("suboption", "see option", "STRING", false) {
+	_dcmdparser.add_dcmd_argument(&_option);
+	_dcmdparser.add_dcmd_argument(&_suboption);
+}
+
+void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
+	// For now just do some tests.
+	real_funcs_t* funcs = setup_hooks(NULL, _output);
+
+#define MAX_ALLOCS (1024 * 1024)
+
+	static void* results[MAX_ALLOCS];
+
+	for (int r = 0; r < 10000; ++r) {
+
+		for (int i = 0; i < MAX_ALLOCS; ++i) {
+			results[i] = NULL;
+		}
+
+		MallocHooksSafeAllocator alloc(96, funcs);
+		for (int i = 0; i < MAX_ALLOCS; ++i) {
+			results[i] = alloc.allocate();
+			alloc.free(results[(317 * (int64_t) i) & (MAX_ALLOCS - 1)]);
+		}
+	}
+
+	MallocStatistic::enable(_output);
+	MallocStatistic::disable(_output);
+	_output->print_raw_cr("Test succeeded.");
 }
 
 }
