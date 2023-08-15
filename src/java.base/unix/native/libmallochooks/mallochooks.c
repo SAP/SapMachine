@@ -13,7 +13,7 @@
 #include <malloc.h>
 #endif
 
-#include "mallochook.h"
+#include "mallochooks.h"
 
 // The level of testing (0: none, 1: just debug output, 2: additional normal allocations
 // during startup, 3: additional aligned allocations during startup, 4: use fallbacks
@@ -444,16 +444,16 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 		registered_hooks = hooks;
 	}
 
-	real_funcs.real_malloc = malloc_for_fallback;
-	real_funcs.real_calloc = calloc_for_fallback;
-	real_funcs.real_realloc = realloc_for_fallback;
-	real_funcs.real_free = free_for_fallback;
-	real_funcs.real_posix_memalign = posix_memalign_for_fallback;
-	real_funcs.real_memalign = memalign_for_fallback;
-	real_funcs.real_aligned_alloc = aligned_alloc_for_fallback;
-	real_funcs.real_valloc = valloc_for_fallback;
-	real_funcs.real_pvalloc = pvalloc_for_fallback;
-	real_funcs.real_malloc_size = get_allocated_size;
+	real_funcs.malloc = malloc_for_fallback;
+	real_funcs.calloc = calloc_for_fallback;
+	real_funcs.realloc = realloc_for_fallback;
+	real_funcs.free = free_for_fallback;
+	real_funcs.posix_memalign = posix_memalign_for_fallback;
+	real_funcs.memalign = memalign_for_fallback;
+	real_funcs.aligned_alloc = aligned_alloc_for_fallback;
+	real_funcs.valloc = valloc_for_fallback;
+	real_funcs.pvalloc = pvalloc_for_fallback;
+	real_funcs.malloc_size = get_allocated_size;
 
 	return &real_funcs;
 }

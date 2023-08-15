@@ -53,7 +53,7 @@ public:
 };
 
 MallocHooksSafeOutputStream::~MallocHooksSafeOutputStream() {
-	_funcs->real_free(_buffer);
+	_funcs->free(_buffer);
 }
 
 void MallocHooksSafeOutputStream::write(const char* c, size_t len) {
@@ -68,7 +68,7 @@ void MallocHooksSafeOutputStream::write(const char* c, size_t len) {
 			to_add = len;
 		}
 
-		char* new_buffer = (char*) _funcs->real_realloc(_buffer, _buffer_size + to_add);
+		char* new_buffer = (char*) _funcs->realloc(_buffer, _buffer_size + to_add);
 
 		if (new_buffer == NULL) {
 			_failed = true;
@@ -133,7 +133,7 @@ MallocHooksSafeAllocator::MallocHooksSafeAllocator(size_t allocation_size, real_
 
 MallocHooksSafeAllocator::~MallocHooksSafeAllocator() {
 	for (int i = 0; i < _nr_of_chunks; ++i) {
-		_funcs->real_free(_chunks[i]);
+		_funcs->free(_chunks[i]);
 	}
 }
 
@@ -147,14 +147,14 @@ void* MallocHooksSafeAllocator::allocate() {
 	}
 
 	// We need a new chunk.
-	char* new_chunk = (char*) _funcs->real_malloc(_entries_per_chunk * _allocation_size);
+	char* new_chunk = (char*) _funcs->malloc(_entries_per_chunk * _allocation_size);
 
 	if (new_chunk == NULL) {
 		return NULL;
 	}
 
 	_nr_of_chunks += 1;
-	void** new_chunks = (void**) _funcs->real_realloc(_chunks, sizeof(void**) * _nr_of_chunks);
+	void** new_chunks = (void**) _funcs->realloc(_chunks, sizeof(void**) * _nr_of_chunks);
 
 	if (new_chunks == NULL) {
 		return NULL;

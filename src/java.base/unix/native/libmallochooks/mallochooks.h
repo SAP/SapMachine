@@ -43,16 +43,16 @@ typedef struct {
 } registered_hooks_t;
 
 typedef struct {
-	malloc_func_t* real_malloc;
-	calloc_func_t* real_calloc;
-	realloc_func_t* real_realloc;
-	free_func_t* real_free;
-        posix_memalign_func_t* real_posix_memalign;
-	memalign_func_t* real_memalign;
-	aligned_alloc_func_t* real_aligned_alloc;
-	valloc_func_t* real_valloc;
-	pvalloc_func_t* real_pvalloc;
-	malloc_size_func_t* real_malloc_size;
+	malloc_func_t* malloc;
+	calloc_func_t* calloc;
+	realloc_func_t* realloc;
+	free_func_t* free;
+        posix_memalign_func_t* posix_memalign;
+	memalign_func_t* memalign;
+	aligned_alloc_func_t* aligned_alloc;
+	valloc_func_t* valloc;
+	pvalloc_func_t* pvalloc;
+	malloc_size_func_t* malloc_size;
 } real_funcs_t;
 
 typedef real_funcs_t* register_hooks_t(registered_hooks_t* registered_hooks);
