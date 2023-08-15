@@ -7,7 +7,7 @@
 #include <string.h>
 #include <malloc.h>
 
-#include "mallochook.h"
+#include "mallochooks.h"
 
 #define PRINT_CALLER_ADDRESS 1
 

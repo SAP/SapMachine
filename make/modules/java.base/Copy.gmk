@@ -283,12 +283,12 @@ TARGETS += $(CREATE_CLASSFILE_CONSTANTS_H)
 
 ifeq ($(call isTargetOs, windows), false)
 
-  $(eval $(call SetupCopyFiles, CREATE_MALLOC_HOOK_H, \
-      FILES := $(TOPDIR)/src/java.base/unix/native/libmallochooks/mallochook.h, \
+  $(eval $(call SetupCopyFiles, CREATE_MALLOC_HOOKS_H, \
+      FILES := $(TOPDIR)/src/java.base/unix/native/libmallochooks/mallochooks.h, \
       DEST := $(SUPPORT_OUTPUTDIR)/modules_include/java.base/, \
   ))
 
-  TARGETS += $(CREATE_MALLOC_HOOK_H)
+  TARGETS += $(CREATE_MALLOC_HOOKS_H)
 endif
 
 ################################################################################

@@ -1,7 +1,6 @@
 #ifndef OS_POSIX_MALLOCTRACE_MALLOCTRACE_HPP
 #define OS_POSIX_MALLOCTRACE_MALLOCTRACE_HPP
 
-#include "mallochook.h"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;

@@ -1,6 +1,7 @@
 #include "precompiled.hpp"
 
 #include "jvm_io.h"
+#include "mallochooks.h"
 #include "malloctrace/mallocTrace2.hpp"
 #include "utilities/ostream.hpp"
 
