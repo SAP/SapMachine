@@ -11,6 +11,17 @@
 
 namespace sap {
 
+
+//
+//
+//
+//
+// Class MallocHooksSafeOutputStream
+//
+//
+//
+//
+
 // A output stream which can use the real allocation functions
 // given by malloc hooks to avoid triggering the hooks.
 class MallocHooksSafeOutputStream : public outputStream {
@@ -82,6 +93,92 @@ void MallocHooksSafeOutputStream::copy_to(outputStream* st) {
 		st->print_raw_cr("*** Error during writing. Output might be truncated.");
 	}
 }
+
+
+//
+//
+//
+//
+// Class MallocHooksSafeAllocator
+//
+//
+//
+//
+class MallocHooksSafeAllocator {
+private:
+
+	real_funcs_t* _funcs;
+	size_t        _allocation_size;
+	int           _entries_per_chunk;
+	void**        _chunks;
+	int           _nr_of_chunks;
+	void**        _free_list;
+
+public:
+	MallocHooksSafeAllocator(size_t allocation_size, real_funcs_t* funcs);
+	~MallocHooksSafeAllocator();
+
+	void* allocate();
+	void free(void* ptr);
+};
+
+MallocHooksSafeAllocator::MallocHooksSafeAllocator(size_t allocation_size, real_funcs_t* funcs) :
+	_funcs(funcs),
+	_allocation_size(align_up(allocation_size, 16)),
+	_entries_per_chunk(16384),
+	_chunks(NULL),
+	_nr_of_chunks(0),
+	_free_list(NULL) {
+}
+
+MallocHooksSafeAllocator::~MallocHooksSafeAllocator() {
+	for (int i = 0; i < _nr_of_chunks; ++i) {
+		_funcs->real_free(_chunks[i]);
+	}
+}
+
+void* MallocHooksSafeAllocator::allocate() {
+	void** as_array = (void**) _free_list[0];
+
+	if (as_array != NULL) {
+		_free_list = (void**) as_array[0];
+
+		return (void*) as_array;
+	}
+
+	// We need a new chunk.
+	char* new_chunk = (char*) _funcs->real_malloc(_entries_per_chunk * _allocation_size);
+
+	if (new_chunk == NULL) {
+		return NULL;
+	}
+
+	_nr_of_chunks += 1;
+	void** new_chunks = (void**) _funcs->real_realloc(_chunks, sizeof(void**) * _nr_of_chunks);
+
+	if (new_chunks == NULL) {
+		return NULL;
+	}
+
+	new_chunks[_nr_of_chunks - 1] = new_chunk;
+	_chunks = new_chunks;
+
+	for (int i = 0; i < _entries_per_chunk; ++i) {
+		free(new_chunk + i * _allocation_size);
+	}
+
+	return allocate();
+}
+
+void MallocHooksSafeAllocator::free(void* ptr) {
+	void** as_array = (void**) ptr;
+	as_array[0] = (void*) _free_list;
+	_free_list = as_array;
+}
+
+
+
+
 
 static register_hooks_t* register_hooks;
 
