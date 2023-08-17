@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +22,36 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6587786
- * @summary Javap throws error : "ERROR:Could not find <classname>" for JRE classes
- * @modules jdk.jdeps/com.sun.tools.javap
- */
+import java.io.File;
+import java.io.FileOutputStream;
+import jdk.test.whitebox.WhiteBox;
 
-import java.io.*;
+// Check dynamic limits updating. HotSpot side.
+public class LimitUpdateChecker {
 
-public class T6587786 {
+    private static final File UPDATE_FILE = new File("/tmp", "limitsUpdated");
+    private static final File STARTED_FILE = new File("/tmp", "started");
+
     public static void main(String[] args) throws Exception {
-        new T6587786().run();
-    }
-
-    public void run() throws IOException {
-        javap("jdk.javadoc.doclet.Doclet", "java.util.List");
-        javap("java.util.List", "jdk.javadoc.doclet.StandardDoclet");
-    }
-
-    void javap(String... args) {
-        StringWriter sw = new StringWriter();
-        PrintWriter out = new PrintWriter(sw);
-        //sun.tools.javap.Main.entry(args);
-        try {
-            int rc = com.sun.tools.javap.Main.run(args, out);
-            if (rc != 0)
-                throw new Error("javap failed. rc=" + rc);
-        } finally {
-            out.close();
-            System.out.println(sw.toString());
+        System.out.println("LimitUpdateChecker: Entering");
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        printMetrics(wb); // print initial limits
+        createStartedFile();
+        while (!UPDATE_FILE.exists()) {
+            Thread.sleep(200);
         }
+        System.out.println("'limitsUpdated' file appeared. Stopped loop.");
+        printMetrics(wb); // print limits after update
+        System.out.println("LimitUpdateChecker DONE.");
+
+    }
+
+    private static void printMetrics(WhiteBox wb) {
+        wb.printOsInfo();
+    }
+
+    private static void createStartedFile() throws Exception {
+        FileOutputStream fout = new FileOutputStream(STARTED_FILE);
+        fout.close();
     }
 }
