@@ -290,6 +290,8 @@ private:
 	static real_funcs_t*      _funcs;
 	static volatile bool      _initialized;
 	static bool               _enabled;
+	static bool               _track_free;
+	static int                _max_frames;
 	static registered_hooks_t _malloc_stat_hooks;
 	static CacheLineSafeLock  _malloc_stat_lock;
 	static CacheLineSafeLock  _hash_map_locks[NR_OF_MAPS];
@@ -305,6 +307,10 @@ private:
 	static void* valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size);
 	static void* pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
 
+	static void record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
+	static void record_allocation(void* ptr, size_t size, int nr_of_frames, address* frames);
+	static void record_free(void* ptr, size_t size, int nr_of_frames, address* frames);
+
 public:
 	static void initialize(outputStream* st);
 
@@ -312,9 +318,9 @@ public:
 
 	static bool disable(outputStream* st);
 
-	static void reset(outputStream* st);
+	static bool reset(outputStream* st);
 
-	static void print(outputStream* st);
+	static bool dump(outputStream* st, bool on_error);
 
 };
 
@@ -333,47 +339,197 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
 real_funcs_t*      MallocStatisticImpl::_funcs;
 volatile bool      MallocStatisticImpl::_initialized;
 bool               MallocStatisticImpl::_enabled;
+bool               MallocStatisticImpl::_track_free;
+int                MallocStatisticImpl::_max_frames;
 CacheLineSafeLock  MallocStatisticImpl::_malloc_stat_lock;
 CacheLineSafeLock  MallocStatisticImpl::_hash_map_locks[NR_OF_MAPS];
 
+#define MAX_FRAMES 32
+
+#define CAPTURE_STACK \
+	address frames[MAX_FRAMES]; \
+	int nr_of_frames = 0; \
+	frame fr = os::current_frame(); \
+	while (fr.pc() && nr_of_frames < _max_frames) { \
+		frames[nr_of_frames] = fr.pc(); \
+		nr_of_frames += 1; \
+		if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
+			break; \
+		if (fr.sender_pc() && !os::is_first_C_frame(&fr)) { \
+			fr = os::get_sender_for_C_frame(&fr); \
+		} else { \
+			break; \
+		} \
+	}
+
+
 void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) {
 	void* result = real_malloc(size);
+
+	if (result != NULL) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+		} else {
+			record_allocation_size(size, nr_of_frames, frames);
+		}
+	}
 
 	return result;
 }
 
 void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
-	return real_calloc(elems, size);
+	void* result = real_calloc(elems, size);
+
+	if (result != NULL) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+		} else {
+			record_allocation_size(elems * size, nr_of_frames, frames);
+		}
+	}
+
+	return result;
 }
 
 void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
-	return real_realloc(ptr, size);
+	size_t old_size = ptr != NULL ? real_malloc_size(ptr) : 0;
+	void* result = real_realloc(ptr, size);
+
+	if (result != NULL) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_free(result, old_size, nr_of_frames, frames);
+			record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+		} else if (old_size < size) {
+			// Track the additional allocate bytes. This is somewhat wrong, since
+			// we don't know the requested size of the original allocation and
+			// old_size might be greater.
+			record_allocation_size(size - old_size, nr_of_frames, frames);
+		}
+	} else if ((size == 0) && _track_free) {
+		// Treat as free.
+		CAPTURE_STACK;
+		record_free(result, old_size, nr_of_frames, frames);
+	}
+
+	return result;
 }
 
 void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
+	if ((ptr != NULL) &&_track_free) {
+		CAPTURE_STACK;
+		record_free(ptr, real_malloc_size(ptr), nr_of_frames, frames);
+	}
+
 	real_free(ptr);
 }
 
 int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
-	return real_posix_memalign(ptr, align, size);
+	int result =  real_posix_memalign(ptr, align, size);
+
+	if (result == 0) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_allocation(*ptr, real_malloc_size(*ptr), nr_of_frames, frames);
+		} else {
+			// Here we track the really allocated size, since it might be very different
+			// from the requested one.
+			record_allocation_size(real_malloc_size(*ptr), nr_of_frames, frames);
+		}
+	}
+
+	return result;
 }
 
 void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
-	return real_memalign(align, size);
+	void* result =  real_memalign(align, size);
+
+	if (result != NULL) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+		} else {
+			// Here we track the really allocated size, since it might be very different
+			// from the requested one.
+			record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+		}
+	}
+
+	return result;
 }
 
 void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size) {
-	return real_aligned_alloc(align, size);
+	void* result =  real_aligned_alloc(align, size);
+
+	if (result != NULL) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+		} else {
+			// Here we track the really allocated size, since it might be very different
+			// from the requested one.
+			record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+		}
+	}
+
+	return result;
 }
 
 void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size) {
-	return real_valloc(size);
+	void* result =  real_valloc(size);
+
+	if (result != NULL) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+		} else {
+			// Here we track the really allocated size, since it might be very different
+			// from the requested one.
+			record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+		}
+	}
+
+	return result;
 }
 
 void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size) {
-	return real_pvalloc(size);
+	void* result =  real_pvalloc(size);
+
+	if (result != NULL) {
+		CAPTURE_STACK;
+
+		if (_track_free) {
+			record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+		} else {
+			// Here we track the really allocated size, since it might be very different
+			// from the requested one.
+			record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+		}
+	}
+
+	return result;
 }
 
+void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
+	assert(!_track_free, "Only used for summary tracking");
+}
+
+void MallocStatisticImpl::record_allocation(void* ptr, size_t size, int nr_of_frames, address* frames) {
+	assert(_track_free, "Only used for detailed tracking");
+}
+
+void MallocStatisticImpl::record_free(void* ptr, size_t size, int nr_of_frames, address* frames) {
+	assert(_track_free, "Only used for detailed tracking");
+}
 
 void MallocStatisticImpl::initialize(outputStream* st) {
 	if (!_initialized) {
@@ -401,6 +557,8 @@ bool MallocStatisticImpl::enable(outputStream* st) {
 		return false;
 	}
 
+	_track_free = false;
+	_max_frames = MAX_FRAMES;
 	_funcs = setup_hooks(&_malloc_stat_hooks, st);
 
 	if (_funcs == NULL) {
@@ -428,10 +586,42 @@ bool MallocStatisticImpl::disable(outputStream* st) {
 	return true;
 }
 
-void MallocStatisticImpl::reset(outputStream* st) {
+bool MallocStatisticImpl::reset(outputStream* st) {
+	initialize(st);
+	PthreadLocker lock(&_malloc_stat_lock._lock);
+
+	if (!_enabled) {
+		st->print_raw_cr("malloc statistic not enabled!");
+
+		return false;
+	}
+
+	return true;	
 }
 
-void MallocStatisticImpl::print(outputStream* st) {
+bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
+	if (!on_error) {
+		initialize(st);
+
+		if (pthread_mutex_lock(&_malloc_stat_lock._lock) != 0) {
+			st->print_raw_cr("Could not dump because locking failed");
+
+			return false;
+		}
+	}
+
+	bool result = true;
+
+	if (!_enabled) {
+		st->print_raw_cr("malloc statistic not enabled!");
+		result = false;
+	}
+
+	if (!on_error) {
+		pthread_mutex_unlock(&_malloc_stat_lock._lock);
+	}
+
+	return result;
 }
 
 
@@ -449,12 +639,12 @@ bool MallocStatistic::disable(outputStream* st) {
 	return MallocStatisticImpl::disable(st);
 }
 
-void MallocStatistic::reset(outputStream* st) {
-	MallocStatisticImpl::reset(st);
+bool MallocStatistic::reset(outputStream* st) {
+	return MallocStatisticImpl::reset(st);
 }
 
-void MallocStatistic::print(outputStream* st) {
-	MallocStatisticImpl::print(st);
+bool MallocStatistic::dump(outputStream* st, bool on_error) {
+	return MallocStatisticImpl::dump(st, on_error);
 }
 
 
@@ -469,36 +659,46 @@ void MallocStatistic::print(outputStream* st) {
 //
 MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
 	DCmdWithParser(output, heap),
-	_option("option", "dummy", "STRING", true),
+	_cmd("cmd", "enable,disable,reset,dump,test", "STRING", true),
 	_suboption("suboption", "see option", "STRING", false) {
-	_dcmdparser.add_dcmd_argument(&_option);
+	_dcmdparser.add_dcmd_argument(&_cmd);
 	_dcmdparser.add_dcmd_argument(&_suboption);
 }
 
 void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
-	// For now just do some tests.
-	real_funcs_t* funcs = setup_hooks(NULL, _output);
+	const char* const cmd = _cmd.value();
 
-#define MAX_ALLOCS (1024 * 1024)
-
-	static void* results[MAX_ALLOCS];
-
-	for (int r = 0; r < 10; ++r) {
-
-		for (int i = 0; i < MAX_ALLOCS; ++i) {
-			results[i] = NULL;
+	if (strcmp(cmd, "enable") == 0) {
+		if (MallocStatistic::enable(_output)) {
+			_output->print_raw_cr("mallocstatistic enabled");
 		}
-
-		MallocHooksSafeAllocator alloc(96, funcs);
-		for (int i = 0; i < MAX_ALLOCS; ++i) {
-			results[i] = alloc.allocate();
-			alloc.free(results[(317 * (int64_t) i) & (MAX_ALLOCS - 1)]);
+	} else if (strcmp(cmd, "disable") == 0) {
+		if (MallocStatistic::disable(_output)) {
+			_output->print_raw_cr("mallocstatistic disabled");
 		}
+	} else if (strcmp(cmd, "reset") == 0) {
+		MallocStatistic::reset(_output);
+	} else if (strcmp(cmd, "dump") == 0) {
+		MallocStatistic::dump(_output, false);
+	} else if (strcmp(cmd, "test") == 0) {
+		real_funcs_t* funcs = setup_hooks(NULL, _output);
+		static void* results[1024 * 1024];
+
+		for (int r = 0; r < 10; ++r) {
+
+			for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); ++i) {
+				results[i] = NULL;
+			}
+
+			MallocHooksSafeAllocator alloc(96, funcs);
+			for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); ++i) {
+				results[i] = alloc.allocate();
+				alloc.free(results[(317 * (int64_t) i) & (sizeof(results) / sizeof(results[0]) - 1)]);
+			}
+		}
+	} else {
+		_output->print_cr("Unknown command '%s'", cmd);
 	}
-
-	MallocStatistic::enable(_output);
-	MallocStatistic::disable(_output);
-	_output->print_raw_cr("Test succeeded.");
 }
 
 }

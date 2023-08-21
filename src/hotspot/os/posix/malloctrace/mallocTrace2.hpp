@@ -25,17 +25,17 @@ public:
 	static bool disable(outputStream* st);
 
 	// Resets the statistic.
-	static void reset(outputStream* st);
+	static bool reset(outputStream* st);
 
-	// Prints the statistic
-	static void print(outputStream* st);
+	// Dumps the statistic.
+	static bool dump(outputStream* st, bool on_error);
 };
 
 
 class MallocStatisticDCmd : public DCmdWithParser {
 private:
 
-	DCmdArgument<char*> _option;
+	DCmdArgument<char*> _cmd;
 	DCmdArgument<char*> _suboption;
 
 public:
