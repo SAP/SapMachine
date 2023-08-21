@@ -179,7 +179,86 @@ void MallocHooksSafeAllocator::free(void* ptr) {
 
 
 
+class PthreadLocker : public StackObj {
+private:
+	pthread_mutex_t* _mutex;
 
+public:
+	PthreadLocker(pthread_mutex_t* mutex);
+	~PthreadLocker();
+};
+
+PthreadLocker::PthreadLocker(pthread_mutex_t* mutex) :
+	_mutex(mutex) {
+	if (pthread_mutex_lock(_mutex) != 0) {
+		fatal("Could not lock mutex");
+	}
+}
+
+PthreadLocker::~PthreadLocker() {
+	if (pthread_mutex_unlock(_mutex) != 0) {
+		fatal("Could not unlock mutex");
+	}
+}
+
+
+//
+//
+//
+//
+// Class MallocStatisticEntry
+//
+//
+//
+//
+class MallocStatisticEntry {
+private:
+	MallocStatisticEntry* _next;
+	uint32_t              _hash;
+	int                   _nr_of_frames;
+	size_t                _size;
+	size_t                _nr_of_allocations;
+	address		      _frames[1];
+
+public:
+	MallocStatisticEntry(uint32_t hash, size_t size, int nr_of_frames, address* frames) :
+		_next(NULL),
+		_hash(hash),
+		_nr_of_frames(nr_of_frames),
+		_size(size),
+		_nr_of_allocations(1) {
+		memcpy(_frames, frames, sizeof(address) * nr_of_frames);
+	}
+
+	void add_allocation(size_t size) {
+		_size += size;
+		_nr_of_allocations += 1;
+	}
+
+	uint32_t hash() {
+		return _hash;
+	}
+
+	size_t size() {
+		return _size;
+	}
+
+	int nr_of_frames() {
+		return _nr_of_frames;
+	}
+
+	address* frames() {
+		return _frames;
+	}
+
+	MallocStatisticEntry* next() {
+		return _next;
+	}
+
+	void set_next(MallocStatisticEntry* next) {
+		_next = next;
+	}
+};
 
 static register_hooks_t* register_hooks;
 
@@ -197,52 +276,37 @@ static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
 }
 
 
+// A pthread mutex usable in arrays.
+struct CacheLineSafeLock {
+	pthread_mutex_t _lock;
+	char            _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(pthread_mutex_t)];
+};
+
+#define NR_OF_MAPS 16
+
 class MallocStatisticImpl : public AllStatic {
 private:
 
+	static real_funcs_t*      _funcs;
 	static volatile bool      _initialized;
+	static bool               _enabled;
 	static registered_hooks_t _malloc_stat_hooks;
-	static pthread_mutex_t    _malloc_stat_lock;
+	static CacheLineSafeLock  _malloc_stat_lock;
+	static CacheLineSafeLock  _hash_map_locks[NR_OF_MAPS];
 
-
-	static void* malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) {
-		return real_malloc(size);
-	}
-
-	static void* calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
-		return real_calloc(elems, size);
-	}
-
-	static void* realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
-		return real_realloc(ptr, size);
-	}
-
-	static void free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
-		real_free(ptr);
-	}
-
-	static int posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
-		return real_posix_memalign(ptr, align, size);
-	}
-
-	static void* memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
-		return real_memalign(align, size);
-	}
-
-	static void* aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size) {
-		return real_aligned_alloc(align, size);
-	}
-
-	static void* valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size) {
-		return real_valloc(size);
-	}
-
-	static void* pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size) {
-		return real_pvalloc(size);
-	}
+	// The hooks.
+	static void* malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
+	static void* calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size);
+	static void* realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size);
+	static void free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size);
+	static int posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size);
+	static void* memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size);
+	static void* aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size);
+	static void* valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size);
+	static void* pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
 
 public:
-	static bool initialize(outputStream* st);
+	static void initialize(outputStream* st);
 
 	static bool enable(outputStream* st);
 
@@ -266,46 +330,100 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
 	MallocStatisticImpl::pvalloc_hook
 };
 
-pthread_mutex_t MallocStatisticImpl::_malloc_stat_lock;
-volatile bool MallocStatisticImpl::_initialized;
+real_funcs_t*      MallocStatisticImpl::_funcs;
+volatile bool      MallocStatisticImpl::_initialized;
+bool               MallocStatisticImpl::_enabled;
+CacheLineSafeLock  MallocStatisticImpl::_malloc_stat_lock;
+CacheLineSafeLock  MallocStatisticImpl::_hash_map_locks[NR_OF_MAPS];
 
-bool MallocStatisticImpl::initialize(outputStream* st) {
-	if (_initialized) {
-		return true;
-	}
+void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) {
+	void* result = real_malloc(size);
 
-	if (pthread_mutex_init(&_malloc_stat_lock, NULL) != 0) {
-		if (st != NULL) {
-			st->print_raw_cr("Could not initialize pthread lock for malloc statistic!");
+	return result;
+}
+
+void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
+	return real_calloc(elems, size);
+}
+
+void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
+	return real_realloc(ptr, size);
+}
+
+void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
+	real_free(ptr);
+}
+
+int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
+	return real_posix_memalign(ptr, align, size);
+}
+
+void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
+	return real_memalign(align, size);
+}
+
+void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size) {
+	return real_aligned_alloc(align, size);
+}
+
+void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size) {
+	return real_valloc(size);
+}
+
+void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size) {
+	return real_pvalloc(size);
+}
+
+
+void MallocStatisticImpl::initialize(outputStream* st) {
+	if (!_initialized) {
+		_initialized = true;
+
+		if (pthread_mutex_init(&_malloc_stat_lock._lock, NULL) != 0) {
+			fatal("Could not initialize lock");
 		}
 
-		return false;
+		for (int i = 0; i < NR_OF_MAPS; ++i) {
+			if (pthread_mutex_init(&_hash_map_locks[i]._lock, NULL) != 0) {
+				fatal("Could not initialize lock");
+			}
+		}
 	}
-
-	_initialized = true;
-	return true;
 }
 
 bool MallocStatisticImpl::enable(outputStream* st) {
-	if (!initialize(st)) {
+	initialize(st);
+	PthreadLocker lock(&_malloc_stat_lock._lock);
+
+	if (_enabled) {
+		st->print_raw_cr("malloc statistic is already enabled!");
+
 		return false;
 	}
 
-	real_funcs_t* funcs = setup_hooks(&_malloc_stat_hooks, st);
+	_funcs = setup_hooks(&_malloc_stat_hooks, st);
 
-	if (funcs == NULL) {
+	if (_funcs == NULL) {
 		return false;
 	}
 
+	_enabled = true;
 	return true;
 }
 
 bool MallocStatisticImpl::disable(outputStream* st) {
-	if (!initialize(st)) {
+	initialize(st);
+	PthreadLocker lock(&_malloc_stat_lock._lock);
+
+	if (!_enabled) {
+		st->print_raw_cr("malloc statistic is already disabled!");
+
 		return false;
 	}
 
 	setup_hooks(NULL, st);
+	_funcs = NULL;
+	_enabled = false;
 
 	return true;
 }
@@ -319,8 +437,8 @@ void MallocStatisticImpl::print(outputStream* st) {
 
 
 
-bool MallocStatistic::initialize() {
-	return MallocStatisticImpl::initialize(NULL);
+void MallocStatistic::initialize() {
+	MallocStatisticImpl::initialize(NULL);
 }
 
 bool MallocStatistic::enable(outputStream* st) {
@@ -365,7 +483,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 	static void* results[MAX_ALLOCS];
 
-	for (int r = 0; r < 10000; ++r) {
+	for (int r = 0; r < 10; ++r) {
 
 		for (int i = 0; i < MAX_ALLOCS; ++i) {
 			results[i] = NULL;

@@ -16,7 +16,7 @@ class MallocStatistic : public AllStatic {
 public:
 
 	// Called early to initialize the class.
-	static bool initialize();
+	static void initialize();
 
 	// Enables the tracing. Returns true if enabled.
 	static bool enable(outputStream* st);
