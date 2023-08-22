@@ -16,7 +16,7 @@ namespace sap {
 //
 //
 //
-// Class MallocHooksSafeOutputStream
+// Class SafeOutputStream
 //
 //
 //
@@ -24,7 +24,7 @@ namespace sap {
 
 // A output stream which can use the real allocation functions
 // given by malloc hooks to avoid triggering the hooks.
-class MallocHooksSafeOutputStream : public outputStream {
+class SafeOutputStream : public outputStream {
 
 private:
 	real_funcs_t* _funcs;
@@ -36,7 +36,7 @@ private:
 public:
 	// funcs contains the 'real' malloc functions and is optained when
 	// initializing the malloc hooks.
-	MallocHooksSafeOutputStream(real_funcs_t* funcs) :
+	SafeOutputStream(real_funcs_t* funcs) :
 		_funcs(funcs),
 		_buffer(NULL),
 		_buffer_size(0),
@@ -44,7 +44,7 @@ public:
 		_failed(false) {
 	}
 
-	virtual ~MallocHooksSafeOutputStream();
+	virtual ~SafeOutputStream();
 
 	virtual void write(const char* c, size_t len);
 
@@ -52,11 +52,11 @@ public:
 	void copy_to(outputStream* st);
 };
 
-MallocHooksSafeOutputStream::~MallocHooksSafeOutputStream() {
+SafeOutputStream::~SafeOutputStream() {
 	_funcs->free(_buffer);
 }
 
-void MallocHooksSafeOutputStream::write(const char* c, size_t len) {
+void SafeOutputStream::write(const char* c, size_t len) {
 	if (_failed) {
 		return;
 	}
@@ -81,7 +81,7 @@ void MallocHooksSafeOutputStream::write(const char* c, size_t len) {
 	_used += len;
 }
 
-void MallocHooksSafeOutputStream::copy_to(outputStream* st) {
+void SafeOutputStream::copy_to(outputStream* st) {
 	if (_buffer == NULL) {
 		st->print_cr("<empty>");
 	} else {
@@ -99,12 +99,12 @@ void MallocHooksSafeOutputStream::copy_to(outputStream* st) {
 //
 //
 //
-// Class MallocHooksSafeAllocator
+// Class SafeAllocator
 //
 //
 //
 //
-class MallocHooksSafeAllocator {
+class SafeAllocator {
 private:
 
 	real_funcs_t* _funcs;
@@ -115,14 +115,14 @@ private:
 	void**        _free_list;
 
 public:
-	MallocHooksSafeAllocator(size_t allocation_size, real_funcs_t* funcs);
-	~MallocHooksSafeAllocator();
+	SafeAllocator(size_t allocation_size, real_funcs_t* funcs);
+	~SafeAllocator();
 
 	void* allocate();
 	void free(void* ptr);
 };
 
-MallocHooksSafeAllocator::MallocHooksSafeAllocator(size_t allocation_size, real_funcs_t* funcs) :
+SafeAllocator::SafeAllocator(size_t allocation_size, real_funcs_t* funcs) :
 	_funcs(funcs),
 	_allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
 	_entries_per_chunk(16384),
@@ -131,13 +131,13 @@ MallocHooksSafeAllocator::MallocHooksSafeAllocator(size_t allocation_size, real_
 	_free_list(NULL) {
 }
 
-MallocHooksSafeAllocator::~MallocHooksSafeAllocator() {
+SafeAllocator::~SafeAllocator() {
 	for (int i = 0; i < _nr_of_chunks; ++i) {
 		_funcs->free(_chunks[i]);
 	}
 }
 
-void* MallocHooksSafeAllocator::allocate() {
+void* SafeAllocator::allocate() {
 	if (_free_list != NULL) {
 		void* result = _free_list;
 		_free_list = (void**) ((void**) result)[0];
@@ -169,7 +169,7 @@ void* MallocHooksSafeAllocator::allocate() {
 	return allocate();
 }
 
-void MallocHooksSafeAllocator::free(void* ptr) {
+void SafeAllocator::free(void* ptr) {
 	if (ptr != NULL) {
 		void** as_array = (void**) ptr;
 		as_array[0] = (void*) _free_list;
@@ -295,6 +295,8 @@ private:
 	static registered_hooks_t _malloc_stat_hooks;
 	static CacheLineSafeLock  _malloc_stat_lock;
 	static CacheLineSafeLock  _hash_map_locks[NR_OF_MAPS];
+	static void*              _map[NR_OF_MAPS];
+	static SafeAllocator*     _allocators[NR_OF_MAPS];
 
 	// The hooks.
 	static void* malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
@@ -343,6 +345,9 @@ bool               MallocStatisticImpl::_track_free;
 int                MallocStatisticImpl::_max_frames;
 CacheLineSafeLock  MallocStatisticImpl::_malloc_stat_lock;
 CacheLineSafeLock  MallocStatisticImpl::_hash_map_locks[NR_OF_MAPS];
+void*              MallocStatisticImpl::_map[NR_OF_MAPS];
+SafeAllocator*     MallocStatisticImpl::_allocators[NR_OF_MAPS];
+
 
 #define MAX_FRAMES 32
 
@@ -690,7 +695,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 				results[i] = NULL;
 			}
 
-			MallocHooksSafeAllocator alloc(96, funcs);
+			SafeAllocator alloc(96, funcs);
 			for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); ++i) {
 				results[i] = alloc.allocate();
 				alloc.free(results[(317 * (int64_t) i) & (sizeof(results) / sizeof(results[0]) - 1)]);
