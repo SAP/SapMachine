@@ -206,61 +206,43 @@ PthreadLocker::~PthreadLocker() {
 //
 //
 //
-// Class EntryBase
-//
-//
-//
-//
-class EntryBase {
-private:
-	EntryBase* _next;
-	uint32_t   _hash;
-
-public:
-	EntryBase(uint32_t hash) :
-		_next(NULL),
-		_hash(hash) {
-	}
-
-	uint32_t hash() {
-		return _hash;
-	}
-
-	EntryBase* next() {
-		return _next;
-	}
-
-	void set_next(EntryBase* next) {
-		_next = next;
-	}
-};
-
-typedef bool EntryCmpFunc_t(EntryBase* entry1, EntryBase* entry2);
-typedef void EntryAddFunc_t(EntryBase* base, EntryBase* to_add);
-
-//
-//
-//
-//
 // Class MallocStatisticEntry
 //
 //
 //
 //
-class MallocStatisticEntry : public EntryBase {
+
+// Must be a power of two minus 1.
+#define MAX_FRAMES 31
+
+class MallocStatisticEntry {
 private:
-	int     _nr_of_frames;
-	size_t  _size;
-	size_t  _nr_of_allocations;
-	address	_frames[1];
+	MallocStatisticEntry* _next;
+	uint64_t              _hash_and_nr_of_frames;
+	size_t                _size;
+	size_t                _nr_of_allocations;
+	address	              _frames[1];
 
 public:
-	MallocStatisticEntry(uint32_t hash, size_t size, int nr_of_frames, address* frames) :
-		EntryBase(hash),
-		_nr_of_frames(nr_of_frames),
+	MallocStatisticEntry(size_t hash, size_t size, int nr_of_frames, address* frames) :
+		_next(NULL),
+		_hash_and_nr_of_frames((hash * (MAX_FRAMES + 1)) + nr_of_frames),
 		_size(size),
 		_nr_of_allocations(1) {
 		memcpy(_frames, frames, sizeof(address) * nr_of_frames);
+		assert(nr_of_frames <= MAX_FRAMES, "too many frames");
+	}
+
+	uint64_t hash() {
+		return _hash_and_nr_of_frames / (MAX_FRAMES + 1);
+	}
+
+	MallocStatisticEntry* next() {
+		return _next;
+	}
+
+	void set_next(MallocStatisticEntry* next) {
+		_next = next;
 	}
 
 	void add_allocation(size_t size) {
@@ -277,7 +259,7 @@ public:
 	}
 
 	int nr_of_frames() {
-		return _nr_of_frames;
+		return _hash_and_nr_of_frames & MAX_FRAMES;
 	}
 
 	address* frames() {
@@ -307,25 +289,26 @@ struct CacheLineSafeLock {
 	char            _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(pthread_mutex_t)];
 };
 
+// Must be a power of two.
 #define NR_OF_MAPS 16
 
 class MallocStatisticImpl : public AllStatic {
 private:
 
-	static real_funcs_t*      _funcs;
-	static volatile bool      _initialized;
-	static bool               _enabled;
-	static bool               _track_free;
-	static int                _max_frames;
-	static registered_hooks_t _malloc_stat_hooks;
-	static CacheLineSafeLock  _malloc_stat_lock;
-	static CacheLineSafeLock  _hash_map_locks[NR_OF_MAPS];
-	static EntryBase**        _maps[NR_OF_MAPS];
-	static int                _maps_mask[NR_OF_MAPS];
-	static int                _maps_size[NR_OF_MAPS];
-	static int                _maps_limit[NR_OF_MAPS];
-	static SafeAllocator*     _allocators[NR_OF_MAPS];
-	static int                _entry_size;
+	static real_funcs_t*          _funcs;
+	static volatile bool          _initialized;
+	static bool                   _enabled;
+	static bool                   _track_free;
+	static int                    _max_frames;
+	static registered_hooks_t     _malloc_stat_hooks;
+	static CacheLineSafeLock      _malloc_stat_lock;
+	static MallocStatisticEntry** _maps[NR_OF_MAPS];
+	static CacheLineSafeLock      _maps_lock[NR_OF_MAPS];
+	static int                    _maps_mask[NR_OF_MAPS];
+	static int                    _maps_size[NR_OF_MAPS];
+	static int                    _maps_limit[NR_OF_MAPS];
+	static SafeAllocator*         _allocators[NR_OF_MAPS];
+	static int                    _entry_size;
 
 	// The hooks.
 	static void* malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
@@ -342,13 +325,9 @@ private:
 	static void record_allocation(void* ptr, size_t size, int nr_of_frames, address* frames);
 	static void record_free(void* ptr, size_t size, int nr_of_frames, address* frames);
 
+	static void resize_map(int map, int new_mask);
 	static void cleanup_for_map(int map);
 	static void cleanup();
-
-	static bool add_to_map(int map, EntryBase* entry, EntryCmpFunc_t* cmp_func, EntryAddFunc_t* add_func);
-	static size_t hash_for_frames(int nr_of_frames, address* frames);
-	static bool malloc_stastic_entry_cmp(EntryBase* entry1, EntryBase* entry2);
-	static void malloc_stastic_entry_add(EntryBase* entry, EntryBase* to_add);
 
 public:
 	static void initialize(outputStream* st);
@@ -375,22 +354,21 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
 	MallocStatisticImpl::pvalloc_hook
 };
 
-real_funcs_t*      MallocStatisticImpl::_funcs;
-volatile bool      MallocStatisticImpl::_initialized;
-bool               MallocStatisticImpl::_enabled;
-bool               MallocStatisticImpl::_track_free;
-int                MallocStatisticImpl::_max_frames;
-CacheLineSafeLock  MallocStatisticImpl::_malloc_stat_lock;
-CacheLineSafeLock  MallocStatisticImpl::_hash_map_locks[NR_OF_MAPS];
-EntryBase**        MallocStatisticImpl::_maps[NR_OF_MAPS];
-int                MallocStatisticImpl::_maps_mask[NR_OF_MAPS];
-int                MallocStatisticImpl::_maps_size[NR_OF_MAPS];
-int                MallocStatisticImpl::_maps_limit[NR_OF_MAPS];
-SafeAllocator*     MallocStatisticImpl::_allocators[NR_OF_MAPS];
-int                MallocStatisticImpl::_entry_size;
+real_funcs_t*          MallocStatisticImpl::_funcs;
+volatile bool          MallocStatisticImpl::_initialized;
+bool                   MallocStatisticImpl::_enabled;
+bool                   MallocStatisticImpl::_track_free;
+int                    MallocStatisticImpl::_max_frames;
+CacheLineSafeLock      MallocStatisticImpl::_malloc_stat_lock;
+MallocStatisticEntry** MallocStatisticImpl::_maps[NR_OF_MAPS];
+CacheLineSafeLock      MallocStatisticImpl::_maps_lock[NR_OF_MAPS];
+int                    MallocStatisticImpl::_maps_mask[NR_OF_MAPS];
+int                    MallocStatisticImpl::_maps_size[NR_OF_MAPS];
+int                    MallocStatisticImpl::_maps_limit[NR_OF_MAPS];
+SafeAllocator*         MallocStatisticImpl::_allocators[NR_OF_MAPS];
+int                    MallocStatisticImpl::_entry_size;
 
 
-#define MAX_FRAMES 32
 #define MAX_LOAD 0.5
 
 #define CAPTURE_STACK \
@@ -566,20 +544,71 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
 	return result;
 }
 
+static bool is_same_stack(MallocStatisticEntry* to_check, int nr_of_frames, address* frames) {
+	for (int i = 0; i < nr_of_frames; ++i) {
+		if (to_check->frames()[i] != frames[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+static size_t hash_for_frames(int nr_of_frames, address* frames) {
+	size_t result = 0;
+
+	for (int i = 0; i < nr_of_frames; ++i) {
+		intptr_t frame_addr = (intptr_t) frames[i];
+		result = result * 31 + ((frame_addr & 0xfffffff0) >> 4) + 127 * (frame_addr >> 36);
+	}
+
+	return result;
+}
+
 void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
 	assert(!_track_free, "Only used for summary tracking");
 
-	size_t raw_hash = hash_for_frames(nr_of_frames, frames);
-	int map = raw_hash & (NR_OF_MAPS - 1);
-	raw_hash /= NR_OF_MAPS;
+	size_t hash = hash_for_frames(nr_of_frames, frames);
+	int idx = hash & (NR_OF_MAPS - 1);
+	assert((idx >= 0) && (idx < NR_OF_MAPS), "invalid map index");
+	hash /= NR_OF_MAPS;
 
-	void* mem = _allocators[map]->allocate();
+	PthreadLocker locker(&_maps_lock[idx]._lock);
+
+	if (!_enabled) {
+		return;
+	}
+
+	int slot = hash & _maps_mask[idx];
+	assert((slot >= 0) || (slot <= _maps_mask[idx]), "Invalid slot");
+	MallocStatisticEntry* to_check = _maps[idx][slot];
+
+	// Check if we already know this stack.
+	while (to_check != NULL) {
+		if ((to_check->hash() == hash) && (to_check->nr_of_frames() == nr_of_frames)) {
+			if (is_same_stack(to_check, nr_of_frames, frames)) {
+				to_check->add_allocation(to_add);
+
+				return;
+			}
+		}
+
+		to_check = to_check->next();
+	}
+
+	// Need a new entry. Fail silently if we don't get the memory.
+	//if (nr_of_frames >= 0) return;
+	void* mem = _allocators[idx]->allocate();
 
 	if (mem != NULL) {
-		MallocStatisticEntry* entry = new (mem) MallocStatisticEntry((uint32_t) raw_hash, to_add, nr_of_frames, frames);
+		MallocStatisticEntry* entry = new (mem) MallocStatisticEntry(hash, to_add, nr_of_frames, frames);
+		entry->set_next(_maps[idx][slot]);
+		_maps[idx][slot] = entry;
+		_maps_size[idx] += 1;
 
-		if (!add_to_map(map, entry, malloc_stastic_entry_cmp, malloc_stastic_entry_add)) {
-			_allocators[map]->free(entry);
+		if (_maps_size[idx] > _maps_limit[idx]) {
+			resize_map(idx, _maps_mask[idx] * 2 + 1);
 		}
 	}
 }
@@ -592,16 +621,18 @@ void MallocStatisticImpl::record_free(void* ptr, size_t size, int nr_of_frames, 
 	assert(_track_free, "Only used for detailed tracking");
 }
 
-void MallocStatisticImpl::cleanup_for_map(int map) {
-	if (_allocators[map] != NULL) {
-		_allocators[map]->~SafeAllocator();
-		_funcs->free(_allocators[map]);
-		_allocators[map] = NULL;
+void MallocStatisticImpl::cleanup_for_map(int idx) {
+	PthreadLocker locker(&_maps_lock[idx]._lock);
+
+	if (_allocators[idx] != NULL) {
+		_allocators[idx]->~SafeAllocator();
+		_funcs->free(_allocators[idx]);
+		_allocators[idx] = NULL;
 	}
 
-	if (_maps[map] != NULL) {
-		_funcs->free(_maps[map]);
-		_maps[map] = NULL;
+	if (_maps[idx] != NULL) {
+		_funcs->free(_maps[idx]);
+		_maps[idx] = NULL;
 	}
 }
 
@@ -611,60 +642,29 @@ void MallocStatisticImpl::cleanup() {
 	}
 }
 
-bool MallocStatisticImpl::add_to_map(int map, EntryBase* entry, EntryCmpFunc_t* cmp_func, EntryAddFunc_t* add_func) {
-	EntryBase** entries = _maps[map];
-	int slot = entry->hash() & _maps_mask[map];
-	EntryBase* to_check = entries[slot];
+void MallocStatisticImpl::resize_map(int map, int new_mask) {
+	MallocStatisticEntry** new_map = (MallocStatisticEntry**) _funcs->calloc(new_mask + 1, sizeof(MallocStatisticEntry*));
+	MallocStatisticEntry** old_map = _maps[map];
 
-	while (to_check != NULL) {
-		if (cmp_func(to_check, entry)) {
-			add_func(to_check, entry);
+	// Fail silently if we don't get the memory.
+	if (new_map != NULL) {
+		for (int i = 0; i < _maps_mask[map]; ++i) {
+			MallocStatisticEntry* entry = old_map[i];
 
-			return false;
+			while (entry != NULL) {
+				MallocStatisticEntry* next_entry = entry->next();
+				int slot = entry->hash() & new_mask;
+				entry->set_next(new_map[slot]);
+				new_map[slot] = entry;
+				entry = next_entry;
+			}
 		}
 
-		to_check = to_check->next();
+		_maps[map] = new_map;
+		_maps_mask[map] = new_mask;
+		_maps_limit[map] = (int) ((_maps_mask[map] + 1) * MAX_LOAD);
+		_funcs->free(old_map);
 	}
-
-	entry->set_next(entries[slot]);
-	entries[slot] = entry;
-
-	return true;
-}
-
-size_t MallocStatisticImpl::hash_for_frames(int nr_of_frames, address* frames) {
-	size_t result = 0;
-
-	for (int i = 0; i < nr_of_frames; ++i) {
-		intptr_t frame_addr = (intptr_t) frames[i];
-		result = result * 31 + ((frame_addr & 0xfffffff0) >> 4) + 127 * (frame_addr >> 36);
-	}
-
-	return result;
-}
-
-bool MallocStatisticImpl::malloc_stastic_entry_cmp(EntryBase* entry1, EntryBase* entry2) {
-	MallocStatisticEntry* e1 = (MallocStatisticEntry*) entry1;
-	MallocStatisticEntry* e2 = (MallocStatisticEntry*) entry2;
-
-	if (e1->nr_of_frames() != e2->nr_of_frames()) {
-		return false;
-	}
-
-	for (int i = e1->nr_of_frames() - 1; i >= 0; --i) {
-		if (e1->frames()[i] != e2->frames()[i]) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void MallocStatisticImpl::malloc_stastic_entry_add(EntryBase* entry, EntryBase* to_add) {
-	MallocStatisticEntry* e = (MallocStatisticEntry*) entry;
-	MallocStatisticEntry* add = (MallocStatisticEntry*) to_add;
-
-	e->add_allocation(add->size());
 }
 
 void MallocStatisticImpl::initialize(outputStream* st) {
@@ -676,7 +676,7 @@ void MallocStatisticImpl::initialize(outputStream* st) {
 		}
 
 		for (int i = 0; i < NR_OF_MAPS; ++i) {
-			if (pthread_mutex_init(&_hash_map_locks[i]._lock, NULL) != 0) {
+			if (pthread_mutex_init(&_maps_lock[i]._lock, NULL) != 0) {
 				fatal("Could not initialize lock");
 			}
 		}
@@ -708,12 +708,12 @@ bool MallocStatisticImpl::enable(outputStream* st) {
 			return false;
 		}
 
-		_allocators[i] = new (mem) SafeAllocator(_max_frames, _funcs);
+		_allocators[i] = new (mem) SafeAllocator(sizeof(MallocStatisticEntry) + sizeof(address) * (_max_frames - 1), _funcs);
 
 		_maps_mask[i] = 127;
 		_maps_size[i] = 0;
 		_maps_limit[i] = (int) ((_maps_mask[i] + 1) * MAX_LOAD);
-		_maps[i] = (EntryBase**) _funcs->malloc(sizeof(void*) * _maps_size[i]);
+		_maps[i] = (MallocStatisticEntry**) _funcs->calloc(_maps_mask[i] + 1, sizeof(MallocStatisticEntry*));
 
 		if (mem == NULL) {
 			st->print_raw_cr("Could not allocate the map");
@@ -721,8 +721,6 @@ bool MallocStatisticImpl::enable(outputStream* st) {
 
 			return false;
 		}
-
-		memset(_maps[i], 0, sizeof(void*) * _maps_size[i]); // Assumes NULL is 0.
 	}
 
 	if (_funcs == NULL) {
@@ -743,10 +741,10 @@ bool MallocStatisticImpl::disable(outputStream* st) {
 		return false;
 	}
 
-	cleanup();
-	setup_hooks(NULL, st);
-	_funcs = NULL;
 	_enabled = false;
+	setup_hooks(NULL, st);
+	cleanup();
+	_funcs = NULL;
 
 	return true;
 }
