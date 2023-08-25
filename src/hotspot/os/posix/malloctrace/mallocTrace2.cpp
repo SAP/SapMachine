@@ -16,90 +16,6 @@ namespace sap {
 //
 //
 //
-// Class SafeOutputStream
-//
-//
-//
-//
-
-// A output stream which can use the real allocation functions
-// given by malloc hooks to avoid triggering the hooks.
-class SafeOutputStream : public outputStream {
-
-private:
-	real_funcs_t* _funcs;
-	char*         _buffer;
-	size_t        _buffer_size;
-	size_t        _used;
-	bool          _failed;
-
-public:
-	// funcs contains the 'real' malloc functions and is optained when
-	// initializing the malloc hooks.
-	SafeOutputStream(real_funcs_t* funcs) :
-		_funcs(funcs),
-		_buffer(NULL),
-		_buffer_size(0),
-		_used(0),
-		_failed(false) {
-	}
-
-	virtual ~SafeOutputStream();
-
-	virtual void write(const char* c, size_t len);
-
-	// Copies the buffer to the given stream.
-	void copy_to(outputStream* st);
-};
-
-SafeOutputStream::~SafeOutputStream() {
-	_funcs->free(_buffer);
-}
-
-void SafeOutputStream::write(const char* c, size_t len) {
-	if (_failed) {
-		return;
-	}
-
-	if (_used + len > _buffer_size) {
-		size_t to_add = 10 * 1024 + _buffer_size / 2;
-
-		if (to_add + _buffer_size < len) {
-			to_add = len;
-		}
-
-		char* new_buffer = (char*) _funcs->realloc(_buffer, _buffer_size + to_add);
-
-		if (new_buffer == NULL) {
-			_failed = true;
-		} else {
-			_buffer_size += to_add;
-			_buffer = new_buffer;
-		}
-	}
-
-	memcpy(_buffer + _used, c, len);
-	_used += len;
-}
-
-void SafeOutputStream::copy_to(outputStream* st) {
-	if (_buffer == NULL) {
-		st->print_cr("<empty>");
-	} else {
-		st->write(_buffer, _used);
-	}
-
-	if (_failed) {
-		st->cr();
-		st->print_raw_cr("*** Error during writing. Output might be truncated.");
-	}
-}
-
-
-//
-//
-//
-//
 // Class SafeAllocator
 //
 //
@@ -304,6 +220,7 @@ private:
 	static int                    _max_frames;
 	static registered_hooks_t     _malloc_stat_hooks;
 	static CacheLineSafeLock      _malloc_stat_lock;
+	static pthread_key_t          _malloc_suspended;
 	static MallocStatisticEntry** _maps[NR_OF_MAPS];
 	static CacheLineSafeLock      _maps_lock[NR_OF_MAPS];
 	static int                    _maps_mask[NR_OF_MAPS];
@@ -361,6 +278,7 @@ bool                   MallocStatisticImpl::_shutdown;
 bool                   MallocStatisticImpl::_track_free;
 int                    MallocStatisticImpl::_max_frames;
 CacheLineSafeLock      MallocStatisticImpl::_malloc_stat_lock;
+pthread_key_t          MallocStatisticImpl::_malloc_suspended;
 MallocStatisticEntry** MallocStatisticImpl::_maps[NR_OF_MAPS];
 CacheLineSafeLock      MallocStatisticImpl::_maps_lock[NR_OF_MAPS];
 int                    MallocStatisticImpl::_maps_mask[NR_OF_MAPS];
@@ -392,7 +310,7 @@ int                    MallocStatisticImpl::_entry_size;
 void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) {
 	void* result = real_malloc(size);
 
-	if (result != NULL) {
+	if ((result != NULL) && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -408,7 +326,7 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc
 void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
 	void* result = real_calloc(elems, size);
 
-	if (result != NULL) {
+	if ((result != NULL) && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -425,7 +343,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 	size_t old_size = ptr != NULL ? real_malloc_size(ptr) : 0;
 	void* result = real_realloc(ptr, size);
 
-	if (result != NULL) {
+	if ((result != NULL) && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -447,7 +365,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 }
 
 void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
-	if ((ptr != NULL) &&_track_free) {
+	if ((ptr != NULL) &&_track_free && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 		record_free(ptr, real_malloc_size(ptr), nr_of_frames, frames);
 	}
@@ -458,7 +376,7 @@ void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t
 int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
 	int result =  real_posix_memalign(ptr, align, size);
 
-	if (result == 0) {
+	if ((result == 0) && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -476,7 +394,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
 void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
 	void* result =  real_memalign(align, size);
 
-	if (result != NULL) {
+	if ((result != NULL) && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -494,7 +412,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
 void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size) {
 	void* result =  real_aligned_alloc(align, size);
 
-	if (result != NULL) {
+	if ((result != NULL)  && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -512,7 +430,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
 void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size) {
 	void* result =  real_valloc(size);
 
-	if (result != NULL) {
+	if ((result != NULL) && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -530,7 +448,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc
 void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size) {
 	void* result =  real_pvalloc(size);
 
-	if (result != NULL) {
+	if ((result != NULL) && (pthread_getspecific(_malloc_suspended) == NULL)) {
 		CAPTURE_STACK;
 
 		if (_track_free) {
@@ -698,18 +616,12 @@ void MallocStatisticImpl::initialize(outputStream* st) {
 			fatal("Could not initialize lock");
 		}
 
+		if (pthread_key_create(&_malloc_suspended, NULL) != 0) {
+			fatal("Could not initialize key");
+		}
+
 		for (int i = 0; i < NR_OF_MAPS; ++i) {
-			pthread_mutexattr_t attr;
-
-			if (pthread_mutexattr_init(&attr) != 0) {
-				fatal("Could not initialize attribute");
-			}
-
-			if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0) {
-				fatal("Could not set attribute");
-			}
-
-			if (pthread_mutex_init(&_maps_lock[i]._lock, &attr) != 0) {
+			if (pthread_mutex_init(&_maps_lock[i]._lock, NULL) != 0) {
 				fatal("Could not initialize lock");
 			}
 		}
@@ -810,7 +722,7 @@ bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	size_t total_allocations = 0;
 	size_t total_stacks = 0;
 
-	SafeOutputStream sos(_funcs);
+	pthread_setspecific(_malloc_suspended, (void*) 1);
 
 	{
 		PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
@@ -830,20 +742,18 @@ bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 					total_size += entry->size();
 					total_allocations += entry->nr_of_allocations();
 					total_stacks += 1;
-					dump_entry(on_error ? st : &sos, entry);
+					dump_entry(st, entry);
 					entry = entry->next();
 				}
 			}
 		}
 	}
 
-	if (!on_error) {
-		sos.copy_to(st);
-	}
-
 	st->print_cr("Total allocation size      : " UINT64_FORMAT, (uint64_t) total_size);
 	st->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
 	st->print_cr("Total unique stacks        : "  UINT64_FORMAT, (uint64_t) total_stacks);
+
+	pthread_setspecific(_malloc_suspended, NULL);
 
 	return true;
 }
