@@ -74,6 +74,7 @@ void SafeOutputStream::write(const char* c, size_t len) {
 			_failed = true;
 		} else {
 			_buffer_size += to_add;
+			_buffer = new_buffer;
 		}
 	}
 
@@ -85,7 +86,7 @@ void SafeOutputStream::copy_to(outputStream* st) {
 	if (_buffer == NULL) {
 		st->print_cr("<empty>");
 	} else {
-		st->write(_buffer, _buffer_size);
+		st->write(_buffer, _used);
 	}
 
 	if (_failed) {
@@ -190,13 +191,13 @@ public:
 
 PthreadLocker::PthreadLocker(pthread_mutex_t* mutex) :
 	_mutex(mutex) {
-	if (pthread_mutex_lock(_mutex) != 0) {
+	if ((_mutex != NULL) && (pthread_mutex_lock(_mutex) != 0)) {
 		fatal("Could not lock mutex");
 	}
 }
 
 PthreadLocker::~PthreadLocker() {
-	if (pthread_mutex_unlock(_mutex) != 0) {
+	if ((_mutex != NULL) && (pthread_mutex_unlock(_mutex) != 0)) {
 		fatal("Could not unlock mutex");
 	}
 }
@@ -298,6 +299,7 @@ private:
 	static real_funcs_t*          _funcs;
 	static volatile bool          _initialized;
 	static bool                   _enabled;
+	static bool                   _shutdown;
 	static bool                   _track_free;
 	static int                    _max_frames;
 	static registered_hooks_t     _malloc_stat_hooks;
@@ -329,17 +331,15 @@ private:
 	static void cleanup_for_map(int map);
 	static void cleanup();
 
+	static void dump_entry(outputStream* st, MallocStatisticEntry* entry);
+
 public:
 	static void initialize(outputStream* st);
-
-	static bool enable(outputStream* st);
-
+	static bool enable(outputStream* st, int stack_depth);
 	static bool disable(outputStream* st);
-
 	static bool reset(outputStream* st);
-
 	static bool dump(outputStream* st, bool on_error);
-
+	static void shutdown();
 };
 
 registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
@@ -357,6 +357,7 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
 real_funcs_t*          MallocStatisticImpl::_funcs;
 volatile bool          MallocStatisticImpl::_initialized;
 bool                   MallocStatisticImpl::_enabled;
+bool                   MallocStatisticImpl::_shutdown;
 bool                   MallocStatisticImpl::_track_free;
 int                    MallocStatisticImpl::_max_frames;
 CacheLineSafeLock      MallocStatisticImpl::_malloc_stat_lock;
@@ -372,10 +373,10 @@ int                    MallocStatisticImpl::_entry_size;
 #define MAX_LOAD 0.5
 
 #define CAPTURE_STACK \
-	address frames[MAX_FRAMES]; \
+	address frames[MAX_FRAMES + 1]; \
 	int nr_of_frames = 0; \
 	frame fr = os::current_frame(); \
-	while (fr.pc() && nr_of_frames < _max_frames) { \
+	while (fr.pc() && nr_of_frames <= _max_frames) { \
 		frames[nr_of_frames] = fr.pc(); \
 		nr_of_frames += 1; \
 		if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
@@ -569,6 +570,10 @@ static size_t hash_for_frames(int nr_of_frames, address* frames) {
 void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
 	assert(!_track_free, "Only used for summary tracking");
 
+	// Skip the top frame since it is always from the hooks.
+	nr_of_frames = MAX2(nr_of_frames - 1, 0);
+	frames += 1;
+
 	size_t hash = hash_for_frames(nr_of_frames, frames);
 	int idx = hash & (NR_OF_MAPS - 1);
 	assert((idx >= 0) && (idx < NR_OF_MAPS), "invalid map index");
@@ -667,6 +672,24 @@ void MallocStatisticImpl::resize_map(int map, int new_mask) {
 	}
 }
 
+void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* entry) {
+	st->print_cr("Allocated bytes: " UINT64_FORMAT, (uint64_t) entry->size());
+	st->print_cr("Allocated object: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
+	st->print_raw_cr("Stack: ");
+
+	char tmp[256];
+
+	for (int i = 0; i < entry->nr_of_frames(); ++i) {
+		st->print_raw("    ");
+
+		if (os::print_function_and_library_name(st, entry->frames()[i], tmp, sizeof(tmp), true, true, false)) {
+			st->cr();
+		} else {
+			st->print_raw_cr("<compiled code>");
+		}
+	}
+}
+
 void MallocStatisticImpl::initialize(outputStream* st) {
 	if (!_initialized) {
 		_initialized = true;
@@ -676,14 +699,24 @@ void MallocStatisticImpl::initialize(outputStream* st) {
 		}
 
 		for (int i = 0; i < NR_OF_MAPS; ++i) {
-			if (pthread_mutex_init(&_maps_lock[i]._lock, NULL) != 0) {
+			pthread_mutexattr_t attr;
+
+			if (pthread_mutexattr_init(&attr) != 0) {
+				fatal("Could not initialize attribute");
+			}
+
+			if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0) {
+				fatal("Could not set attribute");
+			}
+
+			if (pthread_mutex_init(&_maps_lock[i]._lock, &attr) != 0) {
 				fatal("Could not initialize lock");
 			}
 		}
 	}
 }
 
-bool MallocStatisticImpl::enable(outputStream* st) {
+bool MallocStatisticImpl::enable(outputStream* st, int stack_depth) {
 	initialize(st);
 	PthreadLocker lock(&_malloc_stat_lock._lock);
 
@@ -693,8 +726,14 @@ bool MallocStatisticImpl::enable(outputStream* st) {
 		return false;
 	}
 
+	if (_shutdown) {
+		st->print_raw_cr("malloc statistic is already shut down!");
+
+		return false;
+	}
+
 	_track_free = false;
-	_max_frames = MAX_FRAMES;
+	_max_frames = stack_depth;
 	_funcs = setup_hooks(&_malloc_stat_hooks, st);
 	_entry_size = sizeof(MallocStatisticEntry) + sizeof(address) * (_max_frames - 1);
 
@@ -765,37 +804,68 @@ bool MallocStatisticImpl::reset(outputStream* st) {
 bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	if (!on_error) {
 		initialize(st);
+	}
 
-		if (pthread_mutex_lock(&_malloc_stat_lock._lock) != 0) {
-			st->print_raw_cr("Could not dump because locking failed");
+	size_t total_size = 0;
+	size_t total_allocations = 0;
+	size_t total_stacks = 0;
 
+	SafeOutputStream sos(_funcs);
+
+	{
+		PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
+
+		if (!_enabled) {
+			st->print_raw_cr("malloc statistic not enabled!");
 			return false;
+		}
+
+		for (int idx = 0; idx < NR_OF_MAPS; ++idx) {
+			PthreadLocker lock2(on_error ? NULL : &_maps_lock[idx]._lock);
+
+			for (int slot = 0; slot <= _maps_mask[idx]; ++slot) {
+				MallocStatisticEntry* entry = _maps[idx][slot];
+
+				while (entry != NULL) {
+					total_size += entry->size();
+					total_allocations += entry->nr_of_allocations();
+					total_stacks += 1;
+					dump_entry(on_error ? st : &sos, entry);
+					entry = entry->next();
+				}
+			}
 		}
 	}
 
-	bool result = true;
-
-	if (!_enabled) {
-		st->print_raw_cr("malloc statistic not enabled!");
-		result = false;
-	}
-
 	if (!on_error) {
-		pthread_mutex_unlock(&_malloc_stat_lock._lock);
+		sos.copy_to(st);
 	}
 
-	return result;
+	st->print_cr("Total allocation size      : " UINT64_FORMAT, (uint64_t) total_size);
+	st->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
+	st->print_cr("Total unique stacks        : "  UINT64_FORMAT, (uint64_t) total_stacks);
+
+	return true;
 }
 
+void MallocStatisticImpl::shutdown() {
+	_shutdown = true;
 
+	if (_initialized) {
+		_enabled = false;
 
+		if (register_hooks == NULL) {
+			register_hooks(NULL);
+		}
+	}
+}
 
 void MallocStatistic::initialize() {
 	MallocStatisticImpl::initialize(NULL);
 }
 
-bool MallocStatistic::enable(outputStream* st) {
-	return MallocStatisticImpl::enable(st);
+bool MallocStatistic::enable(outputStream* st, int stack_depth) {
+	return MallocStatisticImpl::enable(st, stack_depth);
 }
 
 bool MallocStatistic::disable(outputStream* st) {
@@ -810,6 +880,9 @@ bool MallocStatistic::dump(outputStream* st, bool on_error) {
 	return MallocStatisticImpl::dump(st, on_error);
 }
 
+void MallocStatistic::shutdown() {
+	MallocStatisticImpl::shutdown();
+}
 
 //
 //
@@ -823,16 +896,16 @@ bool MallocStatistic::dump(outputStream* st, bool on_error) {
 MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
 	DCmdWithParser(output, heap),
 	_cmd("cmd", "enable,disable,reset,dump,test", "STRING", true),
-	_suboption("suboption", "see option", "STRING", false) {
+        _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5") {
 	_dcmdparser.add_dcmd_argument(&_cmd);
-	_dcmdparser.add_dcmd_argument(&_suboption);
+	_dcmdparser.add_dcmd_option(&_stack_depth);
 }
 
 void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 	const char* const cmd = _cmd.value();
 
 	if (strcmp(cmd, "enable") == 0) {
-		if (MallocStatistic::enable(_output)) {
+		if (MallocStatistic::enable(_output, (int) _stack_depth.value())) {
 			_output->print_raw_cr("mallocstatistic enabled");
 		}
 	} else if (strcmp(cmd, "disable") == 0) {

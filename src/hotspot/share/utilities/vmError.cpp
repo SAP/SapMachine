@@ -86,8 +86,6 @@
 #include "malloctrace/mallocTrace2.hpp"
 #endif
 
-#endif
-
 #ifndef PRODUCT
 #include <signal.h>
 #endif // PRODUCT
@@ -1653,7 +1651,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 {
 #ifdef LINUX
   // Make sure we don't track allocations anymore.
-  MallocStatistic::shutdown();
+  sap::MallocStatistic::shutdown();
 #endif
 
   // A single scratch buffer to be used from here on.

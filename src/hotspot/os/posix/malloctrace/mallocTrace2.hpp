@@ -19,7 +19,7 @@ public:
 	static void initialize();
 
 	// Enables the tracing. Returns true if enabled.
-	static bool enable(outputStream* st);
+	static bool enable(outputStream* st, int stack_depth);
 
 	// Disables the tracing. Returns true if disabled.
 	static bool disable(outputStream* st);
@@ -29,6 +29,9 @@ public:
 
 	// Dumps the statistic.
 	static bool dump(outputStream* st, bool on_error);
+
+	// Shuts down the statistic on error.
+	static void shutdown();
 };
 
 
@@ -36,7 +39,7 @@ class MallocStatisticDCmd : public DCmdWithParser {
 private:
 
 	DCmdArgument<char*> _cmd;
-	DCmdArgument<char*> _suboption;
+	DCmdArgument<jlong> _stack_depth;
 
 public:
 	static int num_arguments() {
