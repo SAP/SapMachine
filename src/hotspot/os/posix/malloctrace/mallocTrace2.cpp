@@ -3,6 +3,8 @@
 #include "jvm_io.h"
 #include "mallochooks.h"
 #include "malloctrace/mallocTrace2.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/ostream.hpp"
 
 #include <pthread.h>
@@ -131,6 +133,9 @@ PthreadLocker::~PthreadLocker() {
 
 // Must be a power of two minus 1.
 #define MAX_FRAMES 31
+// Must be a power of two.
+#define NR_OF_STACK_MAPS 16
+#define MAP_STACK_MAP_LOAD 2
 
 class MallocStatisticEntry {
 private:
@@ -152,6 +157,10 @@ public:
 
 	uint64_t hash() {
 		return _hash_and_nr_of_frames / (MAX_FRAMES + 1);
+	}
+
+	int map_index() {
+		return hash() & (NR_OF_STACK_MAPS - 1);
 	}
 
 	MallocStatisticEntry* next() {
@@ -206,9 +215,6 @@ struct CacheLineSafeLock {
 	char            _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(pthread_mutex_t)];
 };
 
-// Must be a power of two.
-#define NR_OF_MAPS 16
-
 class MallocStatisticImpl : public AllStatic {
 private:
 
@@ -216,17 +222,18 @@ private:
 	static volatile bool          _initialized;
 	static bool                   _enabled;
 	static bool                   _shutdown;
+	static bool                   _forbid_resizes;
 	static bool                   _track_free;
 	static int                    _max_frames;
 	static registered_hooks_t     _malloc_stat_hooks;
 	static CacheLineSafeLock      _malloc_stat_lock;
 	static pthread_key_t          _malloc_suspended;
-	static MallocStatisticEntry** _stack_maps[NR_OF_MAPS];
-	static CacheLineSafeLock      _stack_maps_lock[NR_OF_MAPS];
-	static int                    _stack_maps_mask[NR_OF_MAPS];
-	static int                    _stack_maps_size[NR_OF_MAPS];
-	static int                    _stack_maps_limit[NR_OF_MAPS];
-	static SafeAllocator*         _allocators[NR_OF_MAPS];
+	static MallocStatisticEntry** _stack_maps[NR_OF_STACK_MAPS];
+	static CacheLineSafeLock      _stack_maps_lock[NR_OF_STACK_MAPS];
+	static int                    _stack_maps_mask[NR_OF_STACK_MAPS];
+	static int                    _stack_maps_size[NR_OF_STACK_MAPS];
+	static int                    _stack_maps_limit[NR_OF_STACK_MAPS];
+	static SafeAllocator*         _allocators[NR_OF_STACK_MAPS];
 	static int                    _entry_size;
 
 	// The hooks.
@@ -276,20 +283,21 @@ real_funcs_t*          MallocStatisticImpl::_funcs;
 volatile bool          MallocStatisticImpl::_initialized;
 bool                   MallocStatisticImpl::_enabled;
 bool                   MallocStatisticImpl::_shutdown;
+bool                   MallocStatisticImpl::_forbid_resizes;
 bool                   MallocStatisticImpl::_track_free;
 int                    MallocStatisticImpl::_max_frames;
 CacheLineSafeLock      MallocStatisticImpl::_malloc_stat_lock;
 pthread_key_t          MallocStatisticImpl::_malloc_suspended;
-MallocStatisticEntry** MallocStatisticImpl::_stack_maps[NR_OF_MAPS];
-CacheLineSafeLock      MallocStatisticImpl::_stack_maps_lock[NR_OF_MAPS];
-int                    MallocStatisticImpl::_stack_maps_mask[NR_OF_MAPS];
-int                    MallocStatisticImpl::_stack_maps_size[NR_OF_MAPS];
-int                    MallocStatisticImpl::_stack_maps_limit[NR_OF_MAPS];
-SafeAllocator*         MallocStatisticImpl::_allocators[NR_OF_MAPS];
+MallocStatisticEntry** MallocStatisticImpl::_stack_maps[NR_OF_STACK_MAPS];
+CacheLineSafeLock      MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS];
+int                    MallocStatisticImpl::_stack_maps_mask[NR_OF_STACK_MAPS];
+int                    MallocStatisticImpl::_stack_maps_size[NR_OF_STACK_MAPS];
+int                    MallocStatisticImpl::_stack_maps_limit[NR_OF_STACK_MAPS];
+SafeAllocator*         MallocStatisticImpl::_allocators[NR_OF_STACK_MAPS];
 int                    MallocStatisticImpl::_entry_size;
 
 
-#define MAX_LOAD 0.5
+#define MAX_STACK_MAP_LOAD 0.5
 
 #define CAPTURE_STACK \
 	address frames[MAX_FRAMES + 1]; \
@@ -494,9 +502,9 @@ void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames
 	frames += 1;
 
 	size_t hash = hash_for_frames(nr_of_frames, frames);
-	int idx = hash & (NR_OF_MAPS - 1);
-	assert((idx >= 0) && (idx < NR_OF_MAPS), "invalid map index");
-	hash /= NR_OF_MAPS;
+	int idx = hash & (NR_OF_STACK_MAPS - 1);
+	assert((idx >= 0) && (idx < NR_OF_STACK_MAPS), "invalid map index");
+	hash /= NR_OF_STACK_MAPS;
 
 	PthreadLocker locker(&_stack_maps_lock[idx]._lock);
 
@@ -522,16 +530,20 @@ void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames
 	}
 
 	// Need a new entry. Fail silently if we don't get the memory.
-	//if (nr_of_frames >= 0) return;
 	void* mem = _allocators[idx]->allocate();
 
 	if (mem != NULL) {
 		MallocStatisticEntry* entry = new (mem) MallocStatisticEntry(hash, to_add, nr_of_frames, frames);
+		// First set the next pointer, so we can iterate the chain in parallel when we insert it into
+		// the array in the next step.
 		entry->set_next(_stack_maps[idx][slot]);
+		// We need a fence here to guarantee that a paralle thread will see the full entry when
+		// it sees the pointer in the array. Should not be very costly, since the we don't add often here.
+		OrderAccess::fence();
 		_stack_maps[idx][slot] = entry;
 		_stack_maps_size[idx] += 1;
 
-		if (_stack_maps_size[idx] > _stack_maps_limit[idx]) {
+		if (!_forbid_resizes && (_stack_maps_size[idx] > _stack_maps_limit[idx])) {
 			resize_map(idx, _stack_maps_mask[idx] * 2 + 1);
 		}
 	}
@@ -561,7 +573,7 @@ void MallocStatisticImpl::cleanup_for_map(int idx) {
 }
 
 void MallocStatisticImpl::cleanup() {
-	for (int i = 0; i < NR_OF_MAPS; ++i) {
+	for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
 		cleanup_for_map(i);
 	}
 }
@@ -586,26 +598,8 @@ void MallocStatisticImpl::resize_map(int map, int new_mask) {
 
 		_stack_maps[map] = new_map;
 		_stack_maps_mask[map] = new_mask;
-		_stack_maps_limit[map] = (int) ((_stack_maps_mask[map] + 1) * MAX_LOAD);
+		_stack_maps_limit[map] = (int) ((_stack_maps_mask[map] + 1) * MAX_STACK_MAP_LOAD);
 		_funcs->free(old_map);
-	}
-}
-
-void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* entry) {
-	st->print_cr("Allocated bytes: " UINT64_FORMAT, (uint64_t) entry->size());
-	st->print_cr("Allocated object: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
-	st->print_raw_cr("Stack: ");
-
-	char tmp[256];
-
-	for (int i = 0; i < entry->nr_of_frames(); ++i) {
-		st->print_raw("    ");
-
-		if (os::print_function_and_library_name(st, entry->frames()[i], tmp, sizeof(tmp), true, true, false)) {
-			st->cr();
-		} else {
-			st->print_raw_cr("<compiled code>");
-		}
 	}
 }
 
@@ -621,7 +615,7 @@ void MallocStatisticImpl::initialize(outputStream* st) {
 			fatal("Could not initialize key");
 		}
 
-		for (int i = 0; i < NR_OF_MAPS; ++i) {
+		for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
 			if (pthread_mutex_init(&_stack_maps_lock[i]._lock, NULL) != 0) {
 				fatal("Could not initialize lock");
 			}
@@ -650,7 +644,7 @@ bool MallocStatisticImpl::enable(outputStream* st, int stack_depth) {
 	_funcs = setup_hooks(&_malloc_stat_hooks, st);
 	_entry_size = sizeof(MallocStatisticEntry) + sizeof(address) * (_max_frames - 1);
 
-	for (int i = 0; i < NR_OF_MAPS; ++i) {
+	for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
 		void* mem = _funcs->malloc(sizeof(SafeAllocator));
 
 		if (mem == NULL) {
@@ -664,7 +658,7 @@ bool MallocStatisticImpl::enable(outputStream* st, int stack_depth) {
 
 		_stack_maps_mask[i] = 127;
 		_stack_maps_size[i] = 0;
-		_stack_maps_limit[i] = (int) ((_stack_maps_mask[i] + 1) * MAX_LOAD);
+		_stack_maps_limit[i] = (int) ((_stack_maps_mask[i] + 1) * MAX_STACK_MAP_LOAD);
 		_stack_maps[i] = (MallocStatisticEntry**) _funcs->calloc(_stack_maps_mask[i] + 1, sizeof(MallocStatisticEntry*));
 
 		if (mem == NULL) {
@@ -755,18 +749,21 @@ int fast_log2(unsigned long long v) {
 }
 
 void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, size_t* allocation_bins) {
-	PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
-
 	for (int i = 0; i < 63; ++i) {
 		size_bins[i] = 0;
 		allocation_bins[i] = 0;
 	}
 
-	for (int idx = 0; idx < NR_OF_MAPS; ++idx) {
-		PthreadLocker lock2(on_error ? NULL : &_stack_maps_lock[idx]._lock);
+	for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
+		MallocStatisticEntry** map = _stack_maps[idx];
 
 		for (int slot = 0; slot <= _stack_maps_mask[idx]; ++slot) {
-			MallocStatisticEntry* entry = _stack_maps[idx][slot];
+			MallocStatisticEntry* entry = map[slot];
+
+			// Needed to make sure we see the full content of the entry.
+			if (entry != NULL) {
+				OrderAccess::fence();
+			}
 
 			while (entry != NULL) {
 				size_bins[fast_log2((unsigned long long) entry->size())] += 1;
@@ -777,42 +774,74 @@ void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, siz
 	}
 }
 
+void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* entry) {
+	st->print_cr("Allocated bytes: " UINT64_FORMAT, (uint64_t) entry->size());
+	st->print_cr("Allocated object: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
+	st->print_raw_cr("Stack: ");
+
+	char tmp[256];
+
+	for (int i = 0; i < entry->nr_of_frames(); ++i) {
+		st->print_raw("    ");
+
+		if (os::print_function_and_library_name(st, entry->frames()[i], tmp, sizeof(tmp), true, true, false)) {
+			st->cr();
+		} else {
+			st->print_raw_cr("<compiled code>");
+		}
+	}
+}
+
 bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	if (!on_error) {
 		initialize(st);
 	}
 
+	// Handle recusrive allocations by just performing them without tracking.
+	pthread_setspecific(_malloc_suspended, (void*) 1);
+
+	// We need to avoid having the trace disabled concurrently.
+	PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
+
+	if (!_enabled) {
+		st->print_raw_cr("malloc statistic not enabled!");
+		pthread_setspecific(_malloc_suspended, NULL);
+
+		return false;
+	}
+
+	// Forbid resizes, since we don't want the chaining of the entries to change.
+	// Should be no big deal, since the next addition would trigger the resize.
+	_forbid_resizes = true;
+
+	// Get the lock for each map, so we are sure the add-code will see the _forbid_reiszes
+	// field.
+	for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
+		PthreadLocker locker(&_stack_maps_lock[i]._lock);
+	}
+
+	// Get a statistic of the sizes and number of allocations.
+	size_t size_bins[63];
+	size_t allocation_bins[63];
+	create_statistic(on_error, size_bins, allocation_bins);
+
 	size_t total_size = 0;
 	size_t total_allocations = 0;
 	size_t total_stacks = 0;
 
-	pthread_setspecific(_malloc_suspended, (void*) 1);
+	for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
+		MallocStatisticEntry** map = _stack_maps[idx];
 
-	size_t size_bins[64];
-	size_t allocation_bins[64];
-	create_statistic(on_error, size_bins, allocation_bins);
+		for (int slot = 0; slot <= _stack_maps_mask[idx]; ++slot) {
+			MallocStatisticEntry* entry = map[slot];
 
-	{
-		PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
-
-		if (!_enabled) {
-			st->print_raw_cr("malloc statistic not enabled!");
-			return false;
-		}
-
-		for (int idx = 0; idx < NR_OF_MAPS; ++idx) {
-			PthreadLocker lock2(on_error ? NULL : &_stack_maps_lock[idx]._lock);
-
-			for (int slot = 0; slot <= _stack_maps_mask[idx]; ++slot) {
-				MallocStatisticEntry* entry = _stack_maps[idx][slot];
-
-				while (entry != NULL) {
-					total_size += entry->size();
-					total_allocations += entry->nr_of_allocations();
-					total_stacks += 1;
-					dump_entry(st, entry);
-					entry = entry->next();
-				}
+			while (entry != NULL) {
+				total_size += entry->size();
+				total_allocations += entry->nr_of_allocations();
+				total_stacks += 1;
+				stringStream dummy;
+				dump_entry(&dummy, entry);
+				entry = entry->next();
 			}
 		}
 	}
@@ -821,14 +850,17 @@ bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	st->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
 	st->print_cr("Total unique stacks        : "  UINT64_FORMAT, (uint64_t) total_stacks);
 
-	for (int i = 0; i < 64; ++i) {
-		st->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, ((uint64_t) 1) << i,
-			((uint64_t) 1) << (i + 1), (uint64_t) size_bins[i]);
-		st->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
-			((uint64_t) 1) << i, ((uint64_t) 1) << (i + 1), (uint64_t) allocation_bins[i]);
+	for (int i = 62; i >= 0; ++i) {
+		if ((allocation_bins[i] != 0) || (size_bins[i] != 0)) {
+			st->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, ((uint64_t) 1) << i,
+				((uint64_t) 1) << (i + 1), (uint64_t) size_bins[i]);
+			st->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
+				((uint64_t) 1) << i, ((uint64_t) 1) << (i + 1), (uint64_t) allocation_bins[i]);
+		}
 	}
 
 	pthread_setspecific(_malloc_suspended, NULL);
+	_forbid_resizes = false;
 
 	return true;
 }
@@ -887,6 +919,9 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
 }
 
 void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
+	// Need to switch to native or the long operations block GCs.
+	ThreadToNativeFromVM ttn(THREAD);
+
 	const char* const cmd = _cmd.value();
 
 	if (strcmp(cmd, "enable") == 0) {
