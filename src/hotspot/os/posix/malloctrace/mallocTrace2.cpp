@@ -249,6 +249,7 @@ private:
 	static void cleanup();
 
 	static void dump_entry(outputStream* st, MallocStatisticEntry* entry);
+	static void create_statistic(bool on_error, size_t* size_bins, size_t* allocation_bins);
 
 public:
 	static void initialize(outputStream* st);
@@ -713,6 +714,69 @@ bool MallocStatisticImpl::reset(outputStream* st) {
 	return true;	
 }
 
+int fast_log2(unsigned long long v) {
+#if defined(__GNUC__) || defined(_AIX) || defined(__APPLE__)
+	return 63 - __builtin_clzll(v);
+#else
+	int result = 0;
+
+	if ((v >> 32) != 0) {
+		result += 32;
+		v >>= 32;
+	}
+
+	if ((v >> 16) != 0) {
+		result += 16;
+		v >>= 16;
+	}
+
+	if ((v >> 8) != 0) {
+		result += 8;
+		v >>= 8;
+	}
+
+	if ((v >> 4) != 0) {
+		result += 4;
+		v >>= 4;
+	}
+
+	if ((v >> 2) != 0) {
+		result += 2;
+		v >>= 2;
+	}
+
+	if ((v >> 1) != 0) {
+		result += 1;
+		v >>= 1;
+	}
+
+	return result;
+#endif
+}
+
+void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, size_t* allocation_bins) {
+	PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
+
+	for (int i = 0; i < 63; ++i) {
+		size_bins[i] = 0;
+		allocation_bins[i] = 0;
+	}
+
+	for (int idx = 0; idx < NR_OF_MAPS; ++idx) {
+		PthreadLocker lock2(on_error ? NULL : &_maps_lock[idx]._lock);
+
+		for (int slot = 0; slot <= _maps_mask[idx]; ++slot) {
+			MallocStatisticEntry* entry = _maps[idx][slot];
+
+			while (entry != NULL) {
+				size_bins[fast_log2((unsigned long long) entry->size())] += 1;
+				allocation_bins[fast_log2((unsigned long long) entry->nr_of_allocations())] += 1;
+				entry = entry->next();
+			}
+		}
+	}
+}
+
 bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	if (!on_error) {
 		initialize(st);
@@ -723,6 +787,10 @@ bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	size_t total_stacks = 0;
 
 	pthread_setspecific(_malloc_suspended, (void*) 1);
+
+	size_t size_bins[64];
+	size_t allocation_bins[64];
+	create_statistic(on_error, size_bins, allocation_bins);
 
 	{
 		PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
@@ -752,6 +820,13 @@ bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	st->print_cr("Total allocation size      : " UINT64_FORMAT, (uint64_t) total_size);
 	st->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
 	st->print_cr("Total unique stacks        : "  UINT64_FORMAT, (uint64_t) total_stacks);
+
+	for (int i = 0; i < 64; ++i) {
+		st->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, ((uint64_t) 1) << i,
+			((uint64_t) 1) << (i + 1), (uint64_t) size_bins[i]);
+		st->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
+			((uint64_t) 1) << i, ((uint64_t) 1) << (i + 1), (uint64_t) allocation_bins[i]);
+	}
 
 	pthread_setspecific(_malloc_suspended, NULL);
 
