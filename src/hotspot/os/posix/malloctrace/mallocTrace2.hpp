@@ -28,7 +28,7 @@ public:
 	static bool reset(outputStream* st);
 
 	// Dumps the statistic.
-	static bool dump(outputStream* st, bool on_error);
+	static bool dump(outputStream* st, const char* dump_file, bool on_error);
 
 	// Shuts down the statistic on error.
 	static void shutdown();
@@ -40,10 +40,11 @@ private:
 
 	DCmdArgument<char*> _cmd;
 	DCmdArgument<jlong> _stack_depth;
+	DCmdArgument<char*> _dump_file;
 
 public:
 	static int num_arguments() {
-		return 2;
+		return 3;
 	}
 
 	MallocStatisticDCmd(outputStream* output, bool heap);

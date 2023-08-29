@@ -5,6 +5,7 @@
 #include "malloctrace/mallocTrace2.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/timer.hpp"
 #include "utilities/ostream.hpp"
 
 #include <pthread.h>
@@ -263,7 +264,7 @@ public:
 	static bool enable(outputStream* st, int stack_depth);
 	static bool disable(outputStream* st);
 	static bool reset(outputStream* st);
-	static bool dump(outputStream* st, bool on_error);
+	static bool dump(outputStream* msg_stream, outputStream* dump_stream, bool on_error);
 	static void shutdown();
 };
 
@@ -491,7 +492,8 @@ static size_t hash_for_frames(int nr_of_frames, address* frames) {
 		result = result * 31 + ((frame_addr & 0xfffffff0) >> 4) + 127 * (frame_addr >> 36);
 	}
 
-	return result;
+	// Avoid more bits than we can store in the entry.
+	return (MAX_FRAMES + 1) * result/ (MAX_FRAMES + 1);
 }
 
 void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
@@ -504,7 +506,6 @@ void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames
 	size_t hash = hash_for_frames(nr_of_frames, frames);
 	int idx = hash & (NR_OF_STACK_MAPS - 1);
 	assert((idx >= 0) && (idx < NR_OF_STACK_MAPS), "invalid map index");
-	hash /= NR_OF_STACK_MAPS;
 
 	PthreadLocker locker(&_stack_maps_lock[idx]._lock);
 
@@ -534,6 +535,8 @@ void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames
 
 	if (mem != NULL) {
 		MallocStatisticEntry* entry = new (mem) MallocStatisticEntry(hash, to_add, nr_of_frames, frames);
+		assert(hash == entry->hash(), "Must be the same");
+		assert(nr_of_frames == entry->nr_of_frames(), "Must be equal");
 		// First set the next pointer, so we can iterate the chain in parallel when we insert it into
 		// the array in the next step.
 		entry->set_next(_stack_maps[idx][slot]);
@@ -642,6 +645,11 @@ bool MallocStatisticImpl::enable(outputStream* st, int stack_depth) {
 	_track_free = false;
 	_max_frames = stack_depth;
 	_funcs = setup_hooks(&_malloc_stat_hooks, st);
+
+	if (_funcs == NULL) {
+		return false;
+	}
+
 	_entry_size = sizeof(MallocStatisticEntry) + sizeof(address) * (_max_frames - 1);
 
 	for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
@@ -775,26 +783,38 @@ void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, siz
 }
 
 void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* entry) {
-	st->print_cr("Allocated bytes: " UINT64_FORMAT, (uint64_t) entry->size());
-	st->print_cr("Allocated object: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
-	st->print_raw_cr("Stack: ");
+	// Use a temp buffer since the output stream might use unbuffered I/O.
+	char ss_tmp[4096];
+	stringStream ss(ss_tmp, sizeof(ss_tmp));
+
+	ss.print_cr("Allocated bytes: " UINT64_FORMAT, (uint64_t) entry->size());
+	ss.print_cr("Allocated object: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
+	ss.print_raw_cr("Stack:");
 
 	char tmp[256];
 
 	for (int i = 0; i < entry->nr_of_frames(); ++i) {
-		st->print_raw("    ");
+		ss.print("  %p  ", entry->frames()[i]);
 
-		if (os::print_function_and_library_name(st, entry->frames()[i], tmp, sizeof(tmp), true, true, false)) {
-			st->cr();
+		if (os::print_function_and_library_name(&ss, entry->frames()[i], tmp, sizeof(tmp), true, true, false)) {
+			ss.cr();
 		} else {
-			st->print_raw_cr("<compiled code>");
+			ss.print_raw_cr("<compiled code>");
+		}
+
+		// Flush the temp buffer if we are near the end.
+		if (sizeof(ss_tmp) - ss.size() < sizeof(tmp)) {
+			st->write(ss_tmp, ss.size());
+			ss.reset();
 		}
 	}
+
+	st->write(ss_tmp, ss.size());
 }
 
-bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
+bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, bool on_error) {
 	if (!on_error) {
-		initialize(st);
+		initialize(msg_stream);
 	}
 
 	// Handle recusrive allocations by just performing them without tracking.
@@ -804,11 +824,14 @@ bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 	PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
 
 	if (!_enabled) {
-		st->print_raw_cr("malloc statistic not enabled!");
+		msg_stream->print_raw_cr("malloc statistic not enabled!");
 		pthread_setspecific(_malloc_suspended, NULL);
 
 		return false;
 	}
+
+	elapsedTimer timer;
+	timer.start();
 
 	// Forbid resizes, since we don't want the chaining of the entries to change.
 	// Should be no big deal, since the next addition would trigger the resize.
@@ -839,26 +862,30 @@ bool MallocStatisticImpl::dump(outputStream* st, bool on_error) {
 				total_size += entry->size();
 				total_allocations += entry->nr_of_allocations();
 				total_stacks += 1;
-				stringStream dummy;
-				dump_entry(&dummy, entry);
+				dump_entry(dump_stream, entry);
 				entry = entry->next();
 			}
 		}
 	}
 
-	st->print_cr("Total allocation size      : " UINT64_FORMAT, (uint64_t) total_size);
-	st->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
-	st->print_cr("Total unique stacks        : "  UINT64_FORMAT, (uint64_t) total_stacks);
+	dump_stream->print_cr("Total allocation size      : " UINT64_FORMAT, (uint64_t) total_size);
+	dump_stream->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
+	dump_stream->print_cr("Total unique stacks        : "  UINT64_FORMAT, (uint64_t) total_stacks);
 
-	for (int i = 62; i >= 0; ++i) {
+#if 0
+	for (int i = 62; i >= 0; --i) {
 		if ((allocation_bins[i] != 0) || (size_bins[i] != 0)) {
-			st->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, ((uint64_t) 1) << i,
+			dump_stream->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, ((uint64_t) 1) << i,
 				((uint64_t) 1) << (i + 1), (uint64_t) size_bins[i]);
-			st->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
+			dump_stream->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
 				((uint64_t) 1) << i, ((uint64_t) 1) << (i + 1), (uint64_t) allocation_bins[i]);
 		}
 	}
+#endif
 
+	timer.stop();
+	msg_stream->print_cr("Dump finished in %.1f seconds (%.3f stacks per second).", timer.seconds(),
+			total_stacks / timer.seconds());
 	pthread_setspecific(_malloc_suspended, NULL);
 	_forbid_resizes = false;
 
@@ -893,8 +920,35 @@ bool MallocStatistic::reset(outputStream* st) {
 	return MallocStatisticImpl::reset(st);
 }
 
-bool MallocStatistic::dump(outputStream* st, bool on_error) {
-	return MallocStatisticImpl::dump(st, on_error);
+bool MallocStatistic::dump(outputStream* st, const char* dump_file, bool on_error) {
+	if ((dump_file != NULL) && (strlen(dump_file) > 0)) {
+		int fd;
+
+		if (strcmp("stderr", dump_file) == 0) {
+			fd = 2;
+		} else if (strcmp("stdout", dump_file) == 0) {
+			fd = 1;
+		} else {
+			fd = ::open(dump_file, O_WRONLY | O_CREAT | O_TRUNC);
+
+			if (fd < 0) {
+				st->print_cr("Could not open '%s' for output.", dump_file);
+
+				return false;
+			}
+		}
+
+		fdStream dump_stream(fd);
+		bool result = MallocStatisticImpl::dump(st, &dump_stream, on_error);
+
+		if ((fd != 1) && (fd != 2)) {
+			::close(fd);
+		}
+
+		return fd;
+	}
+
+	return MallocStatisticImpl::dump(st, st, on_error);
 }
 
 void MallocStatistic::shutdown() {
@@ -913,9 +967,14 @@ void MallocStatistic::shutdown() {
 MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
 	DCmdWithParser(output, heap),
 	_cmd("cmd", "enable,disable,reset,dump,test", "STRING", true),
-        _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5") {
+        _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5"),
+        _dump_file("-dump-file", "If given the dump command writes the result to the given file.\n" \
+                   "Note that the filename is interpreted by the target VM. You can use " \
+		   "'stdout' or 'stderr' as filenames to dump via stdout or stderr of\n" \
+		   "the target VM", "STRING", false) {
 	_dcmdparser.add_dcmd_argument(&_cmd);
 	_dcmdparser.add_dcmd_option(&_stack_depth);
+	_dcmdparser.add_dcmd_option(&_dump_file);
 }
 
 void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
@@ -935,7 +994,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 	} else if (strcmp(cmd, "reset") == 0) {
 		MallocStatistic::reset(_output);
 	} else if (strcmp(cmd, "dump") == 0) {
-		MallocStatistic::dump(_output, false);
+		MallocStatistic::dump(_output, _dump_file.value(), false);
 	} else if (strcmp(cmd, "test") == 0) {
 		real_funcs_t* funcs = setup_hooks(NULL, _output);
 		static void* results[1024 * 1024];
