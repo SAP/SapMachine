@@ -154,6 +154,14 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
 
 ###############################################################################
+# New failures detected after GA of 17.0.5 (e.g. seen only in jdk11u-dev after branching 17.0.5 to jdk17u)
+
+# SapMachine 2022-12-30 test has timeouts, vector API is rather slow on ppc
+#
+# maybe test changes of 8276151 would improve test speed?
+compiler/vectorapi/VectorCastShape64Test.java                                        generic-ppc64,linux-ppc64le
+
+###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
 
 # SapMachine 2018-10-05
