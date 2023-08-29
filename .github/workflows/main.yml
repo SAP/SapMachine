@@ -60,10 +60,9 @@ jobs:
 
   select:
     name: 'Select platforms'
-    # pr-jdk-17.0.9+3: runs-on: ubuntu-22.04
     # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86: ${{ steps.include.outputs.linux-x86 }}
@@ -332,8 +331,7 @@ jobs:
   # Remove bundles so they are not misconstrued as binary distributions from the JDK project
   remove-bundles:
     name: 'Remove bundle artifacts'
-    # pr-jdk-17.0.9+3 ; runs-on: ubuntu-22.04
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
     if: ${{ github.event_name != 'pull_request' || github.repository != 'SAP/SapMachine' }}
     needs:
