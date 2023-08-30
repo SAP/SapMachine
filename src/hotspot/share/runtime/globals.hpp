@@ -517,8 +517,9 @@ const int ObjectAlignmentInBytes = 8;
           "The size of the short term vitals table in hours")               \
           range(1, 365 * 24)                                                \
                                                                             \
-  product(uintx, VitalsLongTernSampleIntervalMinutes, 60,                   \
-          "Vitals sample interval for the long term table in minutes")      \
+  product(uintx, VitalsLongTermSampleIntervalMinutes, 60,                   \
+          "Vitals sample rate interval in minutes for the long term table " \
+          "(default 60)")                                                   \
           range(1, 365 * 24 * 60)                                           \
                                                                             \
   product(uintx, VitalsLongTermTableDays, 14,                               \

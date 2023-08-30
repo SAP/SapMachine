@@ -781,7 +781,7 @@ public:
 class SampleTables: public CHeapObj<mtInternal> {
 
   static int short_term_tablesize() { return (VitalsShortTermTableHours * 3600 / VitalsSampleInterval) + 1; }
-  static int long_term_tablesize()  { return (VitalsLongTermTableDays * 24 * 60 / VitalsLongTernSampleIntervalMinutes) + 1; }
+  static int long_term_tablesize()  { return (VitalsLongTermTableDays * 24 * 60 / VitalsLongTermSampleIntervalMinutes) + 1; }
 
   SampleTable _short_term_table;
   SampleTable _long_term_table;
@@ -833,7 +833,7 @@ public:
       _extremum_samples(Sample::num_values()),
       _last_extremum_samples(Sample::num_values()),
       _count(0),
-      _large_table_count(MAX2(1, (int) (VitalsLongTernSampleIntervalMinutes * 60 / VitalsSampleInterval)))
+      _large_table_count(MAX2(1, (int) (VitalsLongTermSampleIntervalMinutes * 60 / VitalsSampleInterval)))
   {}
 
   void add_sample(const Sample* sample) {
