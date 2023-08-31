@@ -257,14 +257,14 @@ private:
 	static void cleanup();
 
 	static void dump_entry(outputStream* st, MallocStatisticEntry* entry);
-	static void create_statistic(bool on_error, size_t* size_bins, size_t* allocation_bins);
+	static void create_statistic(bool for_siez, size_t* bins);
 
 public:
 	static void initialize(outputStream* st);
 	static bool enable(outputStream* st, int stack_depth);
 	static bool disable(outputStream* st);
 	static bool reset(outputStream* st);
-	static bool dump(outputStream* msg_stream, outputStream* dump_stream, const char* sort, bool on_error);
+	static bool dump(outputStream* msg_stream, outputStream* dump_stream, const char* sort, int size_fraction, int count_fraction, bool on_error);
 	static void shutdown();
 };
 
@@ -774,10 +774,9 @@ uint64_t get_size_for_index(int index) {
 
 #define NR_OF_BINS 127
 
-void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, size_t* allocation_bins) {
+void MallocStatisticImpl::create_statistic(bool for_size, size_t* bins) {
 	for (int i = 0; i < NR_OF_BINS; ++i) {
-		size_bins[i] = 0;
-		allocation_bins[i] = 0;
+		bins[i] = 0;
 	}
 
 	for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
@@ -792,12 +791,36 @@ void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, siz
 			}
 
 			while (entry != NULL) {
-				size_bins[get_index_for_size(entry->size())] += 1;
-				allocation_bins[get_index_for_size(entry->nr_of_allocations())] += 1;
+				if (for_size) {
+					bins[get_index_for_size(entry->size())] += 1;
+				} else {
+					bins[get_index_for_size(entry->nr_of_allocations())] += 1;
+				}
+
 				entry = entry->next();
 			}
 		}
 	}
+}
+
+size_t calc_min_from_statistic(size_t* bins, double factor) {
+	size_t total = 0;
+
+	for (int i = 0; i < NR_OF_BINS; ++i) {
+		total += bins[i] * get_size_for_index(i);
+	}
+
+	size_t sum = 0;
+
+	for (int i = NR_OF_BINS - 1; i >= 0; --i) {
+		sum += bins[i] * get_size_for_index(i);
+
+		if (sum > factor * total) {
+			return get_size_for_index(i);
+		}
+	}
+
+	return 0;
 }
 
 void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* entry) {
@@ -860,7 +883,7 @@ static int sort_by_count(const void* p1, const void* p2) {
 	return 0;
 }
 
-bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, const char* sort, bool on_error) {
+bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, const char* sort, int size_fraction, int count_fraction, bool on_error) {
 	if (!on_error) {
 		initialize(msg_stream);
 	}
@@ -907,10 +930,21 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 		PthreadLocker locker(&_stack_maps_lock[i]._lock);
 	}
 
-	// Get a statistic of the sizes and number of allocations.
-	size_t size_bins[NR_OF_BINS];
-	size_t allocation_bins[NR_OF_BINS];
-	create_statistic(on_error, size_bins, allocation_bins);
+	size_t min_size = 0;
+	size_t min_allocations = 0;
+
+	// Approximately determine a min size and count to only display the requested fractions.
+	if (size_fraction < 100) {
+		size_t bins[NR_OF_BINS];
+		create_statistic(true, bins);
+		min_size = calc_min_from_statistic(bins, size_fraction * 0.01);
+	}
+
+	if (count_fraction < 100) {
+		size_t bins[NR_OF_BINS];
+		create_statistic(false, bins);
+		min_allocations = calc_min_from_statistic(bins, count_fraction * 0.01);
+	}
 
 	size_t total_size = 0;
 	size_t total_allocations = 0;
@@ -927,7 +961,9 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 				total_allocations += entry->nr_of_allocations();
 				total_stacks += 1;
 
-				if (to_sort == NULL) {
+				if ((entry->size() < min_size) || (entry->nr_of_allocations() < min_allocations)) {
+					// We don't track this.
+				} else if (to_sort == NULL) {
 					dump_entry(dump_stream, entry);
 				} else {
 					to_sort[added_entries] = entry;
@@ -956,7 +992,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 	}
 
 	if (to_sort != NULL) {
-		msg_stream->print_cr("Stacks sorted by %s", sort);
+		msg_stream->print_cr("%d stacks sorted by %s", added_entries, sort);
 
 		qsort(to_sort, added_entries, sizeof(MallocStatisticEntry*),
 			strcmp("size", sort) == 0 ? sort_by_size : sort_by_count);
@@ -972,13 +1008,16 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 	dump_stream->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
 	dump_stream->print_cr("Total unique stacks        : " UINT64_FORMAT, (uint64_t) total_stacks);
 
-#if 1
+#if 0
 	for (int i = NR_OF_BINS - 1; i >= 0; --i) {
-		if ((allocation_bins[i] != 0) || (size_bins[i] != 0)) {
-			dump_stream->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, get_size_for_index(i),
-				get_size_for_index(i + 1), (uint64_t) size_bins[i]);
-			dump_stream->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
-				get_size_for_index(i), get_size_for_index(i + 1), (uint64_t) allocation_bins[i]);
+		if ((sort != NULL) && (bins[i] != 0)) {
+			if (strcmp("size", sort) == 0) {
+				dump_stream->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, get_size_for_index(i),
+					get_size_for_index(i + 1), (uint64_t) bins[i]);
+			} else {
+				dump_stream->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
+					get_size_for_index(i), get_size_for_index(i + 1), (uint64_t) bins[i]);
+			}
 		}
 	}
 #endif
@@ -1020,7 +1059,7 @@ bool MallocStatistic::reset(outputStream* st) {
 	return MallocStatisticImpl::reset(st);
 }
 
-bool MallocStatistic::dump(outputStream* st, const char* dump_file, const char* sort, bool on_error) {
+bool MallocStatistic::dump(outputStream* st, const char* dump_file, const char* sort, int size_fraction, int count_fraction, bool on_error) {
 	if ((dump_file != NULL) && (strlen(dump_file) > 0)) {
 		int fd;
 
@@ -1039,7 +1078,7 @@ bool MallocStatistic::dump(outputStream* st, const char* dump_file, const char* 
 		}
 
 		fdStream dump_stream(fd);
-		bool result = MallocStatisticImpl::dump(st, &dump_stream, sort, on_error);
+		bool result = MallocStatisticImpl::dump(st, &dump_stream, sort, size_fraction, count_fraction, on_error);
 
 		if ((fd != 1) && (fd != 2)) {
 			::close(fd);
@@ -1048,7 +1087,7 @@ bool MallocStatistic::dump(outputStream* st, const char* dump_file, const char* 
 		return fd;
 	}
 
-	return MallocStatisticImpl::dump(st, st, sort, on_error);
+	return MallocStatisticImpl::dump(st, st, sort, size_fraction, count_fraction, on_error);
 }
 
 void MallocStatistic::shutdown() {
@@ -1072,12 +1111,18 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
                    "Note that the filename is interpreted by the target VM. You can use " \
 		   "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
 		   "the target VM", "STRING", false),
+	_size_fraction("-size-fraction", "The fraction in percent of the total size the output " \
+		   "must contain.", "INT", false, "100"),
+	_count_fraction("-count-fraction", "The fraction in percent of the total allocation count " \
+		   "the output must contain.", "INT", false, "100"),
 	_sort("-sort", "If given the stacks are sorted. If the argument is 'size' they are " \
 		   "sorted by size and if the argument is 'count' the are sorted by allocation " \
-		   "count", "STRING", false) {
+		   "count.", "STRING", false) {
 	_dcmdparser.add_dcmd_argument(&_cmd);
 	_dcmdparser.add_dcmd_option(&_stack_depth);
 	_dcmdparser.add_dcmd_option(&_dump_file);
+	_dcmdparser.add_dcmd_option(&_size_fraction);
+	_dcmdparser.add_dcmd_option(&_count_fraction);
 	_dcmdparser.add_dcmd_option(&_sort);
 }
 
@@ -1098,7 +1143,8 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 	} else if (strcmp(cmd, "reset") == 0) {
 		MallocStatistic::reset(_output);
 	} else if (strcmp(cmd, "dump") == 0) {
-		MallocStatistic::dump(_output, _dump_file.value(), _sort.value(), false);
+		MallocStatistic::dump(_output, _dump_file.value(), _sort.value(),
+				      (int) _size_fraction.value(), (int) _count_fraction.value(), false);
 	} else if (strcmp(cmd, "test") == 0) {
 		real_funcs_t* funcs = setup_hooks(NULL, _output);
 		static void* results[1024 * 1024];
