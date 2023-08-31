@@ -756,8 +756,26 @@ int fast_log2(unsigned long long v) {
 #endif
 }
 
+int get_index_for_size(size_t size) {
+	int base = fast_log2((unsigned long long) size);
+
+	return 2 * base + ((size >> (base - 1)) & 1);
+}
+
+uint64_t get_size_for_index(int index) {
+	uint64_t base = ((uint64_t) 1) << (index / 2);
+
+	if (index & 1) {
+		return base + base / 2;
+	}
+
+	return base;
+}
+
+#define NR_OF_BINS 127
+
 void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, size_t* allocation_bins) {
-	for (int i = 0; i < 63; ++i) {
+	for (int i = 0; i < NR_OF_BINS; ++i) {
 		size_bins[i] = 0;
 		allocation_bins[i] = 0;
 	}
@@ -774,8 +792,8 @@ void MallocStatisticImpl::create_statistic(bool on_error, size_t* size_bins, siz
 			}
 
 			while (entry != NULL) {
-				size_bins[fast_log2((unsigned long long) entry->size())] += 1;
-				allocation_bins[fast_log2((unsigned long long) entry->nr_of_allocations())] += 1;
+				size_bins[get_index_for_size(entry->size())] += 1;
+				allocation_bins[get_index_for_size(entry->nr_of_allocations())] += 1;
 				entry = entry->next();
 			}
 		}
@@ -890,8 +908,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 	}
 
 	// Get a statistic of the sizes and number of allocations.
-	size_t size_bins[63];
-	size_t allocation_bins[63];
+	size_t size_bins[NR_OF_BINS];
+	size_t allocation_bins[NR_OF_BINS];
 	create_statistic(on_error, size_bins, allocation_bins);
 
 	size_t total_size = 0;
@@ -954,13 +972,13 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 	dump_stream->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
 	dump_stream->print_cr("Total unique stacks        : " UINT64_FORMAT, (uint64_t) total_stacks);
 
-#if 0
-	for (int i = 62; i >= 0; --i) {
+#if 1
+	for (int i = NR_OF_BINS - 1; i >= 0; --i) {
 		if ((allocation_bins[i] != 0) || (size_bins[i] != 0)) {
-			dump_stream->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, ((uint64_t) 1) << i,
-				((uint64_t) 1) << (i + 1), (uint64_t) size_bins[i]);
+			dump_stream->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, get_size_for_index(i),
+				get_size_for_index(i + 1), (uint64_t) size_bins[i]);
 			dump_stream->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
-				((uint64_t) 1) << i, ((uint64_t) 1) << (i + 1), (uint64_t) allocation_bins[i]);
+				get_size_for_index(i), get_size_for_index(i + 1), (uint64_t) allocation_bins[i]);
 		}
 	}
 #endif
@@ -1096,6 +1114,18 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 				results[i] = alloc.allocate();
 				alloc.free(results[(317 * (int64_t) i) & (sizeof(results) / sizeof(results[0]) - 1)]);
 			}
+		}
+
+		for (int i = 0; i < 63; ++i) {
+			size_t base = ((size_t) 1) << i;
+			_output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, get_index_for_size(base - 1));
+			_output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, get_index_for_size(base));
+			_output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, get_index_for_size(base + 1));
+			base = base + base / 2;
+			_output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, get_index_for_size(base - 1));
+			_output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, get_index_for_size(base));
+			_output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, get_index_for_size(base + 1));
+			_output->cr();
 		}
 	} else {
 		_output->print_cr("Unknown command '%s'", cmd);
