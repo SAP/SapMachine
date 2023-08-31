@@ -300,3 +300,7 @@ java/lang/ProcessHandle/OnExitTest.java                                         
 # We see this test failing on our linux boxes
 # https://bugs.openjdk.java.net/browse/JDK-8249079
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java                 8249079 linux-all
+
+# SapMachine 2023-08-31
+# Seems we're running into timeouts on our macosx-x64 CI machine from time to time
+java/foreign/StdLibTest.java                                                         macosx-x64
