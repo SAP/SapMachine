@@ -264,7 +264,7 @@ public:
 	static bool enable(outputStream* st, int stack_depth);
 	static bool disable(outputStream* st);
 	static bool reset(outputStream* st);
-	static bool dump(outputStream* msg_stream, outputStream* dump_stream, bool on_error);
+	static bool dump(outputStream* msg_stream, outputStream* dump_stream, const char* sort, bool on_error);
 	static void shutdown();
 };
 
@@ -787,8 +787,8 @@ void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* ent
 	char ss_tmp[4096];
 	stringStream ss(ss_tmp, sizeof(ss_tmp));
 
-	ss.print_cr("Allocated bytes: " UINT64_FORMAT, (uint64_t) entry->size());
-	ss.print_cr("Allocated object: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
+	ss.print_cr("Allocated bytes : " UINT64_FORMAT, (uint64_t) entry->size());
+	ss.print_cr("Allocated objects: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
 	ss.print_raw_cr("Stack:");
 
 	char tmp[256];
@@ -812,7 +812,37 @@ void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* ent
 	st->write(ss_tmp, ss.size());
 }
 
-bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, bool on_error) {
+static int sort_by_size(const void* p1, const void* p2) {
+	MallocStatisticEntry* e1 = *(MallocStatisticEntry**) p1;
+	MallocStatisticEntry* e2 = *(MallocStatisticEntry**) p2;
+
+	if (e1->size() > e2->size()) {
+		return 1;
+	}
+
+	if (e1->size() < e2->size()) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static int sort_by_count(const void* p1, const void* p2) {
+	MallocStatisticEntry* e1 = *(MallocStatisticEntry**) p1;
+	MallocStatisticEntry* e2 = *(MallocStatisticEntry**) p2;
+
+	if (e1->nr_of_allocations() > e2->nr_of_allocations()) {
+		return 1;
+	}
+
+	if (e1->nr_of_allocations() < e2->nr_of_allocations()) {
+		return -1;
+	}
+
+	return 0;
+}
+
+bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, const char* sort, bool on_error) {
 	if (!on_error) {
 		initialize(msg_stream);
 	}
@@ -828,6 +858,22 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 		pthread_setspecific(_malloc_suspended, NULL);
 
 		return false;
+	}
+
+	MallocStatisticEntry** to_sort = NULL;
+	int added_entries = 0;
+	int max_entries = 1024;
+
+	if (sort != NULL) {
+		if ((strcmp("size", sort) != 0) && (strcmp("count", sort) != 0)) {
+			msg_stream->print_cr("Invalid argument to -sort: '%s'", sort);
+			pthread_setspecific(_malloc_suspended, NULL);
+
+			return false;
+		}
+
+		// The colde below handles a failed allocation.
+		to_sort = (MallocStatisticEntry**) _funcs->calloc(max_entries, sizeof(MallocStatisticEntry*));
 	}
 
 	elapsedTimer timer;
@@ -862,15 +908,51 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 				total_size += entry->size();
 				total_allocations += entry->nr_of_allocations();
 				total_stacks += 1;
-				dump_entry(dump_stream, entry);
+
+				if (to_sort == NULL) {
+					dump_entry(dump_stream, entry);
+				} else {
+					to_sort[added_entries] = entry;
+					added_entries += 1;
+
+					if (added_entries >= max_entries) {
+						max_entries += 1024;
+						MallocStatisticEntry** new_to_sort = (MallocStatisticEntry** ) _funcs->realloc(to_sort, max_entries * sizeof(MallocStatisticEntry*));
+
+						if (new_to_sort == NULL) {
+							for (int i = 0; i < added_entries; ++i) {
+								dump_entry(dump_stream, to_sort[i]);
+							}
+
+							_funcs->free(to_sort);
+							to_sort = NULL;
+						} else {
+							to_sort = new_to_sort;
+						}
+					}
+				}
+
 				entry = entry->next();
 			}
 		}
 	}
 
+	if (to_sort != NULL) {
+		msg_stream->print_cr("Stacks sorted by %s", sort);
+
+		qsort(to_sort, added_entries, sizeof(MallocStatisticEntry*),
+			strcmp("size", sort) == 0 ? sort_by_size : sort_by_count);
+
+		for (int i = 0; i < added_entries; ++i) {
+			dump_entry(dump_stream ,to_sort[i]);
+		}
+
+		_funcs->free(to_sort);
+	}
+
 	dump_stream->print_cr("Total allocation size      : " UINT64_FORMAT, (uint64_t) total_size);
 	dump_stream->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
-	dump_stream->print_cr("Total unique stacks        : "  UINT64_FORMAT, (uint64_t) total_stacks);
+	dump_stream->print_cr("Total unique stacks        : " UINT64_FORMAT, (uint64_t) total_stacks);
 
 #if 0
 	for (int i = 62; i >= 0; --i) {
@@ -920,7 +1002,7 @@ bool MallocStatistic::reset(outputStream* st) {
 	return MallocStatisticImpl::reset(st);
 }
 
-bool MallocStatistic::dump(outputStream* st, const char* dump_file, bool on_error) {
+bool MallocStatistic::dump(outputStream* st, const char* dump_file, const char* sort, bool on_error) {
 	if ((dump_file != NULL) && (strlen(dump_file) > 0)) {
 		int fd;
 
@@ -939,7 +1021,7 @@ bool MallocStatistic::dump(outputStream* st, const char* dump_file, bool on_erro
 		}
 
 		fdStream dump_stream(fd);
-		bool result = MallocStatisticImpl::dump(st, &dump_stream, on_error);
+		bool result = MallocStatisticImpl::dump(st, &dump_stream, sort, on_error);
 
 		if ((fd != 1) && (fd != 2)) {
 			::close(fd);
@@ -948,7 +1030,7 @@ bool MallocStatistic::dump(outputStream* st, const char* dump_file, bool on_erro
 		return fd;
 	}
 
-	return MallocStatisticImpl::dump(st, st, on_error);
+	return MallocStatisticImpl::dump(st, st, sort, on_error);
 }
 
 void MallocStatistic::shutdown() {
@@ -968,13 +1050,17 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
 	DCmdWithParser(output, heap),
 	_cmd("cmd", "enable,disable,reset,dump,test", "STRING", true),
         _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5"),
-        _dump_file("-dump-file", "If given the dump command writes the result to the given file.\n" \
+        _dump_file("-dump-file", "If given the dump command writes the result to the given file. " \
                    "Note that the filename is interpreted by the target VM. You can use " \
-		   "'stdout' or 'stderr' as filenames to dump via stdout or stderr of\n" \
-		   "the target VM", "STRING", false) {
+		   "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
+		   "the target VM", "STRING", false),
+	_sort("-sort", "If given the stacks are sorted. If the argument is 'size' they are " \
+		   "sorted by size and if the argument is 'count' the are sorted by allocation " \
+		   "count", "STRING", false) {
 	_dcmdparser.add_dcmd_argument(&_cmd);
 	_dcmdparser.add_dcmd_option(&_stack_depth);
 	_dcmdparser.add_dcmd_option(&_dump_file);
+	_dcmdparser.add_dcmd_option(&_sort);
 }
 
 void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
@@ -994,7 +1080,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 	} else if (strcmp(cmd, "reset") == 0) {
 		MallocStatistic::reset(_output);
 	} else if (strcmp(cmd, "dump") == 0) {
-		MallocStatistic::dump(_output, _dump_file.value(), false);
+		MallocStatistic::dump(_output, _dump_file.value(), _sort.value(), false);
 	} else if (strcmp(cmd, "test") == 0) {
 		real_funcs_t* funcs = setup_hooks(NULL, _output);
 		static void* results[1024 * 1024];
