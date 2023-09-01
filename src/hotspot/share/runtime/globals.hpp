@@ -626,6 +626,20 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   product(uintx, VitalsSampleInterval, 10,                                  \
           "Vitals sample rate interval in seconds (default 10)")            \
+          range(1, 24 * 3600)                                               \
+                                                                            \
+  product(uintx, VitalsShortTermTableHours, 1,                              \
+          "The size of the short term vitals table in hours")               \
+          range(1, 365 * 24)                                                \
+                                                                            \
+  product(uintx, VitalsLongTermSampleIntervalMinutes, 60,                   \
+          "Vitals sample rate interval in minutes for the long term table " \
+          "(default 60)")                                                   \
+          range(1, 365 * 24 * 60)                                           \
+                                                                            \
+  product(uintx, VitalsLongTermTableDays, 14,                               \
+          "The size of the long term vitals table in days")                 \
+          range(1, 10 * 365)                                                \
                                                                             \
   diagnostic(bool, VitalsLockFreeSampling, false,                           \
           "When sampling vitals, omit any actions which require locking.")  \
