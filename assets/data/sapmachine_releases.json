@@ -402,10 +402,12 @@
                 {
                     "tag": "sapmachine-17.0.9+5",
                     "jdk": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.9%2B5/sapmachine-jdk-17.0.9-ea.5_linux-x64-musl_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.9%2B5/sapmachine-jdk-17.0.9-ea.5_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.9%2B5/sapmachine-jdk-17.0.9-ea.5_macos-aarch64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.9%2B5/sapmachine-jre-17.0.9-ea.5_linux-x64-musl_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.9%2B5/sapmachine-jre-17.0.9-ea.5_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.9%2B5/sapmachine-jre-17.0.9-ea.5_macos-aarch64_bin.tar.gz"
                     }
@@ -415,10 +417,12 @@
                 {
                     "tag": "sapmachine-17.0.9+5",
                     "jdk": {
+                        "linux-x64-musl": "sha256 9245dedcdf457425202b6d06ba8cdb19a90c1061b9332a6126092f17d9590bba",
                         "macos-aarch64-installer": "sha256 9736da350e90f0e78718fa3a1ba1d69a115840cccd6791d70a1c101c112fe0f4",
                         "macos-aarch64": "sha256 d86b6b4e38275ac9f6527197492624b67a5fc021990c257787f1893eacd45b9b"
                     },
                     "jre": {
+                        "linux-x64-musl": "sha256 81e8d7cd591d69f3da3b10c9b502b672bff97528ff4117bbc14f885d1cf5081e",
                         "macos-aarch64-installer": "sha256 725c85d0f4ccea560d65e09d077ee70bbd4f7ba853dc1a39db87b3be821e9d48",
                         "macos-aarch64": "sha256 2ee55217b5d2b3f7b47d57bdfb5696bee78813db5f639a8c125d97a42d1081a0"
                     }
