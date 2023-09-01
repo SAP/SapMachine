@@ -12,8 +12,8 @@ typedef void* valloc_func_t(size_t size);
 typedef void* pvalloc_func_t(size_t size);
 
 typedef size_t malloc_size_func_t(void* ptr);
-typedef void* malloc_hook_t(size_t size, void* caller, malloc_func_t* real_malloc,
-                            malloc_size_func_t real_malloc_size);
+typedef void*  malloc_hook_t(size_t size, void* caller, malloc_func_t* real_malloc,
+                             malloc_size_func_t real_malloc_size);
 typedef void* calloc_hook_t(size_t elems, size_t size, void* caller, calloc_func_t* real_calloc,
                             malloc_size_func_t real_malloc_size);
 typedef void* realloc_hook_t(void* ptr, size_t size, void* caller, realloc_func_t* real_realloc,
@@ -31,28 +31,28 @@ typedef void* pvalloc_hook_t(size_t size, void* caller, pvalloc_func_t* real_pva
                              malloc_size_func_t real_malloc_size);
 
 typedef struct {
-	malloc_hook_t* malloc_hook;
-	calloc_hook_t* calloc_hook;
-	realloc_hook_t* realloc_hook;
-	free_hook_t* free_hook;
-	posix_memalign_hook_t* posix_memalign_hook;
-	memalign_hook_t* memalign_hook;
-	aligned_alloc_hook_t* aligned_alloc_hook;
-	valloc_hook_t* valloc_hook;
-	pvalloc_hook_t* pvalloc_hook;
+  malloc_hook_t* malloc_hook;
+  calloc_hook_t* calloc_hook;
+  realloc_hook_t* realloc_hook;
+  free_hook_t* free_hook;
+  posix_memalign_hook_t* posix_memalign_hook;
+  memalign_hook_t* memalign_hook;
+  aligned_alloc_hook_t* aligned_alloc_hook;
+  valloc_hook_t* valloc_hook;
+  pvalloc_hook_t* pvalloc_hook;
 } registered_hooks_t;
 
 typedef struct {
-	malloc_func_t* malloc;
-	calloc_func_t* calloc;
-	realloc_func_t* realloc;
-	free_func_t* free;
-        posix_memalign_func_t* posix_memalign;
-	memalign_func_t* memalign;
-	aligned_alloc_func_t* aligned_alloc;
-	valloc_func_t* valloc;
-	pvalloc_func_t* pvalloc;
-	malloc_size_func_t* malloc_size;
+  malloc_func_t* malloc;
+  calloc_func_t* calloc;
+  realloc_func_t* realloc;
+  free_func_t* free;
+  posix_memalign_func_t* posix_memalign;
+  memalign_func_t* memalign;
+  aligned_alloc_func_t* aligned_alloc;
+  valloc_func_t* valloc;
+  pvalloc_func_t* pvalloc;
+  malloc_size_func_t* malloc_size;
 } real_funcs_t;
 
 typedef real_funcs_t* register_hooks_t(registered_hooks_t* registered_hooks);

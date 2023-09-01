@@ -83,11 +83,11 @@ static void print_size(size_t size);
 #endif
 
 static void print_error(char const* msg, int error_code) {
-	write(2, msg, strlen(msg));
+  write(2, msg, strlen(msg));
 
-	if (error_code > 0) {
-		exit(error_code);
-	}
+  if (error_code > 0) {
+    exit(error_code);
+  }
 }
 
 #if !defined(MALLOC_REPLACEMENT)
@@ -102,18 +102,18 @@ static char* fallback_buffer_pos = fallback_buffer;
 static char* fallback_buffer_end = &fallback_buffer[sizeof(fallback_buffer)];
 
 static void* fallback_malloc(size_t size) {
-	// Align to 16 byte and add 16 bytes for the header.
-	size_t real_size = 16 + ((size - 1) | 15) + 1;
+  // Align to 16 byte and add 16 bytes for the header.
+  size_t real_size = 16 + ((size - 1) | 15) + 1;
 
-	if (fallback_buffer_pos + real_size >= fallback_buffer_end) {
-		return NULL;
-	}
+  if (fallback_buffer_pos + real_size >= fallback_buffer_end) {
+    return NULL;
+  }
 
-	void* result = fallback_buffer_pos;
-	((size_t*) result)[-1] = real_size - 16;
-	fallback_buffer_pos += real_size;
+  void* result = fallback_buffer_pos;
+  ((size_t*) result)[-1] = real_size - 16;
+  fallback_buffer_pos += real_size;
 
-	return result;
+  return result;
 }
 
 static malloc_func_t* malloc_for_fallback = fallback_malloc;
@@ -124,9 +124,9 @@ static malloc_func_t* malloc_for_fallback = MALLOC_REPLACEMENT;
 
 #if !defined(FREE_REPLACEMENT)
 static void  fallback_free(void* ptr) {
-	if (((char*) ptr < fallback_buffer) && ((char*) ptr >= fallback_buffer_end)) {
-		print_error("fallback free called with wrong pointer!\n", 1);
-	}
+  if (((char*) ptr < fallback_buffer) && ((char*) ptr >= fallback_buffer_end)) {
+    print_error("fallback free called with wrong pointer!\n", 1);
+  }
 }
 
 static free_func_t* free_for_fallback = fallback_free;
@@ -137,13 +137,13 @@ static free_func_t* free_for_fallback = FREE_REPLACEMENT;
 
 #if !defined(CALLOC_REPLACEMENT)
 static void* fallback_calloc(size_t elems, size_t size) {
-	void* result = malloc_for_fallback(elems * size);
+  void* result = malloc_for_fallback(elems * size);
 
-	if (result != NULL) {
-		bzero(result, elems * size);
-	}
+  if (result != NULL) {
+    bzero(result, elems * size);
+  }
 
-	return result;
+  return result;
 }
 
 static calloc_func_t* calloc_for_fallback = fallback_calloc;
@@ -154,20 +154,20 @@ static calloc_func_t* calloc_for_fallback = CALLOC_REPLACEMENT;
 
 #if !defined(REALLOC_REPLACEMENT)
 static void* fallback_realloc(void* ptr, size_t size) {
-	if (((char*) ptr < fallback_buffer) && ((char*) ptr >= fallback_buffer_end)) {
-		print_error("fallback realloc called with wrong pointer!\n", 1);
-	}
+  if (((char*) ptr < fallback_buffer) && ((char*) ptr >= fallback_buffer_end)) {
+    print_error("fallback realloc called with wrong pointer!\n", 1);
+  }
 
-	void* result = fallback_malloc(size);
+  void* result = fallback_malloc(size);
 
-	if ((result != NULL) && (ptr != NULL)) {
-		size_t old_size = ((size_t*) ptr)[-1];
-		memcpy(result, ptr, old_size);
-	}
+  if ((result != NULL) && (ptr != NULL)) {
+    size_t old_size = ((size_t*) ptr)[-1];
+    memcpy(result, ptr, old_size);
+  }
 
-	fallback_free(ptr);
+  fallback_free(ptr);
 
-	return result;
+  return result;
 }
 
 static realloc_func_t* realloc_for_fallback = fallback_realloc;
@@ -179,34 +179,34 @@ static realloc_func_t* realloc_for_fallback = REALLOC_REPLACEMENT;
 
 #if !defined(MEMALIGN_REPLACEMENT)
 static void* fallback_memalign(size_t align, size_t size) {
-	// We don't expect this to ever be called, since we assume
-	// the dlsym functions would not needed aligned allocations.
-	// Nevertheless you'll never know, so we implement one.
-	//
-	// Since this should be at most used during initialization, we don't
-	// check for overflow in allocation size or other invalid arguments.
-	//
-	// Allocate larger and larger chunks and hope we somehow find an aligned
-	// allocation.
-	void* result = NULL;
-	size_t alloc_size = size;
+  // We don't expect this to ever be called, since we assume
+  // the dlsym functions would not needed aligned allocations.
+  // Nevertheless you'll never know, so we implement one.
+  //
+  // Since this should be at most used during initialization, we don't
+  // check for overflow in allocation size or other invalid arguments.
+  //
+  // Allocate larger and larger chunks and hope we somehow find an aligned
+  // allocation.
+  void* result = NULL;
+  size_t alloc_size = size;
 
-	while (true) {
-		void* new_result = malloc_for_fallback(alloc_size);
-		free_for_fallback(result);
-		result = new_result;
+  while (true) {
+    void* new_result = malloc_for_fallback(alloc_size);
+    free_for_fallback(result);
+    result = new_result;
 
-		if (result == NULL) {
-			return NULL;
-		}
+    if (result == NULL) {
+      return NULL;
+    }
 
-		// Check if aligned by chance.
-		if ((((intptr_t) result) & (align - 1)) == 0) {
-			return result;
-		}
+    // Check if aligned by chance.
+    if ((((intptr_t) result) & (align - 1)) == 0) {
+      return result;
+    }
 
-		alloc_size += 8;
-	}
+    alloc_size += 8;
+  }
 }
 
 static memalign_func_t* memalign_for_fallback = fallback_memalign;
@@ -217,13 +217,13 @@ static memalign_func_t* memalign_for_fallback = MEMALIGN_REPLACEMENT;
 
 #if !defined(POSIX_MEMALIGN_REPLACEMENT)
 static int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
-	*ptr = memalign_for_fallback(align, size);
+  *ptr = memalign_for_fallback(align, size);
 
-	if (*ptr == NULL) {
-		return ENOMEM;
-	}
+  if (*ptr == NULL) {
+    return ENOMEM;
+  }
 
-	return 0;
+  return 0;
 }
 
 static posix_memalign_func_t* posix_memalign_for_fallback = fallback_posix_memalign;
@@ -234,12 +234,12 @@ static posix_memalign_func_t* posix_memalign_for_fallback = POSIX_MEMALIGN_REPLA
 
 #if !defined(ALIGNED_ALLOC_REPLACEMENT)
 static void* fallback_aligned_alloc(size_t align, size_t size) {
-	if ((align == 0) || ((size & align) != 0)) {
-		errno = EINVAL;
-		return NULL;
-	}
+  if ((align == 0) || ((size & align) != 0)) {
+    errno = EINVAL;
+    return NULL;
+  }
 
-	return memalign(align, size);
+  return memalign(align, size);
 }
 
 static aligned_alloc_func_t* aligned_alloc_for_fallback = fallback_aligned_alloc;
@@ -261,11 +261,11 @@ static size_t page_size = 0;
 
 #if !defined(VALLOC_REPLACEMENT)
 static void* fallback_valloc(size_t size) {
-	if (page_size == 0) {
-		page_size = (size_t) getpagesize();
-	}
+  if (page_size == 0) {
+    page_size = (size_t) getpagesize();
+  }
 
-	return fallback_memalign(page_size, size);
+  return fallback_memalign(page_size, size);
 }
 
 static valloc_func_t* valloc_for_fallback = fallback_valloc;
@@ -276,12 +276,12 @@ static valloc_func_t* valloc_for_fallback = VALLOC_REPLACEMENT;
 
 #if !defined(PVALLOC_REPLACEMENT)
 static void* fallback_pvalloc(size_t size) {
-	if (page_size == 0) {
-		page_size = (size_t) getpagesize();
-	}
+  if (page_size == 0) {
+    page_size = (size_t) getpagesize();
+  }
 
-	size_t real_size = 1 + ((size - 1) | page_size);
-	return fallback_memalign(page_size, real_size);
+  size_t real_size = 1 + ((size - 1) | page_size);
+  return fallback_memalign(page_size, real_size);
 }
 
 static pvalloc_func_t* pvalloc_for_fallback = fallback_pvalloc;
@@ -291,25 +291,25 @@ static pvalloc_func_t* pvalloc_for_fallback = PVALLOC_REPLACEMENT;
 #endif
 
 static size_t get_allocated_size(void* ptr) {
-	if (ptr == NULL) {
-		return 0;
-	}
+  if (ptr == NULL) {
+    return 0;
+  }
 
 #if !defined(MALLOC_REPLACEMENT)
-	// We always know for fallback methods.
-	if (((char*) ptr >= fallback_buffer) && ((char*) ptr < fallback_buffer_end)) {
-		return ((size_t*) ptr)[-1];
-	}
+  // We always know for fallback methods.
+  if (((char*) ptr >= fallback_buffer) && ((char*) ptr < fallback_buffer_end)) {
+    return ((size_t*) ptr)[-1];
+  }
 #endif
 
 #if defined(__GLIBC__)
-	return ((size_t*) ptr)[-1] & ~((size_t) 15);
+  return ((size_t*) ptr)[-1] & ~((size_t) 15);
 #elif defined(__APPLE__)
-	return malloc_size(ptr);
+  return malloc_size(ptr);
 #elif defined(__AIX__)
-	return 0; // We don't know
+  return 0; // We don't know
 #elif defined (__THIS_IS_MUSL__)
-	return malloc_usable_size(ptr);
+  return malloc_usable_size(ptr);
 #endif
 }
 
@@ -333,22 +333,22 @@ static void allow_aligned_malloc_in_test();
 #endif
 
 static void assign_function(void** dest, char const* symbol) {
-	assign_function_test(symbol);
+  assign_function_test(symbol);
 
-	print("Resolving '");
-	print(symbol);
-	print("'\n");
+  print("Resolving '");
+  print(symbol);
+  print("'\n");
 
-	*dest = dlsym(RTLD_NEXT, symbol);
+  *dest = dlsym(RTLD_NEXT, symbol);
 
-	if (*dest == NULL) {
-		print_error(symbol, 0);
-		print_error(" not found!\n", 1);
-	}
+  if (*dest == NULL) {
+    print_error(symbol, 0);
+    print_error(" not found!\n", 1);
+  }
 
-	print("Found at ");
-	print_ptr(*dest);
-	print("\n");
+  print("Found at ");
+  print_ptr(*dest);
+  print("\n");
 }
 
 #if !defined(_AIX)
@@ -365,70 +365,70 @@ static void assign_function(void** dest, char const* symbol) {
 
 static void LIB_INIT init(void) {
 #if !defined(MALLOC_REPLACEMENT) || !defined(REALLOC_REPLACEMENT) || !defined(FREE_REPLACEMENT) || !defined(MEMALIGN_REPLACEMENT) || !defined(ALIGNED_ALLOC_REPLACEMENT)
-	void* real_malloc;
-	void* real_realloc;
-	void* real_free;
-	void* real_memalign;
-	void* real_aligned_alloc;
+  void* real_malloc;
+  void* real_realloc;
+  void* real_free;
+  void* real_memalign;
+  void* real_aligned_alloc;
 
-	// malloc/realloc/free are the most important ones, so we get them
-	// first. We cannot run with only a part being the real ones and a
-	// part being fallback, so assign them in one go.
+  // malloc/realloc/free are the most important ones, so we get them
+  // first. We cannot run with only a part being the real ones and a
+  // part being fallback, so assign them in one go.
 
-	assign_function(&real_malloc, "malloc");
-	assign_function(&real_realloc, "realloc");
-	assign_function(&real_free, "free");
+  assign_function(&real_malloc, "malloc");
+  assign_function(&real_realloc, "realloc");
+  assign_function(&real_free, "free");
 
-	// Resolved memalign and aligned_alloc at the same time, since on
-	// MUSL at least memalign just forwards to aligned_alloc.
-	assign_function(&real_memalign, "memalign");
-	assign_function(&real_aligned_alloc, "aligned_alloc");
+  // Resolved memalign and aligned_alloc at the same time, since on
+  // MUSL at least memalign just forwards to aligned_alloc.
+  assign_function(&real_memalign, "memalign");
+  assign_function(&real_aligned_alloc, "aligned_alloc");
 
-	malloc_for_fallback = (malloc_func_t*) real_malloc;
-	realloc_for_fallback = (realloc_func_t*) real_realloc;
-	free_for_fallback = (free_func_t*) real_free;
-	memalign_for_fallback = (memalign_func_t*) real_memalign;
-	aligned_alloc_for_fallback = (aligned_alloc_func_t*) real_aligned_alloc;
+  malloc_for_fallback = (malloc_func_t*) real_malloc;
+  realloc_for_fallback = (realloc_func_t*) real_realloc;
+  free_for_fallback = (free_func_t*) real_free;
+  memalign_for_fallback = (memalign_func_t*) real_memalign;
+  aligned_alloc_for_fallback = (aligned_alloc_func_t*) real_aligned_alloc;
 
-	allow_aligned_malloc_in_test();
+  allow_aligned_malloc_in_test();
 
 #if !defined(MALLOC_REPLACEMENT)
-	print_size(fallback_buffer_pos - fallback_buffer);
-	print(" bytes used for fallback\n");
-	print_size(fallback_buffer_end - fallback_buffer_pos);
-	print(" bytes not used for fallback\n");
+  print_size(fallback_buffer_pos - fallback_buffer);
+  print(" bytes used for fallback\n");
+  print_size(fallback_buffer_end - fallback_buffer_pos);
+  print(" bytes not used for fallback\n");
 #endif
 
 #endif
 
-	// Now the rest can be assigned, since even the fallack methods are not
-	// too bad.
+  // Now the rest can be assigned, since even the fallack methods are not
+  // too bad.
 #if !defined(CALLOC_REPLACEMENT)
-	assign_function((void**) &calloc_for_fallback, "calloc");
+  assign_function((void**) &calloc_for_fallback, "calloc");
 #endif
 #if !defined(POSIX_MEMALIGN_REPLACEMENT)
-	assign_function((void**) &posix_memalign_for_fallback, "posix_memalign");
+  assign_function((void**) &posix_memalign_for_fallback, "posix_memalign");
 #endif
 #if !defined(VALLOC_REPLACEMENT)
-	assign_function((void**) &valloc_for_fallback, "valloc");
+  assign_function((void**) &valloc_for_fallback, "valloc");
 #endif
 #if !defined(PVALLOC_REPLACEMENT)
-	assign_function((void**) &pvalloc_for_fallback, "pvalloc");
+  assign_function((void**) &pvalloc_for_fallback, "pvalloc");
 #endif
 
-	assign_function_post_test();
+  assign_function_post_test();
 }
 
 static registered_hooks_t empty_registered_hooks = {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL
 };
 
 static volatile registered_hooks_t* registered_hooks = &empty_registered_hooks;
@@ -436,272 +436,272 @@ static volatile registered_hooks_t* registered_hooks = &empty_registered_hooks;
 static real_funcs_t real_funcs;
 
 EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
-	if (hooks == NULL) {
-                print("Deregistered hooks\n");
-		registered_hooks = &empty_registered_hooks;
-	} else {
-                print("Registered hooks\n");
-		registered_hooks = hooks;
-	}
+  if (hooks == NULL) {
+    print("Deregistered hooks\n");
+    registered_hooks = &empty_registered_hooks;
+  } else {
+    print("Registered hooks\n");
+    registered_hooks = hooks;
+  }
 
-	real_funcs.malloc = malloc_for_fallback;
-	real_funcs.calloc = calloc_for_fallback;
-	real_funcs.realloc = realloc_for_fallback;
-	real_funcs.free = free_for_fallback;
-	real_funcs.posix_memalign = posix_memalign_for_fallback;
-	real_funcs.memalign = memalign_for_fallback;
-	real_funcs.aligned_alloc = aligned_alloc_for_fallback;
-	real_funcs.valloc = valloc_for_fallback;
-	real_funcs.pvalloc = pvalloc_for_fallback;
-	real_funcs.malloc_size = get_allocated_size;
+  real_funcs.malloc = malloc_for_fallback;
+  real_funcs.calloc = calloc_for_fallback;
+  real_funcs.realloc = realloc_for_fallback;
+  real_funcs.free = free_for_fallback;
+  real_funcs.posix_memalign = posix_memalign_for_fallback;
+  real_funcs.memalign = memalign_for_fallback;
+  real_funcs.aligned_alloc = aligned_alloc_for_fallback;
+  real_funcs.valloc = valloc_for_fallback;
+  real_funcs.pvalloc = pvalloc_for_fallback;
+  real_funcs.malloc_size = get_allocated_size;
 
-	return &real_funcs;
+  return &real_funcs;
 }
 
 
 
 #define LOG_FUNC(func) \
-	print(#func); \
-	if (func##_for_fallback == fallback_##func) { \
-		print(" (fallback)"); \
-	}
+  print(#func); \
+  if (func##_for_fallback == fallback_##func) { \
+    print(" (fallback)"); \
+  }
 
 #define LOG_ALIGN(align) \
-	print(" alignment "); \
-	print_size(align);
+  print(" alignment "); \
+  print_size(align);
 
 #define LOG_PTR(ptr) \
-	print(" "); \
-	print_ptr(ptr);
+  print(" "); \
+  print_ptr(ptr);
 
 #define LOG_PTR_WITH_SIZE(ptr) \
-	LOG_PTR(ptr); \
-	if (ptr != NULL) { \
-		size_t size = get_allocated_size(ptr); \
-		if (size > 0) { \
-			print(" (size "); \
-			print_size(size); \
-			print(")"); \
-		} \
-	}
+  LOG_PTR(ptr); \
+  if (ptr != NULL) { \
+    size_t size = get_allocated_size(ptr); \
+    if (size > 0) { \
+      print(" (size "); \
+      print_size(size); \
+      print(")"); \
+    } \
+  }
 
 #define LOG_ELEMS(elems) \
-	print(" #elems "); \
-	print_size(elems);
+  print(" #elems "); \
+  print_size(elems);
 
 #define LOG_SIZE(size) \
-	print(" size "); \
-	print_size(size);
+  print(" size "); \
+  print_size(size);
 
 #define LOG_ALLOCATION_RESULT(result) \
-	if (result == NULL) { \
-		print(" failed with errno "); \
-		print_size(errno); \
-	} else { \
-	        print(" allocated at"); \
-		LOG_PTR_WITH_SIZE(result); \
-	}
+  if (result == NULL) { \
+    print(" failed with errno "); \
+    print_size(errno); \
+  } else { \
+    print(" allocated at"); \
+    LOG_PTR_WITH_SIZE(result); \
+  }
 
 #define LOG_RESULT(result) \
-	print(" result "); \
-	print_size(result);
+  print(" result "); \
+  print_size(result);
 
 #define LOG_HOOK \
-	print(tmp_hook ? " with hook\n" : " without hook\n");
+  print(tmp_hook ? " with hook\n" : " without hook\n");
 
 EXPORT void* REPLACE_NAME(malloc)(size_t size) {
-	malloc_hook_t* tmp_hook = registered_hooks->malloc_hook;
-	void* result;
+  malloc_hook_t* tmp_hook = registered_hooks->malloc_hook;
+  void* result;
 
-	LOG_FUNC(malloc);
-	LOG_SIZE(size);
+  LOG_FUNC(malloc);
+  LOG_SIZE(size);
 
-	if (tmp_hook != NULL) {
-		result = tmp_hook(size, __builtin_return_address(0), malloc_for_fallback, get_allocated_size);
-	} else {
-		result = malloc_for_fallback(size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(size, __builtin_return_address(0), malloc_for_fallback, get_allocated_size);
+  } else {
+    result = malloc_for_fallback(size);
+  }
 
-	LOG_ALLOCATION_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 
 EXPORT void* REPLACE_NAME(calloc)(size_t elems, size_t size) {
-	calloc_hook_t* tmp_hook = registered_hooks->calloc_hook;
-	void* result;
+  calloc_hook_t* tmp_hook = registered_hooks->calloc_hook;
+  void* result;
 
-	LOG_FUNC(calloc);
-	LOG_ELEMS(elems);
-	LOG_SIZE(size);
+  LOG_FUNC(calloc);
+  LOG_ELEMS(elems);
+  LOG_SIZE(size);
 
-	if (tmp_hook != NULL) {
-		result = tmp_hook(elems, size, __builtin_return_address(0), calloc_for_fallback, get_allocated_size);
-	} else {
-		result = calloc_for_fallback(elems, size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(elems, size, __builtin_return_address(0), calloc_for_fallback, get_allocated_size);
+  } else {
+    result = calloc_for_fallback(elems, size);
+  }
 
-	LOG_ALLOCATION_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 
 EXPORT void* REPLACE_NAME(realloc)(void* ptr, size_t size) {
-	realloc_hook_t* tmp_hook = registered_hooks->realloc_hook;
-	void* result;
+  realloc_hook_t* tmp_hook = registered_hooks->realloc_hook;
+  void* result;
 
-	LOG_FUNC(realloc);
-	LOG_PTR_WITH_SIZE(ptr);
-	LOG_SIZE(size);
+  LOG_FUNC(realloc);
+  LOG_PTR_WITH_SIZE(ptr);
+  LOG_SIZE(size);
 
 #if !defined(MALLOC_REPLACEMENT)
-	// We might see remnants of the fallback allocations here.
-	if (((char*) ptr >= fallback_buffer) && ((char*) ptr < fallback_buffer_end)) {
-		result = fallback_malloc(size);
+  // We might see remnants of the fallback allocations here.
+  if (((char*) ptr >= fallback_buffer) && ((char*) ptr < fallback_buffer_end)) {
+    result = fallback_malloc(size);
 
-		if (result != NULL) {
-			size_t max_to_copy = fallback_buffer_end - (char*) ptr;
-			memcpy(result, ptr, max_to_copy > size ? size : max_to_copy);
-		}
-	} else
+    if (result != NULL) {
+      size_t max_to_copy = fallback_buffer_end - (char*) ptr;
+      memcpy(result, ptr, max_to_copy > size ? size : max_to_copy);
+    }
+  } else
 #endif
-	if (tmp_hook != NULL) {
-		result = tmp_hook(ptr, size, __builtin_return_address(0), realloc_for_fallback, get_allocated_size);
-	} else {
-		result = realloc_for_fallback(ptr, size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(ptr, size, __builtin_return_address(0), realloc_for_fallback, get_allocated_size);
+  } else {
+    result = realloc_for_fallback(ptr, size);
+  }
 
-	LOG_ALLOCATION_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 
 EXPORT void REPLACE_NAME(free)(void* ptr) {
-	free_hook_t* tmp_hook = registered_hooks->free_hook;
+  free_hook_t* tmp_hook = registered_hooks->free_hook;
 
-	LOG_FUNC(free);
-	LOG_PTR_WITH_SIZE(ptr);
+  LOG_FUNC(free);
+  LOG_PTR_WITH_SIZE(ptr);
 
 #if !defined(MALLOC_REPLACEMENT)
-	// We might see remnants of the fallback allocations here.
-	if ((ptr >= (void*) fallback_buffer) && (ptr < (void*) fallback_buffer_end)) {
-		// Nothinng to do
-	} else
+  // We might see remnants of the fallback allocations here.
+  if ((ptr >= (void*) fallback_buffer) && (ptr < (void*) fallback_buffer_end)) {
+    // Nothinng to do
+  } else
 #endif
-	if (tmp_hook != NULL) {
-		tmp_hook(ptr, __builtin_return_address(0), free_for_fallback, get_allocated_size);
-	} else {
-		free_for_fallback(ptr);
-	}
+  if (tmp_hook != NULL) {
+    tmp_hook(ptr, __builtin_return_address(0), free_for_fallback, get_allocated_size);
+  } else {
+    free_for_fallback(ptr);
+  }
 
-	LOG_HOOK;
+  LOG_HOOK;
 }
 
 EXPORT int REPLACE_NAME(posix_memalign)(void** ptr, size_t align, size_t size) {
-	posix_memalign_hook_t* tmp_hook = registered_hooks->posix_memalign_hook;
-	int result;
+  posix_memalign_hook_t* tmp_hook = registered_hooks->posix_memalign_hook;
+  int result;
 
-	LOG_FUNC(posix_memalign);
-	LOG_ALIGN(align);
-	LOG_SIZE(size);
+  LOG_FUNC(posix_memalign);
+  LOG_ALIGN(align);
+  LOG_SIZE(size);
 
-	if (tmp_hook != NULL) {
-		result = tmp_hook(ptr, align, size, __builtin_return_address(0), posix_memalign_for_fallback, get_allocated_size);
-	} else {
-		result = posix_memalign_for_fallback(ptr, align, size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(ptr, align, size, __builtin_return_address(0), posix_memalign_for_fallback, get_allocated_size);
+  } else {
+    result = posix_memalign_for_fallback(ptr, align, size);
+  }
 
-	LOG_ALLOCATION_RESULT(*ptr);
-	LOG_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(*ptr);
+  LOG_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 
 #if !defined(__APPLE__)
 EXPORT void* REPLACE_NAME(memalign)(size_t align, size_t size) {
-	memalign_hook_t* tmp_hook = registered_hooks->memalign_hook;
-	void* result;
+  memalign_hook_t* tmp_hook = registered_hooks->memalign_hook;
+  void* result;
 
-	LOG_FUNC(memalign);
-	LOG_ALIGN(align);
-	LOG_SIZE(size);
+  LOG_FUNC(memalign);
+  LOG_ALIGN(align);
+  LOG_SIZE(size);
 
-	if (tmp_hook != NULL) {
-		result = tmp_hook(align, size, __builtin_return_address(0), memalign_for_fallback, get_allocated_size);
-	} else {
-		result = memalign_for_fallback(align, size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(align, size, __builtin_return_address(0), memalign_for_fallback, get_allocated_size);
+  } else {
+    result = memalign_for_fallback(align, size);
+  }
 
-	LOG_ALLOCATION_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 #endif
 
 EXPORT void* REPLACE_NAME(aligned_alloc)(size_t align, size_t size) {
-	memalign_hook_t* tmp_hook = registered_hooks->aligned_alloc_hook;
-	void* result;
+  memalign_hook_t* tmp_hook = registered_hooks->aligned_alloc_hook;
+  void* result;
 
-	LOG_FUNC(aligned_alloc);
-	LOG_ALIGN(align);
-	LOG_SIZE(size);
+  LOG_FUNC(aligned_alloc);
+  LOG_ALIGN(align);
+  LOG_SIZE(size);
 
-	if (tmp_hook != NULL) {
-		result = tmp_hook(align, size, __builtin_return_address(0), aligned_alloc_for_fallback, get_allocated_size);
-	} else {
-		result = aligned_alloc_for_fallback(align, size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(align, size, __builtin_return_address(0), aligned_alloc_for_fallback, get_allocated_size);
+  } else {
+    result = aligned_alloc_for_fallback(align, size);
+  }
 
-	LOG_ALLOCATION_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 
 #if !defined(__THIS_IS_MUSL__)
 EXPORT void* REPLACE_NAME(valloc)(size_t size) {
-	valloc_hook_t* tmp_hook = registered_hooks->valloc_hook;
-	void* result;
+  valloc_hook_t* tmp_hook = registered_hooks->valloc_hook;
+  void* result;
 
-	LOG_FUNC(valloc);
-	LOG_SIZE(size);
+  LOG_FUNC(valloc);
+  LOG_SIZE(size);
 
-	if (tmp_hook != NULL) {
-		result = tmp_hook(size, __builtin_return_address(0), valloc_for_fallback, get_allocated_size);
-	} else {
-		result = valloc_for_fallback(size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(size, __builtin_return_address(0), valloc_for_fallback, get_allocated_size);
+  } else {
+    result = valloc_for_fallback(size);
+  }
 
-	LOG_ALLOCATION_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 #endif
 
 #if !defined(__THIS_IS_MUSL__)
 EXPORT void* REPLACE_NAME(pvalloc)(size_t size) {
-	pvalloc_hook_t* tmp_hook = registered_hooks->pvalloc_hook;
-	void* result;
+  pvalloc_hook_t* tmp_hook = registered_hooks->pvalloc_hook;
+  void* result;
 
-	LOG_FUNC(pvalloc);
-	LOG_SIZE(size);
+  LOG_FUNC(pvalloc);
+  LOG_SIZE(size);
 
-	if (tmp_hook != NULL) {
-		result = tmp_hook(size, __builtin_return_address(0), pvalloc_for_fallback, get_allocated_size);
-	} else {
-		result = pvalloc_for_fallback(size);
-	}
+  if (tmp_hook != NULL) {
+    result = tmp_hook(size, __builtin_return_address(0), pvalloc_for_fallback, get_allocated_size);
+  } else {
+    result = pvalloc_for_fallback(size);
+  }
 
-	LOG_ALLOCATION_RESULT(result);
-	LOG_HOOK;
+  LOG_ALLOCATION_RESULT(result);
+  LOG_HOOK;
 
-	return result;
+  return result;
 }
 #endif
 
@@ -736,36 +736,36 @@ DYLD_INTERPOSE(REPLACE_NAME(valloc), valloc)
 #define DEBUG_FD 2
 
 static void print(char const* str) {
-	int errno_backup = errno;
-	write(DEBUG_FD, str, strlen(str));
-	errno = errno_backup;
+  int errno_backup = errno;
+  write(DEBUG_FD, str, strlen(str));
+  errno = errno_backup;
 }
 
 static void print_ptr(void* ptr) {
-	int errno_backup = errno;
-	int shift = 64;
-	print("0x");
+  int errno_backup = errno;
+  int shift = 64;
+  print("0x");
 
-	do {
-		shift -= 4;
-		write(DEBUG_FD, &("0123456789abcdef"[((((size_t) ptr) >> shift) & 15)]), 1);
-	} while (shift > 0);
+  do {
+    shift -= 4;
+    write(DEBUG_FD, &("0123456789abcdef"[((((size_t) ptr) >> shift) & 15)]), 1);
+  } while (shift > 0);
 
-	errno = errno_backup;
+  errno = errno_backup;
 }
 
 static void print_size(size_t size) {
-	int errno_backup = errno;
-	char buf[20];
-	size_t pos = sizeof(buf);
+  int errno_backup = errno;
+  char buf[20];
+  size_t pos = sizeof(buf);
 
-	do {
-		buf[--pos] = '0' + (size % 10);
-		size /= 10;
-	}  while (size > 0);
+  do {
+    buf[--pos] = '0' + (size % 10);
+    size /= 10;
+  }  while (size > 0);
 
-	write(DEBUG_FD, buf + pos, sizeof(buf) - pos);
-	errno = errno_backup;
+  write(DEBUG_FD, buf + pos, sizeof(buf) - pos);
+  errno = errno_backup;
 }
 
 #endif
@@ -775,128 +775,128 @@ static void print_size(size_t size) {
 
 static void* memalign_for_test(size_t align, size_t size) {
 #if defined(__APPLE__)
-	// No memalign on MacOSX
-	void* result;
+  // No memalign on MacOSX
+  void* result;
 
-	if (REPLACE_NAME(posix_memalign)(&result, align, size) == 0) {
-		return result;
-	}
+  if (REPLACE_NAME(posix_memalign)(&result, align, size) == 0) {
+    return result;
+  }
 
-	return NULL;
+  return NULL;
 #else
-	return REPLACE_NAME(memalign)(align, size);
+  return REPLACE_NAME(memalign)(align, size);
 #endif
 }
 
 static void* valloc_for_test(size_t size) {
 #if defined(__THIS_IS_MUSL__)
-	// musl has no valloc
-	return REPLACE_NAME(memalign)(getpagesize(), size);
+  // musl has no valloc
+  return REPLACE_NAME(memalign)(getpagesize(), size);
 #else
-	return REPLACE_NAME(valloc)(size);
+  return REPLACE_NAME(valloc)(size);
 #endif
 }
 
 static void* pvalloc_for_test(size_t size) {
 #if defined(__THIS_IS_MUSL__)
-	// musl has no pvalloc
-	return REPLACE_NAME(memalign)(getpagesize(), size);
+  // musl has no pvalloc
+  return REPLACE_NAME(memalign)(getpagesize(), size);
 #else
-	return REPLACE_NAME(pvalloc)(size);
+  return REPLACE_NAME(pvalloc)(size);
 #endif
 }
 
 static bool allow_aligned_malloc;
 
 static void allow_aligned_malloc_in_test() {
-	allow_aligned_malloc = true;
+  allow_aligned_malloc = true;
 }
 
 #endif
 
 #if TEST_LEVEL > 1
 static void assign_function_test(char const* symbol) {
-	// Simulate having to malloc for dlsym. Only use the most likely called
-	// allocation methods at this level, so no aligned allocations.
-	void* p1 = REPLACE_NAME(malloc)(strlen(symbol) * 2 + 1024);
-	void* p2 = REPLACE_NAME(calloc)(4, 256);
-	char* p3 = strdup(symbol);
-	p1 = REPLACE_NAME(realloc)(p1, 2048);
-	REPLACE_NAME(free)(p2);
-	REPLACE_NAME(free)(p3);
-	REPLACE_NAME(free)(p1);
+  // Simulate having to malloc for dlsym. Only use the most likely called
+  // allocation methods at this level, so no aligned allocations.
+  void* p1 = REPLACE_NAME(malloc)(strlen(symbol) * 2 + 1024);
+  void* p2 = REPLACE_NAME(calloc)(4, 256);
+  char* p3 = strdup(symbol);
+  p1 = REPLACE_NAME(realloc)(p1, 2048);
+  REPLACE_NAME(free)(p2);
+  REPLACE_NAME(free)(p3);
+  REPLACE_NAME(free)(p1);
 
-	if (g1 == NULL) {
-		g1 = REPLACE_NAME(malloc)(12);
-	} if (g2 == NULL) {
-		g2 = REPLACE_NAME(malloc)(13);
-	} else if (g3 == NULL) {
-		g3 = REPLACE_NAME(malloc)(14);
-	}
+  if (g1 == NULL) {
+    g1 = REPLACE_NAME(malloc)(12);
+  } if (g2 == NULL) {
+    g2 = REPLACE_NAME(malloc)(13);
+  } else if (g3 == NULL) {
+    g3 = REPLACE_NAME(malloc)(14);
+  }
 
-	// For higher test levels test the aligned allocations too.
+  // For higher test levels test the aligned allocations too.
 #if TEST_LEVEL > 2
-	if (allow_aligned_malloc) {
-		REPLACE_NAME(posix_memalign)(&p1, 64, 256);
-		p2 = memalign_for_test(32, 128);
-		p3 = valloc_for_test(7);
-		p1 = REPLACE_NAME(realloc)(p1, 2048);
-		REPLACE_NAME(free)(p2);
-		REPLACE_NAME(free)(p3);
-		REPLACE_NAME(free)(p1);
+  if (allow_aligned_malloc) {
+    REPLACE_NAME(posix_memalign)(&p1, 64, 256);
+    p2 = memalign_for_test(32, 128);
+    p3 = valloc_for_test(7);
+    p1 = REPLACE_NAME(realloc)(p1, 2048);
+    REPLACE_NAME(free)(p2);
+    REPLACE_NAME(free)(p3);
+    REPLACE_NAME(free)(p1);
 
-		p1 = pvalloc_for_test(127);
-		REPLACE_NAME(free)(p1);
+    p1 = pvalloc_for_test(127);
+    REPLACE_NAME(free)(p1);
 
-		if (ag1 == NULL) {
-			REPLACE_NAME(posix_memalign)(&ag1, 64, 1024);
-		} else if (ag2 == NULL) {
-			ag2 = valloc_for_test(16365);
-		} else if (ag3 == NULL) {
-			ag3 = memalign_for_test(128, 512);
-		}
-	}
+    if (ag1 == NULL) {
+      REPLACE_NAME(posix_memalign)(&ag1, 64, 1024);
+    } else if (ag2 == NULL) {
+      ag2 = valloc_for_test(16365);
+    } else if (ag3 == NULL) {
+      ag3 = memalign_for_test(128, 512);
+    }
+  }
 #endif
 }
 
 void assign_function_post_test() {
-	g1 = REPLACE_NAME(realloc)(g1, 128);
-	g1 = REPLACE_NAME(realloc)(g1, 0);
-	REPLACE_NAME(free)(g1);
-	REPLACE_NAME(free)(g2);
-	REPLACE_NAME(free)(g3);
-	void* p = NULL;
-	REPLACE_NAME(posix_memalign)(&p, 12, 204);
-	REPLACE_NAME(free)(p);
-	REPLACE_NAME(posix_memalign)(&p, 2048, 7);
-	p = REPLACE_NAME(realloc)(p, 19);
-	REPLACE_NAME(free)(p);
+  g1 = REPLACE_NAME(realloc)(g1, 128);
+  g1 = REPLACE_NAME(realloc)(g1, 0);
+  REPLACE_NAME(free)(g1);
+  REPLACE_NAME(free)(g2);
+  REPLACE_NAME(free)(g3);
+  void* p = NULL;
+  REPLACE_NAME(posix_memalign)(&p, 12, 204);
+  REPLACE_NAME(free)(p);
+  REPLACE_NAME(posix_memalign)(&p, 2048, 7);
+  p = REPLACE_NAME(realloc)(p, 19);
+  REPLACE_NAME(free)(p);
 
 #if !defined(__APPLE__)
-	p = REPLACE_NAME(memalign)(12, 204);
-	REPLACE_NAME(free)(p);
-	p = REPLACE_NAME(memalign)(2048, 7);
-	p = REPLACE_NAME(realloc)(p, 19);
-	REPLACE_NAME(free)(p);
+  p = REPLACE_NAME(memalign)(12, 204);
+  REPLACE_NAME(free)(p);
+  p = REPLACE_NAME(memalign)(2048, 7);
+  p = REPLACE_NAME(realloc)(p, 19);
+  REPLACE_NAME(free)(p);
 #endif
 
 #if !defined(__THIS_IS_MUSL__)
-	p = REPLACE_NAME(valloc)(7);
-	p = REPLACE_NAME(realloc)(p, 19);
-	REPLACE_NAME(free)(p);
+  p = REPLACE_NAME(valloc)(7);
+  p = REPLACE_NAME(realloc)(p, 19);
+  REPLACE_NAME(free)(p);
 #endif
 
 #if TEST_LEVEL > 2
-	ag1 = REPLACE_NAME(realloc)(ag1, 128);
-	ag1 = REPLACE_NAME(realloc)(ag1, 0);
-	REPLACE_NAME(free)(ag1);
-	REPLACE_NAME(free)(ag2);
-	REPLACE_NAME(free)(ag3);
+  ag1 = REPLACE_NAME(realloc)(ag1, 128);
+  ag1 = REPLACE_NAME(realloc)(ag1, 0);
+  REPLACE_NAME(free)(ag1);
+  REPLACE_NAME(free)(ag2);
+  REPLACE_NAME(free)(ag3);
 #endif
 
-	// Do a large allocation which might be mmap'ed by the allocator
-	void* large = REPLACE_NAME(malloc)(1024 * 1024);
-	REPLACE_NAME(free)(large);
+  // Do a large allocation which might be mmap'ed by the allocator
+  void* large = REPLACE_NAME(malloc)(1024 * 1024);
+  REPLACE_NAME(free)(large);
 }
 
 #endif
