@@ -780,15 +780,8 @@ public:
 // It takes care to feed new samples into these tables at the appropriate intervals.
 class SampleTables: public CHeapObj<mtInternal> {
 
-  // Short term table: cover one hour, one sample per VitalsSampleInterval (default 10 seconds)
-  static const int short_term_span_seconds = 3600;
-
-  // Long term table: cover 14 days, one sample per hour
-  static const int long_term_span_seconds = short_term_span_seconds * 24 * 14;
-  static const int long_term_sample_interval = short_term_span_seconds;
-
-  static int short_term_tablesize()      { return (short_term_span_seconds / VitalsSampleInterval) + 1; }
-  static const int long_term_tablesize = (long_term_span_seconds / long_term_sample_interval) + 1;
+  static int short_term_tablesize() { return (VitalsShortTermTableHours * 3600 / VitalsSampleInterval) + 1; }
+  static int long_term_tablesize()  { return (VitalsLongTermTableDays * 24 * 60 / VitalsLongTermSampleIntervalMinutes) + 1; }
 
   SampleTable _short_term_table;
   SampleTable _long_term_table;
@@ -796,6 +789,7 @@ class SampleTables: public CHeapObj<mtInternal> {
   SampleTable _last_extremum_samples;
 
   int _count;
+  int _large_table_count;
 
   static void print_table(const SampleTable* table, outputStream* st,
                           const ColumnWidths* widths, const print_info_t* pi) {
@@ -835,10 +829,11 @@ public:
 
   SampleTables()
     : _short_term_table(short_term_tablesize()),
-      _long_term_table(long_term_tablesize),
+      _long_term_table(long_term_tablesize()),
       _extremum_samples(Sample::num_values()),
       _last_extremum_samples(Sample::num_values()),
-      _count(0)
+      _count(0),
+      _large_table_count(MAX2(1, (int) (VitalsLongTermSampleIntervalMinutes * 60 / VitalsSampleInterval)))
   {}
 
   void add_sample(const Sample* sample) {
@@ -850,7 +845,7 @@ public:
     // only after an initial long term table interval has passed
     _count++;
     // Feed long term table
-    if ((_count % (long_term_sample_interval / VitalsSampleInterval)) == 0) {
+    if ((_count % _large_table_count) == 0) {
       _long_term_table.add_sample(sample);
     }
 
@@ -916,7 +911,7 @@ public:
         _short_term_table.walk_table_locked(&mcwclos);
 
         if (pi->csv == false) {
-          print_time_span(st, short_term_span_seconds);
+          print_time_span(st, VitalsShortTermTableHours * 3600);
         }
         print_headers(st, &widths, pi);
         print_table(&_short_term_table, st, &widths, pi);
@@ -927,7 +922,7 @@ public:
         ColumnWidths widths;
         MeasureColumnWidthsClosure mcwclos(pi, &widths);
         _long_term_table.walk_table_locked(&mcwclos);
-        print_time_span(st, long_term_span_seconds);
+        print_time_span(st, VitalsLongTermTableDays * 24 * 3600);
         print_headers(st, &widths, pi);
         print_table(&_long_term_table, st, &widths, pi);
         st->cr();
@@ -1315,13 +1310,6 @@ bool initialize() {
   initialized = true;
 
   log_info(vitals)("Vitals v%x", vitals_version);
-
-  // Adjust VitalsSampleInterval
-  if (VitalsSampleInterval == 0) {
-    log_warning(vitals)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
-                    VitalsSampleInterval);
-    return false;
-  }
 
   bool success = ColumnList::initialize();
   success = success && Legend::initialize();
