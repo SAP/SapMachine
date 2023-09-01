@@ -143,7 +143,7 @@ private:
   MallocStatisticEntry* _next;
   uint64_t              _hash_and_nr_of_frames;
   size_t                _size;
-  size_t                _nr_of_allocations;
+  size_t                _count;
   address                _frames[1];
 
 public:
@@ -151,7 +151,7 @@ public:
     _next(NULL),
     _hash_and_nr_of_frames((hash * (MAX_FRAMES + 1)) + nr_of_frames),
     _size(size),
-    _nr_of_allocations(1) {
+    _count(1) {
     memcpy(_frames, frames, sizeof(address) * nr_of_frames);
     assert(nr_of_frames <= MAX_FRAMES, "too many frames");
   }
@@ -174,15 +174,15 @@ public:
 
   void add_allocation(size_t size) {
     _size += size;
-    _nr_of_allocations += 1;
+    _count += 1;
   }
 
   size_t size() {
     return _size;
   }
 
-  size_t nr_of_allocations() {
-    return _nr_of_allocations;
+  size_t count() {
+    return _count;
   }
 
   int nr_of_frames() {
@@ -794,7 +794,7 @@ void MallocStatisticImpl::create_statistic(bool for_size, size_t* bins) {
         if (for_size) {
           bins[get_index_for_size(entry->size())] += 1;
         } else {
-          bins[get_index_for_size(entry->nr_of_allocations())] += 1;
+          bins[get_index_for_size(entry->count())] += 1;
         }
 
         entry = entry->next();
@@ -829,7 +829,7 @@ void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* ent
   stringStream ss(ss_tmp, sizeof(ss_tmp));
 
   ss.print_cr("Allocated bytes : " UINT64_FORMAT, (uint64_t) entry->size());
-  ss.print_cr("Allocated objects: " UINT64_FORMAT, (uint64_t) entry->nr_of_allocations());
+  ss.print_cr("Allocated objects: " UINT64_FORMAT, (uint64_t) entry->count());
   ss.print_raw_cr("Stack:");
 
   char tmp[256];
@@ -876,11 +876,11 @@ static int sort_by_count(const void* p1, const void* p2) {
   MallocStatisticEntry* e1 = *(MallocStatisticEntry**) p1;
   MallocStatisticEntry* e2 = *(MallocStatisticEntry**) p2;
 
-  if (e1->nr_of_allocations() > e2->nr_of_allocations()) {
+  if (e1->count() > e2->count()) {
     return 1;
   }
 
-  if (e1->nr_of_allocations() < e2->nr_of_allocations()) {
+  if (e1->count() < e2->count()) {
     return -1;
   }
 
@@ -941,7 +941,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   size_t min_size = 0;
-  size_t min_allocations = 0;
+  size_t min_count = 0;
 
   // Approximately determine a min size and count to only display the requested fractions.
   if (spec._size_fraction < 100) {
@@ -953,11 +953,11 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   if (spec._count_fraction < 100) {
     size_t bins[NR_OF_BINS];
     create_statistic(false, bins);
-    min_allocations = calc_min_from_statistic(bins, spec._count_fraction * 0.01);
+    min_count = calc_min_from_statistic(bins, spec._count_fraction * 0.01);
   }
 
   size_t total_size = 0;
-  size_t total_allocations = 0;
+  size_t total_count = 0;
   size_t total_stacks = 0;
 
   for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
@@ -968,10 +968,10 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
       while (entry != NULL) {
         total_size += entry->size();
-        total_allocations += entry->nr_of_allocations();
+        total_count += entry->count();
         total_stacks += 1;
 
-        if ((entry->size() < min_size) || (entry->nr_of_allocations() < min_allocations)) {
+        if ((entry->size() < min_size) || (entry->count() < min_count)) {
           // We don't track this.
         } else if (to_sort == NULL) {
           dump_entry(dump_stream, entry);
@@ -1013,9 +1013,9 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     _funcs->free(to_sort);
   }
 
-  dump_stream->print_cr("Total allocation size      : " UINT64_FORMAT, (uint64_t) total_size);
-  dump_stream->print_cr("Total number of allocations: " UINT64_FORMAT, (uint64_t) total_allocations);
-  dump_stream->print_cr("Total unique stacks        : " UINT64_FORMAT, (uint64_t) total_stacks);
+  dump_stream->print_cr("Total allocation size  : " UINT64_FORMAT, (uint64_t) total_size);
+  dump_stream->print_cr("Total allocations count: " UINT64_FORMAT, (uint64_t) total_count);
+  dump_stream->print_cr("Total unique stacks    : " UINT64_FORMAT, (uint64_t) total_stacks);
 
 #if 0
   for (int i = NR_OF_BINS - 1; i >= 0; --i) {
