@@ -8,6 +8,21 @@ class outputStream;
 
 namespace sap {
 
+// The spec we use for configuring the dump.
+struct DumpSpec {
+  const char* _dump_file;
+  const char* _sort;
+  int         _size_fraction;
+  int         _count_fraction;
+
+  DumpSpec() :
+    _dump_file(NULL),
+    _sort(NULL),
+    _size_fraction(100),
+    _count_fraction(100) {
+  }
+};
+
 // Traces where allocations take place. Sums up the allocations by stack and total
 // size. It is cheaper than a full trace, since it doesn't have to record frees
 // and doesn't have to store data for each individual allocation.
@@ -28,7 +43,7 @@ public:
   static bool reset(outputStream* st);
 
   // Dumps the statistic.
-  static bool dump(outputStream* st, const char* dump_file, const char* sort, int size_fraction, int count_fraction, bool on_error);
+  static bool dump(outputStream* st, DumpSpec const& spec, bool on_error);
 
   // Shuts down the statistic on error.
   static void shutdown();
