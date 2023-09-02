@@ -14,12 +14,14 @@ struct DumpSpec {
   const char* _sort;
   int         _size_fraction;
   int         _count_fraction;
+  int         _max_entries;
 
   DumpSpec() :
     _dump_file(NULL),
     _sort(NULL),
     _size_fraction(100),
-    _count_fraction(100) {
+    _count_fraction(100),
+    _max_entries(0) {
   }
 };
 
@@ -58,11 +60,12 @@ private:
   DCmdArgument<char*> _dump_file;
   DCmdArgument<jlong> _size_fraction;
   DCmdArgument<jlong> _count_fraction;
+  DCmdArgument<jlong> _max_entries;
   DCmdArgument<char*> _sort;
 
 public:
   static int num_arguments() {
-    return 6;
+    return 7;
   }
 
   MallocStatisticDCmd(outputStream* output, bool heap);

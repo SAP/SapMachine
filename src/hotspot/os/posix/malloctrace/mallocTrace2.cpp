@@ -134,6 +134,7 @@ PthreadLocker::~PthreadLocker() {
 
 // Must be a power of two minus 1.
 #define MAX_FRAMES 31
+#define FRAMES_TO_SKIP 0
 // Must be a power of two.
 #define NR_OF_STACK_MAPS 16
 #define MAP_STACK_MAP_LOAD 2
@@ -155,7 +156,6 @@ public:
     memcpy(_frames, frames, sizeof(address) * nr_of_frames);
     assert(nr_of_frames <= MAX_FRAMES, "too many frames");
   }
-
   uint64_t hash() {
     return _hash_and_nr_of_frames / (MAX_FRAMES + 1);
   }
@@ -301,10 +301,10 @@ int                    MallocStatisticImpl::_entry_size;
 #define MAX_STACK_MAP_LOAD 0.5
 
 #define CAPTURE_STACK \
-  address frames[MAX_FRAMES + 1]; \
+  address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
   int nr_of_frames = 0; \
   frame fr = os::current_frame(); \
-  while (fr.pc() && nr_of_frames <= _max_frames) { \
+  while (fr.pc() && nr_of_frames < _max_frames + FRAMES_TO_SKIP) { \
     frames[nr_of_frames] = fr.pc(); \
     nr_of_frames += 1; \
     if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
@@ -314,6 +314,11 @@ int                    MallocStatisticImpl::_entry_size;
     } else { \
       break; \
     } \
+  } \
+  /* We know at least the called addreess */ \
+  if (nr_of_frames < 2) { \
+    frames[nr_of_frames] = (address) caller_address; \
+    nr_of_frames += 1; \
   }
 
 
@@ -500,8 +505,10 @@ void MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames
   assert(!_track_free, "Only used for summary tracking");
 
   // Skip the top frame since it is always from the hooks.
-  nr_of_frames = MAX2(nr_of_frames - 1, 0);
-  frames += 1;
+  nr_of_frames = MAX2(nr_of_frames - FRAMES_TO_SKIP, 0);
+  frames += FRAMES_TO_SKIP;
+
+  assert(nr_of_frames <= _max_frames, "Overflow");
 
   size_t hash = hash_for_frames(nr_of_frames, frames);
   int idx = hash & (NR_OF_STACK_MAPS - 1);
@@ -587,7 +594,7 @@ void MallocStatisticImpl::resize_map(int map, int new_mask) {
 
   // Fail silently if we don't get the memory.
   if (new_map != NULL) {
-    for (int i = 0; i < _stack_maps_mask[map]; ++i) {
+    for (int i = 0; i <= _stack_maps_mask[map]; ++i) {
       MallocStatisticEntry* entry = old_map[i];
 
       while (entry != NULL) {
@@ -830,7 +837,7 @@ void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* ent
 
   ss.print_cr("Allocated bytes : " UINT64_FORMAT, (uint64_t) entry->size());
   ss.print_cr("Allocated objects: " UINT64_FORMAT, (uint64_t) entry->count());
-  ss.print_raw_cr("Stack:");
+  ss.print_cr("Stack (%d frames):", entry->nr_of_frames());
 
   char tmp[256];
 
@@ -862,11 +869,11 @@ static int sort_by_size(const void* p1, const void* p2) {
   MallocStatisticEntry* e2 = *(MallocStatisticEntry**) p2;
 
   if (e1->size() > e2->size()) {
-    return 1;
+    return -1;
   }
 
   if (e1->size() < e2->size()) {
-    return -1;
+    return 1;
   }
 
   return 0;
@@ -877,11 +884,11 @@ static int sort_by_count(const void* p1, const void* p2) {
   MallocStatisticEntry* e2 = *(MallocStatisticEntry**) p2;
 
   if (e1->count() > e2->count()) {
-    return 1;
+    return -1;
   }
 
   if (e1->count() < e2->count()) {
-    return -1;
+    return 1;
   }
 
   return 0;
@@ -905,19 +912,26 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     return false;
   }
 
+  const char* sort = NULL;
   int (*sort_algo)(const void*, const void*) = NULL;
-
   int added_entries = 0;
   int max_entries = 1024;
   MallocStatisticEntry** to_sort = NULL;
 
-  if (spec._sort != NULL) {
-    if (strcmp("size", spec._sort) == 0) {
+  if (spec._max_entries > 0) {
+    // Makes only sense if we sort.
+    sort = "size";
+  }
+
+  sort = spec._sort == NULL ? sort : spec._sort;
+
+  if (sort != NULL) {
+    if (strcmp("size", sort) == 0) {
       sort_algo = sort_by_size;
-    } else if (strcmp("count", spec._sort) == 0) {
+    } else if (strcmp("count", sort) == 0) {
       sort_algo = sort_by_count;
     } else {
-      msg_stream->print_cr("Invalid sorting argument '%s'. Muste be 'size' or 'count'.", spec._sort);
+      msg_stream->print_cr("Invalid sorting argument '%s'. Muste be 'size' or 'count'.", sort);
       pthread_setspecific(_malloc_suspended, NULL);
 
       return false;
@@ -959,6 +973,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   size_t total_size = 0;
   size_t total_count = 0;
   size_t total_stacks = 0;
+  int stacks_dumped = 0;
 
   for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
     MallocStatisticEntry** map = _stack_maps[idx];
@@ -986,6 +1001,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
             if (new_to_sort == NULL) {
               for (int i = 0; i < added_entries; ++i) {
                 dump_entry(dump_stream, to_sort[i]);
+                stacks_dumped += 1;
               }
 
               _funcs->free(to_sort);
@@ -1002,12 +1018,14 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   if (sort_algo != NULL) {
-    msg_stream->print_cr("%d stacks sorted by %s", added_entries, spec._sort);
+    int to_print = MIN2(added_entries, spec._max_entries);
 
+    msg_stream->print_cr("%d stacks sort by %s", to_print, sort);
     qsort(to_sort, added_entries, sizeof(MallocStatisticEntry*), sort_algo);
 
-    for (int i = 0; i < added_entries; ++i) {
+    for (int i = 0; i < to_print; ++i) {
       dump_entry(dump_stream ,to_sort[i]);
+      stacks_dumped += 1;
     }
 
     _funcs->free(to_sort);
@@ -1033,7 +1051,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
   timer.stop();
   msg_stream->print_cr("Dump finished in %.1f seconds (%.3f stacks per second).", timer.seconds(),
-      total_stacks / timer.seconds());
+      stacks_dumped  / timer.seconds());
   pthread_setspecific(_malloc_suspended, NULL);
   _forbid_resizes = false;
 
@@ -1126,6 +1144,7 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
                  "must contain.", "INT", false, "100"),
   _count_fraction("-count-fraction", "The fraction in percent of the total allocation count " \
                   "the output must contain.", "INT", false, "100"),
+  _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "-1"),
   _sort("-sort", "If given the stacks are sorted. If the argument is 'size' they are " \
        "sorted by size and if the argument is 'count' the are sorted by allocation " \
        "count.", "STRING", false) {
@@ -1134,6 +1153,7 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
+  _dcmdparser.add_dcmd_option(&_max_entries);
   _dcmdparser.add_dcmd_option(&_sort);
 }
 
@@ -1159,6 +1179,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
     spec._sort = _sort.value();
     spec._size_fraction = _size_fraction.value();
     spec._count_fraction = _count_fraction.value();
+    spec._max_entries = _max_entries.value();
 
     MallocStatistic::dump(_output, spec, false);
   } else if (strcmp(cmd, "test") == 0) {
