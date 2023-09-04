@@ -46,79 +46,32 @@
 # Windows: Testbug: users mixed up by our infrastructure
 # Aix: also in central exclude list, see 8211847.
 #
-# SapMachine 2019-07-16 Still fails
-java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
+# SapMachine 2023-08-03 Try again
+#java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
 
 # SapMachine 2018-08-22 Failures on sparc/linuxppc64le.
 # Some just fail sporadic.
+# SapMachine 2023-08-03 Try again
 #
-com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le
+#com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le
 #
-com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java                             linux-ppc64le
+#com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le
 #
-com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le
-#
-com/sun/nio/sctp/SctpChannel/SocketOptionTests.java                                  linux-ppc64le
-#
-com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le
+#com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le
 
 # SapMachine 2018-06-22, 2019-04-30
 # Fails only on recent Suse systems (e.g. SLES 12.2, 12.4, 15): "RuntimeException: Test failed for angle 15.0"
 # The test passes on SLES 12.0, SLES 11.3, RHEL 6.1
 #
 # Opened bug for this: 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
-java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-all
+# SapMachine 2023-08-03 Try again
+#java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-all
 
-# SapMachine 2019-09-26
-# This seems to fail on RHEL 7: java.lang.RuntimeException: Font metrics differ for angle 165
-#
-java/awt/font/Rotate/RotatedFontMetricsTest.java                             8219641 linux-all
-
-###############################################################################
-# New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
-
-# SapMachine 2019-06-28
-#
-# java.lang.AssertionError at java.desktop/sun.awt.shell.Win32ShellFolder2$4.call(Win32ShellFolder2.java:440)
-# Seen in 11, 13, 14.
-#
-# SapMachine 2020-06-22
-# We give up on fixing this. We keep the test excldued.
-javax/swing/JFileChooser/4847375/bug4847375.java                             8227257 windows-x64
-
-# SapMachine 2019-07-15
-# Issue started occuring in 06/2019 but not related to JDK updates
-#
-#
-# https://bugs.openjdk.java.net/browse/JDK-8229023
-#java/awt/print/PrinterJob/SameService.java                                   8229023 linux-s390x
-
-###############################################################################
-# New failures detected after GA of 11.0.4 (e.g. seen only in jdk11u-dev after branching 11.0.4 to jdk11u)
-
-# SapMachine 2019-08-01
-# Appears in 11, 13, 14. In 11 not seen for quite some time, but failures with the same error in the database.
-#
-#
-# SapMachine 2019-08-13 Remove entry after moving tests to OSX 10.12+. There the font iteration is fast.
-#
-#
-#java/awt/FontClass/FontSize1Test.java                                                macosx-all
-
-###############################################################################
-# New failures detected after GA of 11.0.9 (e.g. seen only in jdk11u-dev after branching 11.0.9 to jdk11u)
-
-# SapMachine 2020-09-17
-# SocketException: Cannot allocate memory
-#
-# Seen a lot on mac, also 7, 11 ...
-#
-#
-#
-#
-#
-#
-java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                     macosx-all
+# SapMachine 2023-07-26
+# These two tests fail very often on our windows machines. This seems to be caused by network 
+# filtering in our infrastructure in case of a lot of datagram packets in a very short time.
+java/net/DatagramSocket/SendSize.java                                                  windows-x64
+java/nio/channels/DatagramChannel/ReceiveISA.java                                      windows-x64
 
 ###############################################################################
 # New failures detected after GA of 11.0.10 (e.g. seen only in jdk11u-dev after branching 11.0.10 to jdk11u)
@@ -129,23 +82,16 @@ java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                
 #
 #
 # https://bugs.openjdk.java.net/browse/JDK-8232153
-sun/security/pkcs11/Secmod/AddTrustedCert.java                               8232153 linux-aarch64,linux-ppc64le
+# SapMachine 2023-09-01 Try again
+#sun/security/pkcs11/Secmod/AddTrustedCert.java                               8232153 linux-aarch64,linux-ppc64le
 
 # SapMachine 2021-02-24
 # Test sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java that was introduced
 # with https://bugs.openjdk.java.net/browse/JDK-8257545 fails on ...
 # Probably some issue with OS configuration/libnss. We simply exclude it.
 #
+# SapMachine 2023-09-01 Try again
 #sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java                                 linux-s390x
-
-###############################################################################
-# New failures detected after GA of 11.0.16 (e.g. seen only in jdk11u-dev after branching 11.0.16 to jdk11u)
-
-# SapMachine 2022-08-17
-# We see this issue occuring on our new Mac aarch64 VMs
-# Excluding now to reduce noise
-#
-java/net/MulticastSocket/Promiscuous.java                                            macosx-aarch64
 
 ###############################################################################
 # Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
@@ -237,7 +183,7 @@ sun/tools/jstat/jstatLineCounts4.sh                                          824
 # SapMachine 2023-03-20: the next 2 fail on Alpine (unfortunately x64 is not soo specific)
 #
 #
-com/sun/jdi/JdwpAllowTest.java                                                       linux-x64
+com/sun/jdi/JdwpAllowTest.java                                                       aix-ppc64,linux-x64
 com/sun/jdi/JdwpListenTest.java                                                      linux-x64
 
 ###############################################################################
@@ -262,18 +208,39 @@ java/foreign/TestHandshake.java                                                 
 java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1                         linux-ppc64le
 
 ###############################################################################
-# Failing new tests, unsupported new features in jdk20
-
-# SapMachine 2022-07-04: JDK-8224768 removed this test from ProblemList, afterwards the test failures started
-# Seems to be fixed with https://bugs.openjdk.org/browse/JDK-8297955
-#security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java     generic-all
-
-###############################################################################
 # Failing new tests, unsupported new features in jdk21
 
 # SapMachine 2022-12-29: fails sometimes with timeout on our slooooow Linuxppc64le machines
 #
 jdk/internal/vm/Continuation/Fuzz.java#preserve-fp                                   linux-ppc64le
+
+# SapMachine 2023-06-06
+#
+com/sun/net/httpserver/simpleserver/StressDirListings.java                            aix-ppc64
+java/net/httpclient/http2/ContinuationFrameTest.java                                  aix-ppc64
+java/net/DatagramSocket/SendReceiveMaxSize.java                                       aix-ppc64
+java/net/MulticastSocket/Promiscuous.java                                             aix-ppc64
+java/net/Socket/asyncClose/Race.java                                                  aix-ppc64
+java/nio/channels/Channels/SocketChannelStreams.java                                  aix-ppc64
+java/nio/channels/DatagramChannel/SendReceiveMaxSize.java                             aix-ppc64
+
+# Tests that fail with xlc16
+# 2023-07-06 seems JliLaunchTest failed only in stage (xlc16)
+#tools/launcher/JliLaunchTest.java                                                     aix-ppc64
+# https://bugs.openjdk.org/browse/JDK-8306007
+#java/lang/String/concat/IntegerMinValue.java                                          aix-ppc64
+
+# SapMachine 2023-08-01
+# https://bugs.openjdk.org/browse/JDK-8309846
+jdk/jfr/event/runtime/TestResidentSetSizeEvent.java                                   aix-ppc64
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk22
+
+# SapMachine 2023-08-25
+#
+# see 8315026: java/lang/ProcessHandle/TreeTest.java fails intermittent on AIX in TreeTest.test5
+#java/lang/ProcessHandle/TreeTest.java                                                 aix-all
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
