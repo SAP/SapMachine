@@ -42,29 +42,10 @@
 ###############################################################################
 # New failures detected after GA or caused by changes pushed after GA of 11.
 
-# SapMachine 2019-01-08
-# RuntimeException: Total aborts count (1002) should be less or equal to 1001: expected that 1002 <= 1001
-# SapMachine 2019-08-07 Still failing
-#
-compiler/rtm/locking/TestRTMSpinLoopCount.java                                       generic-ppc64,linux-ppc64le
-
-# SapMachine 2022-04-01
-# Expected that method with rtm lock elision was deoptimized after 1 lock attempts: expected 2 to equal 1
-#
-compiler/rtm/locking/TestRTMAbortThreshold.java                                      generic-ppc64,linux-ppc64le
-
 # SapMachine 2019-04-29
 # Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
-vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
-
-# SapMachine 2019-08-07
-# Seems to occur only on ...
-#
-#
-# SapMachine 2019-09-10 This is probably the linux kernel issue on early ppc64le releases.
-# It fails for jdk11 and jdk14 on ..., which is SLES 12.1.
-# It passes for both on ...: SLES 12.3, ...: RHEL 7.2, ...: RHEL 7.3 and ...: Ubuntu 16.4
-runtime/StackGuardPages/testme.sh                                                    linux-ppc64le
+# SapMachine 2023-08-03 Enable again and see what happens
+#vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
@@ -75,7 +56,8 @@ runtime/StackGuardPages/testme.sh                                               
 #
 # SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
 # For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
-serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
+# SapMachine 2023-08-03 Enable again and see what happens
+#serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
 
 ###############################################################################
 # New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
@@ -83,8 +65,7 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # SapMachine 2020-04-09
 # We see some new failures on aarch64, 11u only. They probably aren't new but
 # we just started to run tests for 11u on that platform lately
-#
-#
+# SapMachine 2023-08-03 try again
 #
 #compiler/c2/cr6340864/TestIntVect.java                                               linux-aarch64
 #
@@ -101,13 +82,15 @@ serviceability/dcmd/framework/VMVersionTest.java                                
 # New failures detected after GA of 11.0.17 (e.g. seen only in jdk11u-dev after branching 11.0.17 to jdk11u)
 
 # SapMachine 2022-10-17 Issues on ... zGC is not fully supported in 11, so excluding there
+# SapMachine 2023-08-03 try again
 #
 #compiler/gcbarriers/UnsafeIntrinsicsTest.java#z                                      linux-x64
+# SapMachine 2023-08-03 try again
 #
 #gc/stress/gcold/TestGCOldWithZ.java                                                  linux-x64
 
 ###############################################################################
-# Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
+# Failing new tests, unsupported new features in jdk12
 
 # SapMachine 2019-01-08
 # Could not reserve enough space for 131072KB object heap
@@ -185,7 +168,8 @@ runtime/logging/loadLibraryTest/LoadLibraryTest.java                            
 compiler/vectorapi/reshape/TestVectorReinterpret.java                                linux-ppc64le,aix-ppc64
 
 # SapMachine 2022-06-15 Vector API Timeout
-compiler/vectorapi/VectorRebracket128Test.java                                       linux-ppc64le
+compiler/vectorapi/VectorRebracket128Test.java#ZSinglegen                            linux-ppc64le,aix-ppc64
+compiler/vectorapi/VectorRebracket128Test.java#ZGenerational                         linux-ppc64le,aix-ppc64
 
 # SapMachine 2022-06-15 Loom
 #vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java                    linux-ppc64le
@@ -196,6 +180,22 @@ compiler/vectorapi/VectorRebracket128Test.java                                  
 
 # SapMachine 2022-12-14: Test needs an additional JDK19? We do not want to provide that during our test runs.
 runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java            generic-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk21
+
+# SapMachine 2023-06-06
+#
+gtest/GTestWrapper.java                                                              aix-ppc64
+runtime/jni/getCreatedJavaVMs/TestGetCreatedJavaVMs.java                             aix-ppc64
+runtime/NMT/JcmdScale.java                                                           aix-ppc64
+runtime/Thread/TestAlwaysPreTouchStacks.java                                         aix-ppc64
+
+# SapMachine 2023-06-06
+#
+runtime/Shutdown/ShutdownTest.java                                                   aix-ppc64
+runtime/posixSig/TestPosixSig.java                                                   aix-ppc64
+vmTestbase/vm/mlvm/mixed/stress/java/findDeadlock/TestDescription.java               aix-ppc64
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
