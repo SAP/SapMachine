@@ -3,6 +3,9 @@
 #include "jvm_io.h"
 #include "mallochooks.h"
 #include "malloctrace/mallocTrace2.hpp"
+
+#include "code/codeBlob.hpp"
+#include "code/codeCache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/timer.hpp"
@@ -209,6 +212,7 @@ static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
   return register_hooks(hooks);
 }
 
+typedef int backtrace_func_t(void** stacks, int max_depth);
 
 // A pthread mutex usable in arrays.
 struct CacheLineSafeLock {
@@ -220,6 +224,7 @@ class MallocStatisticImpl : public AllStatic {
 private:
 
   static real_funcs_t*          _funcs;
+  static backtrace_func_t*      _backtrace;
   static volatile bool          _initialized;
   static bool                   _enabled;
   static bool                   _shutdown;
@@ -281,6 +286,7 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
 };
 
 real_funcs_t*          MallocStatisticImpl::_funcs;
+backtrace_func_t*      MallocStatisticImpl::_backtrace;
 volatile bool          MallocStatisticImpl::_initialized;
 bool                   MallocStatisticImpl::_enabled;
 bool                   MallocStatisticImpl::_shutdown;
@@ -303,22 +309,26 @@ int                    MallocStatisticImpl::_entry_size;
 #define CAPTURE_STACK \
   address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
   int nr_of_frames = 0; \
-  frame fr = os::current_frame(); \
-  while (fr.pc() && nr_of_frames < _max_frames + FRAMES_TO_SKIP) { \
-    frames[nr_of_frames] = fr.pc(); \
-    nr_of_frames += 1; \
-    if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
-      break; \
-    if (fr.sender_pc() && !os::is_first_C_frame(&fr)) { \
-      fr = os::get_sender_for_C_frame(&fr); \
-    } else { \
-      break; \
+  if (_backtrace != NULL) { \
+    nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
+  } else { \
+    frame fr = os::current_frame(); \
+    while (fr.pc() && nr_of_frames < _max_frames + FRAMES_TO_SKIP) { \
+      frames[nr_of_frames] = fr.pc(); \
+      nr_of_frames += 1; \
+      if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
+        break; \
+      if (fr.sender_pc() && !os::is_first_C_frame(&fr)) { \
+        fr = os::get_sender_for_C_frame(&fr); \
+      } else { \
+        break; \
+      } \
     } \
-  } \
-  /* We know at least the called addreess */ \
-  if (nr_of_frames < 2) { \
-    frames[nr_of_frames] = (address) caller_address; \
-    nr_of_frames += 1; \
+    /* We know at least the called addreess */ \
+    if (nr_of_frames < 2) { \
+      frames[nr_of_frames] = (address) caller_address; \
+      nr_of_frames += 1; \
+    } \
   }
 
 
@@ -630,6 +640,18 @@ void MallocStatisticImpl::initialize(outputStream* st) {
         fatal("Could not initialize lock");
       }
     }
+
+    _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
+
+    if (dlerror() != NULL) {
+      _backtrace = NULL;
+    }
+
+    if (_backtrace != NULL) {
+      // Trigger initialization needed.
+      void* tmp[1];
+      _backtrace(tmp, 1);
+    }
   }
 }
 
@@ -842,12 +864,21 @@ void MallocStatisticImpl::dump_entry(outputStream* st, MallocStatisticEntry* ent
   char tmp[256];
 
   for (int i = 0; i < entry->nr_of_frames(); ++i) {
-    ss.print("  %p  ", entry->frames()[i]);
+    address frame = entry->frames()[i];
+    ss.print("  %p  ", frame);
 
-    if (os::print_function_and_library_name(&ss, entry->frames()[i], tmp, sizeof(tmp), true, true, false)) {
+    if (os::print_function_and_library_name(&ss, frame, tmp, sizeof(tmp), true, true, false)) {
       ss.cr();
     } else {
-      ss.print_raw_cr("<compiled code>");
+      CodeBlob* blob = CodeCache::find_blob((void*) frame);
+
+      if (blob != NULL) {
+        ss.print_raw(" ");
+        blob->print_value_on(&ss);
+        ss.cr();
+      } else {
+        ss.print_raw_cr(" <unknown code>");
+      }
     }
 
     // Flush the temp buffer if we are near the end.
@@ -939,6 +970,10 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
     // The colde below handles a failed allocation.
     to_sort = (MallocStatisticEntry**) _funcs->calloc(max_entries, sizeof(MallocStatisticEntry*));
+  }
+
+  if (_backtrace != NULL) {
+    dump_stream->print_raw_cr("Stacks collected via backtrace().");
   }
 
   elapsedTimer timer;
