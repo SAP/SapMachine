@@ -69,6 +69,8 @@
 #include "mallocInfoDcmd.hpp"
 // SapMachine 2021-09-01: malloc-trace
 #include "malloctrace/mallocTraceDCmd.hpp"
+#endif
+#if defined(LINUX) || defined(__APPLE__)
 // SapMachine 2023-08-15: malloc trace2
 #include "malloctrace/mallocTrace2.hpp"
 #endif
@@ -142,6 +144,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
   // SapMachine 2021-09-01: malloc-trace
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
+#endif
+#if defined(LINUX) || defined(__APPLE__)
   // SapMachine 2023-08-15: malloc trace2
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocStatisticDCmd>(full_export, true, false));
 #endif // LINUX

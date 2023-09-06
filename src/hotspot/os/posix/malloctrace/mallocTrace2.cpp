@@ -225,6 +225,7 @@ private:
 
   static real_funcs_t*          _funcs;
   static backtrace_func_t*      _backtrace;
+  static bool                   _use_backtrace;
   static volatile bool          _initialized;
   static bool                   _enabled;
   static bool                   _shutdown;
@@ -266,7 +267,7 @@ private:
 
 public:
   static void initialize(outputStream* st);
-  static bool enable(outputStream* st, int stack_depth);
+  static bool enable(outputStream* st, int stack_depth, bool use_backtrace);
   static bool disable(outputStream* st);
   static bool reset(outputStream* st);
   static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec, bool on_error);
@@ -287,6 +288,7 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
 
 real_funcs_t*          MallocStatisticImpl::_funcs;
 backtrace_func_t*      MallocStatisticImpl::_backtrace;
+bool                   MallocStatisticImpl::_use_backtrace;
 volatile bool          MallocStatisticImpl::_initialized;
 bool                   MallocStatisticImpl::_enabled;
 bool                   MallocStatisticImpl::_shutdown;
@@ -306,10 +308,13 @@ int                    MallocStatisticImpl::_entry_size;
 
 #define MAX_STACK_MAP_LOAD 0.5
 
+static void break_here() {
+}
+
 #define CAPTURE_STACK \
   address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
   int nr_of_frames = 0; \
-  if (_backtrace != NULL) { \
+  if (_use_backtrace) { \
     nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
   } else { \
     frame fr = os::current_frame(); \
@@ -318,16 +323,16 @@ int                    MallocStatisticImpl::_entry_size;
       nr_of_frames += 1; \
       if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
         break; \
-      if (fr.sender_pc() && !os::is_first_C_frame(&fr)) { \
-        fr = os::get_sender_for_C_frame(&fr); \
-      } else { \
-        break; \
-      } \
+      fr = os::get_sender_for_C_frame(&fr); \
     } \
     /* We know at least the called addreess */ \
     if (nr_of_frames < 2) { \
       frames[nr_of_frames] = (address) caller_address; \
-      nr_of_frames += 1; \
+      nr_of_frames += 1; break_here(); \
+      if (_backtrace != NULL) { \
+        nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
+        frames[0] = (address) break_here; \
+      } \
     } \
   }
 
@@ -655,7 +660,7 @@ void MallocStatisticImpl::initialize(outputStream* st) {
   }
 }
 
-bool MallocStatisticImpl::enable(outputStream* st, int stack_depth) {
+bool MallocStatisticImpl::enable(outputStream* st, int stack_depth, bool use_backtrace) {
   initialize(st);
   PthreadLocker lock(&_malloc_stat_lock._lock);
 
@@ -671,7 +676,24 @@ bool MallocStatisticImpl::enable(outputStream* st, int stack_depth) {
     return false;
   }
 
+  if (stack_depth < 1 || stack_depth > MAX_FRAMES) {
+    st->print_cr("The given stack depth %d is outside of the valid range [%d, %d]",
+                 stack_depth, 1, MAX_FRAMES);
+
+    return false;
+  }
+
   _track_free = false;
+  _use_backtrace = use_backtrace && (_backtrace != NULL);
+
+  if (_use_backtrace && use_backtrace) {
+    st->print_raw_cr("Using backtrace() to sample stacks.");
+  } else if (use_backtrace) {
+    st->print_raw_cr("Using fallback mechanism to sample stacks, since backtrace() was not available.");
+  } else {
+    st->print_raw_cr("Using fallback mechanism to sample stacks.");
+  }
+
   _max_frames = stack_depth;
   _funcs = setup_hooks(&_malloc_stat_hooks, st);
 
@@ -1025,6 +1047,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
           // We don't track this.
         } else if (to_sort == NULL) {
           dump_entry(dump_stream, entry);
+          stacks_dumped += 1;
         } else {
           to_sort[added_entries] = entry;
           added_entries += 1;
@@ -1070,20 +1093,6 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   dump_stream->print_cr("Total allocations count: " UINT64_FORMAT, (uint64_t) total_count);
   dump_stream->print_cr("Total unique stacks    : " UINT64_FORMAT, (uint64_t) total_stacks);
 
-#if 0
-  for (int i = NR_OF_BINS - 1; i >= 0; --i) {
-    if ((sort != NULL) && (bins[i] != 0)) {
-      if (strcmp("size", sort) == 0) {
-        dump_stream->print_cr("sizes " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, get_size_for_index(i),
-          get_size_for_index(i + 1), (uint64_t) bins[i]);
-      } else {
-        dump_stream->print_cr("allocationss " UINT64_FORMAT " -> " UINT64_FORMAT ": " UINT64_FORMAT, 
-          get_size_for_index(i), get_size_for_index(i + 1), (uint64_t) bins[i]);
-      }
-    }
-  }
-#endif
-
   timer.stop();
   msg_stream->print_cr("Dump finished in %.1f seconds (%.3f stacks per second).", timer.seconds(),
       stacks_dumped  / timer.seconds());
@@ -1109,8 +1118,8 @@ void MallocStatistic::initialize() {
   MallocStatisticImpl::initialize(NULL);
 }
 
-bool MallocStatistic::enable(outputStream* st, int stack_depth) {
-  return MallocStatisticImpl::enable(st, stack_depth);
+bool MallocStatistic::enable(outputStream* st, int stack_depth, bool use_backtrace) {
+  return MallocStatisticImpl::enable(st, stack_depth, use_backtrace);
 }
 
 bool MallocStatistic::disable(outputStream* st) {
@@ -1171,6 +1180,8 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
   _cmd("cmd", "enable,disable,reset,dump,test", "STRING", true),
   _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5"),
+  _use_backtrace("-use-backtrace", "If true we try to use the backtrace() method to sample " \
+                 "the stack traces.", "BOOLEAN", false, "true"),
   _dump_file("-dump-file", "If given the dump command writes the result to the given file. " \
              "Note that the filename is interpreted by the target VM. You can use " \
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
@@ -1185,6 +1196,7 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
        "count.", "STRING", false) {
   _dcmdparser.add_dcmd_argument(&_cmd);
   _dcmdparser.add_dcmd_option(&_stack_depth);
+  _dcmdparser.add_dcmd_option(&_use_backtrace);
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
@@ -1199,7 +1211,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
   const char* const cmd = _cmd.value();
 
   if (strcmp(cmd, "enable") == 0) {
-    if (MallocStatistic::enable(_output, (int) _stack_depth.value())) {
+    if (MallocStatistic::enable(_output, (int) _stack_depth.value(), _use_backtrace.value())) {
       _output->print_raw_cr("mallocstatistic enabled");
     }
   } else if (strcmp(cmd, "disable") == 0) {
