@@ -36,7 +36,7 @@ public:
   static void initialize();
 
   // Enables the tracing. Returns true if enabled.
-  static bool enable(outputStream* st, int stack_depth, bool use_bracktrace);
+  static bool enable(outputStream* st, int stack_depth, bool use_bracktrace, int to_track_mask);
 
   // Disables the tracing. Returns true if disabled.
   static bool disable(outputStream* st);
@@ -58,6 +58,7 @@ private:
   DCmdArgument<char*> _cmd;
   DCmdArgument<jlong> _stack_depth;
   DCmdArgument<bool>  _use_backtrace;
+  DCmdArgument<jlong> _skip_allocations;
   DCmdArgument<char*> _dump_file;
   DCmdArgument<jlong> _size_fraction;
   DCmdArgument<jlong> _count_fraction;
@@ -66,7 +67,7 @@ private:
 
 public:
   static int num_arguments() {
-    return 8;
+    return 9;
   }
 
   MallocStatisticDCmd(outputStream* output, bool heap);
