@@ -8,6 +8,21 @@ class outputStream;
 
 namespace sap {
 
+// The spec we use for configuring the trace
+struct TraceSpec {
+  int _stack_depth;
+  bool _use_backtrace;
+  int _skip_exp;
+  bool _force;
+
+  TraceSpec() :
+    _stack_depth(10),
+    _use_backtrace(true),
+    _skip_exp(0),
+    _force(false) {
+  }
+};
+
 // The spec we use for configuring the dump.
 struct DumpSpec {
   const char* _dump_file;
@@ -36,7 +51,7 @@ public:
   static void initialize();
 
   // Enables the tracing. Returns true if enabled.
-  static bool enable(outputStream* st, int stack_depth, bool use_bracktrace, int to_track_mask);
+  static bool enable(outputStream* st, TraceSpec const& spec);
 
   // Disables the tracing. Returns true if disabled.
   static bool disable(outputStream* st);
@@ -59,6 +74,7 @@ private:
   DCmdArgument<jlong> _stack_depth;
   DCmdArgument<bool>  _use_backtrace;
   DCmdArgument<jlong> _skip_allocations;
+  DCmdArgument<bool>  _force;
   DCmdArgument<char*> _dump_file;
   DCmdArgument<jlong> _size_fraction;
   DCmdArgument<jlong> _count_fraction;
@@ -67,7 +83,7 @@ private:
 
 public:
   static int num_arguments() {
-    return 9;
+    return 10;
   }
 
   MallocStatisticDCmd(outputStream* output, bool heap);

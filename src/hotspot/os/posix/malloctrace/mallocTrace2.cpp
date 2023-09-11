@@ -275,7 +275,7 @@ private:
 
 public:
   static void initialize(outputStream* st);
-  static bool enable(outputStream* st, int stack_depth, bool use_backtrace, int to_track_mask);
+  static bool enable(outputStream* st, TraceSpec const& spec);
   static bool disable(outputStream* st);
   static bool reset(outputStream* st);
   static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec, bool on_error);
@@ -387,7 +387,7 @@ uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   }
 
   uint64_t hash = (uint64_t) ptr;
-#if 0
+#if 1
   hash = (~hash) + (hash << 21);
   hash = hash ^ (hash >> 24);
   hash = hash + hash * 265;
@@ -757,14 +757,23 @@ void MallocStatisticImpl::initialize(outputStream* st) {
   }
 }
 
-bool MallocStatisticImpl::enable(outputStream* st, int stack_depth, bool use_backtrace, int to_track_mask) {
+bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   initialize(st);
   PthreadLocker lock(&_malloc_stat_lock._lock);
 
   if (_enabled) {
-    st->print_raw_cr("malloc statistic is already enabled!");
+    if (spec._force) {
+      _enabled = false;
+      setup_hooks(NULL, st);
+      cleanup();
+      _funcs = NULL;
 
-    return false;
+      st->print_raw_cr("Disabling already running trace first.");
+    } else {
+      st->print_raw_cr("malloc statistic is already enabled!");
+
+      return false;
+    }
   }
 
   if (_shutdown) {
@@ -773,31 +782,36 @@ bool MallocStatisticImpl::enable(outputStream* st, int stack_depth, bool use_bac
     return false;
   }
 
-  if (stack_depth < 1 || stack_depth > MAX_FRAMES) {
+  if (spec._stack_depth < 1 || spec._stack_depth > MAX_FRAMES) {
     st->print_cr("The given stack depth %d is outside of the valid range [%d, %d]",
-                 stack_depth, 1, MAX_FRAMES);
+                 spec._stack_depth, 1, MAX_FRAMES);
 
     return false;
   }
 
   _track_free = false;
-  _to_track_mask = to_track_mask;
-  _use_backtrace = use_backtrace && (_backtrace != NULL);
+  _to_track_mask = (1 << spec._skip_exp) - 1;
+
+  if (_to_track_mask != 0) {
+    st->print_cr("Tracking about every %d allocations.", _to_track_mask + 1);
+  }
+
+  _use_backtrace = spec._use_backtrace && (_backtrace != NULL);
 
 #if defined(ALLOCATION_TRACKING_STATS)
   tracked_ptrs = 0;
   not_tracked_ptrs = 0;
 #endif
 
-  if (_use_backtrace && use_backtrace) {
+  if (_use_backtrace && spec._use_backtrace) {
     st->print_raw_cr("Using backtrace() to sample stacks.");
-  } else if (use_backtrace) {
+  } else if (spec._use_backtrace) {
     st->print_raw_cr("Using fallback mechanism to sample stacks, since backtrace() was not available.");
   } else {
     st->print_raw_cr("Using fallback mechanism to sample stacks.");
   }
 
-  _max_frames = stack_depth;
+  _max_frames = spec._stack_depth;
   _funcs = setup_hooks(&_malloc_stat_hooks, st);
 
   if (_funcs == NULL) {
@@ -1209,9 +1223,12 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 #if defined(ALLOCATION_TRACKING_STATS)
   msg_stream->print_cr("tracked alllocations " UINT64_FORMAT ", untracked allocations " UINT64_FORMAT,
                        tracked_ptrs, not_tracked_ptrs);
-  msg_stream->print_cr("%.2f %% of the allocations were tracked, about every %.2f allocations " \
-                       "(target %d)", 100.0 * tracked_ptrs / (tracked_ptrs + not_tracked_ptrs),
-                       (tracked_ptrs + not_tracked_ptrs) / ((float) tracked_ptrs), (int) (_to_track_mask + 1));
+
+  if (tracked_ptrs > 0) {
+    msg_stream->print_cr("%.2f %% of the allocations were tracked, about every %.2f allocations " \
+                         "(target %d)", 100.0 * tracked_ptrs / (tracked_ptrs + not_tracked_ptrs),
+                         (tracked_ptrs + not_tracked_ptrs) / ((float) tracked_ptrs), (int) (_to_track_mask + 1));
+  }
 #endif
 
   pthread_setspecific(_malloc_suspended, NULL);
@@ -1236,8 +1253,8 @@ void MallocStatistic::initialize() {
   MallocStatisticImpl::initialize(NULL);
 }
 
-bool MallocStatistic::enable(outputStream* st, int stack_depth, bool use_backtrace, int to_track_mask) {
-  return MallocStatisticImpl::enable(st, stack_depth, use_backtrace, to_track_mask);
+bool MallocStatistic::enable(outputStream* st, TraceSpec const& spec) {
+  return MallocStatisticImpl::enable(st, spec);
 }
 
 bool MallocStatistic::disable(outputStream* st) {
@@ -1302,6 +1319,7 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
                  "the stack traces.", "BOOLEAN", false, "true"),
   _skip_allocations("-skip-allocations", "If > 0 we only track about every 2^N allocation.",
                     "INT", false, "0"),
+  _force("-force", "If the trace is already enabled, we disable it first.", "BOOLEAN", false, "false"),
   _dump_file("-dump-file", "If given the dump command writes the result to the given file. " \
              "Note that the filename is interpreted by the target VM. You can use " \
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
@@ -1318,6 +1336,7 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_stack_depth);
   _dcmdparser.add_dcmd_option(&_use_backtrace);
   _dcmdparser.add_dcmd_option(&_skip_allocations);
+  _dcmdparser.add_dcmd_option(&_force);
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
@@ -1332,8 +1351,13 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
   const char* const cmd = _cmd.value();
 
   if (strcmp(cmd, "enable") == 0) {
-    if (MallocStatistic::enable(_output, (int) _stack_depth.value(), _use_backtrace.value(),
-                               ((1 << _skip_allocations.value()) - 1))) {
+    TraceSpec spec;
+    spec._stack_depth = (int) _stack_depth.value();
+    spec._use_backtrace = _use_backtrace.value();
+    spec._skip_exp = (int) _skip_allocations.value();
+    spec._force = _force.value();
+
+    if (MallocStatistic::enable(_output, spec)) {
       _output->print_raw_cr("mallocstatistic enabled");
     }
   } else if (strcmp(cmd, "disable") == 0) {
