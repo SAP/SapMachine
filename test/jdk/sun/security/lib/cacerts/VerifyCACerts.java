@@ -28,7 +28,7 @@
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
- *      8305975 8304760 8307134 8295894
+ *      8305975 8304760 8307134 8295894 8314960
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -48,13 +48,13 @@ public class VerifyCACerts {
 
     // The numbers of certs now.
     // SapMachine 2021-09-23: Additional certificate for SAP
-    private static final int COUNT = 97;
+    private static final int COUNT = 98;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     // SapMachine 2021-09-23: Additional certificate for SAP
     private static final String CHECKSUM
-            = "30:B5:E4:12:45:C3:F5:D9:F6:7D:02:41:88:47:04:3C:4A:9D:65:BD:ED:D8:BF:CA:05:2D:16:EB:E1:23:2E:ED";
+            = "74:DB:6D:C3:29:1D:54:65:A4:BD:83:F4:21:AF:30:1F:A6:62:0E:B6:04:42:8E:D7:E3:B0:CE:5F:8B:45:C0:A3";
 
     // map of cert alias to SHA-256 fingerprint
     @SuppressWarnings("serial")
@@ -255,6 +255,8 @@ public class VerifyCACerts {
                     "34:D8:A7:3E:E2:08:D9:BC:DB:0D:95:65:20:93:4B:4E:40:E6:94:82:59:6E:8B:6F:73:C8:42:6B:01:0A:6F:48");
             put("gtsrootecccar4 [jdk]",
                     "34:9D:FA:40:58:C5:E2:63:12:3B:39:8A:E7:95:57:3C:4E:13:13:C8:3F:E6:8F:93:55:6C:D5:E8:03:1B:3C:7D");
+            put("certignarootca [jdk]",
+                    "D4:8D:3D:23:EE:DB:50:A4:59:E5:51:97:60:1C:27:77:4B:9D:7B:18:C9:4D:5A:05:95:11:A1:02:50:B9:31:68");
         }
     };
 
