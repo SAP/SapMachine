@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 11 Release for windows-x64-installer
-checksum: sha256 a80875ffa275c53e77f4e668b95aa93165b97265a3669f8157541aa78d6fe438
+checksum: sha256 349c72cd87e55c1cf0a06a5bdae5dd452898a96f65ef7ee630fdb8b2ac15cb65
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20/sapmachine-jdk-11.0.20_windows-x64_bin.msi
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.20.1/sapmachine-jdk-11.0.20.1_windows-x64_bin.msi
 ---
