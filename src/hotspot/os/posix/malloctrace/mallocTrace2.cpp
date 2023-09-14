@@ -304,8 +304,8 @@ private:
   static void* pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
 
   static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
-  static void record_allocation(void* ptr, size_t size, int nr_of_frames, address* frames);
-  static void record_free(void* ptr, size_t size, int nr_of_frames, address* frames);
+  static void record_allocation(uint64_t hash, size_t size, int nr_of_frames, address* frames);
+  static void record_free(uint64_t hash, size_t size, int nr_of_frames, address* frames);
 
   static uint64_t ptr_hash(void* ptr);
   static bool     should_track(uint64_t hash);
@@ -478,7 +478,7 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
     } else {
       record_allocation_size(size, nr_of_frames, frames);
     }
@@ -495,7 +495,7 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
     } else {
       record_allocation_size(elems * size, nr_of_frames, frames);
     }
@@ -515,11 +515,11 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 
     if (_track_free) {
       if (should_track(old_hash)) {
-        record_free(result, old_size, nr_of_frames, frames);
+        record_free(old_hash, old_size, nr_of_frames, frames);
       }
 
       if (should_track(hash)) {
-        record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+        record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
       }
     } else if ((old_size < size) && should_track(hash)) {
       // Track the additional allocate bytes. This is somewhat wrong, since
@@ -530,7 +530,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
   } else if ((size == 0) && _track_free && should_track(old_hash)) {
     // Treat as free.
     CAPTURE_STACK;
-    record_free(ptr, old_size, nr_of_frames, frames);
+    record_free(hash, old_size, nr_of_frames, frames);
   }
 
   return result;
@@ -541,7 +541,7 @@ void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t
 
   if ((ptr != NULL) &&_track_free && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
     CAPTURE_STACK;
-    record_free(ptr, real_malloc_size(ptr), nr_of_frames, frames);
+    record_free(hash, real_malloc_size(ptr), nr_of_frames, frames);
   }
 
   real_free(ptr);
@@ -555,7 +555,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(*ptr, real_malloc_size(*ptr), nr_of_frames, frames);
+      record_allocation(hash, real_malloc_size(*ptr), nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -574,7 +574,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -593,7 +593,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -612,7 +612,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -631,7 +631,7 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(result, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -727,11 +727,17 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
   return NULL;
 }
 
-void MallocStatisticImpl::record_allocation(void* ptr, size_t size, int nr_of_frames, address* frames) {
+void MallocStatisticImpl::record_allocation(uint64_t hash, size_t size, int nr_of_frames, address* frames) {
   assert(_track_free, "Only used for detailed tracking");
+
+  StatEntry* stat_entry = record_allocation_size(size, nr_of_frames, frames);
+
+  if (stat_entry == NULL) {
+    return;
+  }
 }
 
-void MallocStatisticImpl::record_free(void* ptr, size_t size, int nr_of_frames, address* frames) {
+void MallocStatisticImpl::record_free(uint64_t hash, size_t size, int nr_of_frames, address* frames) {
   assert(_track_free, "Only used for detailed tracking");
 }
 
