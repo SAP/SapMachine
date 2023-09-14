@@ -14,12 +14,14 @@ struct TraceSpec {
   bool _use_backtrace;
   int _skip_exp;
   bool _force;
+  bool _track_free;
 
   TraceSpec() :
     _stack_depth(10),
     _use_backtrace(true),
     _skip_exp(0),
-    _force(false) {
+    _force(false),
+    _track_free(false) {
   }
 };
 
@@ -30,13 +32,17 @@ struct DumpSpec {
   int         _size_fraction;
   int         _count_fraction;
   int         _max_entries;
+  bool        _hide_dump_allocs;
+  bool        _on_error;
 
   DumpSpec() :
     _dump_file(NULL),
     _sort(NULL),
     _size_fraction(100),
     _count_fraction(100),
-    _max_entries(0) {
+    _max_entries(0),
+    _hide_dump_allocs(true),
+    _on_error(false) {
   }
 };
 
@@ -60,7 +66,7 @@ public:
   static bool reset(outputStream* st);
 
   // Dumps the statistic.
-  static bool dump(outputStream* st, DumpSpec const& spec, bool on_error);
+  static bool dump(outputStream* st, DumpSpec const& spec);
 
   // Shuts down the statistic on error.
   static void shutdown();
@@ -75,6 +81,7 @@ private:
   DCmdArgument<bool>  _use_backtrace;
   DCmdArgument<jlong> _skip_allocations;
   DCmdArgument<bool>  _force;
+  DCmdArgument<bool>  _track_free;
   DCmdArgument<char*> _dump_file;
   DCmdArgument<jlong> _size_fraction;
   DCmdArgument<jlong> _count_fraction;
@@ -83,7 +90,7 @@ private:
 
 public:
   static int num_arguments() {
-    return 10;
+    return 11;
   }
 
   MallocStatisticDCmd(outputStream* output, bool heap);

@@ -184,6 +184,13 @@ public:
     _count += 1;
   }
 
+  void remove_allocation(size_t size) {
+    assert(_size >= size, "Size cannot get negative");
+    assert(_count >= 1, "Count cannot get negative");
+    _size -= size;
+    _count -= 1;
+  }
+
   size_t size() {
     return _size;
   }
@@ -210,12 +217,30 @@ private:
   StatEntry*  _entry;
   AllocEntry* _next;
 
+#if defined(ASSERT)
+  void*       _ptr; // Is not really needed, but helps debugging.
+#endif
+
 public:
-  AllocEntry(uint64_t hash, StatEntry* entry) :
+
+#if defined(ASSERT)
+
+  AllocEntry(uint64_t hash, StatEntry* entry, AllocEntry* next, void* ptr) :
     _hash(hash),
     _entry(entry),
-    _next(NULL) {
+    _next(next),
+    _ptr(ptr) {
   }
+
+#else
+
+  AllocEntry(uint64_t hash, StatEntry* entry, AllocEntry* next) :
+    _hash(hash),
+    _entry(entry),
+    _next(next) {
+  }
+
+#endif
 
   uint64_t hash() {
     return _hash;
@@ -231,6 +256,10 @@ public:
 
   void set_next(AllocEntry* next) {
     _next = next;
+  }
+
+  AllocEntry** next_ptr() {
+    return &_next;
   }
 };
 
@@ -304,13 +333,14 @@ private:
   static void* pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
 
   static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
-  static void record_allocation(uint64_t hash, size_t size, int nr_of_frames, address* frames);
+  static void record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames);
   static void record_free(uint64_t hash, size_t size, int nr_of_frames, address* frames);
 
   static uint64_t ptr_hash(void* ptr);
   static bool     should_track(uint64_t hash);
 
   static void resize_stack_map(int map, int new_mask);
+  static void resize_alloc_map(int map, int new_mask);
   static void cleanup_for_stack_map(int map);
   static void cleanup_for_alloc_map(int map);
   static void cleanup();
@@ -323,7 +353,7 @@ public:
   static bool enable(outputStream* st, TraceSpec const& spec);
   static bool disable(outputStream* st);
   static bool reset(outputStream* st);
-  static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec, bool on_error);
+  static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec);
   static void shutdown();
 };
 
@@ -433,28 +463,35 @@ static void break_here() {
   } \
   TIME_STACK_WALK_END
 
+
+static uint64_t ptr_hash_backup(void* ptr) {
+  uint64_t hash = (uint64_t) ptr;
+  hash = (~hash) + (hash << 21);
+  hash = hash ^ (hash >> 24);
+  hash = hash * 265;
+  hash = hash ^ (hash >> 14);
+  hash = hash * 21;
+  hash = hash ^ (hash >> 28);
+  hash = hash + (hash << 31);
+
+  return hash;
+}
+
 uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   if (!_track_free && (_to_track_mask == 0)) {
     return 0;
   }
 
   uint64_t hash = (uint64_t) ptr;
-#if 1
   hash = (~hash) + (hash << 21);
   hash = hash ^ (hash >> 24);
-  hash = hash + hash * 265;
+  hash = (hash + (hash << 3)) + (hash << 8);
   hash = hash ^ (hash >> 14);
-  hash = hash + hash * 21;
+  hash = (hash + (hash << 2)) + (hash << 4);
   hash = hash ^ (hash >> 28);
   hash = hash + (hash << 31);
-#else
-  hash = (~hash) + (hash << 18); // key = (key << 18) - key - 1;
-  hash = hash ^ (hash >> 31);
-  hash = hash * 21; // key = (key + (key << 2)) + (key << 4);
-  hash = hash ^ (hash >> 11);
-  hash = hash + (hash << 6);
-  hash = hash ^ (hash >> 22);
-#endif
+
+  assert(hash == ptr_hash_backup(ptr), "Must be the same");
 
   return hash;
 }
@@ -467,6 +504,7 @@ bool MallocStatisticImpl::should_track(uint64_t hash) {
     Atomic::add(&not_tracked_ptrs, (uint64_t) 1);
   }
 #endif
+
   return (hash & _to_track_mask) == 0;
 }
 
@@ -478,7 +516,7 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(result, hash, nr_of_frames, frames);
     } else {
       record_allocation_size(size, nr_of_frames, frames);
     }
@@ -495,7 +533,7 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(result, hash, nr_of_frames, frames);
     } else {
       record_allocation_size(elems * size, nr_of_frames, frames);
     }
@@ -510,7 +548,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
   void* result = real_realloc(ptr, size);
   uint64_t hash = ptr_hash(result);
 
-  if ((result != NULL) && (should_track(old_hash) || should_track(hash)) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result != NULL) && (should_track(old_hash) || should_track(hash))) {
     CAPTURE_STACK;
 
     if (_track_free) {
@@ -518,10 +556,10 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
         record_free(old_hash, old_size, nr_of_frames, frames);
       }
 
-      if (should_track(hash)) {
-        record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
+      if (should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+        record_allocation(result, hash, nr_of_frames, frames);
       }
-    } else if ((old_size < size) && should_track(hash)) {
+    } else if ((old_size < size) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
       // Track the additional allocate bytes. This is somewhat wrong, since
       // we don't know the requested size of the original allocation and
       // old_size might be greater.
@@ -539,7 +577,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
   uint64_t hash = ptr_hash(ptr);
 
-  if ((ptr != NULL) &&_track_free && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((ptr != NULL) &&_track_free && should_track(hash)) {
     CAPTURE_STACK;
     record_free(hash, real_malloc_size(ptr), nr_of_frames, frames);
   }
@@ -555,7 +593,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(hash, real_malloc_size(*ptr), nr_of_frames, frames);
+      record_allocation(*ptr, hash, nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -574,7 +612,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(result, hash, nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -593,7 +631,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(result, hash, nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -612,7 +650,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(result, hash, nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -631,7 +669,7 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
     CAPTURE_STACK;
 
     if (_track_free) {
-      record_allocation(hash, real_malloc_size(result), nr_of_frames, frames);
+      record_allocation(result, hash, nr_of_frames, frames);
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
@@ -666,8 +704,6 @@ static size_t hash_for_frames(int nr_of_frames, address* frames) {
 }
 
 StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
-  assert(!_track_free, "Only used for summary tracking");
-
   // Skip the top frame since it is always from the hooks.
   nr_of_frames = MAX2(nr_of_frames - FRAMES_TO_SKIP, 0);
   frames += FRAMES_TO_SKIP;
@@ -684,7 +720,7 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
     return NULL;
   }
 
-  int slot = hash & _stack_maps_mask[idx];
+  int slot = (hash / NR_OF_STACK_MAPS) & _stack_maps_mask[idx];
   assert((slot >= 0) || (slot <= _stack_maps_mask[idx]), "Invalid slot");
   StatEntry* to_check = _stack_maps[idx][slot];
 
@@ -727,18 +763,97 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
   return NULL;
 }
 
-void MallocStatisticImpl::record_allocation(uint64_t hash, size_t size, int nr_of_frames, address* frames) {
+void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames) {
   assert(_track_free, "Only used for detailed tracking");
+  size_t size = _funcs->malloc_size(ptr);
 
   StatEntry* stat_entry = record_allocation_size(size, nr_of_frames, frames);
 
   if (stat_entry == NULL) {
     return;
   }
+
+  int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
+  PthreadLocker locker(&_alloc_maps_lock[idx]._lock);
+
+  if (!_enabled) {
+    return;
+  }
+
+  int slot = (hash / NR_OF_ALLOC_MAPS) & _alloc_maps_mask[idx];
+
+  // Should not already be in the table, so we remove the check in the optimized version
+#ifdef ASSERT
+  AllocEntry* entry = _alloc_maps[idx][slot];
+
+  while (entry != NULL) {
+    assert(entry->hash() != hash, "Must not be already present");
+    entry = entry->next();
+  }
+#endif
+
+  void* mem = _alloc_maps_alloc[idx]->allocate();
+
+  if (mem != NULL) {
+#if defined(ASSERT)
+    AllocEntry* entry = new (mem) AllocEntry(hash, stat_entry, _alloc_maps[idx][slot], ptr);
+#else
+    AllocEntry* entry = new (mem) AllocEntry(hash, stat_entry, _alloc_maps[idx][slot]);
+#endif
+    _alloc_maps[idx][slot] = entry;
+    _alloc_maps_size[idx] += 1;
+
+    if (_alloc_maps_size[idx] > _alloc_maps_limit[idx]) {
+      resize_alloc_map(idx, _alloc_maps_mask[idx] * 2 + 1);
+    }
+  }
 }
 
 void MallocStatisticImpl::record_free(uint64_t hash, size_t size, int nr_of_frames, address* frames) {
   assert(_track_free, "Only used for detailed tracking");
+
+  int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
+  PthreadLocker locker(&_alloc_maps_lock[idx]._lock);
+
+  if (!_enabled) {
+    return;
+  }
+
+  int slot = (hash / NR_OF_ALLOC_MAPS) & _alloc_maps_mask[idx];
+  AllocEntry** entry = &_alloc_maps[idx][slot];
+
+  while (*entry != NULL) {
+    if ((*entry)->hash() == hash) {
+      StatEntry* stat_entry = (*entry)->entry();
+      AllocEntry* next = (*entry)->next();
+      _alloc_maps_alloc[idx]->free(*entry);
+      *entry = next;
+
+      // Should not be in the table anymore.
+#ifdef ASSERT
+      AllocEntry* to_check = _alloc_maps[idx][slot];
+
+      while (to_check != NULL) {
+        assert(to_check->hash() != hash, "Must not be already present");
+        to_check = to_check->next();
+      }
+#endif
+
+      // We need to lock the stat table containing the entry to avoid
+      // races when changing the size and count fields.
+      int idx2 = (int) (stat_entry->hash() & (NR_OF_STACK_MAPS - 1));
+      PthreadLocker locker2(&_stack_maps_lock[idx2]._lock);
+      stat_entry->remove_allocation(size);
+
+      return;
+    }
+
+    entry = (*entry)->next_ptr();
+  }
+
+  // We missed an allocation. This is fine, since we might have enabled the
+  // trace after the allocation itself (or it might be a bug in the progam,
+  // but we can't be sure).
 }
 
 void MallocStatisticImpl::cleanup_for_stack_map(int idx) {
@@ -802,6 +917,31 @@ void MallocStatisticImpl::resize_stack_map(int map, int new_mask) {
     _stack_maps[map] = new_map;
     _stack_maps_mask[map] = new_mask;
     _stack_maps_limit[map] = (int) ((_stack_maps_mask[map] + 1) * MAX_STACK_MAP_LOAD);
+    _funcs->free(old_map);
+  }
+}
+
+void MallocStatisticImpl::resize_alloc_map(int map, int new_mask) {
+  AllocEntry** new_map = (AllocEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
+  AllocEntry** old_map = _alloc_maps[map];
+
+  // Fail silently if we don't get the memory.
+  if (new_map != NULL) {
+    for (int i = 0; i <= _alloc_maps_mask[map]; ++i) {
+      AllocEntry* entry = old_map[i];
+
+      while (entry != NULL) {
+        AllocEntry* next_entry = entry->next();
+        int slot = (entry->hash() / NR_OF_ALLOC_MAPS) & new_mask;
+        entry->set_next(new_map[slot]);
+        new_map[slot] = entry;
+        entry = next_entry;
+      }
+    }
+
+    _alloc_maps[map] = new_map;
+    _alloc_maps_mask[map] = new_mask;
+    _alloc_maps_limit[map] = (int) ((_alloc_maps_mask[map] + 1) * MAX_ALLOC_MAP_LOAD);
     _funcs->free(old_map);
   }
 }
@@ -876,7 +1016,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     return false;
   }
 
-  _track_free = false;
+  _track_free = spec._track_free;
   _to_track_mask = (1 << spec._skip_exp) - 1;
 
   if (_to_track_mask != 0) {
@@ -1106,8 +1246,10 @@ void MallocStatisticImpl::dump_entry(outputStream* st, StatEntry* entry) {
   char ss_tmp[4096];
   stringStream ss(ss_tmp, sizeof(ss_tmp));
 
-  ss.print_cr("Allocated bytes : " UINT64_FORMAT, (uint64_t) entry->size());
-  ss.print_cr("Allocated objects: " UINT64_FORMAT, (uint64_t) entry->count());
+  // We use int64_t here to easy see if values got negative (instead of seeing
+  // an insanely large number).
+  ss.print_cr("Allocated bytes : " INT64_FORMAT, (int64_t) entry->size());
+  ss.print_cr("Allocated objects: " INT64_FORMAT, (int64_t) entry->count());
   ss.print_cr("Stack (%d frames):", entry->nr_of_frames());
 
   char tmp[256];
@@ -1174,16 +1316,18 @@ static int sort_by_count(const void* p1, const void* p2) {
   return 0;
 }
 
-bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec, bool on_error) {
-  if (!on_error) {
+bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec) {
+  if (!spec._on_error) {
     initialize(msg_stream);
   }
 
-  // Handle recusrive allocations by just performing them without tracking.
-  pthread_setspecific(_malloc_suspended, (void*) 1);
+  // Hide allocations done by this thread during dumping if requested.
+  // Note that we always track  frees or we might end up trying to add
+  // an allocation with a pointer which is already in the aloc maps.
+  pthread_setspecific(_malloc_suspended, spec._hide_dump_allocs ? (void*) 1 : NULL);
 
   // We need to avoid having the trace disabled concurrently.
-  PthreadLocker lock(on_error ? NULL : &_malloc_stat_lock._lock);
+  PthreadLocker lock(spec._on_error ? NULL : &_malloc_stat_lock._lock);
 
   if (!_enabled) {
     msg_stream->print_raw_cr("malloc statistic not enabled!");
@@ -1375,7 +1519,7 @@ bool MallocStatistic::reset(outputStream* st) {
   return MallocStatisticImpl::reset(st);
 }
 
-bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec, bool on_error) {
+bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
   const char* dump_file = spec._dump_file;
 
   if ((dump_file != NULL) && (strlen(dump_file) > 0)) {
@@ -1396,7 +1540,7 @@ bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec, bool on_error
     }
 
     fdStream dump_stream(fd);
-    bool result = MallocStatisticImpl::dump(st, &dump_stream, spec, on_error);
+    bool result = MallocStatisticImpl::dump(st, &dump_stream, spec);
 
     if ((fd != 1) && (fd != 2)) {
       ::close(fd);
@@ -1405,7 +1549,7 @@ bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec, bool on_error
     return fd;
   }
 
-  return MallocStatisticImpl::dump(st, st, spec, on_error);
+  return MallocStatisticImpl::dump(st, st, spec);
 }
 
 void MallocStatistic::shutdown() {
@@ -1430,6 +1574,9 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _skip_allocations("-skip-allocations", "If > 0 we only track about every 2^N allocation.",
                     "INT", false, "0"),
   _force("-force", "If the trace is already enabled, we disable it first.", "BOOLEAN", false, "false"),
+  _track_free("-track-free", "If true we also track frees, so we know the live memory consumption " \
+              "and not just the total allocated amount. This costs some performance and memory.",
+              "BOOLEAN", false, "false"),
   _dump_file("-dump-file", "If given the dump command writes the result to the given file. " \
              "Note that the filename is interpreted by the target VM. You can use " \
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
@@ -1447,6 +1594,7 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_use_backtrace);
   _dcmdparser.add_dcmd_option(&_skip_allocations);
   _dcmdparser.add_dcmd_option(&_force);
+  _dcmdparser.add_dcmd_option(&_track_free);
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
@@ -1466,6 +1614,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
     spec._use_backtrace = _use_backtrace.value();
     spec._skip_exp = (int) _skip_allocations.value();
     spec._force = _force.value();
+    spec._track_free = _track_free.value();
 
     if (MallocStatistic::enable(_output, spec)) {
       _output->print_raw_cr("mallocstatistic enabled");
@@ -1483,8 +1632,9 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
     spec._size_fraction = _size_fraction.value();
     spec._count_fraction = _count_fraction.value();
     spec._max_entries = _max_entries.value();
+    spec._on_error = false;
 
-    MallocStatistic::dump(_output, spec, false);
+    MallocStatistic::dump(_output, spec);
   } else if (strcmp(cmd, "test") == 0) {
     real_funcs_t* funcs = setup_hooks(NULL, _output);
     static void* results[1024 * 1024];
