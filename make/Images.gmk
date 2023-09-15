@@ -44,8 +44,9 @@ ALL_MODULES := $(call FindAllModules) $(EXTRA_MODULES)
 
 $(eval $(call ReadImportMetaData))
 
+# SapMachine 2021-09-24 : add jcmd to JRE
 JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
-    $(PLATFORM_MODULES) jdk.jdwp.agent)
+    $(PLATFORM_MODULES) jdk.jdwp.agent jdk.jcmd)
 JDK_MODULES += $(ALL_MODULES)
 
 JRE_MODULES_LIST := $(call CommaList, $(JRE_MODULES))

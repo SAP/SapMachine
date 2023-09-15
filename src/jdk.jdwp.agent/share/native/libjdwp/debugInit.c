@@ -825,6 +825,8 @@ printUsage(void)
  "launch=<command line>            run debugger on event             none\n"
  "onthrow=<exception name>         debug on throw                    none\n"
  "onuncaught=y|n                   debug on any uncaught?            n\n"
+ // SapMachine 2022-12-12 Revert JDK-8226608, we should show the onjcmd=y|n option in jdwp usage
+ "onjcmd=y|n                       start debug via jcmd?             n\n"
  "timeout=<timeout value>          for listen/attach in milliseconds n\n"
  "includevirtualthreads=y|n        List of all threads includes virtual threads as well as platform threads.\n"
  "                                                                   n\n"

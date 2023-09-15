@@ -425,6 +425,10 @@ bool ClassLoaderDataGraph::do_unloading() {
     } else {
       // Found dead CLD.
       loaders_removed++;
+      // SapMachine 2023-07-04 : vitals
+      if (EnableVitals) {
+        sapmachine_vitals::counters::dec_cld_count(data->has_class_mirror_holder());
+      }
       data->unload();
 
       // Move dead CLD to unloading list.
