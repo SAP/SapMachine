@@ -33,6 +33,8 @@
 
 namespace sap {
 
+// Keep sap namespace free from implementation classes.
+namespace mallocStatImpl {
 
 //
 //
@@ -846,7 +848,7 @@ void MallocStatisticImpl::record_free(uint64_t hash, size_t size, int nr_of_fram
   // trace after the allocation itself (or it might be a bug in the progam,
   // but we can't be sure).
   if (_detailed_stats) {
-    Atomic::add(&_failed_frees, 1);
+    Atomic::add(&_failed_frees, (uint64_t) 1);
   }
 }
 
@@ -1548,20 +1550,22 @@ void MallocStatisticImpl::shutdown() {
   }
 }
 
+} // namespace mallocStatImpl
+
 void MallocStatistic::initialize() {
-  MallocStatisticImpl::initialize(NULL);
+  mallocStatImpl::MallocStatisticImpl::initialize(NULL);
 }
 
 bool MallocStatistic::enable(outputStream* st, TraceSpec const& spec) {
-  return MallocStatisticImpl::enable(st, spec);
+  return mallocStatImpl::MallocStatisticImpl::enable(st, spec);
 }
 
 bool MallocStatistic::disable(outputStream* st) {
-  return MallocStatisticImpl::disable(st);
+  return mallocStatImpl::MallocStatisticImpl::disable(st);
 }
 
 bool MallocStatistic::reset(outputStream* st) {
-  return MallocStatisticImpl::reset(st);
+  return mallocStatImpl::MallocStatisticImpl::reset(st);
 }
 
 bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
@@ -1585,7 +1589,7 @@ bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
     }
 
     fdStream dump_stream(fd);
-    bool result = MallocStatisticImpl::dump(st, &dump_stream, spec);
+    bool result = mallocStatImpl::MallocStatisticImpl::dump(st, &dump_stream, spec);
 
     if ((fd != 1) && (fd != 2)) {
       ::close(fd);
@@ -1594,11 +1598,11 @@ bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
     return fd;
   }
 
-  return MallocStatisticImpl::dump(st, st, spec);
+  return mallocStatImpl::MallocStatisticImpl::dump(st, st, spec);
 }
 
 void MallocStatistic::shutdown() {
-  MallocStatisticImpl::shutdown();
+  mallocStatImpl::MallocStatisticImpl::shutdown();
 }
 
 //
@@ -1685,7 +1689,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
     MallocStatistic::dump(_output, spec);
   } else if (strcmp(cmd, "test") == 0) {
-    real_funcs_t* funcs = setup_hooks(NULL, _output);
+    real_funcs_t* funcs = mallocStatImpl::setup_hooks(NULL, _output);
     static void* results[1024 * 1024];
 
     for (int r = 0; r < 10; ++r) {
@@ -1694,7 +1698,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
         results[i] = NULL;
       }
 
-      SafeAllocator alloc(96, 16, funcs);
+      mallocStatImpl::SafeAllocator alloc(96, 16, funcs);
       for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); ++i) {
         results[i] = alloc.allocate();
         alloc.free(results[(317 * (int64_t) i) & (sizeof(results) / sizeof(results[0]) - 1)]);
@@ -1703,13 +1707,13 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
     for (int i = 0; i < 63; ++i) {
       size_t base = ((size_t) 1) << i;
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, get_index_for_size(base - 1));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, get_index_for_size(base));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, get_index_for_size(base + 1));
+      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, mallocStatImpl::get_index_for_size(base - 1));
+      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, mallocStatImpl::get_index_for_size(base));
+      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, mallocStatImpl::get_index_for_size(base + 1));
       base = base + base / 2;
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, get_index_for_size(base - 1));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, get_index_for_size(base));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, get_index_for_size(base + 1));
+      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, mallocStatImpl::get_index_for_size(base - 1));
+      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, mallocStatImpl::get_index_for_size(base));
+      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, mallocStatImpl::get_index_for_size(base + 1));
       _output->cr();
     }
   } else {
