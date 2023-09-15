@@ -1652,7 +1652,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
                              Thread* thread, address pc, void* siginfo, void* context, const char* filename,
                              int lineno, size_t size)
 {
-#ifdef LINUX
+#if defined(LINUX) || defined(__APPLE__)
   // Make sure we don't track allocations anymore.
   sap::MallocStatistic::shutdown();
 #endif
