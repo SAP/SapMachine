@@ -147,7 +147,10 @@ void DCmd::register_dcmds(){
 #endif
 #if defined(LINUX) || defined(__APPLE__)
   // SapMachine 2023-08-15: malloc trace2
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocStatisticDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceEnableDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDisableDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDumpDCmd>(full_export, true, false));
+
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 

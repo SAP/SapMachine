@@ -99,14 +99,14 @@ void* Allocator::allocate() {
     return NULL;
   }
 
-  _nr_of_chunks += 1;
-  void** new_chunks = (void**) _funcs->realloc(_chunks, sizeof(void**) * _nr_of_chunks);
+  void** new_chunks = (void**) _funcs->realloc(_chunks, sizeof(void**) * (_nr_of_chunks + 1));
 
   if (new_chunks == NULL) {
     return NULL;
   }
 
-  new_chunks[_nr_of_chunks - 1] = new_chunk;
+  new_chunks[_nr_of_chunks] = new_chunk;
+  _nr_of_chunks += 1;
   _chunks = new_chunks;
 
   for (int i = 0; i < _entries_per_chunk; ++i) {
@@ -130,6 +130,18 @@ size_t Allocator::allocated() {
 }
 
 size_t Allocator::unused() {
+#if defined(ASSERT)
+  size_t real_free_entries = 0;
+  void** entry = _free_list;
+
+  while (entry != NULL) {
+    real_free_entries += 1;
+    entry = (void**) entry[0];
+  }
+
+  assert(_free_entries == real_free_entries, "free entries inconsistent");
+#endif
+
   return _allocation_size * _free_entries;
 }
 
@@ -282,6 +294,14 @@ public:
   AllocEntry** next_ptr() {
     return &_next;
   }
+
+  bool is_same_ptr(void* ptr) {
+#if defined(ASSERT)
+    return _ptr == ptr;
+#else
+    return true;
+#endif
+  }
 };
 
 
@@ -362,7 +382,7 @@ private:
 
   static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
   static void record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames);
-  static void record_free(uint64_t hash, size_t size, int nr_of_frames, address* frames);
+  static void record_free(void* ptr, uint64_t hash, size_t size);
 
   static uint64_t ptr_hash(void* ptr);
   static bool     should_track(uint64_t hash);
@@ -380,7 +400,6 @@ public:
   static void initialize(outputStream* st);
   static bool enable(outputStream* st, TraceSpec const& spec);
   static bool disable(outputStream* st);
-  static bool reset(outputStream* st);
   static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec);
   static void shutdown();
 };
@@ -546,7 +565,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 
     if (_track_free) {
       if (should_track(old_hash)) {
-        record_free(old_hash, old_size, nr_of_frames, frames);
+        record_free(ptr, old_hash, old_size);
       }
 
       if (should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
@@ -560,8 +579,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
     }
   } else if ((size == 0) && _track_free && should_track(old_hash)) {
     // Treat as free.
-    CAPTURE_STACK;
-    record_free(hash, old_size, nr_of_frames, frames);
+    record_free(ptr, hash, old_size);
   }
 
   return result;
@@ -571,8 +589,7 @@ void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t
   uint64_t hash = ptr_hash(ptr);
 
   if ((ptr != NULL) &&_track_free && should_track(hash)) {
-    CAPTURE_STACK;
-    record_free(hash, real_malloc_size(ptr), nr_of_frames, frames);
+    record_free(ptr, hash, real_malloc_size(ptr));
   }
 
   real_free(ptr);
@@ -780,6 +797,7 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   AllocEntry* entry = _alloc_maps[idx][slot];
 
   while (entry != NULL) {
+    assert((entry->hash() != hash) || entry->is_same_ptr(ptr), "Same hash for different pointer");
     assert(entry->hash() != hash, "Must not be already present");
     entry = entry->next();
   }
@@ -802,7 +820,7 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   }
 }
 
-void MallocStatisticImpl::record_free(uint64_t hash, size_t size, int nr_of_frames, address* frames) {
+void MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
   assert(_track_free, "Only used for detailed tracking");
 
   int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
@@ -818,6 +836,7 @@ void MallocStatisticImpl::record_free(uint64_t hash, size_t size, int nr_of_fram
   while (*entry != NULL) {
     if ((*entry)->hash() == hash) {
       StatEntry* stat_entry = (*entry)->entry();
+      assert((*entry)->is_same_ptr(ptr), "Same hash must be same pointer");
       AllocEntry* next = (*entry)->next();
       _alloc_maps_alloc[idx]->free(*entry);
       *entry = next;
@@ -1129,19 +1148,6 @@ bool MallocStatisticImpl::disable(outputStream* st) {
   return true;
 }
 
-bool MallocStatisticImpl::reset(outputStream* st) {
-  initialize(st);
-  Locker lock(&_malloc_stat_lock._lock);
-
-  if (!_enabled) {
-    st->print_raw_cr("Malloc statistic not enabled!");
-
-    return false;
-  }
-
-  return true;  
-}
-
 int fast_log2(unsigned long long v) {
 #if defined(__GNUC__) || defined(_AIX) || defined(__APPLE__)
   return 63 - __builtin_clzll(v);
@@ -1264,7 +1270,7 @@ void MallocStatisticImpl::dump_entry(outputStream* st, StatEntry* entry) {
 
   for (int i = 0; i < entry->nr_of_frames(); ++i) {
     address frame = entry->frames()[i];
-    ss.print("  %p  ", frame);
+    ss.print("  [" PTR_FORMAT "]  ", p2i(frame));
 
     if (os::print_function_and_library_name(&ss, frame, tmp, sizeof(tmp), true, true, false)) {
       ss.cr();
@@ -1487,7 +1493,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   if (sort_algo != NULL) {
     int to_print = MIN2(added_entries, spec._max_entries);
 
-    msg_stream->print_cr("%d stacks sort by %s", to_print, sort);
+    msg_stream->print_cr("%d stacks sorted by %s", to_print, sort);
     qsort(to_sort, added_entries, sizeof(StatEntry*), sort_algo);
 
     for (int i = 0; i < to_print; ++i) {
@@ -1564,10 +1570,6 @@ bool MallocStatistic::disable(outputStream* st) {
   return mallocStatImpl::MallocStatisticImpl::disable(st);
 }
 
-bool MallocStatistic::reset(outputStream* st) {
-  return mallocStatImpl::MallocStatisticImpl::reset(st);
-}
-
 bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
   const char* dump_file = spec._dump_file;
 
@@ -1605,18 +1607,8 @@ void MallocStatistic::shutdown() {
   mallocStatImpl::MallocStatisticImpl::shutdown();
 }
 
-//
-//
-//
-//
-// Class MallocStatisticDCmd
-//
-//
-//
-//
-MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
+MallocTraceEnableDCmd::MallocTraceEnableDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
-  _cmd("cmd", "enable,disable,reset,dump,test", "STRING", true),
   _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5"),
   _use_backtrace("-use-backtrace", "If true we try to use the backtrace() method to sample " \
                  "the stack traces.", "BOOLEAN", false, "true"),
@@ -1627,7 +1619,47 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
               "and not just the total allocated amount. This costs some performance and memory.",
               "BOOLEAN", false, "false"),
   _detailed_stats("-detailed-stats", "Collect more detailed statistics. This will costs some " \
-                  "CPU time, but no memory.", "BOOLEAN", false, "false"),
+                  "CPU time, but no memory.", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_stack_depth);
+  _dcmdparser.add_dcmd_option(&_use_backtrace);
+  _dcmdparser.add_dcmd_option(&_skip_allocations);
+  _dcmdparser.add_dcmd_option(&_force);
+  _dcmdparser.add_dcmd_option(&_track_free);
+  _dcmdparser.add_dcmd_option(&_detailed_stats);
+}
+
+void MallocTraceEnableDCmd::execute(DCmdSource source, TRAPS) {
+  // Need to switch to native or the long operations block GCs.
+  ThreadToNativeFromVM ttn(THREAD);
+
+  TraceSpec spec;
+  spec._stack_depth = (int) _stack_depth.value();
+  spec._use_backtrace = _use_backtrace.value();
+  spec._skip_exp = (int) _skip_allocations.value();
+  spec._force = _force.value();
+  spec._track_free = _track_free.value();
+  spec._detailed_stats = _detailed_stats.value();
+
+  if (MallocStatistic::enable(_output, spec)) {
+    _output->print_raw_cr("Mallocstatistic enabled");
+  }
+}
+
+MallocTraceDisableDCmd::MallocTraceDisableDCmd(outputStream* output, bool heap) :
+  DCmdWithParser(output, heap) {
+}
+
+void MallocTraceDisableDCmd::execute(DCmdSource source, TRAPS) {
+  // Need to switch to native or the long operations block GCs.
+  ThreadToNativeFromVM ttn(THREAD);
+
+  if (MallocStatistic::disable(_output)) {
+    _output->print_raw_cr("Mallocstatistic disabled");
+  }
+}
+
+MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
+  DCmdWithParser(output, heap),
   _dump_file("-dump-file", "If given the dump command writes the result to the given file. " \
              "Note that the filename is interpreted by the target VM. You can use " \
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
@@ -1640,13 +1672,6 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _sort("-sort", "If given the stacks are sorted. If the argument is 'size' they are " \
        "sorted by size and if the argument is 'count' the are sorted by allocation " \
        "count.", "STRING", false) {
-  _dcmdparser.add_dcmd_argument(&_cmd);
-  _dcmdparser.add_dcmd_option(&_stack_depth);
-  _dcmdparser.add_dcmd_option(&_use_backtrace);
-  _dcmdparser.add_dcmd_option(&_skip_allocations);
-  _dcmdparser.add_dcmd_option(&_force);
-  _dcmdparser.add_dcmd_option(&_track_free);
-  _dcmdparser.add_dcmd_option(&_detailed_stats);
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
@@ -1654,72 +1679,20 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_sort);
 }
 
-void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
+void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
   // Need to switch to native or the long operations block GCs.
   ThreadToNativeFromVM ttn(THREAD);
 
-  const char* const cmd = _cmd.value();
+  DumpSpec spec;
+  spec._dump_file = _dump_file.value();
+  spec._sort = _sort.value();
+  spec._size_fraction = _size_fraction.value();
+  spec._count_fraction = _count_fraction.value();
+  spec._max_entries = _max_entries.value();
+  spec._on_error = false;
 
-  if (strcmp(cmd, "enable") == 0) {
-    TraceSpec spec;
-    spec._stack_depth = (int) _stack_depth.value();
-    spec._use_backtrace = _use_backtrace.value();
-    spec._skip_exp = (int) _skip_allocations.value();
-    spec._force = _force.value();
-    spec._track_free = _track_free.value();
-    spec._detailed_stats = _detailed_stats.value();
-
-    if (MallocStatistic::enable(_output, spec)) {
-      _output->print_raw_cr("Mallocstatistic enabled");
-    }
-  } else if (strcmp(cmd, "disable") == 0) {
-    if (MallocStatistic::disable(_output)) {
-      _output->print_raw_cr("Mallocstatistic disabled");
-    }
-  } else if (strcmp(cmd, "reset") == 0) {
-    MallocStatistic::reset(_output);
-  } else if (strcmp(cmd, "dump") == 0) {
-    DumpSpec spec;
-    spec._dump_file = _dump_file.value();
-    spec._sort = _sort.value();
-    spec._size_fraction = _size_fraction.value();
-    spec._count_fraction = _count_fraction.value();
-    spec._max_entries = _max_entries.value();
-    spec._on_error = false;
-
-    MallocStatistic::dump(_output, spec);
-  } else if (strcmp(cmd, "test") == 0) {
-    real_funcs_t* funcs = mallocStatImpl::setup_hooks(NULL, _output);
-    static void* results[1024 * 1024];
-
-    for (int r = 0; r < 10; ++r) {
-
-      for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); ++i) {
-        results[i] = NULL;
-      }
-
-      mallocStatImpl::Allocator alloc(96, 16, funcs);
-      for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); ++i) {
-        results[i] = alloc.allocate();
-        alloc.free(results[(317 * (int64_t) i) & (sizeof(results) / sizeof(results[0]) - 1)]);
-      }
-    }
-
-    for (int i = 0; i < 63; ++i) {
-      size_t base = ((size_t) 1) << i;
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, mallocStatImpl::get_index_for_size(base - 1));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, mallocStatImpl::get_index_for_size(base));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, mallocStatImpl::get_index_for_size(base + 1));
-      base = base + base / 2;
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base - 1, mallocStatImpl::get_index_for_size(base - 1));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base, mallocStatImpl::get_index_for_size(base));
-      _output->print_cr(UINT64_FORMAT " -> %d", (uint64_t) base + 1, mallocStatImpl::get_index_for_size(base + 1));
-      _output->cr();
-    }
-  } else {
-    _output->print_cr("Unknown command '%s'", cmd);
-  }
+  MallocStatistic::dump(_output, spec);
 }
 
-}
+} // namespace sap
 

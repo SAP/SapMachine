@@ -64,9 +64,6 @@ public:
   // Disables the tracing. Returns true if disabled.
   static bool disable(outputStream* st);
 
-  // Resets the statistic.
-  static bool reset(outputStream* st);
-
   // Dumps the statistic.
   static bool dump(outputStream* st, DumpSpec const& spec);
 
@@ -74,17 +71,73 @@ public:
   static void shutdown();
 };
 
-
-class MallocStatisticDCmd : public DCmdWithParser {
-private:
-
-  DCmdArgument<char*> _cmd;
+class MallocTraceEnableDCmd : public DCmdWithParser {
   DCmdArgument<jlong> _stack_depth;
   DCmdArgument<bool>  _use_backtrace;
   DCmdArgument<jlong> _skip_allocations;
   DCmdArgument<bool>  _force;
   DCmdArgument<bool>  _track_free;
   DCmdArgument<bool>  _detailed_stats;
+
+public:
+  static int num_arguments() {
+    return 6;
+  }
+
+  MallocTraceEnableDCmd(outputStream* output, bool heap);
+
+  static const char* name() {
+    return "MallocTrace.enable";
+  }
+
+  static const char* description() {
+    return "Enables tracing memory allocations";
+  }
+
+  static const char* impact() {
+    return "High";
+  }
+
+  static const JavaPermission permission() {
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+    return p;
+  }
+
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class MallocTraceDisableDCmd : public DCmdWithParser {
+
+public:
+  static int num_arguments() {
+    return 0;
+  }
+
+  MallocTraceDisableDCmd(outputStream* output, bool heap);
+
+  static const char* name() {
+    return "MallocTrace.disable";
+  }
+
+  static const char* description() {
+    return "Disables tracing memory allocations";
+  }
+
+  static const char* impact() {
+    return "Low";
+  }
+
+  static const JavaPermission permission() {
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+    return p;
+  }
+
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class MallocTraceDumpDCmd : public DCmdWithParser {
+private:
+
   DCmdArgument<char*> _dump_file;
   DCmdArgument<jlong> _size_fraction;
   DCmdArgument<jlong> _count_fraction;
@@ -93,17 +146,17 @@ private:
 
 public:
   static int num_arguments() {
-    return 12;
+    return 5;
   }
 
-  MallocStatisticDCmd(outputStream* output, bool heap);
+  MallocTraceDumpDCmd(outputStream* output, bool heap);
 
   static const char* name() {
-    return "System.mallocstatistic";
+    return "MallocTrace.dump";
   }
 
   static const char* description() {
-    return "Trace malloc call sites";
+    return "Dumps the currently running malloc trace";
   }
 
   static const char* impact() {
