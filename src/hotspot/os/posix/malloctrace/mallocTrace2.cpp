@@ -40,22 +40,26 @@ private:
   void**        _chunks;
   int           _nr_of_chunks;
   void**        _free_list;
+  size_t        _free_entries;
 
 public:
-  SafeAllocator(size_t allocation_size, real_funcs_t* funcs);
+  SafeAllocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs);
   ~SafeAllocator();
 
   void* allocate();
   void free(void* ptr);
+  size_t allocated();
+  size_t unused();
 };
 
-SafeAllocator::SafeAllocator(size_t allocation_size, real_funcs_t* funcs) :
+SafeAllocator::SafeAllocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs) :
   _funcs(funcs),
   _allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
-  _entries_per_chunk(16384),
+  _entries_per_chunk(entries_per_chunk),
   _chunks(NULL),
   _nr_of_chunks(0),
-  _free_list(NULL) {
+  _free_list(NULL),
+  _free_entries(0) {
 }
 
 SafeAllocator::~SafeAllocator() {
@@ -66,8 +70,10 @@ SafeAllocator::~SafeAllocator() {
 
 void* SafeAllocator::allocate() {
   if (_free_list != NULL) {
-    void* result = _free_list;
-    _free_list = (void**) ((void**) result)[0];
+    void** result = _free_list;
+    _free_list = (void**) result[0];
+    assert(_free_entries > 0, "free entries count invalid.");
+    _free_entries -= 1;
 
     return result;
   }
@@ -101,9 +107,17 @@ void SafeAllocator::free(void* ptr) {
     void** as_array = (void**) ptr;
     as_array[0] = (void*) _free_list;
     _free_list = as_array;
+    _free_entries += 1;
   }
 }
 
+size_t SafeAllocator::allocated() {
+  return _allocation_size * _entries_per_chunk * _nr_of_chunks; 
+}
+
+size_t SafeAllocator::unused() {
+  return _allocation_size * _free_entries;
+}
 
 
 class PthreadLocker : public StackObj {
@@ -1057,7 +1071,8 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
       return false;
     }
 
-    _stack_maps_alloc[i] = new (mem) SafeAllocator(sizeof(StatEntry) + sizeof(address) * (_max_frames - 1), _funcs);
+    size_t entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
+    _stack_maps_alloc[i] = new (mem) SafeAllocator(entry_size, 256, _funcs);
     _stack_maps_mask[i] = 127;
     _stack_maps_size[i] = 0;
     _stack_maps_limit[i] = (int) ((_stack_maps_mask[i] + 1) * MAX_STACK_MAP_LOAD);
@@ -1081,7 +1096,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
       return false;
     }
 
-    _alloc_maps_alloc[i] = new (mem) SafeAllocator(sizeof(AllocEntry), _funcs);
+    _alloc_maps_alloc[i] = new (mem) SafeAllocator(sizeof(AllocEntry), 2048, _funcs);
     _alloc_maps_mask[i] = 127;
     _alloc_maps_size[i] = 0;
     _alloc_maps_limit[i] = (int) ((_alloc_maps_mask[i] + 1) * MAX_ALLOC_MAP_LOAD);
@@ -1248,8 +1263,8 @@ void MallocStatisticImpl::dump_entry(outputStream* st, StatEntry* entry) {
 
   // We use int64_t here to easy see if values got negative (instead of seeing
   // an insanely large number).
-  ss.print_cr("Allocated bytes : " INT64_FORMAT, (int64_t) entry->size());
-  ss.print_cr("Allocated objects: " INT64_FORMAT, (int64_t) entry->count());
+  ss.print_cr("Allocated bytes  : %'" PRId64, (int64_t) entry->size());
+  ss.print_cr("Allocated objects: %'" PRId64, (int64_t) entry->count());
   ss.print_cr("Stack (%d frames):", entry->nr_of_frames());
 
   char tmp[256];
@@ -1314,6 +1329,30 @@ static int sort_by_count(const void* p1, const void* p2) {
   }
 
   return 0;
+}
+
+static void print_allocation_stats(outputStream* st, SafeAllocator** allocs, int* masks, int* sizes,
+                                   CacheLineSafeLock* locks, int nr_of_maps, char const* type) {
+  size_t allocated = 0;
+  size_t unused = 0;
+  size_t total_entries = 0;
+  size_t total_slots = 0;
+
+  for (int i = 0; i < nr_of_maps; ++i) {
+    PthreadLocker lock(&locks[i]._lock);
+    allocated     += (masks[i] + 1) * sizeof(void*);
+    total_entries += sizes[i];
+    total_slots   += masks[i] + 1;
+    allocated     += allocs[i]->allocated();
+    unused        += allocs[i]->unused();
+  }
+
+  st->cr();
+  st->print_cr("Statistic for %s:", type);
+  st->print_cr("Allocated memory: %'" PRId64, (uint64_t) allocated);
+  st->print_cr("Unused memory   : %'" PRId64, (uint64_t) unused);
+  st->print_cr("Average load    : %.2f", total_entries / (double) total_slots);
+  st->print_cr("Nr. of entries  : %'" PRId64, (uint64_t) total_entries);
 }
 
 bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec) {
@@ -1460,22 +1499,22 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     _funcs->free(to_sort);
   }
 
-  dump_stream->print_cr("Total allocation size  : " UINT64_FORMAT, (uint64_t) total_size);
-  dump_stream->print_cr("Total allocations count: " UINT64_FORMAT, (uint64_t) total_count);
-  dump_stream->print_cr("Total unique stacks    : " UINT64_FORMAT, (uint64_t) total_stacks);
+  dump_stream->print_cr("Total allocation size  : %'" PRId64, (uint64_t) total_size);
+  dump_stream->print_cr("Total allocations count: %'" PRId64, (uint64_t) total_count);
+  dump_stream->print_cr("Total unique stacks    : %'" PRId64, (uint64_t) total_stacks);
 
   timer.stop();
   msg_stream->print_cr("Dump finished in %.1f seconds (%.3f stacks per second).", timer.seconds(),
       stacks_dumped  / timer.seconds());
 
 #if defined(TIME_STACK_WALK)
-  msg_stream->print_cr("Sampled " UINT64_FORMAT " stacks using " UINT64_FORMAT " ns per stack",
+  msg_stream->print_cr("Sampled %'" PRId64 " stacks using %'" PRId64 " ns per stack",
                        stack_walk_count, stack_walk_time / MAX2(stack_walk_count, (uint64_t) 1));
   msg_stream->print_cr("Sampling took %.1f seconds in total", stack_walk_time * 1e-9);
 #endif
 
 #if defined(ALLOCATION_TRACKING_STATS)
-  msg_stream->print_cr("tracked alllocations " UINT64_FORMAT ", untracked allocations " UINT64_FORMAT,
+  msg_stream->print_cr("tracked alllocations %'" PRId64 ", untracked allocations %'" PRId64,
                        tracked_ptrs, not_tracked_ptrs);
 
   if (tracked_ptrs > 0) {
@@ -1484,6 +1523,13 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
                          (tracked_ptrs + not_tracked_ptrs) / ((float) tracked_ptrs), (int) (_to_track_mask + 1));
   }
 #endif
+
+  if (true) {
+    print_allocation_stats(msg_stream, _stack_maps_alloc, _stack_maps_mask, _stack_maps_size,
+                           _stack_maps_lock, NR_OF_STACK_MAPS, "stack maps");
+    print_allocation_stats(msg_stream, _alloc_maps_alloc, _alloc_maps_mask, _alloc_maps_size,
+                           _alloc_maps_lock, NR_OF_ALLOC_MAPS, "alloc maps");
+  }
 
   pthread_setspecific(_malloc_suspended, NULL);
   _forbid_resizes = false;
@@ -1645,7 +1691,7 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
         results[i] = NULL;
       }
 
-      SafeAllocator alloc(96, funcs);
+      SafeAllocator alloc(96, 16, funcs);
       for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); ++i) {
         results[i] = alloc.allocate();
         alloc.free(results[(317 * (int64_t) i) & (sizeof(results) / sizeof(results[0]) - 1)]);
