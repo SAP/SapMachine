@@ -15,13 +15,15 @@ struct TraceSpec {
   int _skip_exp;
   bool _force;
   bool _track_free;
+  bool _detailed_stats;
 
   TraceSpec() :
     _stack_depth(10),
     _use_backtrace(true),
     _skip_exp(0),
     _force(false),
-    _track_free(false) {
+    _track_free(false),
+    _detailed_stats(false) {
   }
 };
 
@@ -82,6 +84,7 @@ private:
   DCmdArgument<jlong> _skip_allocations;
   DCmdArgument<bool>  _force;
   DCmdArgument<bool>  _track_free;
+  DCmdArgument<bool>  _detailed_stats;
   DCmdArgument<char*> _dump_file;
   DCmdArgument<jlong> _size_fraction;
   DCmdArgument<jlong> _count_fraction;
@@ -90,7 +93,7 @@ private:
 
 public:
   static int num_arguments() {
-    return 11;
+    return 12;
   }
 
   MallocStatisticDCmd(outputStream* output, bool heap);

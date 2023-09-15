@@ -14,10 +14,22 @@
 
 #include <pthread.h>
 
-// Some defines for added debug/info functionality.
-#define TIME_STACK_WALK
-#define ALLOCATION_TRACKING_STATS
-#define MARK_SHORT_STACKS
+// Some compile time constants for the maps.
+
+// The load at which we resize the map.
+#define MAX_STACK_MAP_LOAD 0.5
+#define MAX_ALLOC_MAP_LOAD 0.5
+
+// Must be a power of two minus 1.
+#define MAX_FRAMES 31
+
+// The number of top frames to skip.
+#define FRAMES_TO_SKIP 0
+
+// Must be a power of two.
+#define NR_OF_STACK_MAPS 16
+#define NR_OF_ALLOC_MAPS 16
+
 
 namespace sap {
 
@@ -152,13 +164,6 @@ PthreadLocker::~PthreadLocker() {
 //
 //
 //
-
-// Must be a power of two minus 1.
-#define MAX_FRAMES 31
-#define FRAMES_TO_SKIP 0
-// Must be a power of two.
-#define NR_OF_STACK_MAPS 16
-#define NR_OF_ALLOC_MAPS 16
 
 class StatEntry {
 private:
@@ -313,6 +318,7 @@ private:
   static bool               _shutdown;
   static bool               _forbid_resizes;
   static bool               _track_free;
+  static bool               _detailed_stats;
   static int                _max_frames;
   static registered_hooks_t _malloc_stat_hooks;
   static CacheLineSafeLock  _malloc_stat_lock;
@@ -334,6 +340,12 @@ private:
   static SafeAllocator*     _alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 
   static int                _to_track_mask;
+
+  static volatile uint64_t  _stack_walk_time;
+  static volatile uint64_t  _stack_walk_count;
+  static volatile uint64_t  _tracked_ptrs;
+  static volatile uint64_t  _not_tracked_ptrs;
+  static volatile uint64_t  _failed_frees;
 
   // The hooks.
   static void* malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
@@ -391,6 +403,7 @@ bool              MallocStatisticImpl::_enabled;
 bool              MallocStatisticImpl::_shutdown;
 bool              MallocStatisticImpl::_forbid_resizes;
 bool              MallocStatisticImpl::_track_free;
+bool              MallocStatisticImpl::_detailed_stats;
 int               MallocStatisticImpl::_max_frames;
 CacheLineSafeLock MallocStatisticImpl::_malloc_stat_lock;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
@@ -408,56 +421,16 @@ int               MallocStatisticImpl::_alloc_maps_size[NR_OF_ALLOC_MAPS];
 int               MallocStatisticImpl::_alloc_maps_limit[NR_OF_ALLOC_MAPS];
 SafeAllocator*    MallocStatisticImpl::_alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 int               MallocStatisticImpl::_to_track_mask;
+volatile uint64_t MallocStatisticImpl::_stack_walk_time;
+volatile uint64_t MallocStatisticImpl::_stack_walk_count;
+volatile uint64_t MallocStatisticImpl::_tracked_ptrs;
+volatile uint64_t MallocStatisticImpl::_not_tracked_ptrs;
+volatile uint64_t MallocStatisticImpl::_failed_frees;
 
-
-#define MAX_STACK_MAP_LOAD 0.5
-#define MAX_ALLOC_MAP_LOAD 0.5
-
-#if defined(TIME_STACK_WALK)
-static volatile uint64_t stack_walk_time = 0;
-static volatile uint64_t stack_walk_count = 0;
-
-#define TIME_STACK_WALK_BEGIN \
-   uint64_t ticks = Ticks::now().nanoseconds()
-
-#define TIME_STACK_WALK_END \
-  Atomic::add(&stack_walk_time, Ticks::now().nanoseconds() - ticks); \
-  Atomic::add(&stack_walk_count, (uint64_t) 1)
-
-#else
-#define TIME_STACK_WALK_BEGIN
-#define TIME_STACK_WALK_END
-#endif
-
-#if defined(ALLOCATION_TRACKING_STATS)
-static volatile uint64_t tracked_ptrs = 0;
-static volatile uint64_t not_tracked_ptrs = 0;
-#endif
-
-#if defined(MARK_SHORT_STACKS)
-
-#define MARK_STACK_AND_FILL_WITH_BACKTRACE \
-  frames[nr_of_frames] = (address) caller_address; \
-  nr_of_frames += 1; break_here(); \
-  if (_backtrace != NULL) { \
-    nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
-    frames[0] = (address) break_here; \
-  }
-
-static void break_here() {
-}
-
-#else
-
-#define MARK_STACK_AND_FILL_WITH_BACKTRACE \
-  frames[nr_of_frames] = (address) caller_address; \
-  nr_of_frames += 1;
-
-#endif
 
 #define CAPTURE_STACK \
   address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
-  TIME_STACK_WALK_BEGIN; \
+  uint64_t ticks = _detailed_stats ? Ticks::now().nanoseconds() : 0; \
   int nr_of_frames = 0; \
   if (_use_backtrace) { \
     nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
@@ -472,10 +445,14 @@ static void break_here() {
     } \
     /* We know at least the caller addreess */ \
     if (nr_of_frames < 2) { \
-      MARK_STACK_AND_FILL_WITH_BACKTRACE; \
+      frames[nr_of_frames] = (address) caller_address; \
+      nr_of_frames += 1; \
     } \
   } \
-  TIME_STACK_WALK_END
+  if (_detailed_stats) { \
+    Atomic::add(&_stack_walk_time, Ticks::now().nanoseconds() - ticks); \
+    Atomic::add(&_stack_walk_count, (uint64_t) 1); \
+  }
 
 
 static uint64_t ptr_hash_backup(void* ptr) {
@@ -511,13 +488,13 @@ uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
 }
 
 bool MallocStatisticImpl::should_track(uint64_t hash) {
-#if defined(ALLOCATION_TRACKING_STATS)
-  if ((hash & _to_track_mask) == 0) {
-    Atomic::add(&tracked_ptrs, (uint64_t) 1);
-  } else {
-    Atomic::add(&not_tracked_ptrs, (uint64_t) 1);
+  if (_detailed_stats) {
+    if ((hash & _to_track_mask) == 0) {
+      Atomic::add(&_tracked_ptrs, (uint64_t) 1);
+    } else {
+      Atomic::add(&_not_tracked_ptrs, (uint64_t) 1);
+    }
   }
-#endif
 
   return (hash & _to_track_mask) == 0;
 }
@@ -868,6 +845,9 @@ void MallocStatisticImpl::record_free(uint64_t hash, size_t size, int nr_of_fram
   // We missed an allocation. This is fine, since we might have enabled the
   // trace after the allocation itself (or it might be a bug in the progam,
   // but we can't be sure).
+  if (_detailed_stats) {
+    Atomic::add(&_failed_frees, 1);
+  }
 }
 
 void MallocStatisticImpl::cleanup_for_stack_map(int idx) {
@@ -1031,7 +1011,16 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   }
 
   _track_free = spec._track_free;
+  _detailed_stats = spec._detailed_stats;
   _to_track_mask = (1 << spec._skip_exp) - 1;
+
+  if (_track_free) {
+    st->print_raw_cr("Tracking memory deallocations too, so we track the live memory.");
+  }
+
+  if (_detailed_stats) {
+    st->print_raw_cr("Collecting detailed statistics.");
+  }
 
   if (_to_track_mask != 0) {
     st->print_cr("Tracking about every %d allocations.", _to_track_mask + 1);
@@ -1039,10 +1028,12 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 
   _use_backtrace = spec._use_backtrace && (_backtrace != NULL);
 
-#if defined(ALLOCATION_TRACKING_STATS)
-  tracked_ptrs = 0;
-  not_tracked_ptrs = 0;
-#endif
+  // Reset statistic counters.
+  _stack_walk_time  = 0;
+  _stack_walk_count = 0;
+  _tracked_ptrs     = 0;
+  _not_tracked_ptrs = 0;
+  _failed_frees     = 0;
 
   if (_use_backtrace && spec._use_backtrace) {
     st->print_raw_cr("Using backtrace() to sample stacks.");
@@ -1065,7 +1056,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     void* mem = _funcs->malloc(sizeof(SafeAllocator));
 
     if (mem == NULL) {
-      st->print_raw_cr("Could not allocate the allocator");
+      st->print_raw_cr("Could not allocate the allocator!");
       cleanup();
 
       return false;
@@ -1079,7 +1070,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     _stack_maps[i] = (StatEntry**) _funcs->calloc(_stack_maps_mask[i] + 1, sizeof(StatEntry*));
 
     if (mem == NULL) {
-      st->print_raw_cr("Could not allocate the stack map");
+      st->print_raw_cr("Could not allocate the stack map!");
       cleanup();
 
       return false;
@@ -1090,7 +1081,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     void* mem = _funcs->malloc(sizeof(SafeAllocator));
 
     if (mem == NULL) {
-      st->print_raw_cr("Could not allocate the allocator");
+      st->print_raw_cr("Could not allocate the allocator!");
       cleanup();
 
       return false;
@@ -1103,7 +1094,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     _alloc_maps[i] = (AllocEntry**) _funcs->calloc(_alloc_maps_mask[i] + 1, sizeof(AllocEntry*));
 
     if (mem == NULL) {
-      st->print_raw_cr("Could not allocate the alloc map");
+      st->print_raw_cr("Could not allocate the alloc map!");
       cleanup();
 
       return false;
@@ -1123,7 +1114,7 @@ bool MallocStatisticImpl::disable(outputStream* st) {
   PthreadLocker lock(&_malloc_stat_lock._lock);
 
   if (!_enabled) {
-    st->print_raw_cr("malloc statistic is already disabled!");
+    st->print_raw_cr("Malloc statistic is already disabled!");
 
     return false;
   }
@@ -1141,7 +1132,7 @@ bool MallocStatisticImpl::reset(outputStream* st) {
   PthreadLocker lock(&_malloc_stat_lock._lock);
 
   if (!_enabled) {
-    st->print_raw_cr("malloc statistic not enabled!");
+    st->print_raw_cr("Malloc statistic not enabled!");
 
     return false;
   }
@@ -1405,7 +1396,13 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   if (_backtrace != NULL) {
-    dump_stream->print_raw_cr("Stacks collected via backtrace().");
+    dump_stream->print_raw_cr("Stacks were collected via backtrace().");
+  }
+
+  if (_track_free) {
+    dump_stream->print_raw_cr("Contains the currently allocated memory since enabling.");
+  } else {
+    dump_stream->print_raw_cr("Contains every allocation done since enabling.");
   }
 
   elapsedTimer timer;
@@ -1507,26 +1504,28 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   msg_stream->print_cr("Dump finished in %.1f seconds (%.3f stacks per second).", timer.seconds(),
       stacks_dumped  / timer.seconds());
 
-#if defined(TIME_STACK_WALK)
-  msg_stream->print_cr("Sampled %'" PRId64 " stacks using %'" PRId64 " ns per stack",
-                       stack_walk_count, stack_walk_time / MAX2(stack_walk_count, (uint64_t) 1));
-  msg_stream->print_cr("Sampling took %.1f seconds in total", stack_walk_time * 1e-9);
-#endif
+  if (_detailed_stats) {
+    uint64_t per_stack = _stack_walk_time / MAX2(_stack_walk_count, (uint64_t) 1);
+    msg_stream->print_cr("Sampled %'" PRId64 " stacks, took %'" PRId64 " ns per stack on average.",
+                         _stack_walk_count, per_stack);
+    msg_stream->print_cr("Sampling took %.2f seconds in total", _stack_walk_time * 1e-9);
+    msg_stream->print_cr("Tracked alllocations : %'" PRId64, _tracked_ptrs);
+    msg_stream->print_cr("Untracked allocations: %'" PRId64, _not_tracked_ptrs);
+    msg_stream->print_cr("Untracked frees      : %'" PRId64, _failed_frees);
 
-#if defined(ALLOCATION_TRACKING_STATS)
-  msg_stream->print_cr("tracked alllocations %'" PRId64 ", untracked allocations %'" PRId64,
-                       tracked_ptrs, not_tracked_ptrs);
-
-  if (tracked_ptrs > 0) {
-    msg_stream->print_cr("%.2f %% of the allocations were tracked, about every %.2f allocations " \
-                         "(target %d)", 100.0 * tracked_ptrs / (tracked_ptrs + not_tracked_ptrs),
-                         (tracked_ptrs + not_tracked_ptrs) / ((float) tracked_ptrs), (int) (_to_track_mask + 1));
+    if ((_to_track_mask > 0) && (_tracked_ptrs > 0)) {
+      double frac = 100.0 * _tracked_ptrs / (_tracked_ptrs + _not_tracked_ptrs);
+      double rate = 100.0 * _tracked_ptrs / (_tracked_ptrs + _not_tracked_ptrs);
+      int target = (int) (_to_track_mask + 1);
+      msg_stream->print_cr("%.2f %% of the allocations were tracked, about every %.2f allocations " \
+                           "(target %d)", frac, rate, target);
+    }
   }
-#endif
 
-  if (true) {
-    print_allocation_stats(msg_stream, _stack_maps_alloc, _stack_maps_mask, _stack_maps_size,
-                           _stack_maps_lock, NR_OF_STACK_MAPS, "stack maps");
+  print_allocation_stats(msg_stream, _stack_maps_alloc, _stack_maps_mask, _stack_maps_size,
+                         _stack_maps_lock, NR_OF_STACK_MAPS, "stack maps");
+
+  if (_track_free) {
     print_allocation_stats(msg_stream, _alloc_maps_alloc, _alloc_maps_mask, _alloc_maps_size,
                            _alloc_maps_lock, NR_OF_ALLOC_MAPS, "alloc maps");
   }
@@ -1623,6 +1622,8 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _track_free("-track-free", "If true we also track frees, so we know the live memory consumption " \
               "and not just the total allocated amount. This costs some performance and memory.",
               "BOOLEAN", false, "false"),
+  _detailed_stats("-detailed-stats", "Collect more detailed statistics. This will costs some " \
+                  "CPU time, but no memory.", "BOOLEAN", false, "false"),
   _dump_file("-dump-file", "If given the dump command writes the result to the given file. " \
              "Note that the filename is interpreted by the target VM. You can use " \
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
@@ -1641,6 +1642,7 @@ MallocStatisticDCmd::MallocStatisticDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_skip_allocations);
   _dcmdparser.add_dcmd_option(&_force);
   _dcmdparser.add_dcmd_option(&_track_free);
+  _dcmdparser.add_dcmd_option(&_detailed_stats);
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
@@ -1661,13 +1663,14 @@ void MallocStatisticDCmd::execute(DCmdSource source, TRAPS) {
     spec._skip_exp = (int) _skip_allocations.value();
     spec._force = _force.value();
     spec._track_free = _track_free.value();
+    spec._detailed_stats = _detailed_stats.value();
 
     if (MallocStatistic::enable(_output, spec)) {
-      _output->print_raw_cr("mallocstatistic enabled");
+      _output->print_raw_cr("Mallocstatistic enabled");
     }
   } else if (strcmp(cmd, "disable") == 0) {
     if (MallocStatistic::disable(_output)) {
-      _output->print_raw_cr("mallocstatistic disabled");
+      _output->print_raw_cr("Mallocstatistic disabled");
     }
   } else if (strcmp(cmd, "reset") == 0) {
     MallocStatistic::reset(_output);
