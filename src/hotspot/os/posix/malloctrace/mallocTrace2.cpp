@@ -385,7 +385,7 @@ private:
   static void record_free(void* ptr, uint64_t hash, size_t size);
 
   static uint64_t ptr_hash(void* ptr);
-  static bool     should_track(uint64_t hash);
+  static bool should_track(uint64_t hash);
 
   static void resize_stack_map(int map, int new_mask);
   static void resize_alloc_map(int map, int new_mask);
@@ -839,6 +839,7 @@ void MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
       assert((*entry)->is_same_ptr(ptr), "Same hash must be same pointer");
       AllocEntry* next = (*entry)->next();
       _alloc_maps_alloc[idx]->free(*entry);
+      _alloc_maps_size[idx] -= 1;
       *entry = next;
 
       // Should not be in the table anymore.
