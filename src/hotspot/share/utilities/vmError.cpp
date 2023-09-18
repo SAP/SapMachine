@@ -82,6 +82,8 @@
 // SapMachine 2021-09-01: malloc-trace
 #ifdef LINUX
 #include "malloctrace/mallocTrace.hpp"
+#endif
+#if defined(LINUX) || defined(__APPLE__)
 // SapMachine 2023-08-15: malloc trace2
 #include "malloctrace/mallocTrace2.hpp"
 #endif
@@ -1653,7 +1655,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
                              int lineno, size_t size)
 {
 #if defined(LINUX) || defined(__APPLE__)
-  // Make sure we don't track allocations anymore.
+  // SapMachine RS 2023-09-18: Make sure we don't track allocations anymore.
   sap::MallocStatistic::shutdown();
 #endif
 

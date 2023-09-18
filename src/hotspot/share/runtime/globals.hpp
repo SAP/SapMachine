@@ -549,6 +549,12 @@ const int ObjectAlignmentInBytes = 8;
           "When DumpVitalsAtExit is set, the file name prefix for the "     \
           "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \
+  /* SapMachine 2023-09-18: malloc trace */                                 \
+  product(bool, UseMallocHooks, false,                                      \
+          "Preloads the malloc hooks library needed for the malloc trace. " \
+          "This flag only works when using a JDK launcher. Otherwise the "  \
+          "library has to preloaded by hand.")                              \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \

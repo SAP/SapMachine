@@ -18,7 +18,7 @@
 
 // The load at which we resize the map.
 #define MAX_STACK_MAP_LOAD 0.5
-#define MAX_ALLOC_MAP_LOAD 0.5
+#define MAX_ALLOC_MAP_LOAD 2.5
 
 // Must be a power of two minus 1.
 #define MAX_FRAMES 31
@@ -314,7 +314,15 @@ static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
   }
 
   if (register_hooks == NULL) {
-    st->print_raw_cr("Could not find register_hooks function. Make sure to preload the malloc hooks library.");
+    if (UseMallocHooks) {
+      st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
+                       "This usually happens if the VM is not loaded via the JDK launcher (java.exe). " \
+                       "In this case you must preload the library by hand.");
+    } else {
+      st->print_raw_cr("Could not find preloaded libmallochooks: Try using -XX:+UseMallocHooks " \
+                       "to automatically preloaded it using the JDK launcher.");
+    }
+
     return NULL;
   }
 

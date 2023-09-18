@@ -308,6 +308,9 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     char* lastslash = NULL;
     char** newenvp = NULL; /* current environment */
     size_t new_runpath_size;
+
+    /* SapMachine RS 2023-09-18 */
+    jboolean needs_libmallochooks = ShouldPreloadLibMallocHooks(*pargc, *pargv);
 #endif  /* SETENV_REQUIRED */
 
     /* Compute/set the name of the executable */
@@ -346,7 +349,32 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     mustsetenv = RequiresSetenv(jvmpath);
     JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
 
-    if (mustsetenv == JNI_FALSE) {
+    /* SapMachine RS 2023-09-18 */
+#if defined(LINUX)
+    if (needs_libmallochooks == JNI_TRUE) {
+        char const* env_name = "LD_PRELOAD";
+        char const* libpath = "/lib/libmallochooks.so";
+
+        needs_libmallochooks = JNI_FALSE;
+
+        if (getenv(env_name) == NULL) {
+            /* We currently don't support having LD_PRELAOD already set. */
+            size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
+            char* env_entry = JLI_MemAlloc(size);
+
+            snprintf(env_entry, size, "%s=%s%s", env_name, jrepath, libpath);
+
+            if (putenv(env_entry) == 0) {
+                printf("Loading libmallochooks: %s\n", env_entry);
+                needs_libmallochooks = JNI_TRUE;
+                newenvp = environ;
+            }
+        }
+    }
+#endif
+
+    /* SapMachine RS 2023-09-18: Check for needs_libmallochooks too */
+    if ((needs_libmallochooks == JNI_FALSE) && (mustsetenv == JNI_FALSE)) {
         return;
     }
 #else

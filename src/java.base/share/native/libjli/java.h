@@ -172,6 +172,9 @@ void AddOption(char *str, void *info);
 jboolean IsWhiteSpaceOption(const char* name);
 jlong CurrentTimeMicros();
 
+// SapMachine RS 2023-09-18
+jboolean ShouldPreloadLibMallocHooks(int argc, char **argv);
+
 // Utility function defined in args.c
 int isTerminalOpt(char *arg);
 jboolean IsJavaw();

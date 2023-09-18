@@ -850,6 +850,33 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
     return jvmtype;
 }
 
+// SapMachine RS 2023-09-18
+jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
+#if defined(__APPLE__) || defined(LINUX)
+    for (int i = 1; i < argc; i++) {
+        char const* arg = argv[i];
+
+        if ((strcmp("-XX:+UseMallocHooks", arg) == 0) ||
+            (strcmp("-J-XX:+UseMallocHooks", arg) == 0)) {
+            return JNI_TRUE;
+        }
+
+        if (!IsJavaArgs()) {
+            if (IsWhiteSpaceOption(arg)) {
+                i += 1;
+                continue;
+            }
+
+            if (arg[0] != '-') {
+                break;
+            }
+        }
+    }
+#endif
+
+    return JNI_FALSE;
+}
+
 /* copied from HotSpot function "atomll()" */
 static int
 parse_size(const char *s, jlong *result) {

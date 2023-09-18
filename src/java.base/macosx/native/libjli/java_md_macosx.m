@@ -376,6 +376,33 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     }
     JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
                  jrepath, FILESEP, FILESEP);
+
+    /* SpaMachine RS 2023-09-18 */
+    if (ShouldPreloadLibMallocHooks(*pargc, *pargv)) {
+        char const* env_name = "DYLD_INSERT_LIBRARIES";
+        char const* libpath = "/lib/libmallochooks.dylib";
+
+        if (getenv(env_name ) == NULL) {
+            /* We currently don't support having DYLD_INSERT_LIBRARIES already set. */
+            size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
+            char* env_entry = JLI_MemAlloc(size);
+
+            snprintf(env_entry, size, "%s=%s%s", env_name , jrepath, libpath);
+
+            if (putenv(env_entry) == 0) {
+                char** new_args = (char**) JLI_MemAlloc(sizeof(char*) * (*pargc));
+
+                for (int i = 1; i < *pargc; ++i) {
+                    new_args[i - 1] = (*pargv)[i];
+                }
+
+                new_args[*pargc - 1] = NULL;
+                printf("Loading libmallochooks: %s\n", env_entry);
+                execve((*pargv)[0], new_args, environ);
+            }
+        }
+    }
+
     /* Find the specified JVM type */
     if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
         JLI_ReportErrorMessage(CFG_ERROR7);
