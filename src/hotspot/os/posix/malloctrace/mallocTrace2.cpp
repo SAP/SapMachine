@@ -37,18 +37,9 @@ namespace sap {
 // Keep sap namespace free from implementation classes.
 namespace mallocStatImpl {
 
-//
-//
-//
-//
-// Class Allocator
-//
-//
-//
-//
-class Allocator {
-private:
-
+// Holds the state of the Allocator.
+struct AllocatorState {
+  // The functions to use for allocation of the real memory.
   real_funcs_t* _funcs;
   size_t        _allocation_size;
   int           _entries_per_chunk;
@@ -56,6 +47,24 @@ private:
   int           _nr_of_chunks;
   void**        _free_list;
   size_t        _free_entries;
+
+  AllocatorState(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs) :
+  _funcs(funcs),
+  _allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
+  _entries_per_chunk(entries_per_chunk),
+  _chunks(NULL),
+  _nr_of_chunks(0),
+  _free_list(NULL),
+  _free_entries(0) {
+  }
+};
+
+// Allocates memory of the same size. It's pretty fast, but doesn't return
+// free memory to the OS.
+class Allocator : private AllocatorState {
+private:
+  // We need padding, since we have arrays of this class used in parallel.
+  char           _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(AllocatorState)];
 
 public:
   Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs);
@@ -68,13 +77,7 @@ public:
 };
 
 Allocator::Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs) :
-  _funcs(funcs),
-  _allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
-  _entries_per_chunk(entries_per_chunk),
-  _chunks(NULL),
-  _nr_of_chunks(0),
-  _free_list(NULL),
-  _free_entries(0) {
+  AllocatorState(allocation_size, entries_per_chunk, funcs) {
 }
 
 Allocator::~Allocator() {
