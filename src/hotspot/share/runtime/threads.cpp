@@ -119,6 +119,11 @@
 #include "vitals_linux_himemreport.hpp"
 #endif
 
+// SapMachine 2023-08-15: malloc trace2
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTrace2.hpp"
+#endif
+
 // Initialization after module runtime initialization
 void universe_post_module_init();  // must happen after call_initPhase2
 
@@ -584,6 +589,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
+
+  // SapMachine 2023-09-20: malloc trace2
+#if defined(LINUX) || defined(__APPLE__)
+  sap::MallocStatistic::initialize();
+#endif
 
   JFR_ONLY(Jfr::on_create_vm_1();)
 

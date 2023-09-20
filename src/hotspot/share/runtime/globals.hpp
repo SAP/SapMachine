@@ -555,6 +555,32 @@ const int ObjectAlignmentInBytes = 8;
           "This flag only works when using a JDK launcher. Otherwise the "  \
           "library has to preloaded by hand.")                              \
                                                                             \
+  product(bool, MallocTraceAtStartup, false,                                \
+          "If set the malloc trace is enabled at startup.")                 \
+                                                                            \
+  product(bool, MallocTraceTrackFrees, false,                               \
+          "If set the malloc trace enabled at startup also tracks "         \
+          "deallocation of memory")                                         \
+                                                                            \
+  product(uintx, MallocTraceStackDepth, 10,                                 \
+          "The maximum depth of stack traces for the malloc trace "         \
+          "enabled at startup.")                                            \
+                                                                            \
+  product(uintx, MallocTraceSkipExp, 0,                                     \
+          "if > 0 we only track about every 2^value allocations for the "   \
+          "malloc traced enabled at startup.")                              \
+                                                                            \
+  product(bool, MallocTraceUseBacktrace, false,                             \
+          "If set we use the backtrace() call to samples the stacks of "    \
+          "the malloc trace enabled at startup. Note that while this "      \
+          "creates better stack traces, it is also slower and not "         \
+          "supported on every system. If not supported, this option is "    \
+          "simply ignored.")                                                \
+                                                                            \
+  product(bool, MallocTraceDetailedStats, false,                            \
+          "If enabled we collect more detailed statistics for the malloc "  \
+          "trace enabled at startup. This costs some performance.")         \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \

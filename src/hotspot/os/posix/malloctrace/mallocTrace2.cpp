@@ -313,6 +313,7 @@ static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
     register_hooks  = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
   }
 
+  // TODO: Give more specific instructions.
   if (register_hooks == NULL) {
     if (UseMallocHooks) {
       st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
@@ -1569,6 +1570,17 @@ void MallocStatisticImpl::shutdown() {
 
 void MallocStatistic::initialize() {
   mallocStatImpl::MallocStatisticImpl::initialize(NULL);
+
+  if (MallocTraceAtStartup) {
+    TraceSpec spec;
+    spec._stack_depth = (int) MallocTraceStackDepth;
+    spec._use_backtrace = MallocTraceUseBacktrace;
+    spec._skip_exp = (int) MallocTraceSkipExp;
+    spec._track_free = MallocTraceTrackFrees;
+    spec._detailed_stats = MallocTraceDetailedStats;
+    stringStream ss;
+    enable(&ss, spec);
+  }
 }
 
 bool MallocStatistic::enable(outputStream* st, TraceSpec const& spec) {
