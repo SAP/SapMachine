@@ -6,6 +6,7 @@
 
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/timer.hpp"
@@ -308,21 +309,35 @@ public:
 
 static register_hooks_t* register_hooks;
 
+static void print_needed_preload_env(outputStream* st) {
+#if defined(LINUX)
+      st->print_cr("LD_PRELOAD=%s/libmallochooks.so", Arguments::get_dll_dir());
+#elif defined (__APPLE__)
+      st->print_cr("DYLD_INSERT_LIBRARIES=%s/libmallochooks.dylib", Arguments::get_dll_dir());
+#else
+      st->print_raw_cr("Not supported by the operating system!");
+#endif
+}
+
 static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
   if (register_hooks == NULL) {
     register_hooks  = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
   }
 
-  // TODO: Give more specific instructions.
   if (register_hooks == NULL) {
     if (UseMallocHooks) {
       st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
-                       "This usually happens if the VM is not loaded via the JDK launcher (java.exe). " \
-                       "In this case you must preload the library by hand.");
+                       "This usually happens if the VM is not loaded via the JDK launcher (e.g. " \
+                       "java.exe). In this case you must preload the library by setting the " \
+                       "following environment variable: ");
+      print_needed_preload_env(st);
     } else {
-      st->print_raw_cr("Could not find preloaded libmallochooks: Try using -XX:+UseMallocHooks " \
-                       "to automatically preloaded it using the JDK launcher.");
+      st->print_cr("Could not find preloaded libmallochooks. Try using -XX:+UseMallocHooks " \
+                   "Vm option to automatically preload it using the JDK launcher. Or you can set " \
+                   "the following environment variable: ");
+      print_needed_preload_env(st);
     }
+
 
     return NULL;
   }
@@ -406,7 +421,7 @@ private:
   static void create_statistic(bool for_siez, size_t* bins);
 
 public:
-  static void initialize(outputStream* st);
+  static void initialize();
   static bool enable(outputStream* st, TraceSpec const& spec);
   static bool disable(outputStream* st);
   static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec);
@@ -971,46 +986,48 @@ void MallocStatisticImpl::resize_alloc_map(int map, int new_mask) {
   }
 }
 
-void MallocStatisticImpl::initialize(outputStream* st) {
-  if (!_initialized) {
-    _initialized = true;
+void MallocStatisticImpl::initialize() {
+  if (_initialized) {
+    return;
+  }
 
-    if (pthread_mutex_init(&_malloc_stat_lock._lock, NULL) != 0) {
+  _initialized = true;
+
+  if (pthread_mutex_init(&_malloc_stat_lock._lock, NULL) != 0) {
+    fatal("Could not initialize lock");
+  }
+
+  if (pthread_key_create(&_malloc_suspended, NULL) != 0) {
+    fatal("Could not initialize key");
+  }
+
+  for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
+    if (pthread_mutex_init(&_stack_maps_lock[i]._lock, NULL) != 0) {
       fatal("Could not initialize lock");
     }
+  }
 
-    if (pthread_key_create(&_malloc_suspended, NULL) != 0) {
-      fatal("Could not initialize key");
+  for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
+    if (pthread_mutex_init(&_alloc_maps_lock[i]._lock, NULL) != 0) {
+      fatal("Could not initialize lock");
     }
+  }
 
-    for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
-      if (pthread_mutex_init(&_stack_maps_lock[i]._lock, NULL) != 0) {
-        fatal("Could not initialize lock");
-      }
-    }
+  _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
 
-    for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
-      if (pthread_mutex_init(&_alloc_maps_lock[i]._lock, NULL) != 0) {
-        fatal("Could not initialize lock");
-      }
-    }
+  if (dlerror() != NULL) {
+    _backtrace = NULL;
+  }
 
-    _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
-
-    if (dlerror() != NULL) {
-      _backtrace = NULL;
-    }
-
-    if (_backtrace != NULL) {
-      // Trigger initialization needed.
-      void* tmp[1];
-      _backtrace(tmp, 1);
-    }
+  if (_backtrace != NULL) {
+    // Trigger initialization needed.
+    void* tmp[1];
+    _backtrace(tmp, 1);
   }
 }
 
 bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
-  initialize(st);
+  initialize();
   Locker lock(&_malloc_stat_lock._lock);
 
   if (_enabled) {
@@ -1141,7 +1158,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 }
 
 bool MallocStatisticImpl::disable(outputStream* st) {
-  initialize(st);
+  initialize();
   Locker lock(&_malloc_stat_lock._lock);
 
   if (!_enabled) {
@@ -1366,7 +1383,7 @@ static void print_allocation_stats(outputStream* st, Allocator** allocs, int* ma
 
 bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec) {
   if (!spec._on_error) {
-    initialize(msg_stream);
+    initialize();
   }
 
   // Hide allocations done by this thread during dumping if requested.
@@ -1560,7 +1577,7 @@ void MallocStatisticImpl::shutdown() {
   if (_initialized) {
     _enabled = false;
 
-    if (register_hooks == NULL) {
+    if (register_hooks != NULL) {
       register_hooks(NULL);
     }
   }
@@ -1569,17 +1586,22 @@ void MallocStatisticImpl::shutdown() {
 } // namespace mallocStatImpl
 
 void MallocStatistic::initialize() {
-  mallocStatImpl::MallocStatisticImpl::initialize(NULL);
+  mallocStatImpl::MallocStatisticImpl::initialize();
 
   if (MallocTraceAtStartup) {
     TraceSpec spec;
+    stringStream ss;
+
     spec._stack_depth = (int) MallocTraceStackDepth;
     spec._use_backtrace = MallocTraceUseBacktrace;
     spec._skip_exp = (int) MallocTraceSkipExp;
     spec._track_free = MallocTraceTrackFrees;
     spec._detailed_stats = MallocTraceDetailedStats;
-    stringStream ss;
-    enable(&ss, spec);
+
+    if (!enable(&ss, spec)) {
+      fprintf(stderr, "%s", ss.base());
+      ::exit(1);
+    }
   }
 }
 
