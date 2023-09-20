@@ -357,7 +357,7 @@ static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
 typedef int backtrace_func_t(void** stacks, int max_depth);
 
 // A value usable in arrays.
-template<typename T> struct Val {
+template<typename T> struct Padded {
 public:
   T _val;
   char            _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(T)];
@@ -383,7 +383,7 @@ private:
   static StatEntry**        _stack_maps[NR_OF_STACK_MAPS];
   static Lock               _stack_maps_lock[NR_OF_STACK_MAPS];
   static int                _stack_maps_mask[NR_OF_STACK_MAPS];
-  static Val<int>           _stack_maps_size[NR_OF_STACK_MAPS];
+  static Padded<int>        _stack_maps_size[NR_OF_STACK_MAPS];
   static int                _stack_maps_limit[NR_OF_STACK_MAPS];
   static Allocator*         _stack_maps_alloc[NR_OF_STACK_MAPS];
   static int                _entry_size;
@@ -391,7 +391,7 @@ private:
   static AllocEntry**       _alloc_maps[NR_OF_ALLOC_MAPS];
   static Lock               _alloc_maps_lock[NR_OF_ALLOC_MAPS];
   static int                _alloc_maps_mask[NR_OF_ALLOC_MAPS];
-  static Val<int>           _alloc_maps_size[NR_OF_ALLOC_MAPS];
+  static Padded<int>        _alloc_maps_size[NR_OF_ALLOC_MAPS];
   static int                _alloc_maps_limit[NR_OF_ALLOC_MAPS];
   static Allocator*         _alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 
@@ -465,14 +465,14 @@ pthread_key_t     MallocStatisticImpl::_malloc_suspended;
 StatEntry**       MallocStatisticImpl::_stack_maps[NR_OF_STACK_MAPS];
 Lock              MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS];
 int               MallocStatisticImpl::_stack_maps_mask[NR_OF_STACK_MAPS];
-Val<int>          MallocStatisticImpl::_stack_maps_size[NR_OF_STACK_MAPS];
+Padded<int>       MallocStatisticImpl::_stack_maps_size[NR_OF_STACK_MAPS];
 int               MallocStatisticImpl::_stack_maps_limit[NR_OF_STACK_MAPS];
 Allocator*        MallocStatisticImpl::_stack_maps_alloc[NR_OF_STACK_MAPS];
 int               MallocStatisticImpl::_entry_size;
 AllocEntry**      MallocStatisticImpl::_alloc_maps[NR_OF_ALLOC_MAPS];
 Lock              MallocStatisticImpl::_alloc_maps_lock[NR_OF_ALLOC_MAPS];
 int               MallocStatisticImpl::_alloc_maps_mask[NR_OF_ALLOC_MAPS];
-Val<int>          MallocStatisticImpl::_alloc_maps_size[NR_OF_ALLOC_MAPS];
+Padded<int>       MallocStatisticImpl::_alloc_maps_size[NR_OF_ALLOC_MAPS];
 int               MallocStatisticImpl::_alloc_maps_limit[NR_OF_ALLOC_MAPS];
 Allocator*        MallocStatisticImpl::_alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 int               MallocStatisticImpl::_to_track_mask;
@@ -1367,7 +1367,7 @@ static int sort_by_count(const void* p1, const void* p2) {
   return 0;
 }
 
-static void print_allocation_stats(outputStream* st, Allocator** allocs, int* masks, Val<int>* sizes,
+static void print_allocation_stats(outputStream* st, Allocator** allocs, int* masks, Padded<int>* sizes,
                                    Lock* locks, int nr_of_maps, char const* type) {
   size_t allocated = 0;
   size_t unused = 0;
