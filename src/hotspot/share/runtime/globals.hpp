@@ -550,19 +550,19 @@ const int ObjectAlignmentInBytes = 8;
           "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \
   /* SapMachine 2023-09-18: malloc trace */                                 \
-  product(bool, UseMallocHooks, false,                                      \
+  product(bool, UseMallocHooks, true,                                       \
           "Preloads the malloc hooks library needed for the malloc trace. " \
           "This flag only works when using a JDK launcher. Otherwise the "  \
           "library has to preloaded by hand.")                              \
                                                                             \
-  product(bool, MallocTraceAtStartup, false,                                \
+  product(bool, MallocTraceAtStartup, true,                                 \
           "If set the malloc trace is enabled at startup.")                 \
                                                                             \
-  product(bool, MallocTraceTrackFrees, false,                               \
+  product(bool, MallocTraceTrackFrees, true,                                \
           "If set the malloc trace enabled at startup also tracks "         \
           "deallocation of memory")                                         \
                                                                             \
-  product(uintx, MallocTraceStackDepth, 10,                                 \
+  product(uintx, MallocTraceStackDepth, 12,                                 \
           "The maximum depth of stack traces for the malloc trace "         \
           "enabled at startup.")                                            \
                                                                             \
@@ -570,7 +570,7 @@ const int ObjectAlignmentInBytes = 8;
           "if > 0 we only track about every 2^value allocations for the "   \
           "malloc traced enabled at startup.")                              \
                                                                             \
-  product(bool, MallocTraceUseBacktrace, false,                             \
+  product(bool, MallocTraceUseBacktrace, true,                              \
           "If set we use the backtrace() call to samples the stacks of "    \
           "the malloc trace enabled at startup. Note that while this "      \
           "creates better stack traces, it is also slower and not "         \

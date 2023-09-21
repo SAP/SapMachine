@@ -365,7 +365,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             snprintf(env_entry, size, "%s=%s%s", env_name, jrepath, libpath);
 
             if (putenv(env_entry) == 0) {
-                printf("Loading libmallochooks: %s\n", env_entry);
                 needs_libmallochooks = JNI_TRUE;
                 newenvp = environ;
             }

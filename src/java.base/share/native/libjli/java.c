@@ -872,6 +872,8 @@ jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
             }
         }
     }
+
+    return JNI_TRUE;
 #endif
 
     return JNI_FALSE;

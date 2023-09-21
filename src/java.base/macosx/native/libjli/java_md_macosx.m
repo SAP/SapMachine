@@ -397,7 +397,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                 }
 
                 new_args[*pargc - 1] = NULL;
-                printf("Loading libmallochooks: %s\n", env_entry);
                 execve((*pargv)[0], new_args, environ);
             }
         }
