@@ -509,7 +509,7 @@ volatile uint64_t MallocStatisticImpl::_failed_frees;
     Atomic::add(&_stack_walk_count, (uint64_t) 1); \
   }
 
-
+#if defined(ASSERT)
 static uint64_t ptr_hash_backup(void* ptr) {
   uint64_t hash = (uint64_t) ptr;
   hash = (~hash) + (hash << 21);
@@ -522,6 +522,7 @@ static uint64_t ptr_hash_backup(void* ptr) {
 
   return hash;
 }
+#endif
 
 uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   if (!_track_free && (_to_track_mask == 0)) {
