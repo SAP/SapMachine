@@ -1643,7 +1643,7 @@ void MallocStatistic::initialize() {
 
     if (!enable(&ss, spec)) {
       fprintf(stderr, "%s", ss.base());
-      ::exit(1);
+      os::exit(1);
     }
   }
 
