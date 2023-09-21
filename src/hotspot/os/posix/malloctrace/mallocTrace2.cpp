@@ -1593,6 +1593,38 @@ void MallocStatisticImpl::shutdown() {
   }
 }
 
+#if defined(ASSERT)
+
+class MallocTraceTestDumpPeriodicTask : public PeriodicTask {
+public:
+  MallocTraceTestDumpPeriodicTask(size_t timeout) :
+    PeriodicTask(timeout) {
+  }
+
+  virtual void task();
+};
+
+void MallocTraceTestDumpPeriodicTask::task() {
+  DumpSpec spec;
+  spec._dump_file = NULL;
+  spec._sort = MallocTraceTestDumpSort[0] ? MallocTraceTestDumpSort : NULL;
+  spec._size_fraction = MallocTraceTestDumpSizeFraction;
+  spec._count_fraction = MallocTraceTestDumpCountFraction;
+  spec._max_entries = MallocTraceTestDumpMaxEntries;
+  spec._hide_dump_allocs = MallocTraceTestDumpHideDumpAlllocs;
+
+
+  if (MallocTraceTestDumpStdout) {
+    fdStream fds(1);
+    mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
+  } else {
+    stringStream ss;
+    mallocStatImpl::MallocStatisticImpl::dump(&ss, &ss, spec);
+  }
+}
+
+#endif
+
 } // namespace mallocStatImpl
 
 void MallocStatistic::initialize() {
@@ -1613,6 +1645,14 @@ void MallocStatistic::initialize() {
       ::exit(1);
     }
   }
+
+#if defined(ASSERT)
+  if (MallocTraceTestDump) {
+    mallocStatImpl::MallocTraceTestDumpPeriodicTask* task =
+      new mallocStatImpl::MallocTraceTestDumpPeriodicTask(1000 * MallocTraceTestDumpInterval);
+    task->enroll();
+  }
+#endif
 }
 
 bool MallocStatistic::enable(outputStream* st, TraceSpec const& spec) {
