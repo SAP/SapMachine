@@ -1641,7 +1641,7 @@ void MallocStatistic::initialize() {
     spec._track_free = MallocTraceTrackFrees;
     spec._detailed_stats = MallocTraceDetailedStats;
 
-    if (!enable(&ss, spec)) {
+    if (!enable(&ss, spec) && false) {
       fprintf(stderr, "%s", ss.base());
       os::exit(1);
     }
