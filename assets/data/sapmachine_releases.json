@@ -106,55 +106,27 @@
         "22-ea": {
             "releases": [
                 {
-                    "tag": "sapmachine-22+15",
+                    "tag": "sapmachine-22+16",
                     "jdk": {
-                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_linux-aarch64_bin.tar.gz",
-                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_linux-ppc64le_bin.tar.gz",
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_linux-x64-musl_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_linux-x64_bin.tar.gz",
-                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_macos-aarch64_bin.dmg",
-                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_macos-aarch64_bin.tar.gz",
-                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_macos-x64_bin.dmg",
-                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_macos-x64_bin.tar.gz",
-                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jdk-22-ea.15_windows-x64_bin.zip"
+                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B16/sapmachine-jdk-22-ea.16_macos-aarch64_bin.dmg",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B16/sapmachine-jdk-22-ea.16_macos-aarch64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_linux-aarch64_bin.tar.gz",
-                        "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_linux-ppc64le_bin.tar.gz",
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_linux-x64-musl_bin.tar.gz",
-                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_linux-x64_bin.tar.gz",
-                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_macos-aarch64_bin.dmg",
-                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_macos-aarch64_bin.tar.gz",
-                        "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_macos-x64_bin.dmg",
-                        "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_macos-x64_bin.tar.gz",
-                        "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B15/sapmachine-jre-22-ea.15_windows-x64_bin.zip"
+                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B16/sapmachine-jre-22-ea.16_macos-aarch64_bin.dmg",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B16/sapmachine-jre-22-ea.16_macos-aarch64_bin.tar.gz"
                     }
                 }
             ],
             "checksums": [
                 {
-                    "tag": "sapmachine-22+15",
+                    "tag": "sapmachine-22+16",
                     "jdk": {
-                        "linux-aarch64": "sha256 90edc27828230ae52b65cc1bce05f43b1fc42c776db0c866e7a1c65d2f9c6311",
-                        "linux-ppc64le": "sha256 b01aa06e9d3d3f78eb61c4c9bb11e92d28f3ae1f4e01913949bd44ff01c142ba",
-                        "linux-x64-musl": "sha256 c2ff826de9affc4bd9d20e624a771c738cd5cf7f4836fdd278cf455c329df406",
-                        "linux-x64": "sha256 35945fa9f449f0f14d77add5812249c46715a47d28ec15a88b3de435a9ec6ce2",
-                        "macos-aarch64-installer": "sha256 20f4e80d2fdc6d27f4b6b9bebc68aa710ee0f413714df5138a853b43f5b9909c",
-                        "macos-aarch64": "sha256 562437c9195623314423e7476326e7dcee67f3e043b703156972905e21b44eee",
-                        "macos-x64-installer": "sha256 31aad7a9a4e650e8dbbf2a94b45ab656fab74777ad3bed8dbfb28897f1709cdc",
-                        "macos-x64": "sha256 e8361ef85fadc1f8382ce69b2e562cdf414252f5f4ab4386d75e19663db62241",
-                        "windows-x64": "sha256 4640ff2db287fbddddbc4f83416e40c5a81b7e9ea7915bdd9024978d2c169676"
+                        "macos-aarch64-installer": "sha256 1955a27eb81a7db71c71fa8ba1810cce5eeec1a24c3e59c68fcffa4e1f811c2e",
+                        "macos-aarch64": "sha256 1d5995dcd4cd7bb7aca4029b49f4f25b1f8fb3494551c53592728a02ecd78c53"
                     },
                     "jre": {
-                        "linux-aarch64": "sha256 04d7bc366ff76c000e47ef31a30927ee0eb6bca3c5d5ed2320ff7adf88b2b114",
-                        "linux-ppc64le": "sha256 084fdc58b12665d5420a23a826126e5799028565437322ed7e9ec31dd9c37b21",
-                        "linux-x64-musl": "sha256 ddc93accf6a7864e9aa08f0eca09fe6851a60dccea44931c4194e9795a8bb638",
-                        "linux-x64": "sha256 8c1af115a0335b6b98e1fbedbce806222570c5af42a255258c528380dd29d263",
-                        "macos-aarch64-installer": "sha256 4f6963ff86956594348b5569c68e9af17bb5cd3f21f14c30e2418ed28e2a5bad",
-                        "macos-aarch64": "sha256 433a90991cf01cf6be12291ca87211c1354b98221947693f54fdd72c49f90ad4",
-                        "macos-x64-installer": "sha256 68275169f33926fb951403fad0abfe1108ea9ea6ade6c8d2b10437a5541e7f84",
-                        "macos-x64": "sha256 aa891b38c88752ef0f1c645c68a184e9ea33e9f2e547af010c04ddbd8e4138b4",
-                        "windows-x64": "sha256 621a350125437d913eefcbdb8a4d9dc5d0926518e73011d5534c5c31c4fde500"
+                        "macos-aarch64-installer": "sha256 52c244908a4c29ac665d098267fcba48d5f580e931c0fe0d4ef166ee2c70fb7a",
+                        "macos-aarch64": "sha256 1b524d70080298816bcec8477520edeb1dfb9698c378c97514f98037b3197e5c"
                     }
                 }
             ]
