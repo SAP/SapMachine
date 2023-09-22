@@ -1700,12 +1700,29 @@ void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in
   }
 }
 
-// granularity is 1, 2 bytes per load
+// granularity is 1 OR 2 bytes per load. dst and src.base() allowed to be the same register
+void MacroAssembler::load_short_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity) {
+  if (granularity != 1 && granularity != 2) {
+    ShouldNotReachHere();
+  }
+  if (AvoidUnalignedAccesses && (granularity != 2)) {
+    assert_different_registers(dst, tmp);
+    assert_different_registers(tmp, src.base());
+    is_signed ? lb(tmp, Address(src.base(), src.offset() + 1)) : lbu(tmp, Address(src.base(), src.offset() + 1));
+    slli(tmp, tmp, 8);
+    lbu(dst, src);
+    add(dst, dst, tmp);
+  } else {
+    is_signed ? lh(dst, src) : lhu(dst, src);
+  }
+}
+
+// granularity is 1, 2 OR 4 bytes per load, if granularity 2 or 4 then dst and src.base() allowed to be the same register
 void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity) {
   if (AvoidUnalignedAccesses && (granularity != 4)) {
-    assert_different_registers(dst, tmp, src.base());
     switch(granularity) {
       case 1:
+        assert_different_registers(dst, tmp, src.base());
         lbu(dst, src);
         lbu(tmp, Address(src.base(), src.offset() + 1));
         slli(tmp, tmp, 8);
@@ -1718,9 +1735,11 @@ void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp
         add(dst, dst, tmp);
         break;
       case 2:
-        lhu(dst, src);
+        assert_different_registers(dst, tmp);
+        assert_different_registers(tmp, src.base());
         is_signed ? lh(tmp, Address(src.base(), src.offset() + 2)) : lhu(tmp, Address(src.base(), src.offset() + 2));
         slli(tmp, tmp, 16);
+        lhu(dst, src);
         add(dst, dst, tmp);
         break;
       default:
@@ -1731,12 +1750,12 @@ void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp
   }
 }
 
-// granularity is 1, 2 or 4 bytes per load
+// granularity is 1, 2, 4 or 8 bytes per load, if granularity 4 or 8 then dst and src.base() allowed to be same register
 void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tmp, int granularity) {
   if (AvoidUnalignedAccesses && (granularity != 8)) {
-    assert_different_registers(dst, tmp, src.base());
     switch(granularity){
       case 1:
+        assert_different_registers(dst, tmp, src.base());
         lbu(dst, src);
         lbu(tmp, Address(src.base(), src.offset() + 1));
         slli(tmp, tmp, 8);
@@ -1761,6 +1780,7 @@ void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tm
         add(dst, dst, tmp);
         break;
       case 2:
+        assert_different_registers(dst, tmp, src.base());
         lhu(dst, src);
         lhu(tmp, Address(src.base(), src.offset() + 2));
         slli(tmp, tmp, 16);
@@ -1773,9 +1793,11 @@ void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tm
         add(dst, dst, tmp);
         break;
       case 4:
-        lwu(dst, src);
+        assert_different_registers(dst, tmp);
+        assert_different_registers(tmp, src.base());
         lwu(tmp, Address(src.base(), src.offset() + 4));
         slli(tmp, tmp, 32);
+        lwu(dst, src);
         add(dst, dst, tmp);
         break;
       default:
@@ -3946,18 +3968,17 @@ void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1
 void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Register tmp2) {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
 
-  mv(tmp1, 0xFF);
-  mv(Rd, zr);
-  for (int i = 0; i <= 3; i++) {
+  mv(tmp1, 0xFF000000); // first byte mask at lower word
+  andr(Rd, Rs, tmp1);
+  for (int i = 0; i < 2; i++) {
+    slli(Rd, Rd, wordSize);
+    srli(tmp1, tmp1, wordSize);
     andr(tmp2, Rs, tmp1);
-    if (i) {
-      slli(tmp2, tmp2, i * 8);
-    }
     orr(Rd, Rd, tmp2);
-    if (i != 3) {
-      slli(tmp1, tmp1, 8);
-    }
   }
+  slli(Rd, Rd, wordSize);
+  andi(tmp2, Rs, 0xFF); // last byte mask at lower word
+  orr(Rd, Rd, tmp2);
 }
 
 // This instruction reads adjacent 4 bytes from the upper half of source register,
@@ -3966,17 +3987,8 @@ void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Regis
 // Rd: 00A700A600A500A4
 void MacroAssembler::inflate_hi32(Register Rd, Register Rs, Register tmp1, Register tmp2) {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
-
-  mv(tmp1, 0xFF00000000);
-  mv(Rd, zr);
-  for (int i = 0; i <= 3; i++) {
-    andr(tmp2, Rs, tmp1);
-    orr(Rd, Rd, tmp2);
-    srli(Rd, Rd, 8);
-    if (i != 3) {
-      slli(tmp1, tmp1, 8);
-    }
-  }
+  srli(Rs, Rs, 32);   // only upper 32 bits are needed
+  inflate_lo32(Rd, Rs, tmp1, tmp2);
 }
 
 // The size of the blocks erased by the zero_blocks stub.  We must

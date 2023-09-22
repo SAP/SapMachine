@@ -74,39 +74,24 @@ java/net/DatagramSocket/SendSize.java                                           
 java/nio/channels/DatagramChannel/ReceiveISA.java                                      windows-x64
 
 ###############################################################################
-# New failures detected after GA of 11.0.10 (e.g. seen only in jdk11u-dev after branching 11.0.10 to jdk11u)
+# New failures detected after GA of 11.0.20 (e.g. seen only in jdk11u-dev after branching 11.0.20 to jdk11u)
 
-# SapMachine 2021-02-16
-# sun.security.pkcs11.wrapper.PKCS11Exception: CKR_ATTRIBUTE_READ_ONLY
-# Test fails on several Linux distributions with some packaged nss libs. We see it on ...
-#
-#
-# https://bugs.openjdk.java.net/browse/JDK-8232153
-# SapMachine 2023-09-01 Try again
-#sun/security/pkcs11/Secmod/AddTrustedCert.java                               8232153 linux-aarch64,linux-ppc64le
-
-# SapMachine 2021-02-24
-# Test sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java that was introduced
-# with https://bugs.openjdk.java.net/browse/JDK-8257545 fails on ...
-# Probably some issue with OS configuration/libnss. We simply exclude it.
-#
-# SapMachine 2023-09-01 Try again
-#sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java                                 linux-s390x
+# SapMachine 2023-09-19 exclude until commit is in and backported everywhere
+security/infra/java/security/cert/CertPathValidator/certification/GoogleCA.java 8308592 generic-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk12
 
 # SapMachine 2019-02-08
 # RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
-# SapMachine 2019-07-12 Still failing
 #
-#
-#
-java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
+# SapMachine 2023-09-16 Try again
+#java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
 
 # SapMachine 2019-02-16
 # timeout, on be a lot, on le once.
-java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
+# SapMachine 2023-09-16 Try again
+#java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk13
@@ -115,7 +100,8 @@ java/nio/channels/FileChannel/CleanerTest.java                                  
 # We see this issue occuring for a long time already in 13 and 14.
 # Another one of these flaky font things??
 #
-java/awt/font/FontNames/FCCompositeTest.java                                         linux-all
+# SapMachine 2023-09-16 Try again
+#java/awt/font/FontNames/FCCompositeTest.java                                         linux-all
 
 # SapMachine 2019-08-29
 # GC overhead limit exceeded, occurs very often
@@ -130,7 +116,8 @@ java/awt/font/FontNames/FCCompositeTest.java                                    
 
 # SapMachine 2019-08-30
 # Richard's new test unveils an aarch64 issue.
-com/sun/jdi/EATests.java                                                             linux-aarch64
+# SapMachine 2023-09-16 Try again
+#com/sun/jdi/EATests.java                                                             linux-aarch64
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
@@ -147,12 +134,14 @@ com/sun/jdi/EATests.java                                                        
 # SapMachine 2020-09-17
 # WARNING: Using incubator modules: jdk.incubator.foreign
 # Exclude, retry once foreign is no more incubator.
-java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java    linux-ppc64,linux-ppc64le
+# SapMachine 2023-09-16 Try again
+#java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java    linux-ppc64,linux-ppc64le
 
 # SapMachine 2020-09-17
 # Exception: ERROR: IsModifiableClass failed.
 # I'd assume this test should not be run on mac.
-java/lang/instrument/IsModifiableClassAgent.java                                     macosx-all
+# SapMachine 2023-09-16 Try again
+#java/lang/instrument/IsModifiableClassAgent.java                                     macosx-all
 
 # SapMachine 2022-04-01
 #
@@ -166,7 +155,8 @@ java/lang/instrument/IsModifiableClassAgent.java                                
 #
 #
 #
-java/awt/Graphics2D/DrawString/RotTransText.java                             7043153 linux-all
+# SapMachine 2023-09-16 Try again
+#java/awt/Graphics2D/DrawString/RotTransText.java                             7043153 linux-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk16
@@ -183,7 +173,7 @@ sun/tools/jstat/jstatLineCounts4.sh                                          824
 # SapMachine 2023-03-20: the next 2 fail on Alpine (unfortunately x64 is not soo specific)
 #
 #
-com/sun/jdi/JdwpAllowTest.java                                                       linux-x64
+com/sun/jdi/JdwpAllowTest.java                                                       aix-ppc64,linux-x64
 com/sun/jdi/JdwpListenTest.java                                                      linux-x64
 
 ###############################################################################
@@ -214,25 +204,11 @@ java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1                    
 #
 jdk/internal/vm/Continuation/Fuzz.java#preserve-fp                                   linux-ppc64le
 
-# SapMachine TO 2023-06-06
-# https://jira.tools.sap/browse/TGSAPJVM-5063 Analyse failing network tests
-com/sun/net/httpserver/simpleserver/StressDirListings.java                            aix-ppc64
+# SapMachine 2023-06-06
+# Analyse failing network tests
 java/net/httpclient/http2/ContinuationFrameTest.java                                  aix-ppc64
-java/net/DatagramSocket/SendReceiveMaxSize.java                                       aix-ppc64
-java/net/MulticastSocket/Promiscuous.java                                             aix-ppc64
 java/net/Socket/asyncClose/Race.java                                                  aix-ppc64
 java/nio/channels/Channels/SocketChannelStreams.java                                  aix-ppc64
-java/nio/channels/DatagramChannel/SendReceiveMaxSize.java                             aix-ppc64
-
-# Tests that fail with xlc16
-# MBS 2023-07-06 seems JliLaunchTest failed only in stage (xlc16)
-tools/launcher/JliLaunchTest.java                                                     aix-ppc64
-# https://bugs.openjdk.org/browse/JDK-8306007
-java/lang/String/concat/IntegerMinValue.java                                          aix-ppc64
-
-# SapMachine CL 2023-08-01
-# https://bugs.openjdk.org/browse/JDK-8309846
-jdk/jfr/event/runtime/TestResidentSetSizeEvent.java                                   aix-ppc64
 
 ###############################################################################
 # Tests known to be failing in SapMachine due to SapMachine specific setup.
