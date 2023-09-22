@@ -14,6 +14,7 @@
 #include "utilities/ticks.hpp"
 
 #include <pthread.h>
+#include <stdlib.h>
 
 // Some compile time constants for the maps.
 
@@ -1629,9 +1630,17 @@ void MallocTraceTestDumpPeriodicTask::task() {
 } // namespace mallocStatImpl
 
 void MallocStatistic::initialize() {
-  mallocStatImpl::MallocStatisticImpl::initialize();
+  // Don't enable this if the other malloc trace is on.
+#if defined(LINUX)
+  if (EnableMallocTrace) {
+    return;
+  }
+#endif
 
-  if (MallocTraceAtStartup) {
+  mallocStatImpl::MallocStatisticImpl::initialize();
+  bool start_via_env = ::getenv("MALLOC_TRACE_AT_STARTUP") != NULL;
+
+  if (start_via_env || MallocTraceAtStartup) {
     TraceSpec spec;
     stringStream ss;
 
@@ -1641,7 +1650,9 @@ void MallocStatistic::initialize() {
     spec._track_free = MallocTraceTrackFrees;
     spec._detailed_stats = MallocTraceDetailedStats;
 
-    if (!enable(&ss, spec) && false) {
+    // Don't fail when enabled via environment, since we use this
+    // when we have no real control over the started VM.
+    if (!enable(&ss, spec) && !start_via_env) {
       fprintf(stderr, "%s", ss.base());
       os::exit(1);
     }

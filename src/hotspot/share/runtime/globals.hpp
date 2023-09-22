@@ -550,12 +550,12 @@ const int ObjectAlignmentInBytes = 8;
           "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \
   /* SapMachine 2023-09-18: malloc trace */                                 \
-  product(bool, UseMallocHooks, true,                                       \
+  product(bool, UseMallocHooks, false,                                      \
           "Preloads the malloc hooks library needed for the malloc trace. " \
           "This flag only works when using a JDK launcher. Otherwise the "  \
           "library has to preloaded by hand.")                              \
                                                                             \
-  product(bool, MallocTraceAtStartup, true,                                 \
+  product(bool, MallocTraceAtStartup, false,                                \
           "If set the malloc trace is enabled at startup.")                 \
                                                                             \
   product(bool, MallocTraceTrackFrees, true,                                \
