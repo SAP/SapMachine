@@ -40,110 +40,20 @@
 ###############################################################################
 
 ###############################################################################
-# New failures detected after GA or caused by changes pushed after GA of 11.
-
-# SapMachine 2019-04-29
-# Sporadic timeout 11 only since 3.3.2019, which is probably the date we started to run these again.
-# SapMachine 2023-08-03 Enable again and see what happens
-#vmTestbase/nsk/jdb/unwatch/unwatch002/unwatch002.java                                generic-all
-
-###############################################################################
-# New failures detected after GA of 11.0.3 (e.g. seen only in jdk11u-dev after branching 11.0.3 to jdk11u)
-
-# SapMachine 2019-06-28
-# RuntimeException: '.*(?:HotSpot|OpenJDK).*VM.*' missing from stdout/stderr or just timeout. Seen also in 13.
-#
-#
-# SapMachine 2019-08-08 Backported 8205654 to 11 - but this will probably fix the issue for linux only.
-# For Windows, we should keep the test excluded or we'll see some failing tests sporadically.
-# SapMachine 2023-08-03 Enable again and see what happens
-#serviceability/dcmd/framework/VMVersionTest.java                                     windows-all
-
-###############################################################################
-# New failures detected after GA of 11.0.7 (e.g. seen only in jdk11u-dev after branching 11.0.7 to jdk11u)
-
-# SapMachine 2020-04-09
-# We see some new failures on aarch64, 11u only. They probably aren't new but
-# we just started to run tests for 11u on that platform lately
-# SapMachine 2023-08-03 try again
-#
-#compiler/c2/cr6340864/TestIntVect.java                                               linux-aarch64
-#
-#
-#compiler/c2/cr6340864/TestLongVect.java                                              linux-aarch64
-#
-#
-#compiler/c2/cr6340864/TestShortVect.java                                             linux-aarch64
-#
-#
-#compiler/codegen/TestCharVect2.java                                                  linux-aarch64
-
-###############################################################################
-# New failures detected after GA of 11.0.17 (e.g. seen only in jdk11u-dev after branching 11.0.17 to jdk11u)
-
-# SapMachine 2022-10-17 Issues on ... zGC is not fully supported in 11, so excluding there
-# SapMachine 2023-08-03 try again
-#
-#compiler/gcbarriers/UnsafeIntrinsicsTest.java#z                                      linux-x64
-# SapMachine 2023-08-03 try again
-#
-#gc/stress/gcold/TestGCOldWithZ.java                                                  linux-x64
-
-###############################################################################
 # Failing new tests, unsupported new features in jdk12
 
 # SapMachine 2019-01-08
 # Could not reserve enough space for 131072KB object heap
 #
-# SapMachine 2019-08-29 Still occuring in SapMachine environment
-gc/shenandoah/jvmti/TestHeapDump.java                                                windows-all
+# SapMachine 2023-09-16 Try again
+#gc/shenandoah/jvmti/TestHeapDump.java                                                windows-all
 
 # SapMachine 2019-02-08
 # SapMachine 2019-08-29 Fails in SapMachine 13 and 14
 #
 # Failing for Shenandoah and 32g heaps.
-runtime/CompressedOops/UseCompressedOops.java                                        windows-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk13
-
-# SapMachine 2018-12-11
-# Some brand new shenandoah tests are failing.
-#
-# SapMachine 2019-07-25 Still around
-#
-#gc/shenandoah/TestWithLogLevel.java                                                  macosx-all
-
-# SapMachine 2019-08-02
-# Exception: Uncommitted too slow
-# In SapMachine, we also see this in 13.
-#
-#gc/z/TestUncommit.java                                                               generic-all
-
-###############################################################################
-# Failing new tests, unsupported new features in jdk14
-
-# SapMachine 2019-08-02
-# Crash: Shenandoah assert_correct failed; Object klass pointer must go to metaspace
-#
-#
-#gc/CriticalNativeArgs.java                                                           generic-all
-
-# SapMachine 2019-08-29
-# Some aarch stuff, we don't really care. Do we?
-# Check later on whether it's fixed.
-#
-#
-#compiler/c2/aarch64/TestVolatilesG1.java                                             linux-aarch64
-#
-#gc/shenandoah/mxbeans/TestChurnNotifications.java#id0                                linux-aarch64
-
-# SapMachine 2019-01-02
-# This is failing currently on various places after https://bugs.openjdk.java.net/browse/JDK-8234277
-# It is tracked with https://bugs.openjdk.java.net/browse/JDK-8235220
-# We exclude it now until upstream bug is resolved to reduce noise in testing
-# SapMachine 2020-07-07 Re-enabling test in 15+, because JDK-8235220 is fixed in 15
-#serviceability/sa/ClhsdbScanOops.java                                        8235220 generic-all
+# SapMachine 2023-09-16 Try again
+#runtime/CompressedOops/UseCompressedOops.java                                        windows-all
 
 ###############################################################################
 # Failing new tests, unsupported new features in jdk15
@@ -151,7 +61,8 @@ runtime/CompressedOops/UseCompressedOops.java                                   
 # SapMachine 2020-09-17
 # Fails with: RuntimeException: 'Unloaded library with handle' missing from stdout/stderr
 # Recurring, 1-2 times a month.
-runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
+# SapMachine 2023-09-16 Try again
+#runtime/logging/loadLibraryTest/LoadLibraryTest.java                                 generic-all
 
 ###############################################################################
 # New failures detected after GA of 17.0.5 (e.g. seen only in jdk11u-dev after branching 17.0.5 to jdk17u)
