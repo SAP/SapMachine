@@ -1598,9 +1598,13 @@ void MallocStatisticImpl::shutdown() {
 #if defined(ASSERT)
 
 class MallocTraceTestDumpPeriodicTask : public PeriodicTask {
+private:
+  char const* _file;
+
 public:
-  MallocTraceTestDumpPeriodicTask(size_t timeout) :
-    PeriodicTask(timeout) {
+  MallocTraceTestDumpPeriodicTask(char const* file, size_t timeout) :
+    PeriodicTask(timeout),
+    _file(file) {
   }
 
   virtual void task();
@@ -1616,9 +1620,20 @@ void MallocTraceTestDumpPeriodicTask::task() {
   spec._hide_dump_allocs = MallocTraceTestDumpHideDumpAlllocs;
 
 
-  if (MallocTraceTestDumpStdout) {
-    fdStream fds(1);
-    mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
+  if (strlen(_file) > 0) {
+    if (strcmp("stdout", _file) == 0) {
+      fdStream fds(1);
+      mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
+    } else if (strcmp("stderr", _file) == 0) {
+      fdStream fds(2);
+      mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
+    } else {
+      char buf[32768];
+      jio_snprintf(buf, sizeof(buf), "%s_" UINTX_FORMAT, _file,
+                   os::current_process_id());
+      fileStream fs(buf, "at");
+      mallocStatImpl::MallocStatisticImpl::dump(&fs, &fs, spec);
+    }
   } else {
     stringStream ss;
     mallocStatImpl::MallocStatisticImpl::dump(&ss, &ss, spec);
@@ -1629,6 +1644,7 @@ void MallocTraceTestDumpPeriodicTask::task() {
 
 } // namespace mallocStatImpl
 
+
 void MallocStatistic::initialize() {
   // Don't enable this if the other malloc trace is on.
 #if defined(LINUX)
@@ -1638,7 +1654,8 @@ void MallocStatistic::initialize() {
 #endif
 
   mallocStatImpl::MallocStatisticImpl::initialize();
-  bool start_via_env = ::getenv("MALLOC_TRACE_AT_STARTUP") != NULL;
+
+  bool start_via_env = DEBUG_ONLY(::getenv("MALLOC_TRACE_AT_STARTUP") != NULL) NOT_DEBUG(false);
 
   if (start_via_env || MallocTraceAtStartup) {
     TraceSpec spec;
@@ -1652,19 +1669,20 @@ void MallocStatistic::initialize() {
 
     // Don't fail when enabled via environment, since we use this
     // when we have no real control over the started VM.
-    if (!enable(&ss, spec) && !start_via_env) {
+    if (!enable(&ss, spec) && !start_via_env && MallocTraceExitIfFail) {
       fprintf(stderr, "%s", ss.base());
       os::exit(1);
     }
   }
 
-#if defined(ASSERT)
-  if (MallocTraceTestDump) {
+  bool dump_via_env = DEBUG_ONLY(::getenv("MALLOC_TRACE_TEST_DUMP") != NULL) NOT_DEBUG(false);
+
+  if (dump_via_env || MallocTraceTestDump) {
+    char const* file = dump_via_env ? ::getenv("MALLOC_TRACE_TEST_DUMP") : MallocTraceTestDumpOutput;
     mallocStatImpl::MallocTraceTestDumpPeriodicTask* task =
-      new mallocStatImpl::MallocTraceTestDumpPeriodicTask(1000 * MallocTraceTestDumpInterval);
+      new mallocStatImpl::MallocTraceTestDumpPeriodicTask(file, 1000 * MallocTraceTestDumpInterval);
     task->enroll();
   }
-#endif
 }
 
 bool MallocStatistic::enable(outputStream* st, TraceSpec const& spec) {

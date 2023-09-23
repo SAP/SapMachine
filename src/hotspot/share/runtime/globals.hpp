@@ -558,6 +558,11 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, MallocTraceAtStartup, false,                                \
           "If set the malloc trace is enabled at startup.")                 \
                                                                             \
+  product(bool, MallocTraceExitIfFail, true,                                \
+          "If set and enabling the malloc trace at startup fails, we "      \
+          "print an error message and exit. Otherwise the error is "        \
+          "silently ignored.")                                              \
+                                                                            \
   product(bool, MallocTraceTrackFrees, true,                                \
           "If set the malloc trace enabled at startup also tracks "         \
           "deallocation of memory")                                         \
@@ -581,32 +586,34 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we collect more detailed statistics for the malloc "  \
           "trace enabled at startup. This costs some performance.")         \
                                                                             \
-  develop(bool, MallocTraceTestDump, false,                                 \
+  product(bool, MallocTraceTestDump, false,                                 \
           "If enabled we do a dump of the malloc trace in regular "         \
           "intervals.")                                                     \
                                                                             \
-  develop(uintx, MallocTraceTestDumpInterval, 60,                           \
+  product(uintx, MallocTraceTestDumpInterval, 60,                           \
           "The interval in seconds for the test dump.")                     \
                                                                             \
-  develop(ccstr, MallocTraceTestDumpSort, "",                               \
+  product(ccstr, MallocTraceTestDumpSort, "",                               \
           "If given we sort the output. Can be 'size' or 'count'.")         \
                                                                             \
-  develop(uintx, MallocTraceTestDumpSizeFraction, 100,                      \
+  product(uintx, MallocTraceTestDumpSizeFraction, 100,                      \
           "Only dump the top allocation which comprise the given "          \
           "percentage of the total allocation size.")                       \
                                                                             \
-  develop(uintx, MallocTraceTestDumpCountFraction, 100,                     \
+  product(uintx, MallocTraceTestDumpCountFraction, 100,                     \
           "Only dump the top allocation which comprise the given "          \
           "percentage of the total allocation count.")                      \
                                                                             \
-  develop(uintx, MallocTraceTestDumpMaxEntries, 10,                         \
+  product(uintx, MallocTraceTestDumpMaxEntries, 10,                         \
           "If > 0 it limits the number of entries printed.")                \
                                                                             \
-  develop(bool, MallocTraceTestDumpHideDumpAlllocs, true,                   \
+  product(bool, MallocTraceTestDumpHideDumpAlllocs, true,                   \
           "If enabled we don't track the allocation done for the dump.")    \
                                                                             \
-  develop(bool, MallocTraceTestDumpStdout, false,                           \
-          "Print test test dump to stdout")                                 \
+  product(ccstr, MallocTraceTestDumpOutput, "",                             \
+          "If set the dump is appended to the given file. 'stderr' and "    \
+          "'stdout' can be used for dumping to stderr and stdout. "         \
+          "otherwise '_<pid>' is appended to the file name.")               \
                                                                             \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
