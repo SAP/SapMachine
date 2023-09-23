@@ -590,7 +590,7 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we do a dump of the malloc trace in regular "         \
           "intervals.")                                                     \
                                                                             \
-  product(uintx, MallocTraceTestDumpInterval, 60,                           \
+  product(uintx, MallocTraceTestDumpInterval, 10,                           \
           "The interval in seconds for the test dump.")                     \
                                                                             \
   product(ccstr, MallocTraceTestDumpSort, "",                               \

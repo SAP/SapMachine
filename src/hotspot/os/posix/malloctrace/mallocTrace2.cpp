@@ -1655,9 +1655,10 @@ void MallocStatistic::initialize() {
 
   mallocStatImpl::MallocStatisticImpl::initialize();
 
+  bool dump_via_env = DEBUG_ONLY(::getenv("MALLOC_TRACE_TEST_DUMP") != NULL) NOT_DEBUG(false);
   bool start_via_env = DEBUG_ONLY(::getenv("MALLOC_TRACE_AT_STARTUP") != NULL) NOT_DEBUG(false);
 
-  if (start_via_env || MallocTraceAtStartup) {
+  if (start_via_env || dump_via_env || MallocTraceAtStartup) {
     TraceSpec spec;
     stringStream ss;
 
@@ -1669,13 +1670,12 @@ void MallocStatistic::initialize() {
 
     // Don't fail when enabled via environment, since we use this
     // when we have no real control over the started VM.
-    if (!enable(&ss, spec) && !start_via_env && MallocTraceExitIfFail) {
+    if (!enable(&ss, spec) && !start_via_env && !dump_via_env && MallocTraceExitIfFail) {
       fprintf(stderr, "%s", ss.base());
       os::exit(1);
     }
   }
 
-  bool dump_via_env = DEBUG_ONLY(::getenv("MALLOC_TRACE_TEST_DUMP") != NULL) NOT_DEBUG(false);
 
   if (dump_via_env || MallocTraceTestDump) {
     char const* file = dump_via_env ? ::getenv("MALLOC_TRACE_TEST_DUMP") : MallocTraceTestDumpOutput;
