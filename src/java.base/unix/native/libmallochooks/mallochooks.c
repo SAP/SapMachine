@@ -20,6 +20,20 @@
 // whenever possible
 #define TEST_LEVEL 0
 
+// If > 0 we sync after each write.
+#define SYNC_WRITE 0
+
+void write_safe(int fd, char const* buf, size_t len) {
+  int errno_backup = errno;
+
+  write(fd, buf, len);
+
+#if SYNC_WRITE > 0
+  fsync(fd);
+#endif
+
+  errno = errno_backup;
+}
 
 #if defined(__APPLE__)
 
@@ -67,7 +81,6 @@ void* __libc_pvalloc(size_t size);
 
 #endif
 
-
 #if TEST_LEVEL > 0
 
 static void print(char const* str);
@@ -83,7 +96,7 @@ static void print_size(size_t size);
 #endif
 
 static void print_error(char const* msg, int error_code) {
-  write(2, msg, strlen(msg));
+  write_safe(2, msg, strlen(msg));
 
   if (error_code > 0) {
     exit(error_code);
@@ -736,26 +749,27 @@ DYLD_INTERPOSE(REPLACE_NAME(valloc), valloc)
 #define DEBUG_FD 2
 
 static void print(char const* str) {
-  int errno_backup = errno;
-  write(DEBUG_FD, str, strlen(str));
-  errno = errno_backup;
+  write_safe(DEBUG_FD, str, strlen(str));
 }
 
 static void print_ptr(void* ptr) {
-  int errno_backup = errno;
+  char buf[18];
   int shift = 64;
+  buf[0] = '0';
+  buf[1] = 'x';
+  char* p = buf + 2;
   print("0x");
 
   do {
     shift -= 4;
-    write(DEBUG_FD, &("0123456789abcdef"[((((size_t) ptr) >> shift) & 15)]), 1);
+    *p = "0123456789abcdef"[((((size_t) ptr) >> shift) & 15)];
+    ++p;
   } while (shift > 0);
 
-  errno = errno_backup;
+  write_safe(DEBUG_FD, buf, p - buf);
 }
 
 static void print_size(size_t size) {
-  int errno_backup = errno;
   char buf[20];
   size_t pos = sizeof(buf);
 
@@ -764,8 +778,7 @@ static void print_size(size_t size) {
     size /= 10;
   }  while (size > 0);
 
-  write(DEBUG_FD, buf + pos, sizeof(buf) - pos);
-  errno = errno_backup;
+  write_safe(DEBUG_FD, buf + pos, sizeof(buf) - pos);
 }
 
 #endif
