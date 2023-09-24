@@ -626,13 +626,15 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 }
 
 void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
-  uint64_t hash = ptr_hash(ptr);
+  if ((ptr != NULL) && _track_free) {
+    uint64_t hash = ptr_hash(ptr);
 
-  if ((ptr != NULL) &&_track_free && should_track(hash)) {
-    record_free(ptr, hash, real_malloc_size(ptr));
+    if (should_track(hash)) {
+      record_free(ptr, hash, real_malloc_size(ptr));
+    }
+
+    real_free(ptr);
   }
-
-  real_free(ptr);
 }
 
 int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
@@ -1678,8 +1680,6 @@ void MallocStatistic::initialize() {
     spec._track_free = MallocTraceTrackFrees;
     spec._detailed_stats = MallocTraceDetailedStats;
 
-    // Don't fail when enabled via environment, since we use this
-    // when we have no real control over the started VM.
     if (!enable(&ss, spec) && MallocTraceExitIfFail) {
       fprintf(stderr, "%s", ss.base());
       os::exit(1);
