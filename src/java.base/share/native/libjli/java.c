@@ -853,7 +853,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
 // SapMachine RS 2023-09-18
 jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
 #if defined(__APPLE__) || defined(LINUX)
-    jboolean result = getenv("MALLOC_TRACE_AT_STARTUP") != NULL ? JNI_TRUE : JNI_FALSE;
+    jboolean uses_new_trace = JNI_FALSE;
     jboolean uses_old_trace = JNI_FALSE;
 
     for (int i = 1; i < argc; i++) {
@@ -861,7 +861,7 @@ jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
 
         if ((strcmp("-XX:+UseMallocHooks", arg) == 0) ||
             (strcmp("-J-XX:+UseMallocHooks", arg) == 0)) {
-            result = JNI_TRUE;
+            uses_new_trace = JNI_TRUE;
         }
 
         if ((strcmp("-XX:+EnableMallocTrace", arg) == 0) ||
@@ -881,7 +881,7 @@ jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
         }
     }
 
-    return (result && !uses_old_trace) ? JNI_TRUE : JNI_FALSE;
+    return (uses_new_trace && !uses_old_trace) ? JNI_TRUE : JNI_FALSE;
 #endif
 
     return JNI_FALSE;

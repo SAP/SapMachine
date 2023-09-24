@@ -586,34 +586,38 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we collect more detailed statistics for the malloc "  \
           "trace enabled at startup. This costs some performance.")         \
                                                                             \
-  product(bool, MallocTraceTestDump, false,                                 \
+  product(bool, MallocTraceDump, false,                                     \
           "If enabled we do a dump of the malloc trace in regular "         \
           "intervals.")                                                     \
                                                                             \
-  product(uintx, MallocTraceTestDumpInterval, 10,                           \
+  product(uintx, MallocTraceDumpInterval, 60,                               \
           "The interval in seconds for the test dump.")                     \
                                                                             \
-  product(ccstr, MallocTraceTestDumpSort, "",                               \
+  product(ccstr, MallocTraceDumpSort, "",                                   \
           "If given we sort the output. Can be 'size' or 'count'.")         \
                                                                             \
-  product(uintx, MallocTraceTestDumpSizeFraction, 100,                      \
+  product(uintx, MallocTraceDumpSizeFraction, 100,                          \
           "Only dump the top allocation which comprise the given "          \
           "percentage of the total allocation size.")                       \
                                                                             \
-  product(uintx, MallocTraceTestDumpCountFraction, 100,                     \
+  product(uintx, MallocTraceDumpCountFraction, 100,                         \
           "Only dump the top allocation which comprise the given "          \
           "percentage of the total allocation count.")                      \
                                                                             \
-  product(uintx, MallocTraceTestDumpMaxEntries, 10,                         \
-          "If > 0 it limits the number of entries printed.")                \
+  product(uintx, MallocTraceDumpMaxEntries, 10,                             \
+          "If > 0 it limits the number of entries printed. If no sort "     \
+          "is specified via -XX:MallocTraceDumpSort, we sort by "           \
+          "size.")                                                          \
                                                                             \
-  product(bool, MallocTraceTestDumpHideDumpAlllocs, true,                   \
+  product(bool, MallocTraceDumpHideDumpAlllocs, true,                       \
           "If enabled we don't track the allocation done for the dump.")    \
                                                                             \
-  product(ccstr, MallocTraceTestDumpOutput, "",                             \
+  product(ccstr, MallocTraceDumpOutput, "",                                 \
           "If set the dump is appended to the given file. 'stderr' and "    \
-          "'stdout' can be used for dumping to stderr and stdout. "         \
-          "otherwise '_<pid>' is appended to the file name.")               \
+          "'stdout' can be used for dumping to stderr or stdout. "          \
+          "Otherwise the dump is written to the given file name ( "         \
+          "the first occurrance of '@pid' is replaced by the pid of the "   \
+          "process).")                                                      \
                                                                             \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
