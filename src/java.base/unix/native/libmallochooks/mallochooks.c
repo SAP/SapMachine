@@ -76,6 +76,7 @@ void* __libc_pvalloc(size_t size);
   // This must be musl. Since they are cool they don't set a define.
 #define __THIS_IS_MUSL__
 
+#define CALLOC_REPLACEMENT calloc_by_malloc
 #define VALLOC_REPLACEMENT NULL
 #define PVALLOC_REPLACEMENT NULL
 
@@ -146,6 +147,25 @@ static free_func_t* free_for_fallback = fallback_free;
 #else
 static free_func_t* fallback_free = NULL;
 static free_func_t* free_for_fallback = FREE_REPLACEMENT;
+#endif
+
+#if defined(__THIS_IS_MUSL__)
+/* musl calloc would call the redirected malloc, so we call the right malloc here. */
+static void* calloc_by_malloc(size_t nelem, size_t size) {
+  /* Check for overflow */
+  if (size > 0 && (nelem > ((size_t) -1) / size)) {
+    errno = ENOMEM;
+    return NULL;
+  }
+
+  void* result = malloc_for_fallback(nelem * size);
+
+  if (result != NULL) {
+    bzero(result, nelem * size);
+  }
+
+  return result;
+}
 #endif
 
 #if !defined(CALLOC_REPLACEMENT)
