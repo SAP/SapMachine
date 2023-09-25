@@ -612,7 +612,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, MallocTraceDumpHideDumpAlllocs, true,                       \
           "If enabled we don't track the allocation done for the dump.")    \
                                                                             \
-  product(ccstr, MallocTraceDumpOutput, "",                                 \
+  product(ccstr, MallocTraceDumpOutput, "stderr",                           \
           "If set the dump is appended to the given file. 'stderr' and "    \
           "'stdout' can be used for dumping to stderr or stdout. "          \
           "Otherwise the dump is written to the given file name ( "         \
