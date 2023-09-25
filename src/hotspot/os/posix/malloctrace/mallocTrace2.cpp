@@ -1612,8 +1612,6 @@ void MallocStatisticImpl::shutdown() {
   }
 }
 
-#if defined(ASSERT)
-
 class MallocTraceDumpPeriodicTask : public PeriodicTask {
 private:
   char const* _file;
@@ -1665,8 +1663,6 @@ void MallocTraceDumpPeriodicTask::task() {
     mallocStatImpl::MallocStatisticImpl::dump(&ss, &ss, spec);
   }
 }
-
-#endif
 
 } // namespace mallocStatImpl
 
