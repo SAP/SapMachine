@@ -19,12 +19,17 @@
 // To test in jtreg tests use
 // JTREG="JAVA_OPTIONS=-XX:+UseMallocHooks -XX:+MallocTraceAtStartup -XX:+MallocTraceDump -XX:MallocTraceDumpInterval=10 -XX:MallocTraceDumpOutput=mtrace_@pid.txt"
 
+// A simple smoke test
+// jconsole -J-XX:+UseMallocHooks -J-XX:+MallocTraceAtStartup -J-XX:+MallocTraceDump -J-XX:MallocTraceStackDepth=12 -J-XX:MallocTraceDumpInterval=10
+
 
 // Some compile time constants for the maps.
 
-// The load at which we resize the map.
 #define MAX_STACK_MAP_LOAD 0.5
+#define STACK_MAP_INIT_SIZE 1024
+
 #define MAX_ALLOC_MAP_LOAD 2.5
+#define ALLOC_MAP_INIT_SIZE 1024
 
 // Must be a power of two minus 1.
 #define MAX_FRAMES 31
@@ -488,11 +493,16 @@ volatile uint64_t MallocStatisticImpl::_not_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_failed_frees;
 
 
-#define CAPTURE_STACK \
+#define CAPTURE_STACK(func) \
   address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
   uint64_t ticks = _detailed_stats ? Ticks::now().nanoseconds() : 0; \
   int nr_of_frames = 0; \
-  if (_use_backtrace) { \
+  /* We know at least the function and the caller. */ \
+  if (_max_frames == 2) { \
+    frames[0] = (address) func; \
+    frames[1] = (address) caller_address; \
+    nr_of_frames = 2; \
+  } else if (_use_backtrace) { \
     nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
   } else { \
     frame fr = os::current_frame(); \
@@ -505,8 +515,9 @@ volatile uint64_t MallocStatisticImpl::_failed_frees;
     } \
     /* We know at least the caller addreess */ \
     if (nr_of_frames < 2) { \
-      frames[nr_of_frames] = (address) caller_address; \
-      nr_of_frames += 1; \
+      frames[0] = (address) func; \
+      frames[1] = (address) caller_address; \
+      nr_of_frames = 2; \
     } \
   } \
   if (_detailed_stats) { \
@@ -565,7 +576,7 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_malloc);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -582,7 +593,7 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_calloc);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -601,7 +612,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && (should_track(old_hash) || should_track(hash))) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_realloc);
 
     if (_track_free) {
       if (should_track(old_hash)) {
@@ -642,7 +653,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
   uint64_t hash = ptr_hash(*ptr);
 
   if ((result == 0) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_posix_memalign);
 
     if (_track_free) {
       record_allocation(*ptr, hash, nr_of_frames, frames);
@@ -661,7 +672,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_memalign);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -680,7 +691,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_aligned_alloc);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -699,7 +710,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_valloc);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -718,7 +729,7 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
-    CAPTURE_STACK;
+    CAPTURE_STACK(real_pvalloc);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1069,9 +1080,9 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     return false;
   }
 
-  if (spec._stack_depth < 1 || spec._stack_depth > MAX_FRAMES) {
+  if (spec._stack_depth < 2 || spec._stack_depth > MAX_FRAMES) {
     st->print_cr("The given stack depth %d is outside of the valid range [%d, %d]",
-                 spec._stack_depth, 1, MAX_FRAMES);
+                 spec._stack_depth, 2, MAX_FRAMES);
 
     return false;
   }
@@ -1130,7 +1141,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 
     size_t entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
     _stack_maps_alloc[i] = new (mem) Allocator(entry_size, 256, _funcs);
-    _stack_maps_mask[i] = 127;
+    _stack_maps_mask[i] = STACK_MAP_INIT_SIZE - 1;
     _stack_maps_size[i]._val = 0;
     _stack_maps_limit[i] = (int) ((_stack_maps_mask[i] + 1) * MAX_STACK_MAP_LOAD);
     _stack_maps[i] = (StatEntry**) _funcs->calloc(_stack_maps_mask[i] + 1, sizeof(StatEntry*));
@@ -1154,7 +1165,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     }
 
     _alloc_maps_alloc[i] = new (mem) Allocator(sizeof(AllocEntry), 2048, _funcs);
-    _alloc_maps_mask[i] = 127;
+    _alloc_maps_mask[i] = ALLOC_MAP_INIT_SIZE - 1;
     _alloc_maps_size[i]._val = 0;
     _alloc_maps_limit[i] = (int) ((_alloc_maps_mask[i] + 1) * MAX_ALLOC_MAP_LOAD);
     _alloc_maps[i] = (AllocEntry**) _funcs->calloc(_alloc_maps_mask[i] + 1, sizeof(AllocEntry*));
