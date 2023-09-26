@@ -77,6 +77,7 @@ void* __libc_pvalloc(size_t size);
 #define __THIS_IS_MUSL__
 
 #define CALLOC_REPLACEMENT calloc_by_malloc
+#define POSIX_MEMALIGN_REPLACEMENT posix_memalign_by_aligned_alloc
 #define VALLOC_REPLACEMENT NULL
 #define PVALLOC_REPLACEMENT NULL
 
@@ -151,17 +152,17 @@ static free_func_t* free_for_fallback = FREE_REPLACEMENT;
 
 #if defined(__THIS_IS_MUSL__)
 /* musl calloc would call the redirected malloc, so we call the right malloc here. */
-static void* calloc_by_malloc(size_t nelem, size_t size) {
+static void* calloc_by_malloc(size_t elems, size_t size) {
   /* Check for overflow */
-  if (size > 0 && (nelem > ((size_t) -1) / size)) {
+  if (size > 0 && (elems > ((size_t) -1) / size)) {
     errno = ENOMEM;
     return NULL;
   }
 
-  void* result = malloc_for_fallback(nelem * size);
+  void* result = malloc_for_fallback(elems * size);
 
   if (result != NULL) {
-    bzero(result, nelem * size);
+    bzero(result, elems * size);
   }
 
   return result;
@@ -248,23 +249,6 @@ static memalign_func_t* fallback_memalign = NULL;
 static memalign_func_t* memalign_for_fallback = MEMALIGN_REPLACEMENT;
 #endif
 
-#if !defined(POSIX_MEMALIGN_REPLACEMENT)
-static int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
-  *ptr = memalign_for_fallback(align, size);
-
-  if (*ptr == NULL) {
-    return ENOMEM;
-  }
-
-  return 0;
-}
-
-static posix_memalign_func_t* posix_memalign_for_fallback = fallback_posix_memalign;
-#else
-static posix_memalign_func_t* fallback_posix_memalign = NULL;
-static posix_memalign_func_t* posix_memalign_for_fallback = POSIX_MEMALIGN_REPLACEMENT;
-#endif
-
 #if !defined(ALIGNED_ALLOC_REPLACEMENT)
 static void* fallback_aligned_alloc(size_t align, size_t size) {
   if ((align == 0) || ((size & align) != 0)) {
@@ -286,6 +270,38 @@ static aligned_alloc_func_t* aligned_alloc_for_fallback = ALIGNED_ALLOC_REPLACEM
 #if defined(__APPLE__)
 #pragma clang diagnostic pop
 #endif
+#endif
+
+#if defined(__THIS_IS_MUSL__)
+/* musl posix_memalign would call the redirected aligned_alloc, so we call the right aligned_alloc here. */
+static int posix_memalign_by_aligned_alloc(void** ptr, size_t align, size_t size) {
+  void* result = aligned_alloc_for_fallback(align, size);
+
+  if (ptr != NULL) {
+    *ptr = result;
+
+    return 0;
+  }
+
+  return errno;
+}
+#endif
+
+#if !defined(POSIX_MEMALIGN_REPLACEMENT)
+static int fallback_posix_memalign(void** ptr, size_t align, size_t size) {
+  *ptr = memalign_for_fallback(align, size);
+
+  if (*ptr == NULL) {
+    return ENOMEM;
+  }
+
+  return 0;
+}
+
+static posix_memalign_func_t* posix_memalign_for_fallback = fallback_posix_memalign;
+#else
+static posix_memalign_func_t* fallback_posix_memalign = NULL;
+static posix_memalign_func_t* posix_memalign_for_fallback = POSIX_MEMALIGN_REPLACEMENT;
 #endif
 
 #if !defined(VALLOC_REPLACEMENT) || !defined(PVALLOC_REPLACEMENT)
@@ -422,6 +438,12 @@ static void LIB_INIT init(void) {
   free_for_fallback = (free_func_t*) real_free;
   memalign_for_fallback = (memalign_func_t*) real_memalign;
   aligned_alloc_for_fallback = (aligned_alloc_func_t*) real_aligned_alloc;
+
+  // Set the fallback for memlign to aligned_alloc on musl, since
+  // the memalign implementation calls aligned_alloc.
+#if defined(__THIS_IS_MUSL__)
+  memalign_for_fallback = aligned_alloc_for_fallback;
+#endif
 
   allow_aligned_malloc_in_test();
 
