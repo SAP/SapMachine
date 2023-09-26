@@ -619,6 +619,9 @@ const int ObjectAlignmentInBytes = 8;
           "the first occurrance of '@pid' is replaced by the pid of the "   \
           "process).")                                                      \
                                                                             \
+  develop(bool, MallocTraceTestHooks, false,                                \
+          "If set we test the malloc hooks at startup.")                    \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \
