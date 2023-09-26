@@ -29,6 +29,7 @@
 #include "malloctrace/assertHandling.hpp"
 #include "malloctrace/locker.hpp"
 #include "malloctrace/mallocTrace.hpp"
+#include "malloctrace/mallocTrace2.hpp"
 #include "malloctrace/siteTable.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
@@ -137,6 +138,7 @@ public:
 
   static void enable() {
     DEBUG_ONLY(verify();)
+    MallocStatistic::disable(NULL);
     malloctrace_assert(!hooks_are_active(), "Sanity");
     _old_malloc_hook = __malloc_hook;
     __malloc_hook = my_malloc_hook;
