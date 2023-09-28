@@ -25,8 +25,13 @@
 
 void write_safe(int fd, char const* buf, size_t len) {
   int errno_backup = errno;
+  size_t left = len;
+  ssize_t result;
 
-  write(fd, buf, len);
+  while ((result = write(fd, buf, left)) > 0) {
+    buf += result;
+    left -= result;
+  }
 
 #if SYNC_WRITE > 0
   fsync(fd);
