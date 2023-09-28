@@ -315,13 +315,11 @@ public:
     return &_next;
   }
 
-  bool is_same_ptr(void* ptr) {
 #if defined(ASSERT)
-    return _ptr == ptr;
-#else
-    return true;
-#endif
+  void* ptr() {
+    return _ptr;
   }
+#endif
 };
 
 
@@ -426,7 +424,7 @@ private:
 
   static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
   static void record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames);
-  static void record_free(void* ptr, uint64_t hash, size_t size);
+  static StatEntry* record_free(void* ptr, uint64_t hash, size_t size);
 
   static uint64_t ptr_hash(void* ptr);
   static bool should_track(uint64_t hash);
@@ -608,17 +606,31 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
 void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
   size_t old_size = ptr != NULL ? real_malloc_size(ptr) : 0;
   uint64_t old_hash = ptr_hash(ptr);
+
+  // We have to speculate the realloc does not fail, since realloc itself frees
+  // the ptr potentially and another thread might get it from malloc and tries
+  // to add to the alloc hash map before we could remove it here.
+  StatEntry* freed_entry = NULL;
+
+  if (_track_free && (ptr != NULL) && should_track(old_hash)) {
+    freed_entry = record_free(ptr, old_hash, old_size);
+  }
+
   void* result = real_realloc(ptr, size);
+
+  if ((result == NULL) && (freed_entry != NULL) && (size > 0)) {
+    // We failed, but we already removed the freed memory, so we have to re-add it.
+    record_allocation(ptr, old_hash, freed_entry->nr_of_frames(), freed_entry->frames());
+
+    return NULL;
+  }
+
   uint64_t hash = ptr_hash(result);
 
-  if ((result != NULL) && (should_track(old_hash) || should_track(hash))) {
+  if ((result != NULL) && should_track(hash)) {
     CAPTURE_STACK(real_realloc);
 
     if (_track_free) {
-      if (should_track(old_hash)) {
-        record_free(ptr, old_hash, old_size);
-      }
-
       if (should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
         record_allocation(result, hash, nr_of_frames, frames);
       }
@@ -628,9 +640,6 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
       // old_size might be greater.
       record_allocation_size(size - old_size, nr_of_frames, frames);
     }
-  } else if ((size == 0) && _track_free && should_track(old_hash)) {
-    // Treat as free.
-    record_free(ptr, hash, old_size);
   }
 
   return result;
@@ -850,7 +859,48 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   AllocEntry* entry = _alloc_maps[idx][slot];
 
   while (entry != NULL) {
-    assert((entry->hash() != hash) || entry->is_same_ptr(ptr), "Same hash for different pointer");
+    if (entry->hash() == hash) {
+      char tmp[1024];
+      pthread_setspecific(_malloc_suspended, (void*) 1);
+      shutdown();
+
+      address caller_address = (address) NULL;
+      CAPTURE_STACK(NULL);
+
+      fdStream ss(1);
+      ss.print_cr("Same hash " UINT64_FORMAT " for %p and %p", (uint64_t) hash, ptr, entry->ptr());
+      ss.print_raw_cr("Current stack:");
+
+      for (int i = 0; i < nr_of_frames; ++i) {
+        ss.print("  [" PTR_FORMAT "]  ", p2i(frames[i]));
+        os::print_function_and_library_name(&ss, frames[i], tmp, sizeof(tmp), true, true, false);
+        ss.cr();
+      }
+
+      ss.print_raw_cr("Orig stack:");
+      StatEntry* stat_entry = entry->entry();
+
+      for (int i = 0; i < stat_entry->nr_of_frames(); ++i) {
+        address frame = stat_entry->frames()[i];
+        ss.print("  [" PTR_FORMAT "]  ", p2i(frame));
+
+        if (os::print_function_and_library_name(&ss, frame, tmp, sizeof(tmp), true, true, false)) {
+          ss.cr();
+        } else {
+          CodeBlob* blob = CodeCache::find_blob((void*) frame);
+
+          if (blob != NULL) {
+            ss.print_raw(" ");
+            blob->print_value_on(&ss);
+            ss.cr();
+          } else {
+            ss.print_raw_cr(" <unknown code>");
+          }
+        }
+      }
+    }
+
+    assert((entry->hash() != hash) || (ptr == entry->ptr()), "Same hash for different pointer");
     assert(entry->hash() != hash, "Must not be already present");
     entry = entry->next();
   }
@@ -873,14 +923,14 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   }
 }
 
-void MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
+StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
   assert(_track_free, "Only used for detailed tracking");
 
   int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
   Locker locker(_alloc_maps_lock[idx]);
 
   if (!_enabled) {
-    return;
+    return NULL;
   }
 
   int slot = (hash / NR_OF_ALLOC_MAPS) & _alloc_maps_mask[idx];
@@ -889,7 +939,7 @@ void MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
   while (*entry != NULL) {
     if ((*entry)->hash() == hash) {
       StatEntry* stat_entry = (*entry)->entry();
-      assert((*entry)->is_same_ptr(ptr), "Same hash must be same pointer");
+      assert((*entry)->ptr() == ptr, "Same hash must be same pointer");
       AllocEntry* next = (*entry)->next();
       _alloc_maps_alloc[idx]->free(*entry);
       _alloc_maps_size[idx]._val -= 1;
@@ -911,7 +961,7 @@ void MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
       Locker locker2(_stack_maps_lock[idx2]);
       stat_entry->remove_allocation(size);
 
-      return;
+      return stat_entry;
     }
 
     entry = (*entry)->next_ptr();
@@ -923,6 +973,8 @@ void MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
   if (_detailed_stats) {
     Atomic::add(&_failed_frees, (uint64_t) 1);
   }
+
+  return NULL;
 }
 
 void MallocStatisticImpl::cleanup_for_stack_map(int idx) {
@@ -1882,7 +1934,7 @@ bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
     } else if (strcmp("stdout", dump_file) == 0) {
       fd = 1;
     } else {
-      fd = ::open(dump_file, O_WRONLY | O_CREAT | O_TRUNC);
+      fd = ::open(dump_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
       if (fd < 0) {
         st->print_cr("Could not open '%s' for output.", dump_file);
