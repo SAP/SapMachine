@@ -1,0 +1,305 @@
+###############################################################################
+#
+# This is the additional jtreg exclude list for SapMachine jdk tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+# SAP/SapMachine usage notes:
+#
+# This exclude list is a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal is to fix test issues upstream or at least open upstream
+# bugs and get the test excluded via the upstream exclusion list.
+#
+# This list is refreshed periodically from an SAP-internal version,
+# removing comments which reveal internal URLs, names or hostnames.
+#
+# It might contain additional test exclusions, specific to the SapMachine build
+# and test infrastructure. That section is found at the end of the file.
+#
+###############################################################################
+
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 11 was released (9/2018)
+
+# SapMachine 2018-07-04, 2019-04-30
+# Windows: Testbug: users mixed up by our infrastructure
+# Aix: also in central exclude list, see 8211847.
+#
+# SapMachine 2023-08-03 Try again
+#java/lang/ProcessHandle/InfoTest.java                                                windows-all,aix-all
+
+# SapMachine 2018-08-22 Failures on sparc/linuxppc64le.
+# Some just fail sporadic.
+# SapMachine 2023-08-03 Try again
+#
+#com/sun/nio/sctp/SctpMultiChannel/Branch.java                                        linux-ppc64le
+#
+#com/sun/nio/sctp/SctpMultiChannel/Send.java                                          linux-ppc64le
+#
+#com/sun/nio/sctp/SctpChannel/Send.java                                               linux-ppc64le
+
+# SapMachine 2018-06-22, 2019-04-30
+# Fails only on recent Suse systems (e.g. SLES 12.2, 12.4, 15): "RuntimeException: Test failed for angle 15.0"
+# The test passes on SLES 12.0, SLES 11.3, RHEL 6.1
+#
+# Opened bug for this: 8219641: java/awt/font/Rotate/RotatedTextTest.java fails on linux x86_64: Test failed for angle 15.0
+# SapMachine 2023-08-03 Try again
+#java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-all
+
+# SapMachine 2023-07-26
+# These two tests fail very often on our windows machines. This seems to be caused by network 
+# filtering in our infrastructure in case of a lot of datagram packets in a very short time.
+java/net/DatagramSocket/SendSize.java                                                  windows-x64
+java/nio/channels/DatagramChannel/ReceiveISA.java                                      windows-x64
+
+###############################################################################
+# New failures detected after GA of 11.0.10 (e.g. seen only in jdk11u-dev after branching 11.0.10 to jdk11u)
+
+# SapMachine 2021-02-16
+# sun.security.pkcs11.wrapper.PKCS11Exception: CKR_ATTRIBUTE_READ_ONLY
+# Test fails on several Linux distributions with some packaged nss libs. We see it on ...
+#
+#
+# https://bugs.openjdk.java.net/browse/JDK-8232153
+# SapMachine 2023-09-01 Try again
+#sun/security/pkcs11/Secmod/AddTrustedCert.java                               8232153 linux-aarch64,linux-ppc64le
+
+# SapMachine 2021-02-24
+# Test sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java that was introduced
+# with https://bugs.openjdk.java.net/browse/JDK-8257545 fails on ...
+# Probably some issue with OS configuration/libnss. We simply exclude it.
+#
+# SapMachine 2023-09-01 Try again
+#sun/security/pkcs11/fips/SunJSSEKeyExchangeFIPS.java                                 linux-s390x
+
+###############################################################################
+# Tests known to be failing in OpenJDK when JDK 12 was released (3/2019)
+
+# SapMachine 2019-02-08
+# RuntimeException: getBundle("UnreadableRB") doesn't throw class java.io.IOException
+# SapMachine 2019-07-12 Still failing
+#
+#
+#
+java/util/ResourceBundle/Control/MissingResourceCauseTestRun.java                    windows-all
+
+# SapMachine 2019-02-16
+# timeout, on be a lot, on le once.
+java/nio/channels/FileChannel/CleanerTest.java                                       linux-ppc64,linux-ppc64le
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk13
+
+# SapMachine 2019-08-08
+# We see this issue occuring for a long time already in 13 and 14.
+# Another one of these flaky font things??
+#
+java/awt/font/FontNames/FCCompositeTest.java                                         linux-all
+
+# SapMachine 2019-08-29
+# GC overhead limit exceeded, occurs very often
+#
+# Created JBS issue: https://bugs.openjdk.java.net/browse/JDK-8230349
+#
+#
+#jdk/jfr/event/gc/detailed/TestStressAllocationGCEventsWithParallel.java      8230349 macosx-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk14
+
+# SapMachine 2019-08-30
+# Richard's new test unveils an aarch64 issue.
+com/sun/jdi/EATests.java                                                             linux-aarch64
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk15
+
+# SapMachine 2020-09-17
+# RuntimeException: '/net/usr.work': 13570272264192 != 13570272198656
+#
+#
+#
+#
+#
+#java/io/File/GetXSpace.java                                                          generic-all
+
+# SapMachine 2020-09-17
+# WARNING: Using incubator modules: jdk.incubator.foreign
+# Exclude, retry once foreign is no more incubator.
+java/util/stream/test/org/openjdk/tests/java/util/stream/WhileOpStatefulTest.java    linux-ppc64,linux-ppc64le
+
+# SapMachine 2020-09-17
+# Exception: ERROR: IsModifiableClass failed.
+# I'd assume this test should not be run on mac.
+java/lang/instrument/IsModifiableClassAgent.java                                     macosx-all
+
+# SapMachine 2022-04-01
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+java/awt/Graphics2D/DrawString/RotTransText.java                             7043153 linux-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk16
+
+# SapMachine 2020-08-07
+# These tests fail on our PPC machines that have a stacksize bigger than 4k. Test will
+# fail on all machines that do no GC before the first output.
+# https://bugs.openjdk.java.net/browse/JDK-8248691
+sun/tools/jstat/jstatLineCounts1.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
+sun/tools/jstat/jstatLineCounts2.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
+sun/tools/jstat/jstatLineCounts3.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
+sun/tools/jstat/jstatLineCounts4.sh                                          8248691 linux-ppc64,linux-ppc64le,aix-all
+
+# SapMachine 2023-03-20: the next 2 fail on Alpine (unfortunately x64 is not soo specific)
+#
+#
+com/sun/jdi/JdwpAllowTest.java                                                       aix-ppc64,linux-x64
+com/sun/jdi/JdwpListenTest.java                                                      linux-x64
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk18
+
+# SapMachine 2021-10-28: fails on Windows (at least with dbg binaries) since JDK-8269223,
+#
+#
+#
+#
+java/awt/font/JNICheck/FreeTypeScalerJNICheck.java                           8276809 windows-all
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk19
+
+# SapMachine 2022-06-15 Loom
+#java/beans/XMLDecoder/8028054/TestConstructorFinder.java                             linux-ppc64le
+#java/beans/XMLDecoder/8028054/TestMethodFinder.java                                  linux-ppc64le
+
+# SapMachine 2022-06-15 Panama
+java/foreign/TestHandshake.java                                                      linux-ppc64le
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1                         linux-ppc64le
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk21
+
+# SapMachine 2022-12-29: fails sometimes with timeout on our slooooow Linuxppc64le machines
+#
+jdk/internal/vm/Continuation/Fuzz.java#preserve-fp                                   linux-ppc64le
+
+# SapMachine 2023-06-06
+#
+com/sun/net/httpserver/simpleserver/StressDirListings.java                            aix-ppc64
+java/net/httpclient/http2/ContinuationFrameTest.java                                  aix-ppc64
+java/net/DatagramSocket/SendReceiveMaxSize.java                                       aix-ppc64
+java/net/MulticastSocket/Promiscuous.java                                             aix-ppc64
+java/net/Socket/asyncClose/Race.java                                                  aix-ppc64
+java/nio/channels/Channels/SocketChannelStreams.java                                  aix-ppc64
+java/nio/channels/DatagramChannel/SendReceiveMaxSize.java                             aix-ppc64
+
+# Tests that fail with xlc16
+# 2023-07-06 seems JliLaunchTest failed only in stage (xlc16)
+#tools/launcher/JliLaunchTest.java                                                     aix-ppc64
+# https://bugs.openjdk.org/browse/JDK-8306007
+#java/lang/String/concat/IntegerMinValue.java                                          aix-ppc64
+
+# SapMachine 2023-08-01
+# https://bugs.openjdk.org/browse/JDK-8309846
+jdk/jfr/event/runtime/TestResidentSetSizeEvent.java                                   aix-ppc64
+
+###############################################################################
+# Failing new tests, unsupported new features in jdk22
+
+# SapMachine 2023-08-25
+#
+# see 8315026: java/lang/ProcessHandle/TreeTest.java fails intermittent on AIX in TreeTest.test5
+#java/lang/ProcessHandle/TreeTest.java                                                 aix-all
+
+###############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
+
+# SapMachine 2018-10-05
+# This test opens as many sockets as possible and fails after a timeout.
+# When running in concurrency mode, all tests that need a socket and run in
+# parallel to this test will fail.
+java/nio/channels/AsyncCloseAndInterrupt.java                                        generic-all
+
+# SapMachine 2019-01-31 These fail on MacOS in the SapMachine CI infrastructure.
+# Need to check how this can be fixed.
+com/sun/jdi/AccessSpecifierTest.java                                                 macosx-all
+com/sun/jdi/AfterThreadDeathTest.java                                                macosx-all
+com/sun/jdi/ArrayRangeTest.java                                                      macosx-all
+com/sun/jdi/ConstantPoolInfo.java                                                    macosx-all
+com/sun/jdi/CountFilterTest.java                                                     macosx-all
+com/sun/jdi/EarlyReturnNegativeTest.java                                             macosx-all
+com/sun/jdi/EarlyReturnTest.java                                                     macosx-all
+com/sun/jdi/FieldWatchpoints.java                                                    macosx-all
+com/sun/jdi/FramesTest.java                                                          macosx-all
+com/sun/jdi/InstanceFilter.java                                                      macosx-all
+com/sun/jdi/InterfaceMethodsTest.java                                                macosx-all
+com/sun/jdi/InvokeTest.java                                                          macosx-all
+com/sun/jdi/LocalVariableEqual.java                                                  macosx-all
+com/sun/jdi/LocationTest.java                                                        macosx-all
+com/sun/jdi/ModificationWatchpoints.java                                             macosx-all
+com/sun/jdi/MonitorEventTest.java                                                    macosx-all
+com/sun/jdi/MonitorFrameInfo.java                                                    macosx-all
+com/sun/jdi/NullThreadGroupNameTest.java                                             macosx-all
+com/sun/jdi/PopAndStepTest.java                                                      macosx-all
+com/sun/jdi/PopAsynchronousTest.java                                                 macosx-all
+com/sun/jdi/ReferrersTest.java                                                       macosx-all
+com/sun/jdi/RequestReflectionTest.java                                               macosx-all
+com/sun/jdi/ResumeOneThreadTest.java                                                 macosx-all
+com/sun/jdi/SourceNameFilterTest.java                                                macosx-all
+com/sun/jdi/VarargsTest.java                                                         macosx-all
+com/sun/jdi/Vars.java                                                                macosx-all
+com/sun/jdi/redefineMethod/RedefineTest.java                                         macosx-all
+com/sun/jdi/sde/MangleTest.java                                                      macosx-all
+com/sun/jdi/sde/TemperatureTableTest.java                                            macosx-all
+
+# SapMachine 2019-01-30
+# This test fails on linux-ppc64le and linux-ppc64. Probably due to resource constraints.
+java/util/Base64/TestEncodingDecodingLength.java                                     linux-ppc64le,linux-ppc64
+
+# SapMachine 2019-05-20
+# We have problems with this test in our CI env on linux-x64. Excluding for now.
+java/lang/ProcessHandle/OnExitTest.java                                              linux-x64
+
+# SapMachine 2020-07-14
+# We see this test failing on our linux boxes
+# https://bugs.openjdk.java.net/browse/JDK-8249079
+java/lang/invoke/lambda/LambdaFileEncodingSerialization.java                 8249079 linux-all
+
+# SapMachine 2022-12-11
+java/lang/Thread/virtual/stress/Skynet.java#id0                                      generic-all
+java/lang/Thread/virtual/stress/Skynet.java#id1                                      generic-all
+
+# SapMachine 2023-04-30
+# We see this failing in SapMachine Jenkins CI
+java/util/concurrent/forkjoin/AsyncShutdownNowInvokeAnyRace.java                     windows-x64
