@@ -326,37 +326,49 @@ public:
 
 static register_hooks_t* register_hooks;
 
-static void print_needed_preload_env(outputStream* st) {
-#if defined(LINUX)
-      st->print_cr("LD_PRELOAD=%s/libmallochooks.so", Arguments::get_dll_dir());
-#elif defined (__APPLE__)
-      st->print_cr("DYLD_INSERT_LIBRARIES=%s/libmallochooks.dylib", Arguments::get_dll_dir());
+#if defined(APPLE)
+static char const* ld_preload = "DYLD_INSERT_LIBRARIES";
+static char const* malloc_hooks = "/libmallochooks.dylib";
 #else
-      st->print_raw_cr("Not supported by the operating system!");
+static char const* ld_preload = "LD_PRELOAD";
+static char const* malloc_hooks = "/libmallochooks.so";
 #endif
+
+static void print_needed_preload_env(outputStream* st) {
+  st->print_cr("%s=%s%s", ld_preload, Arguments::get_dll_dir(), malloc_hooks);
+  st->print_cr("Its current value is %s", getenv(ld_preload));
+}
+
+static void remove_malloc_hooks_from_preload() {
+  // TODO: Remove only the needed lib.
+  ::unsetenv(ld_preload);
 }
 
 static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
   if (register_hooks == NULL) {
     register_hooks  = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
-  }
 
-  if (register_hooks == NULL) {
-    if (UseMallocHooks) {
-      st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
-                       "This usually happens if the VM is not loaded via the JDK launcher (e.g. " \
-                       "java.exe). In this case you must preload the library by setting the " \
-                       "following environment variable: ");
-      print_needed_preload_env(st);
-    } else {
-      st->print_cr("Could not find preloaded libmallochooks. Try using -XX:+UseMallocHooks " \
-                   "Vm option to automatically preload it using the JDK launcher. Or you can set " \
-                   "the following environment variable: ");
-      print_needed_preload_env(st);
+    if (register_hooks == NULL) {
+      if (UseMallocHooks) {
+        st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
+                         "This usually happens if the VM is not loaded via the JDK launcher (e.g. " \
+                         "java.exe). In this case you must preload the library by setting the " \
+                         "following environment variable: ");
+        print_needed_preload_env(st);
+      } else {
+        st->print_cr("Could not find preloaded libmallochooks. Try using -XX:+UseMallocHooks " \
+                     "Vm option to automatically preload it using the JDK launcher. Or you can set " \
+                     "the following environment variable: ");
+        print_needed_preload_env(st);
+      }
+
+      st->print_raw_cr("VM arguments:");
+      Arguments::print_summary_on(st);
+      st->print_raw_cr("Loaded libraries:");
+      os::print_dll_info(st);
+
+      return NULL;
     }
-
-
-    return NULL;
   }
 
   return register_hooks(hooks);
@@ -1883,6 +1895,10 @@ void MallocStatistic::initialize() {
     return;
   }
 #endif
+
+  // Remove the hooks from the preload env, so we don't
+  // preload mallochooks for spawned programs.
+  mallocStatImpl::remove_malloc_hooks_from_preload();
 
 #if defined(ASSERT)
   if (MallocTraceTestHooks) {

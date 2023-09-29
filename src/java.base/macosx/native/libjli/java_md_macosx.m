@@ -381,24 +381,31 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     if (ShouldPreloadLibMallocHooks(*pargc, *pargv)) {
         char const* env_name = "DYLD_INSERT_LIBRARIES";
         char const* libpath = "/lib/libmallochooks.dylib";
+        char const* old_env = getenv(env_name);
+        char* env_entry;
 
-        if (getenv(env_name ) == NULL) {
-            /* We currently don't support having DYLD_INSERT_LIBRARIES already set. */
+        if ((old_env == NULL) || (old_env[0] == '0')) {
             size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
-            char* env_entry = JLI_MemAlloc(size);
+            env_entry = JLI_MemAlloc(size);
 
-            snprintf(env_entry, size, "%s=%s%s", env_name , jrepath, libpath);
+            snprintf(env_entry, size, "%s=%s%s", env_name, jrepath, libpath);
+        } else {
+            size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) +
+                          3 + JLI_StrLen(old_env);
+            env_entry = JLI_MemAlloc(size);
 
-            if (putenv(env_entry) == 0) {
-                char** new_args = (char**) JLI_MemAlloc(sizeof(char*) * (*pargc));
+            snprintf(env_entry, size, "%s=%s%s:%s", env_name, jrepath, libpath, old_env);
+        }
 
-                for (int i = 1; i < *pargc; ++i) {
-                    new_args[i - 1] = (*pargv)[i];
-                }
+        if (putenv(env_entry) == 0) {
+            char** new_args = (char**) JLI_MemAlloc(sizeof(char*) * (*pargc));
 
-                new_args[*pargc - 1] = NULL;
-                execve((*pargv)[0], new_args, environ);
+            for (int i = 1; i < *pargc; ++i) {
+                new_args[i - 1] = (*pargv)[i];
             }
+
+            new_args[*pargc - 1] = NULL;
+            execve((*pargv)[0], new_args, environ);
         }
     }
 

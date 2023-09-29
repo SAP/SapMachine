@@ -308,9 +308,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     char* lastslash = NULL;
     char** newenvp = NULL; /* current environment */
     size_t new_runpath_size;
-
-    /* SapMachine RS 2023-09-18 */
-    jboolean needs_libmallochooks = ShouldPreloadLibMallocHooks(*pargc, *pargv);
 #endif  /* SETENV_REQUIRED */
 
     /* Compute/set the name of the executable */
@@ -351,29 +348,35 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     /* SapMachine RS 2023-09-18 */
 #if defined(LINUX)
-    if (needs_libmallochooks == JNI_TRUE) {
+    if (ShouldPreloadLibMallocHooks(*pargc, *pargv) == JNI_TRUE) {
         char const* env_name = "LD_PRELOAD";
         char const* libpath = "/lib/libmallochooks.so";
+        char const* old_env = getenv(env_name);
+        char* env_entry;
 
-        needs_libmallochooks = JNI_FALSE;
-
-        if (getenv(env_name) == NULL) {
-            /* We currently don't support having LD_PRELAOD already set. */
+        if ((old_env == NULL) || (old_env[0] == '0')) {
             size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
-            char* env_entry = JLI_MemAlloc(size);
+            env_entry = JLI_MemAlloc(size);
 
             snprintf(env_entry, size, "%s=%s%s", env_name, jrepath, libpath);
+        } else {
+            size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) +
+                          3 + JLI_StrLen(old_env);
+            env_entry = JLI_MemAlloc(size);
 
-            if (putenv(env_entry) == 0) {
-                needs_libmallochooks = JNI_TRUE;
-                newenvp = environ;
-            }
+            snprintf(env_entry, size, "%s=%s%s:%s", env_name, jrepath, libpath, old_env);
+        }
+
+        if (putenv(env_entry) == 0) {
+            /* We exec here, since the code below might return without exec.
+             * This can lead to double exec in the worst case, but we don't care.
+             */
+            execve(execname, argv, environ);
         }
     }
 #endif
 
-    /* SapMachine RS 2023-09-18: Check for needs_libmallochooks too */
-    if ((needs_libmallochooks == JNI_FALSE) && (mustsetenv == JNI_FALSE)) {
+    if (mustsetenv == JNI_FALSE) {
         return;
     }
 #else
