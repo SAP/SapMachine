@@ -855,7 +855,7 @@ jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
 #if defined(__APPLE__) || defined(LINUX)
     jboolean uses_new_trace = JNI_FALSE;
     jboolean uses_old_trace = JNI_FALSE;
-#if defined(APPLE)
+#if defined(__APPLE__)
     char const* env_name = "DYLD_INSERT_LIBRARIES";
     char const* libpath = "libmallochooks.dylib";
 #else

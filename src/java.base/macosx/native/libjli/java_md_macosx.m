@@ -398,14 +398,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         }
 
         if (putenv(env_entry) == 0) {
-            char** new_args = (char**) JLI_MemAlloc(sizeof(char*) * (*pargc));
-
-            for (int i = 1; i < *pargc; ++i) {
-                new_args[i - 1] = (*pargv)[i];
-            }
-
-            new_args[*pargc - 1] = NULL;
-            execve((*pargv)[0], new_args, environ);
+            execv(execname, argv);
         }
     }
 
