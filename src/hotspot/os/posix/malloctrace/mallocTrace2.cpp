@@ -1762,7 +1762,7 @@ void MallocTraceDumpPeriodicTask::task() {
   spec._hide_dump_allocs = MallocTraceDumpHideDumpAlllocs;
 
 
-  if (strlen(_file) > 0) {
+  if ((_file != NULL) && (strlen(_file) > 0)) {
     if (strcmp("stdout", _file) == 0) {
       fdStream fds(1);
       mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
