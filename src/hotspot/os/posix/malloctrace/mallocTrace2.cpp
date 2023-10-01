@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 // To test in jtreg tests use
-// JTREG="JAVA_OPTIONS=-XX:+UseMallocHooks -XX:+MallocTraceAtStartup -XX:+MallocTraceDump -XX:MallocTraceDumpInterval=10 -XX:MallocTraceDumpOutput=mtrace_@pid.txt"
+// JTREG="JAVA_OPTIONS=-XX:+UseMallocHooks -XX:+MallocTraceAtStartup -XX:+MallocTraceDump -XX:MallocTraceDumpInterval=10 -XX:MallocTraceDumpOutput=`pwd`/mtrace_@pid.txt -XX:ErrorFile=`pwd`/hs_err%p.log"
 
 // A simple smoke test
 // jconsole -J-XX:+UseMallocHooks -J-XX:+MallocTraceAtStartup -J-XX:+MallocTraceDump -J-XX:MallocTraceStackDepth=12 -J-XX:MallocTraceDumpInterval=10
@@ -326,22 +326,82 @@ public:
 
 static register_hooks_t* register_hooks;
 
-#if defined(APPLE)
-static char const* ld_preload = "DYLD_INSERT_LIBRARIES";
-static char const* malloc_hooks = "/libmallochooks.dylib";
+#if defined(__APPLE__)
+#define LD_PRELOAD "DYLD_INSERT_LIBRARIES"
+#define LIB_MALLOC_HOOKS "libmallochooks.dylib"
 #else
-static char const* ld_preload = "LD_PRELOAD";
-static char const* malloc_hooks = "/libmallochooks.so";
+#define LD_PRELOAD  "LD_PRELOAD"
+#define LIB_MALLOC_HOOKS "libmallochooks.so"
 #endif
 
 static void print_needed_preload_env(outputStream* st) {
-  st->print_cr("%s=%s%s", ld_preload, Arguments::get_dll_dir(), malloc_hooks);
-  st->print_cr("Its current value is %s", getenv(ld_preload));
+  st->print_cr("%s=%s/%s", LD_PRELOAD, Arguments::get_dll_dir(), LIB_MALLOC_HOOKS);
+  st->print_cr("Its current value is %s", getenv(LD_PRELOAD));
 }
 
-static void remove_malloc_hooks_from_preload() {
-  // TODO: Remove only the needed lib.
-  ::unsetenv(ld_preload);
+static void remove_malloc_hooks_from_env(char const* env) {
+  bool debug = DEBUG_ONLY(MallocTraceTestHooks) NOT_DEBUG(false);
+
+  if ((env == NULL) || (env[0] == '\0')) {
+     if (debug) {
+       printf("No env\n");
+     }
+
+     return;
+  }
+
+  // Create a env with ':' prepended and appended. This makes the
+  // code easier.
+  stringStream guarded_env;
+  guarded_env.print(":%s:", env);
+
+  stringStream new_env;
+  size_t len = strlen(LIB_MALLOC_HOOKS);
+  char const* base = guarded_env.base();
+  char const* pos = base;
+
+  while ((pos = strstr(pos, LIB_MALLOC_HOOKS)) != NULL) {
+    if (pos[len] != ':') {
+      pos += 1;
+      continue;
+    }
+
+    if (pos[-1] == ':') {
+      new_env.print("%.*s%s", (int) (pos - base) - 1, base, pos + len);
+    } else if (pos[-1] == '/') {
+      char const* c = pos - 1;
+
+      while (c[0] != ':') {
+        --c;
+      }
+
+      new_env.print("%.*s%s", (int) (c - base + 1), base, pos + len + 1);
+    } else {
+      pos += 1;
+      continue;
+    }
+
+    if (new_env.size() <= 2) {
+      ::unsetenv(LD_PRELOAD);
+
+      if (debug) {
+        printf("Removing LD_PRELOAD=%s\n", env);
+      }
+    } else {
+      stringStream ss;
+      ss.print("%s=%.*s", LD_PRELOAD, MAX(0, (int) (new_env.size() - 2)), new_env.base() + 1);
+      ::setenv(LD_PRELOAD, ss.base(), 1);
+
+      if (debug) {
+        printf("%s=%s -> %s\n", LD_PRELOAD, env, ss.base());
+      }
+    }
+    return;
+  }
+
+  if (debug) {
+    printf("Nothing to do for %s=%s\n", LD_PRELOAD, env);
+  }
 }
 
 static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
@@ -1128,7 +1188,6 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
       _enabled = false;
       setup_hooks(NULL, st);
       cleanup();
-      _funcs = NULL;
 
       st->print_raw_cr("Disabling already running trace first.");
     } else {
@@ -1185,12 +1244,14 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   }
 
   _max_frames = spec._stack_depth;
-  _funcs = setup_hooks(&_malloc_stat_hooks, st);
+  real_funcs_t* result = setup_hooks(&_malloc_stat_hooks, st);
 
-  if (_funcs == NULL) {
+  if (result == NULL) {
     return false;
   }
 
+  // Never set _funcs to NULL, even if we fail. It's just safer that way.
+  _funcs = result;
   _entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
@@ -1831,6 +1892,9 @@ void* test_pvalloc_hook(size_t size, void* caller, pvalloc_func_t* real_pvalloc,
   return result;
 }
 
+static void write_string(char const* str) {
+  write(1, str, strlen(str));
+}
 static void test_hooks() {
   register_hooks_t* register_func = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
 
@@ -1852,34 +1916,47 @@ static void test_hooks() {
     // Check that all the real functions do not trigger the hooks.
     no_hooks_should_be_called = true;
     void* ptr;
+    write_string("Testing malloc\n");
     funcs->malloc(0);
     funcs->malloc(1);
+    write_string("Testing calloc\n");
     funcs->calloc(0, 12);
     funcs->calloc(12, 0);
     funcs->calloc(12, 12);
+    write_string("Testing realloc\n");
     funcs->realloc(NULL, 0);
     funcs->realloc(NULL, 12);
     funcs->realloc(funcs->malloc(12), 0);
     funcs->realloc(funcs->malloc(12), 12);
+    write_string("Testing free\n");
     funcs->free(NULL);
     funcs->free(funcs->malloc(12));
+    write_string("Testing posix_memalign\n");
     funcs->posix_memalign(&ptr, 1024, 0);
     funcs->posix_memalign(&ptr, 1024, 12);
-    // MacOSX has no memalign.
-#if !defined(APPLE)
+    // MacOSX has no memalign and aligned_alloc.
+#if !defined(__APPLE__)
+    write_string("Testing memalign\n");
     funcs->memalign(1024, 0);
     funcs->memalign(1024, 12);
-#endif
+    write_string("Testing aligned_alloc\n");
     funcs->aligned_alloc(1024, 0);
     funcs->aligned_alloc(1024, 12);
-    // Musl and MacOSX has no pvalloc and vallod functions.
-#if defined(__GLIBC__)
+#endif
+    // Musl has no valloc function.
+#if defined(__GLIBC__) || defined(__APPLE__)
+    write_string("Testing valloc\n");
     funcs->valloc(0);
     funcs->valloc(12);
+#endif
+    // Musl and MacOSX have no pvalloc function.
+#if defined(__GLIBC__)
+    write_string("Testing pvalloc\n");
     funcs->pvalloc(0);
     funcs->pvalloc(12);
 #endif
 
+    write_string("Testing hooks finished \n");
     register_func(NULL);
   } else {
     fprintf(stderr, "Malloc hooks library not preloaded");
@@ -1896,9 +1973,23 @@ void MallocStatistic::initialize() {
   }
 #endif
 
+  char const* preload_env = ::getenv(LD_PRELOAD);
+
+#if defined(ASSERT)
+  if (MallocTraceTestHooks) {
+    mallocStatImpl::remove_malloc_hooks_from_env("");
+    mallocStatImpl::remove_malloc_hooks_from_env(LIB_MALLOC_HOOKS);
+    mallocStatImpl::remove_malloc_hooks_from_env(LIB_MALLOC_HOOKS ":dummy.so");
+    mallocStatImpl::remove_malloc_hooks_from_env("dummy.so:" LIB_MALLOC_HOOKS ":dummy.so");
+    mallocStatImpl::remove_malloc_hooks_from_env("dummy.so:/a/b/" LIB_MALLOC_HOOKS ":dummy.so");
+    mallocStatImpl::remove_malloc_hooks_from_env("dummy.so:/a/b/" LIB_MALLOC_HOOKS "s:dummy.so");
+    mallocStatImpl::remove_malloc_hooks_from_env("dosy.so:l" LIB_MALLOC_HOOKS ":" LIB_MALLOC_HOOKS);
+  }
+#endif
+
   // Remove the hooks from the preload env, so we don't
   // preload mallochooks for spawned programs.
-  mallocStatImpl::remove_malloc_hooks_from_preload();
+  mallocStatImpl::remove_malloc_hooks_from_env(preload_env);
 
 #if defined(ASSERT)
   if (MallocTraceTestHooks) {
@@ -1924,7 +2015,7 @@ void MallocStatistic::initialize() {
     }
   }
 
-  if (MallocTraceDump) {
+  if (MallocTraceAtStartup && MallocTraceDump) {
     mallocStatImpl::MallocTraceDumpPeriodicTask* task = new mallocStatImpl::MallocTraceDumpPeriodicTask(
         MallocTraceDumpOutput, 1000 * MallocTraceDumpInterval);
     task->enroll();
