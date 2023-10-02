@@ -610,6 +610,12 @@ static uint64_t ptr_hash_backup(void* ptr) {
 }
 #endif
 
+static void after_child_fork() {
+  if (register_hooks != NULL) {
+    register_hooks(NULL);
+  }
+}
+
 uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   if (!_track_free && (_to_track_mask == 0)) {
     return 0;
@@ -2010,6 +2016,7 @@ void MallocStatistic::initialize() {
   }
 #endif
 
+  pthread_atfork(NULL, NULL, mallocStatImpl::after_child_fork);
   mallocStatImpl::MallocStatisticImpl::initialize();
 
   if (MallocTraceAtStartup) {
