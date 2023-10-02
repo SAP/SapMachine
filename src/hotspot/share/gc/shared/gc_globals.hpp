@@ -695,7 +695,7 @@
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
                                                                             \
   /* SapMachine 2023-09-25 */                                               \
-  product(bool, UseParallelLargeArrayScanning, false,                       \
+  product(bool, UseParallelLargeArrayScanning, false, EXPERIMENTAL,         \
           "Parallelize scanning of large object arrays in old gen "         \
           "when scanning roots for parallel young gc")
   // end of GC_FLAGS
