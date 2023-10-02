@@ -1893,8 +1893,21 @@ void* test_pvalloc_hook(size_t size, void* caller, pvalloc_func_t* real_pvalloc,
 }
 
 static void write_string(char const* str) {
-  write(1, str, strlen(str));
+  size_t left = strlen(str);
+  char const* pos = str;
+
+  while (left > 0) {
+    ssize_t result = write(1, pos, left);
+
+   if (result <= 0) {
+     break;
+   }
+
+   pos += result;
+   left -= result;
+  }
 }
+
 static void test_hooks() {
   register_hooks_t* register_func = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
 
