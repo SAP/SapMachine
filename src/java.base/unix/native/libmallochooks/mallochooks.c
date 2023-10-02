@@ -519,6 +519,7 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 }
 
 
+#if TEST_LEVEL > 0
 
 #define LOG_FUNC(func) \
   print(#func); \
@@ -568,6 +569,20 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 
 #define LOG_HOOK \
   print(tmp_hook ? " with hook\n" : " without hook\n");
+
+#else
+
+#define LOG_FUNC(func)
+#define LOG_ALIGN(align)
+#define LOG_PTR(ptr)
+#define LOG_PTR_WITH_SIZE(ptr)
+#define LOG_ELEMS(elems)
+#define LOG_SIZE(size)
+#define LOG_ALLOCATION_RESULT(result)
+#define LOG_RESULT(result)
+#define LOG_HOOK
+
+#endif
 
 EXPORT void* REPLACE_NAME(malloc)(size_t size) {
   malloc_hook_t* tmp_hook = registered_hooks->malloc_hook;
