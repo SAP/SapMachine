@@ -189,7 +189,8 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
   while (obj_addr < end) {
     oop obj = cast_to_oop(obj_addr);
     assert(oopDesc::is_oop(obj), "inv");
-    assert(!obj->is_objArray() || obj->size() < large_obj_arr_min_words(), "inv");
+    assert(!UseParallelLargeArrayScanning || !obj->is_objArray() ||
+           obj->size() < large_obj_arr_min_words(), "inv");
     prefetch_write(obj_addr);
     pm->push_contents(obj);
     obj_addr += obj->size();
@@ -292,7 +293,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       size_t obj_sz = cast_to_oop(obj_addr)->size();
       HeapWord* obj_end_addr = obj_addr + obj_sz;
       // large arrays starting in this stripe are scanned here
-      if (obj_sz >= large_obj_arr_min_words() && cast_to_oop(obj_addr)->is_objArray() &&
+      if (UseParallelLargeArrayScanning &&
+          obj_sz >= large_obj_arr_min_words() &&
+          cast_to_oop(obj_addr)->is_objArray() &&
           obj_addr >= cur_stripe_addr) {
         // the last condition is not redundant as we can reach here if an obj starts at space_top
         obj_end_addr = cur_stripe_end_addr;
@@ -367,6 +370,8 @@ void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
                                               HeapWord* stripe_addr,
                                               HeapWord* stripe_end_addr,
                                               HeapWord* space_top) {
+  if (!UseParallelLargeArrayScanning) return;
+
   const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
 
   HeapWord* large_arr_addr = start_array->object_start(stripe_addr);
