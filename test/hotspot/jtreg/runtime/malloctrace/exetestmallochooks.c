@@ -1,0 +1,218 @@
+#if defined(LINUX) || defined(__APPLE__)
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <dlfcn.h>
+
+#include "mallochooks.h"
+
+
+static void write_string(char const* str) {
+    size_t left = strlen(str);
+    char const* pos = str;
+
+    while (left > 0) {
+        ssize_t result = write(1, pos, left);
+
+        if (result <= 0) {
+            break;
+        }
+
+        pos += result;
+        left -= result;
+    }
+}
+
+static void check(bool condition, char const* msg) {
+  if (!condition) {
+    write_string("Check failed: ");
+    write_string(msg);
+    write_string("\n");
+    exit(1);
+  }
+}
+
+static bool no_hooks_should_be_called;
+
+static void* test_malloc_hook(size_t size, void* caller, malloc_func_t* real_malloc,
+                              malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called malloc hook when should not");
+    no_hooks_should_be_called = true;
+
+    void* result = real_malloc(size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void* test_calloc_hook(size_t elems, size_t size, void* caller, calloc_func_t* real_calloc,
+                       malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called calloc hook when should not");
+    no_hooks_should_be_called = true;
+
+    void* result = real_calloc(elems, size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void* test_realloc_hook(void* ptr, size_t size, void* caller, realloc_func_t* real_realloc,
+                        malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called realloc hook when should not");
+    no_hooks_should_be_called = true;
+
+    void* result = real_realloc(ptr, size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void test_free_hook(void* ptr, void* caller, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called free hook when should not");
+    no_hooks_should_be_called = true;
+
+    real_free(ptr);
+    no_hooks_should_be_called = false;
+}
+
+static int test_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller,
+                             posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called posix_memalign hook when should not");
+    no_hooks_should_be_called = true;
+
+    int result = real_posix_memalign(ptr, align, size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void* test_memalign_hook(size_t align, size_t size, void* caller, memalign_func_t* real_memalign,
+                         malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called memalign hook when should not");
+    no_hooks_should_be_called = true;
+
+    void* result = real_memalign(align, size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void* test_aligned_alloc_hook(size_t align, size_t size, void* caller, aligned_alloc_func_t* real_aligned_alloc,
+                              malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called aligned_alloc hook when should not");
+    no_hooks_should_be_called = true;
+
+    void* result = real_aligned_alloc(align, size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void* test_valloc_hook(size_t size, void* caller, valloc_func_t* real_valloc,
+                       malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called valloc hook when should not");
+    no_hooks_should_be_called = true;
+
+    void* result = real_valloc(size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void* test_pvalloc_hook(size_t size, void* caller, pvalloc_func_t* real_pvalloc,
+                        malloc_size_func_t real_malloc_size) {
+    check(!no_hooks_should_be_called, "Called pvalloc hook when should not");
+    no_hooks_should_be_called = true;
+
+    void* result = real_pvalloc(size);
+    no_hooks_should_be_called = false;
+
+    return result;
+}
+
+static void test_no_recursive_calls() {
+    register_hooks_t* register_func = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+    check(register_func != NULL, "Could not get register function");
+
+    registered_hooks_t test_hooks = {
+        test_malloc_hook,
+        test_calloc_hook,
+        test_realloc_hook,
+        test_free_hook,
+        test_posix_memalign_hook,
+        test_memalign_hook,
+        test_aligned_alloc_hook,
+        test_valloc_hook,
+        test_pvalloc_hook
+    };
+
+    real_funcs_t* funcs = register_func(&test_hooks);
+
+    // Check that all the real functions do not trigger the hooks.
+    void* ptr;
+
+    write_string("Testing malloc\n");
+    funcs->malloc(0);
+    funcs->malloc(1);
+
+    write_string("Testing calloc\n");
+    funcs->calloc(0, 12);
+    funcs->calloc(12, 0);
+    funcs->calloc(12, 12);
+
+    write_string("Testing realloc\n");
+    funcs->realloc(NULL, 0);
+    funcs->realloc(NULL, 12);
+    funcs->realloc(funcs->malloc(12), 0);
+    funcs->realloc(funcs->malloc(12), 12);
+
+    write_string("Testing free\n");
+    funcs->free(NULL);
+    funcs->free(funcs->malloc(12));
+
+    write_string("Testing posix_memalign\n");
+    funcs->posix_memalign(&ptr, 1024, 0);
+    funcs->posix_memalign(&ptr, 1024, 12);
+
+    // MacOSX has no memalign and aligned_alloc.
+#if !defined(__APPLE__)
+    write_string("Testing memalign\n");
+    funcs->memalign(1024, 0);
+    funcs->memalign(1024, 12);
+
+    write_string("Testing aligned_alloc\n");
+    funcs->aligned_alloc(1024, 0);
+    funcs->aligned_alloc(1024, 12);
+#endif
+
+    // Musl has no valloc function.
+#if defined(__GLIBC__) || defined(__APPLE__)
+    write_string("Testing valloc\n");
+    funcs->valloc(0);
+    funcs->valloc(12);
+#endif
+
+    // Musl and MacOSX have no pvalloc function.
+#if defined(__GLIBC__)
+    write_string("Testing pvalloc\n");
+    funcs->pvalloc(0);
+    funcs->pvalloc(12);
+#endif
+
+    write_string("Testing hooks finished \n");
+    register_func(NULL);
+}
+
+int main(int argc, char** argv) {
+  test_no_recursive_calls();
+  return 0;
+}
+
+#else
+int main(int argc, char** argv) {
+  return 0;
+}
+#endif
+

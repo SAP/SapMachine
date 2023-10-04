@@ -1,26 +1,30 @@
 /**
  * @test
  * @summary Test functionality of the malloc hooks library.
- * @author Ralf Schmelter
+ * @library /test/lib
  *
- * @run main/othervm/native -XX:+UseMallocHooks MallocHooksTest
+ * @run main/native MallocHooksTest
  */
 
- public class MallocHooksTest {
-     static native boolean hasActiveHooks();
-     static native String testNoRecursiveCalls();
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-     public static void main(String args[]) {
-         if (!hasActiveHooks()) {
-             String result = testNoRecursiveCalls();
+public class MallocHooksTest {
 
-             if (result != null) {
-                 throw new RuntimeException("Failed no recursive calls test: " + result);
-             }
-         }
-     }
+    public static void main(String args[]) throws Exception {
+        String libDir = System.getProperty("sun.boot.library.path") + "/";
+        ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("testmallochooks");
 
-     static {
-         System.loadLibrary("TestMallocHooks");
-     }
- }
+        if (Platform.isLinux()) {
+            pb.environment().put("LD_PRELOAD", libDir + "libmallochooks.so");
+        } else if (Platform.isOSX()) {
+           pb.environment().put("DYLD_INSERT_LIBRARIES", libDir + "libmallochooks.dylib");
+        } else {
+            return;
+        }
+
+        new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+    }
+}
