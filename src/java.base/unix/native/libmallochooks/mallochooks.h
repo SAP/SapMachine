@@ -56,8 +56,10 @@ typedef struct {
 } real_funcs_t;
 
 typedef real_funcs_t* register_hooks_t(registered_hooks_t* registered_hooks);
+typedef registered_hooks_t* active_hooks_t();
 
 #define REGISTER_HOOKS_NAME "register_hooks"
+#define ACTIVE_HOOKS_NAME "active_hooks"
 
 #endif
 

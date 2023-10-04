@@ -518,6 +518,14 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
   return &real_funcs;
 }
 
+EXPORT registered_hooks_t* active_hooks() {
+  if (registered_hooks == &empty_registered_hooks) {
+    return NULL;
+  }
+
+  return (registered_hooks_t*) registered_hooks;
+}
+
 
 #if TEST_LEVEL > 0
 
