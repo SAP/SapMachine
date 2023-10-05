@@ -846,7 +846,7 @@ static size_t hash_for_frames(int nr_of_frames, address* frames) {
 
   for (int i = 0; i < nr_of_frames; ++i) {
     intptr_t frame_addr = (intptr_t) frames[i];
-    result = result * 31 + ((frame_addr & 0xfffffff0) >> 4) + 127 * (frame_addr >> 36);
+    result = result * 31 + ((frame_addr & 0xfffffff0) >> 4) LP64_ONLY(+ 127 * (frame_addr >> 36));
   }
 
   // Avoid more bits than we can store in the entry.
