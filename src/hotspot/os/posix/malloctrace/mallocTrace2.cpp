@@ -69,12 +69,14 @@ struct AllocatorState {
   }
 };
 
+#define PAD_LEN(T) ((2 * DEFAULT_CACHE_LINE_SIZE - sizeof(T)) & (DEFAULT_CACHE_LINE_SIZE - 1))
+
 // Allocates memory of the same size. It's pretty fast, but doesn't return
 // free memory to the OS.
 class Allocator : private AllocatorState {
 private:
   // We need padding, since we have arrays of this class used in parallel.
-  char           _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(AllocatorState)];
+  char           _pad[PAD_LEN(AllocatorState)];
 
 public:
   Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs);
@@ -163,7 +165,7 @@ size_t Allocator::unused() {
 // A pthread mutex usable in arrays.
 struct Lock {
   pthread_mutex_t _lock;
-  char            _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(pthread_mutex_t)];
+  char            _pad[PAD_LEN(pthread_mutex_t)];
 };
 
 class Locker : public StackObj {
@@ -440,7 +442,7 @@ typedef int backtrace_func_t(void** stacks, int max_depth);
 template<typename T> struct Padded {
 public:
   T _val;
-  char            _pad[DEFAULT_CACHE_LINE_SIZE - sizeof(T)];
+  char            _pad[PAD_LEN(T)];
 };
 
 class MallocStatisticImpl : public AllStatic {
