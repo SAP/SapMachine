@@ -41,14 +41,18 @@
 #define NR_OF_STACK_MAPS 16
 #define NR_OF_ALLOC_MAPS 16
 
+#define PAD_LEN(T) ((2 * DEFAULT_CACHE_LINE_SIZE - sizeof(T)) & (DEFAULT_CACHE_LINE_SIZE - 1))
 
 namespace sap {
 
 // Keep sap namespace free from implementation classes.
 namespace mallocStatImpl {
 
-// Holds the state of the Allocator.
-struct AllocatorState {
+// Allocates memory of the same size. It's pretty fast, but doesn't return
+// free memory to the OS.
+class Allocator {
+private:
+  // We need padding, since we have arrays of this class used in parallel.
   char          _pre_pad[DEFAULT_CACHE_LINE_SIZE];
   real_funcs_t* _funcs;
   size_t        _allocation_size;
@@ -57,26 +61,7 @@ struct AllocatorState {
   int           _nr_of_chunks;
   void**        _free_list;
   size_t        _free_entries;
-
-  AllocatorState(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs) :
-  _funcs(funcs),
-  _allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
-  _entries_per_chunk(entries_per_chunk),
-  _chunks(NULL),
-  _nr_of_chunks(0),
-  _free_list(NULL),
-  _free_entries(0) {
-  }
-};
-
-#define PAD_LEN(T) ((2 * DEFAULT_CACHE_LINE_SIZE - sizeof(T)) & (DEFAULT_CACHE_LINE_SIZE - 1))
-
-// Allocates memory of the same size. It's pretty fast, but doesn't return
-// free memory to the OS.
-class Allocator : private AllocatorState {
-private:
-  // We need padding, since we have arrays of this class used in parallel.
-  char           _pad[PAD_LEN(AllocatorState)];
+  char          _post_pad[DEFAULT_CACHE_LINE_SIZE];
 
 public:
   Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs);
@@ -89,7 +74,13 @@ public:
 };
 
 Allocator::Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs) :
-  AllocatorState(allocation_size, entries_per_chunk, funcs) {
+  _funcs(funcs),
+  _allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
+  _entries_per_chunk(entries_per_chunk),
+  _chunks(NULL),
+  _nr_of_chunks(0),
+  _free_list(NULL),
+  _free_entries(0) {
 }
 
 Allocator::~Allocator() {
@@ -464,18 +455,20 @@ private:
   static Lock               _malloc_stat_lock;
   static pthread_key_t      _malloc_suspended;
 
+  // the +1 is for cache line reasons, so we ensure the last use entry
+  // doesn't share a cache line with another object.
   static StatEntry**        _stack_maps[NR_OF_STACK_MAPS];
-  static Lock               _stack_maps_lock[NR_OF_STACK_MAPS];
+  static Lock               _stack_maps_lock[NR_OF_STACK_MAPS + 1];
   static int                _stack_maps_mask[NR_OF_STACK_MAPS];
-  static Padded<int>        _stack_maps_size[NR_OF_STACK_MAPS];
+  static Padded<int>        _stack_maps_size[NR_OF_STACK_MAPS + 1];
   static int                _stack_maps_limit[NR_OF_STACK_MAPS];
   static Allocator*         _stack_maps_alloc[NR_OF_STACK_MAPS];
   static int                _entry_size;
 
   static AllocEntry**       _alloc_maps[NR_OF_ALLOC_MAPS];
-  static Lock               _alloc_maps_lock[NR_OF_ALLOC_MAPS];
+  static Lock               _alloc_maps_lock[NR_OF_ALLOC_MAPS + 1];
   static int                _alloc_maps_mask[NR_OF_ALLOC_MAPS];
-  static Padded<int>        _alloc_maps_size[NR_OF_ALLOC_MAPS];
+  static Padded<int>        _alloc_maps_size[NR_OF_ALLOC_MAPS + 1];
   static int                _alloc_maps_limit[NR_OF_ALLOC_MAPS];
   static Allocator*         _alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 
@@ -547,16 +540,16 @@ int               MallocStatisticImpl::_max_frames;
 Lock              MallocStatisticImpl::_malloc_stat_lock;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
 StatEntry**       MallocStatisticImpl::_stack_maps[NR_OF_STACK_MAPS];
-Lock              MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS];
+Lock              MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS + 1];
 int               MallocStatisticImpl::_stack_maps_mask[NR_OF_STACK_MAPS];
-Padded<int>       MallocStatisticImpl::_stack_maps_size[NR_OF_STACK_MAPS];
+Padded<int>       MallocStatisticImpl::_stack_maps_size[NR_OF_STACK_MAPS + 1];
 int               MallocStatisticImpl::_stack_maps_limit[NR_OF_STACK_MAPS];
 Allocator*        MallocStatisticImpl::_stack_maps_alloc[NR_OF_STACK_MAPS];
 int               MallocStatisticImpl::_entry_size;
 AllocEntry**      MallocStatisticImpl::_alloc_maps[NR_OF_ALLOC_MAPS];
-Lock              MallocStatisticImpl::_alloc_maps_lock[NR_OF_ALLOC_MAPS];
+Lock              MallocStatisticImpl::_alloc_maps_lock[NR_OF_ALLOC_MAPS + 1];
 int               MallocStatisticImpl::_alloc_maps_mask[NR_OF_ALLOC_MAPS];
-Padded<int>       MallocStatisticImpl::_alloc_maps_size[NR_OF_ALLOC_MAPS];
+Padded<int>       MallocStatisticImpl::_alloc_maps_size[NR_OF_ALLOC_MAPS + 1];
 int               MallocStatisticImpl::_alloc_maps_limit[NR_OF_ALLOC_MAPS];
 Allocator*        MallocStatisticImpl::_alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 int               MallocStatisticImpl::_to_track_mask;
