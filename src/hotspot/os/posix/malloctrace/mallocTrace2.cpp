@@ -333,14 +333,10 @@ static void print_needed_preload_env(outputStream* st) {
   st->print_cr("Its current value is %s", getenv(LD_PRELOAD));
 }
 
-static void remove_malloc_hooks_from_env(char const* env) {
-  bool debug = DEBUG_ONLY(MallocTraceTestHooks) NOT_DEBUG(false);
+static void remove_malloc_hooks_from_env() {
+  char const* env = ::getenv(LD_PRELOAD);
 
   if ((env == NULL) || (env[0] == '\0')) {
-     if (debug) {
-       printf("No env\n");
-     }
-
      return;
   }
 
@@ -357,6 +353,7 @@ static void remove_malloc_hooks_from_env(char const* env) {
   while ((pos = strstr(pos, LIB_MALLOC_HOOKS)) != NULL) {
     if (pos[len] != ':') {
       pos += 1;
+
       continue;
     }
 
@@ -372,29 +369,19 @@ static void remove_malloc_hooks_from_env(char const* env) {
       new_env.print("%.*s%s", (int) (c - base + 1), base, pos + len + 1);
     } else {
       pos += 1;
+
       continue;
     }
 
     if (new_env.size() <= 2) {
       ::unsetenv(LD_PRELOAD);
-
-      if (debug) {
-        printf("Removing LD_PRELOAD=%s\n", env);
-      }
     } else {
       stringStream ss;
-      ss.print("%s=%.*s", LD_PRELOAD, MAX(0, (int) (new_env.size() - 2)), new_env.base() + 1);
+      ss.print("%.*s", MAX(0, (int) (new_env.size() - 2)), new_env.base() + 1);
       ::setenv(LD_PRELOAD, ss.base(), 1);
-
-      if (debug) {
-        printf("%s=%s -> %s\n", LD_PRELOAD, env, ss.base());
-      }
     }
-    return;
-  }
 
-  if (debug) {
-    printf("Nothing to do for %s=%s\n", LD_PRELOAD, env);
+    return;
   }
 }
 
@@ -1804,27 +1791,14 @@ void MallocStatistic::initialize() {
   }
 #endif
 
-  char const* preload_env = ::getenv(LD_PRELOAD);
-
-#if defined(ASSERT)
-  if (MallocTraceTestHooks) {
-    mallocStatImpl::remove_malloc_hooks_from_env("");
-    mallocStatImpl::remove_malloc_hooks_from_env(LIB_MALLOC_HOOKS);
-    mallocStatImpl::remove_malloc_hooks_from_env(LIB_MALLOC_HOOKS ":dummy.so");
-    mallocStatImpl::remove_malloc_hooks_from_env("dummy.so:" LIB_MALLOC_HOOKS ":dummy.so");
-    mallocStatImpl::remove_malloc_hooks_from_env("dummy.so:/a/b/" LIB_MALLOC_HOOKS ":dummy.so");
-    mallocStatImpl::remove_malloc_hooks_from_env("dummy.so:/a/b/" LIB_MALLOC_HOOKS "s:dummy.so");
-    mallocStatImpl::remove_malloc_hooks_from_env("dosy.so:l" LIB_MALLOC_HOOKS ":" LIB_MALLOC_HOOKS);
-  }
-#endif
-
   // Remove the hooks from the preload env, so we don't
   // preload mallochooks for spawned programs.
-  mallocStatImpl::remove_malloc_hooks_from_env(preload_env);
+  mallocStatImpl::remove_malloc_hooks_from_env();
 
   // We have to make sure the child process of a fork doesn't run with
   // enabled malloc hooks before forking.
   pthread_atfork(NULL, NULL, mallocStatImpl::after_child_fork);
+
   mallocStatImpl::MallocStatisticImpl::initialize();
 
   if (MallocTraceAtStartup) {
