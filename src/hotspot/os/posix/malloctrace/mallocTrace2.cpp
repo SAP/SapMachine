@@ -49,7 +49,7 @@ namespace mallocStatImpl {
 
 // Holds the state of the Allocator.
 struct AllocatorState {
-  // The functions to use for allocation of the real memory.
+  char          _pre_pad[DEFAULT_CACHE_LINE_SIZE];
   real_funcs_t* _funcs;
   size_t        _allocation_size;
   int           _entries_per_chunk;
@@ -164,6 +164,7 @@ size_t Allocator::unused() {
 
 // A pthread mutex usable in arrays.
 struct Lock {
+  char            _pre_pad[DEFAULT_CACHE_LINE_SIZE];
   pthread_mutex_t _lock;
   char            _pad[PAD_LEN(pthread_mutex_t)];
 };
@@ -441,8 +442,9 @@ typedef int backtrace_func_t(void** stacks, int max_depth);
 // A value usable in arrays.
 template<typename T> struct Padded {
 public:
-  T _val;
-  char            _pad[PAD_LEN(T)];
+  char _pre_pad[DEFAULT_CACHE_LINE_SIZE];
+  T    _val;
+  char _pad[PAD_LEN(T)];
 };
 
 class MallocStatisticImpl : public AllStatic {
