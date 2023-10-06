@@ -16,6 +16,8 @@
 #include <pthread.h>
 #include <stdlib.h>
 
+// TODO: For each stack add percentage of toal for size and count.
+
 // To test in jtreg tests use
 // JTREG="JAVA_OPTIONS=-XX:+UseMallocHooks -XX:+MallocTraceAtStartup -XX:+MallocTraceDump -XX:MallocTraceDumpInterval=10 -XX:MallocTraceDumpOutput=`pwd`/mtrace_@pid.txt -XX:ErrorFile=`pwd`/hs_err%p.log"
 
@@ -1428,6 +1430,58 @@ size_t calc_min_from_statistic(size_t* bins, double factor) {
   return 0;
 }
 
+static char const* mem_prefix[] = {"k", "M", "G", "T", NULL};
+
+static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
+  size_t k = 1024;
+  double perc = 0.0;
+  if (total > 0) {
+    perc = 100.0 * mem / total;
+  }
+
+  if ((ssize_t) mem < 0) {
+    mem = -((size_t) mem);
+    st->print("*neg* ");
+  }
+
+  if (mem < 10 * k) {
+    if (total > 0) {
+      st->print("%'" PRId64 " (%.2f %%)", (uint64_t) mem, perc);
+    } else {
+      st->print("%'" PRId64, (uint64_t) mem);
+    }
+  } else {
+    int idx =0;
+    size_t curr = mem;
+    double f = 1.0 / k;
+
+    while (mem_prefix[idx] != NULL) {
+      if (curr < 10 * k * k) {
+        if (curr < 100 * k) {
+          if (total > 0) {
+            st->print("%'" PRId64 " (%.1f %s, %.2f %%)", (uint64_t) mem, f * curr, mem_prefix[idx], perc);
+          } else {
+            st->print("%'" PRId64 " (%.1f %s)", (uint64_t) mem, f * curr, mem_prefix[idx]);
+          }
+        } else {
+          if (total > 0) {
+            st->print("%'" PRId64 " (%d %s, %.2f %%)", (uint64_t) mem, (int) (curr / k), mem_prefix[idx], perc);
+          } else {
+            st->print("%'" PRId64 " (%d %s)", (uint64_t) mem, (int) (curr / k), mem_prefix[idx]);
+          }
+        }
+
+        return;
+      }
+
+      curr /= k;
+      idx += 1;
+    }
+
+    st->print("%'" PRId64 " (%'" PRId64 "%s)", (uint64_t) mem, (uint64_t) curr, mem_prefix[idx - 1]);
+  }
+}
+
 void MallocStatisticImpl::dump_entry(outputStream* st, StatEntry* entry) {
   // Use a temp buffer since the output stream might use unbuffered I/O.
   char ss_tmp[4096];
@@ -1435,7 +1489,9 @@ void MallocStatisticImpl::dump_entry(outputStream* st, StatEntry* entry) {
 
   // We use int64_t here to easy see if values got negative (instead of seeing
   // an insanely large number).
-  ss.print_cr("Allocated bytes  : %'" PRId64, (int64_t) entry->size());
+  ss.print_raw("Allocated bytes  : ");
+  print_mem(&ss, (size_t) entry->size());
+  ss.cr();
   ss.print_cr("Allocated objects: %'" PRId64, (int64_t) entry->count());
   ss.print_cr("Stack (%d frames):", entry->nr_of_frames());
 
@@ -1521,8 +1577,12 @@ static void print_allocation_stats(outputStream* st, Allocator** allocs, int* ma
 
   st->cr();
   st->print_cr("Statistic for %s:", type);
-  st->print_cr("Allocated memory: %'" PRId64, (uint64_t) allocated);
-  st->print_cr("Unused memory   : %'" PRId64, (uint64_t) unused);
+  st->print_raw("Allocated memory: ");
+  print_mem(st, allocated);
+  st->cr();
+  st->print_raw("Unused memory   : ");
+  print_mem(st, unused);
+  st->cr();
   st->print_cr("Average load    : %.2f", total_entries / (double) total_slots);
   st->print_cr("Nr. of entries  : %'" PRId64, (uint64_t) total_entries);
 }
