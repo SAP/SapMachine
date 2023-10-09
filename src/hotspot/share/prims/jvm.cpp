@@ -3021,6 +3021,11 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
                             JavaThread::name_for(JNIHandles::resolve_non_null(jthread)));
     // No one should hold a reference to the 'native_thread'.
     native_thread->smr_delete();
+
+    // SapMachine 2021-05-21: All ...OnOutOfMemoryError switches should work for
+    //  thread creation failures too.
+    report_java_out_of_memory(os::native_thread_creation_failed_msg());
+
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_THREADS,
