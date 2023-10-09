@@ -198,10 +198,10 @@ Locker::~Locker() {
 class StatEntry {
 private:
   StatEntry* _next;
-  uint64_t              _hash_and_nr_of_frames;
-  size_t                _size;
-  size_t                _count;
-  address                _frames[1];
+  uint64_t   _hash_and_nr_of_frames;
+  size_t     _size;
+  size_t     _count;
+  address    _frames[1];
 
 public:
   StatEntry(size_t hash, size_t size, int nr_of_frames, address* frames) :
@@ -257,6 +257,12 @@ public:
   }
 };
 
+
+struct StatEntryCopy {
+  StatEntry* _entry;
+  size_t     _size;
+  size_t     _count;
+};
 
 // The entry for a single allocation. Note that we don't store the pointer itself
 // but use the hash code instead. Our hash function is invertible, so this is OK.
@@ -494,6 +500,8 @@ private:
   static void cleanup();
 
   static void dump_entry(outputStream* st, StatEntry* entry);
+  static void dump_entry(outputStream* st, StatEntryCopy* entry, int index,
+                         size_t total_size, size_t total_count, int total_entries);
   static void create_statistic(bool for_siez, size_t* bins);
 
 public:
@@ -501,6 +509,7 @@ public:
   static bool enable(outputStream* st, TraceSpec const& spec);
   static bool disable(outputStream* st);
   static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec);
+  static bool dump2(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec);
   static void shutdown();
 };
 
@@ -1482,6 +1491,69 @@ static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
   }
 }
 
+static void print_count(outputStream* st, size_t count, size_t total = 0) {
+  st->print("%'" PRId64, (int64_t) count);
+
+  if (total > 0) {
+    double f = 100.0 * count / total;
+    if (f < 0.001) {
+      st->print(" (< 0.001 %%)");
+    } else if (f < 1) {
+      st->print(" (%.3f %%)", f);
+    } else if (f < 10) {
+      st->print(" (%.2f %%)", f);
+    } else {
+      st->print(" (%.1f %%)", f);
+    }
+  }
+}
+
+void MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int index,
+                                     size_t total_size, size_t total_count, int total_entries) {
+  // Use a temp buffer since the output stream might use unbuffered I/O.
+  char ss_tmp[4096];
+  char tmp[256];
+  stringStream ss(ss_tmp, sizeof(ss_tmp));
+
+  // We use int64_t here to easy see if values got negative (instead of seeing
+  // an insanely large number).
+  ss.print("Stack %d of %d: ", index, total_entries);
+  print_mem(&ss, entry->_size, total_size);
+  ss.print_raw(" bytes, ");
+  print_count(&ss, entry->_count, total_count);
+  ss.cr();
+
+  for (int i = 0; i < entry->_entry->nr_of_frames(); ++i) {
+    address frame = entry->_entry->frames()[i];
+    ss.print("  [" PTR_FORMAT "]  ", p2i(frame));
+
+    if (os::print_function_and_library_name(&ss, frame, tmp, sizeof(tmp), true, true, false)) {
+      ss.cr();
+    } else {
+      CodeBlob* blob = CodeCache::find_blob((void*) frame);
+
+      if (blob != NULL) {
+        ss.print_raw(" ");
+        blob->print_value_on(&ss);
+      } else {
+        ss.print_raw_cr(" <unknown code>");
+      }
+    }
+
+    // Flush the temp buffer if we are near the end.
+    if (sizeof(ss_tmp) - ss.size() < sizeof(tmp)) {
+      st->write(ss_tmp, ss.size());
+      ss.reset();
+    }
+  }
+
+  if (entry->_entry->nr_of_frames() == 0) {
+    ss.print_raw_cr("  <no stack>");
+  }
+
+  st->write(ss_tmp, ss.size());
+}
+
 void MallocStatisticImpl::dump_entry(outputStream* st, StatEntry* entry) {
   // Use a temp buffer since the output stream might use unbuffered I/O.
   char ss_tmp[4096];
@@ -1585,6 +1657,203 @@ static void print_allocation_stats(outputStream* st, Allocator** allocs, int* ma
   st->cr();
   st->print_cr("Average load    : %.2f", total_entries / (double) total_slots);
   st->print_cr("Nr. of entries  : %'" PRId64, (uint64_t) total_entries);
+}
+
+static int sort_copy_by_size(const void* p1, const void* p2) {
+  StatEntryCopy* e1 = (StatEntryCopy*) p1;
+  StatEntryCopy* e2 = (StatEntryCopy*) p2;
+
+  if (e1->_size > e2->_size) {
+    return -1;
+  }
+
+  if (e1->_size < e2->_size) {
+    return 1;
+  }
+
+  // For consistent sorting.
+  if (e1->_entry < e2->_entry) {
+    return -1;
+  }
+
+  return 1;
+}
+
+static int sort_copy_by_count(const void* p1, const void* p2) {
+  StatEntryCopy* e1 = (StatEntryCopy*) p1;
+  StatEntryCopy* e2 = (StatEntryCopy*) p2;
+
+  if (e1->_count > e2->_count) {
+    return -1;
+  }
+
+  if (e1->_count < e2->_count) {
+    return 1;
+  }
+
+  // For consistent sorting.
+  if (e1->_entry < e2->_entry) {
+    return -1;
+  }
+
+  return 1;
+}
+
+bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec) {
+  if (!spec._on_error) {
+    initialize();
+  }
+
+  // Hide allocations done by this thread during dumping if requested.
+  // Note that we always track  frees or we might end up trying to add
+  // an allocation with a pointer which is already in the aloc maps.
+  pthread_setspecific(_malloc_suspended, spec._hide_dump_allocs ? (void*) 1 : NULL);
+
+  // We need to avoid having the trace disabled concurrently.
+  Locker lock(_malloc_stat_lock, spec._on_error);
+
+  if (!_enabled) {
+    msg_stream->print_raw_cr("malloc statistic not enabled!");
+    pthread_setspecific(_malloc_suspended, NULL);
+
+    return false;
+  }
+
+  // We make a copy of each hash map, since we don't want to lock for the whole operation.
+  StatEntryCopy* entries[NR_OF_STACK_MAPS];
+  int nr_of_entries[NR_OF_STACK_MAPS];
+  bool failed_alloc = false;
+  size_t total_count = 0;
+  size_t total_size = 0;
+  int total_entries = 0;
+
+  for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
+    int expected_size = _stack_maps_size[idx]._val;
+
+    entries[idx] = (StatEntryCopy*) _funcs->malloc(sizeof(StatEntryCopy) * expected_size);
+
+    if (entries[idx] != NULL) {
+        Locker locker(_stack_maps_lock[idx]);
+        int pos = 0;
+        StatEntry** map = _stack_maps[idx];
+        StatEntryCopy* copies = entries[idx];
+        int nr_of_slots = _stack_maps_mask[idx] + 1;
+
+        for (int slot = 0; slot < nr_of_slots; ++slot) {
+          StatEntry* entry = map[slot];
+
+          while (entry != NULL) {
+            assert(pos < expected_size, "To many entries");
+
+            copies[pos]._entry = entry;
+            copies[pos]._size  = entry->size();
+            copies[pos]._count = entry->count();
+
+            total_size += entry->size();
+            total_count += entry->count();
+
+            pos += 1;
+            entry = entry->next();
+        }
+      }
+
+      assert(pos == expected_size, "Size must be correct");
+      nr_of_entries[idx] = pos;
+      total_entries += pos;
+    } else {
+      failed_alloc = true;
+    }
+
+    if (entries[idx] != NULL) {
+      // Now sort so we might be able to trim the array to only contain the
+      // maximum possible entries.if
+      if (spec._sort_by_count) {
+          qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_copy_by_count);
+      } else {
+          qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_copy_by_size);
+      }
+
+      // Free up some memory if possible. Now that we have sorted the array, we
+      // can discard anything which does exceed the maximum entries to print.
+      if (nr_of_entries[idx] > spec._max_entries) {
+        void* result = realloc(entries[idx], spec._max_entries * sizeof(StatEntryCopy));
+        if (result == NULL)  {
+          // No problem, since the original memory is still there. Should not happen
+          // in reality.
+        } else {
+          entries[idx] = (StatEntryCopy*) result;
+        }
+
+        nr_of_entries[idx] = spec._max_entries;
+      }
+    } else {
+      nr_of_entries[idx] = 0;
+      failed_alloc = true;
+    }
+  }
+
+  int curr_pos[NR_OF_STACK_MAPS];
+  memset(curr_pos, 0, NR_OF_STACK_MAPS * sizeof(int));
+
+  size_t printed_size = 0;
+  size_t printed_count = 0;
+  int printed_entries = 0;
+
+  for (int i = 0; i < spec._max_entries; ++i) {
+    int max_pos = -1;
+    StatEntryCopy* max = NULL;
+
+    if (spec._sort_by_count) {
+      for (int j = 0; j < NR_OF_STACK_MAPS; ++j) {
+        if (curr_pos[j] < nr_of_entries[j]) {
+          if ((max == NULL) || (max->_count < entries[j][curr_pos[j]]._count)) {
+            max = &entries[j][curr_pos[j]];
+            max_pos = j;
+          }
+        }
+      }
+    } else {
+      for (int j = 0; j < NR_OF_STACK_MAPS; ++j) {
+        if (curr_pos[j] < nr_of_entries[j]) {
+          if ((max == NULL) || (max->_size < entries[j][curr_pos[j]]._size)) {
+            max = &entries[j][curr_pos[j]];
+            max_pos = j;
+          }
+        }
+      }
+    }
+
+    if (max == NULL) {
+      // Done everything we can.
+      break;
+    }
+
+    printed_entries = i;
+    printed_size += max->_size;
+    printed_count += max->_count;
+    curr_pos[max_pos] += 1;
+
+    dump_entry(dump_stream, max, i + 1, total_size, total_count, total_entries);
+  }
+
+  for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
+    _funcs->free(entries[i]);
+  }
+
+  dump_stream->print_raw("Total allocated bytes: ");
+  print_mem(dump_stream, total_size);
+  dump_stream->cr();
+  dump_stream->print_raw("Total allocation count: ");
+  print_count(dump_stream, total_count);
+  dump_stream->cr();
+  dump_stream->print_raw("Total printed bytes: ");
+  print_mem(dump_stream, printed_size, total_size);
+  dump_stream->cr();
+  dump_stream->print_raw("Total printed count: ");
+  print_count(dump_stream, printed_count, total_count);
+  dump_stream->cr();
+
+  return true;
 }
 
 bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec) {
@@ -1922,7 +2191,7 @@ bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
     return fd;
   }
 
-  return mallocStatImpl::MallocStatisticImpl::dump(st, st, spec);
+  return mallocStatImpl::MallocStatisticImpl::dump2(st, st, spec);
 }
 
 void MallocStatistic::shutdown() {
@@ -2012,6 +2281,7 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
   spec._count_fraction = _count_fraction.value();
   spec._max_entries = _max_entries.value();
   spec._on_error = false;
+  spec._sort_by_count = (spec._sort != NULL) && (strcmp("count", spec._sort) == 0);
 
   MallocStatistic::dump(_output, spec);
 }

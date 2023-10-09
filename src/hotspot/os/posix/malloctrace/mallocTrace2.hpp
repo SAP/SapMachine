@@ -36,6 +36,7 @@ struct DumpSpec {
   int         _max_entries;
   bool        _hide_dump_allocs;
   bool        _on_error;
+  bool        _sort_by_count;
 
   DumpSpec() :
     _dump_file(NULL),
@@ -44,7 +45,8 @@ struct DumpSpec {
     _count_fraction(100),
     _max_entries(0),
     _hide_dump_allocs(true),
-    _on_error(false) {
+    _on_error(false),
+    _sort_by_count(false) {
   }
 };
 
