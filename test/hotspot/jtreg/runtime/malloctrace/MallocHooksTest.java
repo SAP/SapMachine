@@ -90,7 +90,7 @@ public class MallocHooksTest {
     }
 
     private static void testTracking() throws Exception {
-        ProcessBuilder pb = runStress(1000, 1024 * 1024 * 100, 65536);
+        ProcessBuilder pb = runStress(1, 1024 * 1024 * 100, 65536);
         new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
     }
 

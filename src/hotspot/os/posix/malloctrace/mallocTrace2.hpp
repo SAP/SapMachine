@@ -144,7 +144,7 @@ private:
   DCmdArgument<jlong> _size_fraction;
   DCmdArgument<jlong> _count_fraction;
   DCmdArgument<jlong> _max_entries;
-  DCmdArgument<char*> _sort;
+  DCmdArgument<bool>  _sort_by_count;
 
 public:
   static int num_arguments() {
@@ -176,5 +176,3 @@ public:
 }
 
 #endif
-
-

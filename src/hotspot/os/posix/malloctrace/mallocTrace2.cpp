@@ -2260,14 +2260,14 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
   _count_fraction("-count-fraction", "The fraction in percent of the total allocation count " \
                   "the output must contain.", "INT", false, "100"),
   _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "-1"),
-  _sort("-sort", "If given the stacks are sorted. If the argument is 'size' they are " \
-       "sorted by size and if the argument is 'count' the are sorted by allocation " \
-       "count.", "STRING", false) {
+  _sort_by_count("-sort-by-count", "If given the stacks are sorted according to the number " \
+                 "of allocations. Otherwise they are orted by the number of allocated bytes.",
+                 "BOOLEAN", false) {
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
   _dcmdparser.add_dcmd_option(&_max_entries);
-  _dcmdparser.add_dcmd_option(&_sort);
+  _dcmdparser.add_dcmd_option(&_sort_by_count);
 }
 
 void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
@@ -2276,12 +2276,12 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
 
   DumpSpec spec;
   spec._dump_file = _dump_file.value();
-  spec._sort = _sort.value();
+  spec._sort = _sort_by_count.value() ? "count" : "size";
   spec._size_fraction = _size_fraction.value();
   spec._count_fraction = _count_fraction.value();
   spec._max_entries = _max_entries.value();
   spec._on_error = false;
-  spec._sort_by_count = (spec._sort != NULL) && (strcmp("count", spec._sort) == 0);
+  spec._sort_by_count = _sort_by_count.value();
 
   MallocStatistic::dump(_output, spec);
 }
