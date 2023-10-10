@@ -1441,6 +1441,18 @@ size_t calc_min_from_statistic(size_t* bins, double factor) {
 
 static char const* mem_prefix[] = {"k", "M", "G", "T", NULL};
 
+static void print_percentage(outputStream* st, double f) {
+  if (f <= 0) {
+    st->print("0.00 %%");
+  } else if (f < 0.01) {
+    st->print("< 0.01 %%");
+  } else if (f < 10) {
+    st->print("%.2f %%", f);
+  } else {
+    st->print("%.1f %%", f);
+  }
+}
+
 static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
   size_t k = 1024;
   double perc = 0.0;
@@ -1453,9 +1465,11 @@ static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
     st->print("*neg* ");
   }
 
-  if (mem < 10 * k) {
+  if (mem < 1000) {
     if (total > 0) {
-      st->print("%'" PRId64 " (%.2f %%)", (uint64_t) mem, perc);
+      st->print("%'" PRId64 " (", (uint64_t) mem);
+      print_percentage(st, perc);
+      st->print_raw(")");
     } else {
       st->print("%'" PRId64, (uint64_t) mem);
     }
@@ -1465,16 +1479,20 @@ static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
     double f = 1.0 / k;
 
     while (mem_prefix[idx] != NULL) {
-      if (curr < 10 * k * k) {
+      if (curr < 1000 * k) {
         if (curr < 100 * k) {
           if (total > 0) {
-            st->print("%'" PRId64 " (%.1f %s, %.2f %%)", (uint64_t) mem, f * curr, mem_prefix[idx], perc);
+            st->print("%'" PRId64 " (%.1f %s, ", (uint64_t) mem, f * curr, mem_prefix[idx]);
+            print_percentage(st, perc);
+            st->print_raw(")");
           } else {
             st->print("%'" PRId64 " (%.1f %s)", (uint64_t) mem, f * curr, mem_prefix[idx]);
           }
         } else {
           if (total > 0) {
-            st->print("%'" PRId64 " (%d %s, %.2f %%)", (uint64_t) mem, (int) (curr / k), mem_prefix[idx], perc);
+            st->print("%'" PRId64 " (%d %s, ", (uint64_t) mem, (int) (curr / k), mem_prefix[idx]);
+            print_percentage(st, perc);
+            st->print_raw(")");
           } else {
             st->print("%'" PRId64 " (%d %s)", (uint64_t) mem, (int) (curr / k), mem_prefix[idx]);
           }
@@ -1495,16 +1513,11 @@ static void print_count(outputStream* st, size_t count, size_t total = 0) {
   st->print("%'" PRId64, (int64_t) count);
 
   if (total > 0) {
-    double f = 100.0 * count / total;
-    if (f < 0.001) {
-      st->print(" (< 0.001 %%)");
-    } else if (f < 1) {
-      st->print(" (%.3f %%)", f);
-    } else if (f < 10) {
-      st->print(" (%.2f %%)", f);
-    } else {
-      st->print(" (%.1f %%)", f);
-    }
+    double perc = 100.0 * count / total;
+
+    st->print_raw(" (");
+    print_percentage(st, perc);
+    st->print_raw(")");
   }
 }
 
@@ -1521,7 +1534,7 @@ void MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int
   print_mem(&ss, entry->_size, total_size);
   ss.print_raw(" bytes, ");
   print_count(&ss, entry->_count, total_count);
-  ss.cr();
+  ss.print_cr(" allocations");
 
   for (int i = 0; i < entry->_entry->nr_of_frames(); ++i) {
     address frame = entry->_entry->frames()[i];
@@ -1719,22 +1732,43 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
     return false;
   }
 
+  if (_backtrace != NULL) {
+    dump_stream->print_raw_cr("Stacks were collected via backtrace().");
+  }
+
+  if (_track_free) {
+    dump_stream->print_raw_cr("Contains the currently allocated memory since enabling.");
+  } else {
+    dump_stream->print_raw_cr("Contains every allocation done since enabling.");
+  }
+
   // We make a copy of each hash map, since we don't want to lock for the whole operation.
   StatEntryCopy* entries[NR_OF_STACK_MAPS];
   int nr_of_entries[NR_OF_STACK_MAPS];
+
   bool failed_alloc = false;
   size_t total_count = 0;
   size_t total_size = 0;
   int total_entries = 0;
+  int max_entries = MAX2(1, spec._max_entries);
+
+  elapsedTimer totalTime;
+  elapsedTimer lockedTime;
+
+  totalTime.start();
 
   for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
-    int expected_size = _stack_maps_size[idx]._val;
+    lockedTime.start();
 
-    entries[idx] = (StatEntryCopy*) _funcs->malloc(sizeof(StatEntryCopy) * expected_size);
+    {
+      Locker locker(_stack_maps_lock[idx]);
 
-    if (entries[idx] != NULL) {
-        Locker locker(_stack_maps_lock[idx]);
-        int pos = 0;
+      int expected_size = _stack_maps_size[idx]._val;
+      int pos = 0;
+
+      entries[idx] = (StatEntryCopy*) _funcs->malloc(sizeof(StatEntryCopy) * expected_size);
+
+      if (entries[idx] != NULL) {
         StatEntry** map = _stack_maps[idx];
         StatEntryCopy* copies = entries[idx];
         int nr_of_slots = _stack_maps_mask[idx] + 1;
@@ -1754,29 +1788,33 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
 
             pos += 1;
             entry = entry->next();
+          }
         }
+
+        assert(pos == expected_size, "Size must be correct");
+      } else {
+        failed_alloc = true;
       }
 
-      assert(pos == expected_size, "Size must be correct");
+      lockedTime.stop();
+
       nr_of_entries[idx] = pos;
       total_entries += pos;
-    } else {
-      failed_alloc = true;
     }
 
     if (entries[idx] != NULL) {
       // Now sort so we might be able to trim the array to only contain the
-      // maximum possible entries.if
+      // maximum possible entries.
       if (spec._sort_by_count) {
           qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_copy_by_count);
       } else {
           qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_copy_by_size);
       }
 
-      // Free up some memory if possible. Now that we have sorted the array, we
-      // can discard anything which does exceed the maximum entries to print.
-      if (nr_of_entries[idx] > spec._max_entries) {
-        void* result = realloc(entries[idx], spec._max_entries * sizeof(StatEntryCopy));
+      // Free up some memory if possible.
+      if (nr_of_entries[idx] > max_entries) {
+        void* result = _funcs->realloc(entries[idx], max_entries * sizeof(StatEntryCopy));
+
         if (result == NULL)  {
           // No problem, since the original memory is still there. Should not happen
           // in reality.
@@ -1784,7 +1822,7 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
           entries[idx] = (StatEntryCopy*) result;
         }
 
-        nr_of_entries[idx] = spec._max_entries;
+        nr_of_entries[idx] = max_entries;
       }
     } else {
       nr_of_entries[idx] = 0;
@@ -1799,10 +1837,11 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
   size_t printed_count = 0;
   int printed_entries = 0;
 
-  for (int i = 0; i < spec._max_entries; ++i) {
+  for (int i = 0; i < max_entries; ++i) {
     int max_pos = -1;
     StatEntryCopy* max = NULL;
 
+    // Find the largest entry not currently printed.
     if (spec._sort_by_count) {
       for (int j = 0; j < NR_OF_STACK_MAPS; ++j) {
         if (curr_pos[j] < nr_of_entries[j]) {
@@ -1840,6 +1879,7 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
     _funcs->free(entries[i]);
   }
 
+  dump_stream->cr();
   dump_stream->print_raw("Total allocated bytes: ");
   print_mem(dump_stream, total_size);
   dump_stream->cr();
@@ -1852,6 +1892,45 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
   dump_stream->print_raw("Total printed count: ");
   print_count(dump_stream, printed_count, total_count);
   dump_stream->cr();
+
+  totalTime.stop();
+
+  if (failed_alloc) {
+    dump_stream->print_cr("Failed to alloc memory during dump, so it might be incomplete!");
+  }
+
+  if (_detailed_stats) {
+    uint64_t per_stack = _stack_walk_time / MAX2(_stack_walk_count, (uint64_t) 1);
+    msg_stream->cr();
+    msg_stream->print_cr("Sampled %'" PRId64 " stacks, took %'" PRId64 " ns per stack on average.",
+                         _stack_walk_count, per_stack);
+    msg_stream->print_cr("Sampling took %.2f seconds in total", _stack_walk_time * 1e-9);
+    msg_stream->print_cr("Tracked alllocations : %'" PRId64, _tracked_ptrs);
+    msg_stream->print_cr("Untracked allocations: %'" PRId64, _not_tracked_ptrs);
+    msg_stream->print_cr("Untracked frees      : %'" PRId64, _failed_frees);
+
+    if ((_to_track_mask > 0) && (_tracked_ptrs > 0)) {
+      double frac = 100.0 * _tracked_ptrs / (_tracked_ptrs + _not_tracked_ptrs);
+      double rate = 100.0 * _tracked_ptrs / (_tracked_ptrs + _not_tracked_ptrs);
+      int target = (int) (_to_track_mask + 1);
+      msg_stream->print_cr("%.2f %% of the allocations were tracked, about every %.2f allocations " \
+                           "(target %d)", frac, rate, target);
+    }
+
+    print_allocation_stats(msg_stream, _stack_maps_alloc, _stack_maps_mask, _stack_maps_size,
+                           _stack_maps_lock, NR_OF_STACK_MAPS, "stack maps");
+
+    if (_track_free) {
+      print_allocation_stats(msg_stream, _alloc_maps_alloc, _alloc_maps_mask, _alloc_maps_size,
+                             _alloc_maps_lock, NR_OF_ALLOC_MAPS, "alloc maps");
+    }
+  }
+
+  msg_stream->print_cr("Dumping done in %.3f s (%.3f s of that locked)",
+                       totalTime.milliseconds() * 0.001,
+                       lockedTime.milliseconds() * 0.001);
+
+  pthread_setspecific(_malloc_suspended, NULL);
 
   return true;
 }
