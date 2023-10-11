@@ -1899,7 +1899,7 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
     dump_stream->print_cr("Failed to alloc memory during dump, so it might be incomplete!");
   }
 
-  if (_detailed_stats) {
+  if (spec._internal_stats && _detailed_stats) {
     uint64_t per_stack = _stack_walk_time / MAX2(_stack_walk_count, (uint64_t) 1);
     msg_stream->cr();
     msg_stream->print_cr("Sampled %'" PRId64 " stacks, took %'" PRId64 " ns per stack on average.",
@@ -1916,7 +1916,9 @@ bool MallocStatisticImpl::dump2(outputStream* msg_stream, outputStream* dump_str
       msg_stream->print_cr("%.2f %% of the allocations were tracked, about every %.2f allocations " \
                            "(target %d)", frac, rate, target);
     }
+  }
 
+  if (spec._internal_stats) {
     print_allocation_stats(msg_stream, _stack_maps_alloc, _stack_maps_mask, _stack_maps_size,
                            _stack_maps_lock, NR_OF_STACK_MAPS, "stack maps");
 
@@ -2341,12 +2343,15 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
   _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "-1"),
   _sort_by_count("-sort-by-count", "If given the stacks are sorted according to the number " \
                  "of allocations. Otherwise they are orted by the number of allocated bytes.",
-                 "BOOLEAN", false) {
+                 "BOOLEAN", false),
+  _internal_stats("-internal-stats", "If given some internal statistics about the overhead of " \
+                  "the trace is included in the output", "BOOLEAN", false) {
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_size_fraction);
   _dcmdparser.add_dcmd_option(&_count_fraction);
   _dcmdparser.add_dcmd_option(&_max_entries);
   _dcmdparser.add_dcmd_option(&_sort_by_count);
+  _dcmdparser.add_dcmd_option(&_internal_stats);
 }
 
 void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
@@ -2361,6 +2366,7 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
   spec._max_entries = _max_entries.value();
   spec._on_error = false;
   spec._sort_by_count = _sort_by_count.value();
+  spec._internal_stats = _internal_stats.value();
 
   MallocStatistic::dump(_output, spec);
 }
