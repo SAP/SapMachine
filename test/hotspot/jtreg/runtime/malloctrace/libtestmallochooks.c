@@ -30,7 +30,14 @@ Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint 
             } else if (r < 0.75) {
                 roots[idx] = calloc((int) (drand48() * MAX_CALLOC + 1), (int) (drand48() * MAX_CALLOC + 1));
             } else if (r < 0.80) {
-                posix_memalign(&roots[idx], 64, (int) (drand48() * MAX_ALLOC + 1));
+                void* mem;
+                int result = posix_memalign(&mem, 64, (int) (drand48() * MAX_ALLOC + 1));
+
+                if (result == 0) {
+                  roots[idx] = mem;
+                } else {
+                  roots[idx] = NULL;
+                }
             } else if (r < 0.85) {
 #if !defined(__APPLE__)
                 roots[idx] = memalign(64, (int) (drand48() * MAX_ALLOC + 1));
