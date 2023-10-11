@@ -40,8 +40,6 @@
 #define NR_OF_STACK_MAPS 16
 #define NR_OF_ALLOC_MAPS 16
 
-#define PAD_LEN(T) ((2 * DEFAULT_CACHE_LINE_SIZE - sizeof(T)) & (DEFAULT_CACHE_LINE_SIZE - 1))
-
 namespace sap {
 
 // Keep sap namespace free from implementation classes.
@@ -156,7 +154,6 @@ size_t Allocator::unused() {
 struct Lock {
   char            _pre_pad[DEFAULT_CACHE_LINE_SIZE];
   pthread_mutex_t _lock;
-  char            _pad[PAD_LEN(pthread_mutex_t)];
 };
 
 class Locker : public StackObj {
@@ -427,7 +424,6 @@ template<typename T> struct Padded {
 public:
   char _pre_pad[DEFAULT_CACHE_LINE_SIZE];
   T    _val;
-  char _pad[PAD_LEN(T)];
 };
 
 class MallocStatisticImpl : public AllStatic {
