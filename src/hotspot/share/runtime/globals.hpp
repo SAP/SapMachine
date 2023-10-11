@@ -590,19 +590,15 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we do a dump of the malloc trace in regular "         \
           "intervals.")                                                     \
                                                                             \
+  product(bool, MallocTraceDumpInternalStats, false,                        \
+          "If enabled we include internal statistics in the dump. ")        \
+                                                                            \
   product(uintx, MallocTraceDumpInterval, 60,                               \
           "The interval in seconds for the test dump.")                     \
                                                                             \
-  product(ccstr, MallocTraceDumpSort, "",                                   \
-          "If given we sort the output. Can be 'size' or 'count'.")         \
-                                                                            \
-  product(uintx, MallocTraceDumpSizeFraction, 100,                          \
-          "Only dump the top allocation which comprise the given "          \
-          "percentage of the total allocation size.")                       \
-                                                                            \
-  product(uintx, MallocTraceDumpCountFraction, 100,                         \
-          "Only dump the top allocation which comprise the given "          \
-          "percentage of the total allocation count.")                      \
+  product(bool, MallocTraceDumpSortByCount, false,                          \
+          "If given we sort the output by allocation count instead of "     \
+          "allocation size.")                                               \
                                                                             \
   product(uintx, MallocTraceDumpMaxEntries, 10,                             \
           "If > 0 it limits the number of entries printed. If no sort "     \
