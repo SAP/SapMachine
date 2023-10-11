@@ -1557,6 +1557,10 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   int total_entries = 0;
   int max_entries = MAX2(1, spec._max_entries);
 
+  if (spec._dump_fraction > 0) {
+    max_entries = INT_MAX;
+  }
+
   elapsedTimer totalTime;
   elapsedTimer lockedTime;
 
@@ -1635,6 +1639,17 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     }
   }
 
+  size_t size_limit = total_size;
+  size_t count_limit = total_count;
+
+  if (spec._dump_fraction > 0) {
+    if (spec._sort_by_count) {
+      count_limit = (int) (0.01 * total_count *  spec._dump_fraction);
+    } else {
+      size_limit = (int) (0.01 * total_size *  spec._dump_fraction);
+    }
+  }
+
   int curr_pos[NR_OF_STACK_MAPS];
   memset(curr_pos, 0, NR_OF_STACK_MAPS * sizeof(int));
 
@@ -1678,6 +1693,14 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     curr_pos[max_pos] += 1;
 
     dump_entry(dump_stream, max, i + 1, total_size, total_count, total_entries);
+
+    if (printed_size > size_limit) {
+      break;
+    }
+
+    if (printed_count > count_limit) {
+      break;
+    }
   }
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
@@ -1772,6 +1795,7 @@ void MallocTraceDumpPeriodicTask::task() {
   spec._dump_file = NULL;
   spec._sort_by_count = MallocTraceDumpSortByCount;
   spec._max_entries = MallocTraceDumpMaxEntries;
+  spec._dump_fraction = MallocTraceDumpFraction;
   spec._hide_dump_allocs = MallocTraceDumpHideDumpAlllocs;
   spec._internal_stats = MallocTraceDumpInternalStats;
 
@@ -1950,6 +1974,9 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
              "the target VM", "STRING", false),
   _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "-1"),
+  _dump_fraction("-fraction", "If > 0 we dunp the given fraction of allocated bytes " \
+                 "(or allocated objects if sorted by count). In that case the -max-entries " \
+                 "option is ignored", "INT", false, "0"),
   _sort_by_count("-sort-by-count", "If given the stacks are sorted according to the number " \
                  "of allocations. Otherwise they are orted by the number of allocated bytes.",
                  "BOOLEAN", false),
@@ -1957,6 +1984,7 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
                   "the trace is included in the output", "BOOLEAN", false) {
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_max_entries);
+  _dcmdparser.add_dcmd_option(&_dump_fraction);
   _dcmdparser.add_dcmd_option(&_sort_by_count);
   _dcmdparser.add_dcmd_option(&_internal_stats);
 }
@@ -1968,6 +1996,7 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
   DumpSpec spec;
   spec._dump_file = _dump_file.value();
   spec._max_entries = _max_entries.value();
+  spec._dump_fraction = _dump_fraction.value();
   spec._on_error = false;
   spec._sort_by_count = _sort_by_count.value();
   spec._internal_stats = _internal_stats.value();

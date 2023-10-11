@@ -605,6 +605,11 @@ const int ObjectAlignmentInBytes = 8;
           "is specified via -XX:MallocTraceDumpSort, we sort by "           \
           "size.")                                                          \
                                                                             \
+  product(uintx, MallocTraceDumpFraction, 0,                                \
+          "If > 0 we dunp the given fraction of allocated bytes "           \
+          "(or allocated objects if sorted by count). In that case the "    \
+          "-XX:MallocTraceDumpMaxEntries option is ignored.")               \
+                                                                            \
   product(bool, MallocTraceDumpHideDumpAlllocs, true,                       \
           "If enabled we don't track the allocation done for the dump.")    \
                                                                             \

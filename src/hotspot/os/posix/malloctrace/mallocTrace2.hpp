@@ -34,6 +34,7 @@ struct DumpSpec {
   bool        _hide_dump_allocs;
   bool        _on_error;
   bool        _sort_by_count;
+  int         _dump_fraction;
   bool        _internal_stats;
 
   DumpSpec() :
@@ -42,6 +43,7 @@ struct DumpSpec {
     _hide_dump_allocs(true),
     _on_error(false),
     _sort_by_count(false),
+    _dump_fraction(100),
     _internal_stats(false) {
   }
 };
@@ -138,12 +140,13 @@ private:
 
   DCmdArgument<char*> _dump_file;
   DCmdArgument<jlong> _max_entries;
+  DCmdArgument<jlong> _dump_fraction;
   DCmdArgument<bool>  _sort_by_count;
   DCmdArgument<bool>  _internal_stats;
 
 public:
   static int num_arguments() {
-    return 4;
+    return 5;
   }
 
   MallocTraceDumpDCmd(outputStream* output, bool heap);
