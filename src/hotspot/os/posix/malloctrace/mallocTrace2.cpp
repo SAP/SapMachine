@@ -463,7 +463,8 @@ private:
   static int                _alloc_maps_limit[NR_OF_ALLOC_MAPS];
   static Allocator*         _alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 
-  static int                _to_track_mask;
+  static uint64_t           _to_track_mask;
+  static uint64_t           _to_track_limit;
 
   static volatile uint64_t  _stack_walk_time;
   static volatile uint64_t  _stack_walk_count;
@@ -543,7 +544,8 @@ int               MallocStatisticImpl::_alloc_maps_mask[NR_OF_ALLOC_MAPS];
 Padded<int>       MallocStatisticImpl::_alloc_maps_size[NR_OF_ALLOC_MAPS + 1];
 int               MallocStatisticImpl::_alloc_maps_limit[NR_OF_ALLOC_MAPS];
 Allocator*        MallocStatisticImpl::_alloc_maps_alloc[NR_OF_ALLOC_MAPS];
-int               MallocStatisticImpl::_to_track_mask;
+uint64_t          MallocStatisticImpl::_to_track_mask;
+uint64_t          MallocStatisticImpl::_to_track_limit;
 volatile uint64_t MallocStatisticImpl::_stack_walk_time;
 volatile uint64_t MallocStatisticImpl::_stack_walk_count;
 volatile uint64_t MallocStatisticImpl::_tracked_ptrs;
@@ -625,14 +627,14 @@ uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
 
 bool MallocStatisticImpl::should_track(uint64_t hash) {
   if (_detailed_stats) {
-    if ((hash & _to_track_mask) == 0) {
+    if ((hash & _to_track_mask) < _to_track_limit) {
       Atomic::add(&_tracked_ptrs, (uint64_t) 1);
     } else {
       Atomic::add(&_not_tracked_ptrs, (uint64_t) 1);
     }
   }
 
-  return (hash & _to_track_mask) == 0;
+  return (hash & _to_track_mask) < _to_track_limit;
 }
 
 void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) {
@@ -1201,18 +1203,37 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 
   _track_free = spec._track_free;
   _detailed_stats = spec._detailed_stats;
-  _to_track_mask = (1 << spec._skip_exp) - 1;
+
 
   if (_track_free) {
-    st->print_raw_cr("Tracking memory deallocations too, so we track the live memory.");
+    st->print_raw_cr("Tracking live memory.");
+  } else {
+    st->print_raw_cr("Tracking all allocated memory.");
   }
 
   if (_detailed_stats) {
     st->print_raw_cr("Collecting detailed statistics.");
   }
 
-  if (_to_track_mask != 0) {
-    st->print_cr("Tracking about every %d allocations.", _to_track_mask + 1);
+  int only_nth = MIN2(1000, MAX2(1, spec._only_nth));
+
+  if (only_nth > 1) {
+    for (int i = 1; i < 63; ++i) {
+      uint64_t pow = ((uint64_t) 1) << i;
+      _to_track_limit = pow / only_nth;
+      double diff = pow / (double) _to_track_limit - only_nth;
+
+      _to_track_mask = pow - 1;
+
+      if (diff > -0.1 && diff < 0.1) {
+        break;
+      }
+    }
+
+    st->print_cr("Tracking about every %d allocations (%d / %d).", only_nth, (int) _to_track_mask, (int) _to_track_limit);
+  } else {
+    _to_track_mask = 0;
+    _to_track_limit = 1;
   }
 
   _use_backtrace = spec._use_backtrace && (_backtrace != NULL);
@@ -1739,8 +1760,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
     if ((_to_track_mask > 0) && (_tracked_ptrs > 0)) {
       double frac = 100.0 * _tracked_ptrs / (_tracked_ptrs + _not_tracked_ptrs);
-      double rate = 100.0 * _tracked_ptrs / (_tracked_ptrs + _not_tracked_ptrs);
-      int target = (int) (_to_track_mask + 1);
+      double rate = 100.0 / frac;
+      int target = (int) (0.5 + (_to_track_mask + 1) / (double) _to_track_limit);
       msg_stream->print_cr("%.2f %% of the allocations were tracked, about every %.2f allocations " \
                            "(target %d)", frac, rate, target);
     }
@@ -1854,7 +1875,7 @@ void MallocStatistic::initialize() {
 
     spec._stack_depth = (int) MallocTraceStackDepth;
     spec._use_backtrace = MallocTraceUseBacktrace;
-    spec._skip_exp = (int) MallocTraceSkipExp;
+    spec._only_nth = (int) MallocTraceOnlyNth;
     spec._track_free = MallocTraceTrackFrees;
     spec._detailed_stats = MallocTraceDetailedStats;
 
@@ -1921,8 +1942,8 @@ MallocTraceEnableDCmd::MallocTraceEnableDCmd(outputStream* output, bool heap) :
   _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5"),
   _use_backtrace("-use-backtrace", "If true we try to use the backtrace() method to sample " \
                  "the stack traces.", "BOOLEAN", false, "true"),
-  _skip_allocations("-skip-allocations", "If > 0 we only track about every 2^N allocation.",
-                    "INT", false, "0"),
+  _only_nth("-only-nth", "If > 1 we only track about every n'th allocation. Note that we round " \
+            "the given number to the closest power of 2.", "INT", false, "1"),
   _force("-force", "If the trace is already enabled, we disable it first.", "BOOLEAN", false, "false"),
   _track_free("-track-free", "If true we also track frees, so we know the live memory consumption " \
               "and not just the total allocated amount. This costs some performance and memory.",
@@ -1931,7 +1952,7 @@ MallocTraceEnableDCmd::MallocTraceEnableDCmd(outputStream* output, bool heap) :
                   "CPU time, but no memory.", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_stack_depth);
   _dcmdparser.add_dcmd_option(&_use_backtrace);
-  _dcmdparser.add_dcmd_option(&_skip_allocations);
+  _dcmdparser.add_dcmd_option(&_only_nth);
   _dcmdparser.add_dcmd_option(&_force);
   _dcmdparser.add_dcmd_option(&_track_free);
   _dcmdparser.add_dcmd_option(&_detailed_stats);
@@ -1944,7 +1965,7 @@ void MallocTraceEnableDCmd::execute(DCmdSource source, TRAPS) {
   TraceSpec spec;
   spec._stack_depth = (int) _stack_depth.value();
   spec._use_backtrace = _use_backtrace.value();
-  spec._skip_exp = (int) _skip_allocations.value();
+  spec._only_nth = (int) _only_nth.value();
   spec._force = _force.value();
   spec._track_free = _track_free.value();
   spec._detailed_stats = _detailed_stats.value();

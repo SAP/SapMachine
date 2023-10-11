@@ -571,9 +571,10 @@ const int ObjectAlignmentInBytes = 8;
           "The maximum depth of stack traces for the malloc trace "         \
           "enabled at startup.")                                            \
                                                                             \
-  product(uintx, MallocTraceSkipExp, 0,                                     \
-          "if > 0 we only track about every 2^value allocations for the "   \
+  product(uintx, MallocTraceOnlyNth, 1,                                     \
+          "if > 1 we only track about every n'th allocations for the "      \
           "malloc traced enabled at startup.")                              \
+          range(1, 1000)                                                    \
                                                                             \
   product(bool, MallocTraceUseBacktrace, true,                              \
           "If set we use the backtrace() call to samples the stacks of "    \

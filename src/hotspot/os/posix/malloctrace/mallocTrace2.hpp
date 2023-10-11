@@ -12,7 +12,7 @@ namespace sap {
 struct TraceSpec {
   int _stack_depth;
   bool _use_backtrace;
-  int _skip_exp;
+  int  _only_nth;
   bool _force;
   bool _track_free;
   bool _detailed_stats;
@@ -20,7 +20,7 @@ struct TraceSpec {
   TraceSpec() :
     _stack_depth(10),
     _use_backtrace(true),
-    _skip_exp(0),
+    _only_nth(0),
     _force(false),
     _track_free(false),
     _detailed_stats(false) {
@@ -74,7 +74,7 @@ public:
 class MallocTraceEnableDCmd : public DCmdWithParser {
   DCmdArgument<jlong> _stack_depth;
   DCmdArgument<bool>  _use_backtrace;
-  DCmdArgument<jlong> _skip_allocations;
+  DCmdArgument<jlong> _only_nth;
   DCmdArgument<bool>  _force;
   DCmdArgument<bool>  _track_free;
   DCmdArgument<bool>  _detailed_stats;
