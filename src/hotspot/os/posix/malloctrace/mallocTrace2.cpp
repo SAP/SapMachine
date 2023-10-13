@@ -553,11 +553,8 @@ volatile uint64_t MallocStatisticImpl::_failed_frees;
   address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
   uint64_t ticks = _detailed_stats ? Ticks::now().nanoseconds() : 0; \
   int nr_of_frames = 0; \
-  /* We know at least the function and the caller. */ \
-  if (_max_frames == 2) { \
-    frames[0] = (address) func; \
-    frames[1] = (address) caller_address; \
-    nr_of_frames = 2; \
+  if (_max_frames <= 2) { \
+    /* Skip, since we will fill it it later anyway. */ \
   } else if (_use_backtrace) { \
     nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
   } else { \
@@ -569,12 +566,12 @@ volatile uint64_t MallocStatisticImpl::_failed_frees;
         break; \
       fr = os::get_sender_for_C_frame(&fr); \
     } \
-    /* We know at least the caller addreess */ \
-    if (nr_of_frames < 2) { \
-      frames[0] = (address) func; \
-      frames[1] = (address) caller_address; \
-      nr_of_frames = 2; \
-    } \
+  } \
+  /* We know at least the function and the caller. */ \
+  if (nr_of_frames < 2) { \
+    frames[0] = (address) func; \
+    frames[1] = (address) caller_address; \
+    nr_of_frames = MAX2(2, _max_frames); \
   } \
   if (_detailed_stats) { \
     Atomic::add(&_stack_walk_time, Ticks::now().nanoseconds() - ticks); \

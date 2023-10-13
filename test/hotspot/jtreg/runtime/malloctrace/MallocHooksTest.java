@@ -105,7 +105,7 @@ public class MallocHooksTest {
     }
 
     private static void testTracking() throws Exception {
-        ProcessBuilder pb = runStress(10, 1024 * 1024 * 10, 65536, "-XX:-MallocTraceTrackFrees");
+        ProcessBuilder pb = runStress(10, 1024 * 1024 * 10, 65536, "-XX:-MallocTraceTrackFrees", "-XX:MallocTraceStackDepth=2");
         Process p = pb.start();
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump -max-entries=10");
         oa.shouldHaveExitValue(0);
@@ -118,6 +118,8 @@ public class MallocHooksTest {
         oa.shouldContain("Stack 10 of");
         oa.shouldNotContain("Stack 0 of");
         oa.shouldNotContain("Stack 11 of");
+        System.out.println(oa.getOutput());
+        throw new Exception();
     }
 
     private static ProcessBuilder runStress(int runs, int nrOfOps, int maxLiveAllocations, String... opts) {
