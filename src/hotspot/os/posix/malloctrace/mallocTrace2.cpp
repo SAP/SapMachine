@@ -437,6 +437,7 @@ private:
   static bool               _shutdown;
   static bool               _track_free;
   static bool               _detailed_stats;
+  static bool               _tried_to_load_backtrace;
   static int                _max_frames;
   static registered_hooks_t _malloc_stat_hooks;
   static Lock               _malloc_stat_lock;
@@ -524,6 +525,7 @@ bool              MallocStatisticImpl::_enabled;
 bool              MallocStatisticImpl::_shutdown;
 bool              MallocStatisticImpl::_track_free;
 bool              MallocStatisticImpl::_detailed_stats;
+bool              MallocStatisticImpl::_tried_to_load_backtrace;
 int               MallocStatisticImpl::_max_frames;
 Lock              MallocStatisticImpl::_malloc_stat_lock;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
@@ -548,7 +550,6 @@ volatile uint64_t MallocStatisticImpl::_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_not_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_failed_frees;
 
-
 #define CAPTURE_STACK(func) \
   address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
   uint64_t ticks = _detailed_stats ? Ticks::now().nanoseconds() : 0; \
@@ -558,14 +559,22 @@ volatile uint64_t MallocStatisticImpl::_failed_frees;
   } else if (_use_backtrace) { \
     nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
   } else { \
+    /* We have to unblock SIGSEGV signal handling, since os::is_first_C_frame()
+       calls SafeFetch, which needs the proper handling of SIGSEGV. */ \
+    sigset_t curr, old; \
+    sigemptyset(&curr); \
+    sigaddset(&curr, SIGSEGV); \
+    pthread_sigmask(SIG_UNBLOCK, &curr, &old); \
     frame fr = os::current_frame(); \
     while (fr.pc() && nr_of_frames < _max_frames + FRAMES_TO_SKIP) { \
       frames[nr_of_frames] = fr.pc(); \
       nr_of_frames += 1; \
+      if (nr_of_frames >= _max_frames + FRAMES_TO_SKIP) break; \
       if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
         break; \
       fr = os::get_sender_for_C_frame(&fr); \
     } \
+    pthread_sigmask(SIG_SETMASK, &old, NULL); \
   } \
   /* We know at least the function and the caller. */ \
   if (nr_of_frames < 2) { \
@@ -1149,18 +1158,6 @@ void MallocStatisticImpl::initialize() {
       fatal("Could not initialize lock");
     }
   }
-
-  _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
-
-  if (dlerror() != NULL) {
-    _backtrace = NULL;
-  }
-
-  if (_backtrace != NULL) {
-    // Trigger initialization needed.
-    void* tmp[1];
-    _backtrace(tmp, 1);
-  }
 }
 
 bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
@@ -1194,9 +1191,43 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     return false;
   }
 
+  // Get the backtrace function if needed.
+  if (spec._use_backtrace && !_tried_to_load_backtrace) {
+    _tried_to_load_backtrace = true;
+
+#if defined(__APPLE__)
+    // Try libunwind first on mac.
+    _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "unw_backtrace");
+
+    if (_backtrace == NULL) {
+      _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
+    }
+#else
+    _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
+
+    if (_backtrace == NULL) {
+      // Try if we have libunwind installed.
+      char ebuf[512];
+      void* libunwind = os::dll_load(MallocTraceUnwindLibName, ebuf, sizeof ebuf);
+
+      if (libunwind != NULL) {
+        _backtrace = (backtrace_func_t*) dlsym(libunwind, "unw_backtrace");
+      }
+    }
+#endif
+
+    // Clear dlerror.
+    dlerror();
+
+    if (_backtrace != NULL) {
+      // Trigger initialization needed.
+      void* tmp[1];
+      _backtrace(tmp, 1);
+    }
+  }
+
   _track_free = spec._track_free;
   _detailed_stats = spec._detailed_stats;
-
 
   if (_track_free) {
     st->print_raw_cr("Tracking live memory.");

@@ -583,6 +583,9 @@ const int ObjectAlignmentInBytes = 8;
           "supported on every system. If not supported, this option is "    \
           "simply ignored.")                                                \
                                                                             \
+  product(ccstr, MallocTraceUnwindLibName, "libunwind.so.8",                \
+          "The name of the libunwind to load.")                             \
+                                                                            \
   product(bool, MallocTraceDetailedStats, false,                            \
           "If enabled we collect more detailed statistics for the malloc "  \
           "trace enabled at startup. This costs some performance.")         \
