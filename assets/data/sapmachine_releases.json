@@ -108,10 +108,12 @@
                 {
                     "tag": "sapmachine-22+19",
                     "jdk": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B19/sapmachine-jdk-22-ea.19_linux-x64-musl_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B19/sapmachine-jdk-22-ea.19_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B19/sapmachine-jdk-22-ea.19_macos-aarch64_bin.tar.gz"
                     },
                     "jre": {
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B19/sapmachine-jre-22-ea.19_linux-x64-musl_bin.tar.gz",
                         "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B19/sapmachine-jre-22-ea.19_macos-aarch64_bin.dmg",
                         "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B19/sapmachine-jre-22-ea.19_macos-aarch64_bin.tar.gz"
                     }
@@ -121,10 +123,12 @@
                 {
                     "tag": "sapmachine-22+19",
                     "jdk": {
+                        "linux-x64-musl": "sha256 42dc216062746d7e04a482acf965423f0b2afbdd72a99fdcd3235d276a41579f",
                         "macos-aarch64-installer": "sha256 6e5b684ae30517b83a8e6c50d20b20548d56926c40f8cd116b83cc3f40907093",
                         "macos-aarch64": "sha256 bbc9300ae986605ce5643f50b83feec47c583c320eb8a6571da019376db9ad60"
                     },
                     "jre": {
+                        "linux-x64-musl": "sha256 60d7929b60e7493358080892dd3757ff2e488e07c1e9f66c7f5075e030e879b0",
                         "macos-aarch64-installer": "sha256 e5c51d4d545131e74bf9345bb15787ee7ddc4e342d4e1de85ba4ec89f0113a34",
                         "macos-aarch64": "sha256 80928370936eb1441b88de1c760bdb254efaad8f8febeedbaf79d0b981c80cce"
                     }
