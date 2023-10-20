@@ -431,6 +431,7 @@ private:
 
   static real_funcs_t*      _funcs;
   static backtrace_func_t*  _backtrace;
+  static char const*        _backtrace_name;
   static bool               _use_backtrace;
   static volatile bool      _initialized;
   static bool               _enabled;
@@ -519,6 +520,7 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
 
 real_funcs_t*     MallocStatisticImpl::_funcs;
 backtrace_func_t* MallocStatisticImpl::_backtrace;
+char const*       MallocStatisticImpl::_backtrace_name;
 bool              MallocStatisticImpl::_use_backtrace;
 volatile bool     MallocStatisticImpl::_initialized;
 bool              MallocStatisticImpl::_enabled;
@@ -1198,12 +1200,15 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 #if defined(__APPLE__)
     // Try libunwind first on mac.
     _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "unw_backtrace");
+    _backtrace_name = "backtrace (libunwind)";
 
     if (_backtrace == NULL) {
       _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
+      _backtrace_name = "backtrace";
     }
 #else
     _backtrace = (backtrace_func_t*) dlsym(RTLD_DEFAULT, "backtrace");
+    _backtrace_name = "backtrace";
 
     if (_backtrace == NULL) {
       // Try if we have libunwind installed.
@@ -1212,6 +1217,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 
       if (libunwind != NULL) {
         _backtrace = (backtrace_func_t*) dlsym(libunwind, "unw_backtrace");
+        _backtrace_name = "backtrace (libunwind)";
       }
     }
 #endif
@@ -1583,7 +1589,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   if (_backtrace != NULL) {
-    dump_stream->print_raw_cr("Stacks were collected via backtrace().");
+    dump_stream->print_cr("Stacks were collected via %s.", _backtrace_name);
   }
 
   if (_track_free) {
