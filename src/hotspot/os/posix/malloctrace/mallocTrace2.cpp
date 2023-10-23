@@ -1695,9 +1695,9 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
   if (spec._dump_fraction > 0) {
     if (spec._sort_by_count) {
-      count_limit = (int) (0.01 * total_count *  spec._dump_fraction);
+      count_limit = (size_t) (0.01 * total_count *  spec._dump_fraction);
     } else {
-      size_limit = (int) (0.01 * total_size *  spec._dump_fraction);
+      size_limit = (size_t) (0.01 * total_size *  spec._dump_fraction);
     }
   }
 
