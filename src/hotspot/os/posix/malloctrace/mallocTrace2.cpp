@@ -153,6 +153,108 @@ size_t Allocator::unused() {
   return _allocation_size * _free_entries;
 }
 
+class AddressHashSet {
+private:
+  int           _mask;
+  int           _count;
+  address*      _set;
+  real_funcs_t* _funcs;
+
+  int get_slot(address to_check);
+
+public:
+  AddressHashSet(real_funcs_t* funcs, bool enabled);
+  ~AddressHashSet();
+
+  bool contains(address to_check);
+  bool add(address to_add);
+};
+
+AddressHashSet::AddressHashSet(real_funcs_t* funcs, bool enabled) :
+  _mask(enabled ? 0 : 1),
+  _count(0),
+  _set(NULL),
+  _funcs(funcs) {
+}
+
+AddressHashSet::~AddressHashSet() {
+  _funcs->free(_set);
+}
+
+int AddressHashSet::get_slot(address to_check) {
+  assert(to_check != NULL, "Invalid value");
+
+  if (_set == NULL) {
+    // Initialize lazily.
+    if (_mask == 0) {
+      _mask = 8191;
+      _set = (address*) _funcs->calloc(_mask + 1, sizeof(address));
+    }
+
+    // When we overflow, return treat each address as not be contained. This is
+    // the safe behaviour for our use case.
+    return -1;
+  }
+
+  int slot = (int) (((uintptr_t) to_check) & _mask);
+
+  while (_set[slot] != NULL) {
+    if (_set[slot] == to_check) {
+      return slot;
+    }
+
+    slot = (slot + 1) & _mask;
+  }
+
+  return slot;
+}
+
+bool AddressHashSet::contains(address to_check) {
+  int slot = get_slot(to_check);
+
+  return (slot >= 0) && (_set[slot] != NULL);
+}
+
+bool AddressHashSet::add(address to_add) {
+  int slot = get_slot(to_add);
+
+  if ((slot < 0) || (_set[slot] != NULL)) {
+      // Already present.
+      return false;
+  }
+
+  // Check if we should resize.
+  if (_count * 2 > _mask) {
+    address* old_set = _set;
+    int old_mask = _mask;
+
+    _mask = _mask * 2 + 1;
+    _count = 0;
+
+    _set = (address*) _funcs->calloc(_mask + 1, sizeof(address));
+
+    // If full, we fall back to always return false.
+    if (_set == NULL) {
+      _funcs->free(old_set);
+
+      return false;
+    }
+
+    for (int i = 0; i <= old_mask; ++i) {
+      if (old_set[i] != NULL) {
+        add(old_set[i]);
+      }
+    }
+
+    _funcs->free(old_set);
+    add(to_add);
+  } else {
+    _set[slot] = to_add;
+    _count += 1;
+  }
+
+  return true;
+}
 
 // A pthread mutex usable in arrays.
 struct Lock {
@@ -500,7 +602,7 @@ private:
 
   static bool dump_entry(outputStream* st, StatEntryCopy* entry, int index,
                          size_t total_size, size_t total_count, int total_entries,
-                         char const* filter);
+                         char const* filter, AddressHashSet* filter_cache);
   static void create_statistic(bool for_siez, size_t* bins);
 
 public:
@@ -1478,7 +1580,7 @@ static void print_frame(outputStream* st, address frame) {
 
 bool MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int index,
                                      size_t total_size, size_t total_count, int total_entries,
-                                     char const* filter) {
+                                     char const* filter, AddressHashSet* filter_cache) {
   // Use a temp buffer since the output stream might use unbuffered I/O.
   char ss_tmp[4096];
   stringStream ss(ss_tmp, sizeof(ss_tmp));
@@ -1488,13 +1590,21 @@ bool MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int
     bool found = false;
 
     for (int i = 0; i < entry->_entry->nr_of_frames(); ++i) {
-      print_frame(&ss, entry->_entry->frames()[i]);
+      address frame = entry->_entry->frames()[i];
+
+      if (filter_cache->contains(frame)) {
+        continue;
+      }
+
+      print_frame(&ss, frame);
 
       if (strstr(ss.base(), filter) != NULL) {
         found = true;
         ss.reset();
 
         break;
+      } else {
+        filter_cache->add(frame);
       }
 
       ss.reset();
@@ -1742,6 +1852,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     }
   }
 
+  AddressHashSet filter_cache(_funcs, !spec._on_error);
+
   int curr_pos[NR_OF_STACK_MAPS];
   memset(curr_pos, 0, NR_OF_STACK_MAPS * sizeof(int));
 
@@ -1781,7 +1893,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
     curr_pos[max_pos] += 1;
 
-    if (dump_entry(dump_stream, max, i + 1, total_size, total_count, total_entries, spec._filter)) {
+    if (dump_entry(dump_stream, max, i + 1, total_size, total_count,
+                   total_entries, spec._filter, &filter_cache)) {
       printed_size += max->_size;
       printed_count += max->_count;
       printed_entries += 1;
@@ -1854,6 +1967,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     }
   }
 
+  msg_stream->cr();
   msg_stream->print_cr("Dumping done in %.3f s (%.3f s of that locked)",
                        totalTime.milliseconds() * 0.001,
                        lockedTime.milliseconds() * 0.001);
