@@ -42,6 +42,10 @@
 
 namespace sap {
 
+static bool is_non_empty_string(char const* str) {
+  return (str != NULL) && (str[0] != '\0');
+}
+
 // Keep sap namespace free from implementation classes.
 namespace mallocStatImpl {
 
@@ -494,8 +498,9 @@ private:
   static void cleanup_for_alloc_map(int map);
   static void cleanup();
 
-  static void dump_entry(outputStream* st, StatEntryCopy* entry, int index,
-                         size_t total_size, size_t total_count, int total_entries);
+  static bool dump_entry(outputStream* st, StatEntryCopy* entry, int index,
+                         size_t total_size, size_t total_count, int total_entries,
+                         char const* filter);
   static void create_statistic(bool for_siez, size_t* bins);
 
 public:
@@ -1454,12 +1459,51 @@ static void print_count(outputStream* st, size_t count, size_t total = 0) {
   }
 }
 
-void MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int index,
-                                     size_t total_size, size_t total_count, int total_entries) {
+static void print_frame(outputStream* st, address frame) {
+  char tmp[256];
+
+  if (os::print_function_and_library_name(st, frame, tmp, sizeof(tmp), true, true, false)) {
+    st->cr();
+  } else {
+    CodeBlob* blob = CodeCache::find_blob((void*) frame);
+
+    if (blob != NULL) {
+      st->print_raw(" ");
+      blob->print_value_on(st);
+    } else {
+      st->print_raw_cr(" <unknown code>");
+    }
+  }
+}
+
+bool MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int index,
+                                     size_t total_size, size_t total_count, int total_entries,
+                                     char const* filter) {
   // Use a temp buffer since the output stream might use unbuffered I/O.
   char ss_tmp[4096];
-  char tmp[256];
   stringStream ss(ss_tmp, sizeof(ss_tmp));
+
+  // Check if we should print this stack.
+  if (is_non_empty_string(filter)) {
+    bool found = false;
+
+    for (int i = 0; i < entry->_entry->nr_of_frames(); ++i) {
+      print_frame(&ss, entry->_entry->frames()[i]);
+
+      if (strstr(ss.base(), filter) != NULL) {
+        found = true;
+        ss.reset();
+
+        break;
+      }
+
+      ss.reset();
+    }
+
+    if (!found) {
+      return false;
+    }
+  }
 
   // We use int64_t here to easy see if values got negative (instead of seeing
   // an insanely large number).
@@ -1472,22 +1516,10 @@ void MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int
   for (int i = 0; i < entry->_entry->nr_of_frames(); ++i) {
     address frame = entry->_entry->frames()[i];
     ss.print("  [" PTR_FORMAT "]  ", p2i(frame));
-
-    if (os::print_function_and_library_name(&ss, frame, tmp, sizeof(tmp), true, true, false)) {
-      ss.cr();
-    } else {
-      CodeBlob* blob = CodeCache::find_blob((void*) frame);
-
-      if (blob != NULL) {
-        ss.print_raw(" ");
-        blob->print_value_on(&ss);
-      } else {
-        ss.print_raw_cr(" <unknown code>");
-      }
-    }
+    print_frame(&ss, frame);
 
     // Flush the temp buffer if we are near the end.
-    if (sizeof(ss_tmp) - ss.size() < sizeof(tmp)) {
+    if (sizeof(ss_tmp) - ss.size() < 512) {
       st->write(ss_tmp, ss.size());
       ss.reset();
     }
@@ -1498,6 +1530,8 @@ void MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int
   }
 
   st->write(ss_tmp, ss.size());
+
+  return true;
 }
 
 static void print_allocation_stats(outputStream* st, Allocator** allocs, int* masks, Padded<int>* sizes,
@@ -1596,6 +1630,10 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     dump_stream->print_raw_cr("Contains the currently allocated memory since enabling.");
   } else {
     dump_stream->print_raw_cr("Contains every allocation done since enabling.");
+  }
+
+  if (is_non_empty_string(spec._filter)) {
+    dump_stream->print_cr("Only printing stacks in which frames contain '%s'.", spec._filter);
   }
 
   // We make a copy of each hash map, since we don't want to lock for the whole operation.
@@ -1738,12 +1776,13 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
       break;
     }
 
-    printed_entries = i;
-    printed_size += max->_size;
-    printed_count += max->_count;
     curr_pos[max_pos] += 1;
 
-    dump_entry(dump_stream, max, i + 1, total_size, total_count, total_entries);
+    if (dump_entry(dump_stream, max, i + 1, total_size, total_count, total_entries, spec._filter)) {
+      printed_size += max->_size;
+      printed_count += max->_count;
+      printed_entries += 1;
+    }
 
     if (printed_size > size_limit) {
       break;
@@ -1759,6 +1798,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   dump_stream->cr();
+  dump_stream->print_cr("Printed %d stacks", printed_entries);
   dump_stream->print_raw("Total allocated bytes: ");
   print_mem(dump_stream, total_size);
   dump_stream->cr();
@@ -1844,13 +1884,14 @@ public:
 void MallocTraceDumpPeriodicTask::task() {
   DumpSpec spec;
   spec._dump_file = NULL;
+  spec._filter = MallocTraceDumpFilter;
   spec._sort_by_count = MallocTraceDumpSortByCount;
   spec._max_entries = MallocTraceDumpMaxEntries;
   spec._dump_fraction = MallocTraceDumpFraction;
   spec._hide_dump_allocs = MallocTraceDumpHideDumpAlllocs;
   spec._internal_stats = MallocTraceDumpInternalStats;
 
-  if ((_file != NULL) && (strlen(_file) > 0)) {
+  if (is_non_empty_string(_file)) {
     if (strcmp("stdout", _file) == 0) {
       fdStream fds(1);
       mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
@@ -1933,7 +1974,7 @@ bool MallocStatistic::disable(outputStream* st) {
 bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
   const char* dump_file = spec._dump_file;
 
-  if ((dump_file != NULL) && (strlen(dump_file) > 0)) {
+  if (is_non_empty_string(dump_file)) {
     int fd;
 
     if (strcmp("stderr", dump_file) == 0) {
@@ -2024,6 +2065,8 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
              "Note that the filename is interpreted by the target VM. You can use " \
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
              "the target VM", "STRING", false),
+  _filter("-filter", "If given we only print a stack if it contains a function matching " \
+          "the given string.", "STRING", false),
   _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "-1"),
   _dump_fraction("-fraction", "If > 0 we dunp the given fraction of allocated bytes " \
                  "(or allocated objects if sorted by count). In that case the -max-entries " \
@@ -2034,6 +2077,7 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
   _internal_stats("-internal-stats", "If given some internal statistics about the overhead of " \
                   "the trace is included in the output", "BOOLEAN", false) {
   _dcmdparser.add_dcmd_option(&_dump_file);
+  _dcmdparser.add_dcmd_option(&_filter);
   _dcmdparser.add_dcmd_option(&_max_entries);
   _dcmdparser.add_dcmd_option(&_dump_fraction);
   _dcmdparser.add_dcmd_option(&_sort_by_count);
@@ -2046,6 +2090,7 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
 
   DumpSpec spec;
   spec._dump_file = _dump_file.value();
+  spec._filter = _filter.value();
   spec._max_entries = _max_entries.value();
   spec._dump_fraction = _dump_fraction.value();
   spec._on_error = false;

@@ -30,6 +30,7 @@ struct TraceSpec {
 // The spec we use for configuring the dump.
 struct DumpSpec {
   const char* _dump_file;
+  const char* _filter;
   int         _max_entries;
   bool        _hide_dump_allocs;
   bool        _on_error;
@@ -39,6 +40,7 @@ struct DumpSpec {
 
   DumpSpec() :
     _dump_file(NULL),
+    _filter(NULL),
     _max_entries(0),
     _hide_dump_allocs(true),
     _on_error(false),
@@ -139,6 +141,7 @@ class MallocTraceDumpDCmd : public DCmdWithParser {
 private:
 
   DCmdArgument<char*> _dump_file;
+  DCmdArgument<char*> _filter;
   DCmdArgument<jlong> _max_entries;
   DCmdArgument<jlong> _dump_fraction;
   DCmdArgument<bool>  _sort_by_count;
@@ -146,7 +149,7 @@ private:
 
 public:
   static int num_arguments() {
-    return 5;
+    return 6;
   }
 
   MallocTraceDumpDCmd(outputStream* output, bool heap);

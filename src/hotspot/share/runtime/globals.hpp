@@ -594,6 +594,10 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we do a dump of the malloc trace in regular "         \
           "intervals.")                                                     \
                                                                             \
+  product(ccstr, MallocTraceDumpFilter, "",                                 \
+          "If set, we only print stacks which contains functions which "    \
+          "match the given string.")                                        \
+                                                                            \
   product(bool, MallocTraceDumpInternalStats, false,                        \
           "If enabled we include internal statistics in the dump. ")        \
                                                                             \
