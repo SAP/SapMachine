@@ -1632,7 +1632,9 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     dump_stream->print_raw_cr("Contains every allocation done since enabling.");
   }
 
-  if (is_non_empty_string(spec._filter)) {
+  bool uses_filter = is_non_empty_string(spec._filter);
+
+  if (uses_filter) {
     dump_stream->print_cr("Only printing stacks in which frames contain '%s'.", spec._filter);
   }
 
@@ -1645,8 +1647,9 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   size_t total_size = 0;
   int total_entries = 0;
   int max_entries = MAX2(1, spec._max_entries);
+  int max_printed_entries = max_entries;
 
-  if (spec._dump_fraction > 0) {
+  if ((spec._dump_fraction > 0) || uses_filter) {
     max_entries = INT_MAX;
   }
 
@@ -1782,6 +1785,10 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
       printed_size += max->_size;
       printed_count += max->_count;
       printed_entries += 1;
+
+      if (printed_entries >= max_printed_entries) {
+        break;
+      }
     }
 
     if (printed_size > size_limit) {
