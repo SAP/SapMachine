@@ -1790,24 +1790,37 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
           while (entry != NULL) {
             assert(pos < expected_size, "To many entries");
 
-            copies[pos]._entry = entry;
-            copies[pos]._size  = entry->size();
-            copies[pos]._count = entry->count();
+            if (entry->count() > 0) {
+              copies[pos]._entry = entry;
+              copies[pos]._size  = entry->size();
+              copies[pos]._count = entry->count();
 
-            total_size += entry->size();
-            total_count += entry->count();
+              total_size += entry->size();
+              total_count += entry->count();
 
-            pos += 1;
+              pos += 1;
+            }
+
             entry = entry->next();
           }
         }
 
-        assert(pos == expected_size, "Size must be correct");
+        assert(pos <= expected_size, "Size must be correct");
       } else {
         failed_alloc = true;
       }
 
       lockedTime.stop();
+
+      // See if it makes sense to trim. We have to shave of enough and don't
+      // trim anyway after sorting.
+      if ((entries[idx] != NULL) && (pos < expected_size - 16) && (pos < max_entries)) {
+        void* result = _funcs->realloc(entries[idx], pos * sizeof(StatEntryCopy));
+
+        if (result != NULL) {
+          entries[idx] = (StatEntryCopy*) result;
+        }
+      }
 
       nr_of_entries[idx] = pos;
       total_entries += pos;
