@@ -168,6 +168,8 @@ public:
 
   bool contains(address to_check);
   bool add(address to_add);
+  size_t allocated();
+  double load();
 };
 
 AddressHashSet::AddressHashSet(real_funcs_t* funcs, bool enabled) :
@@ -254,6 +256,22 @@ bool AddressHashSet::add(address to_add) {
   }
 
   return true;
+}
+
+size_t AddressHashSet::allocated() {
+  if (_set == NULL) {
+    return 0;
+  }
+
+  return (_mask + 1) * sizeof(address);
+}
+
+double AddressHashSet::load() {
+  if (_set == NULL) {
+    return 0.0;
+  }
+
+  return 1.0 * _count / (_mask + 1);
 }
 
 // A pthread mutex usable in arrays.
@@ -1756,6 +1774,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   size_t total_count = 0;
   size_t total_size = 0;
   int total_entries = 0;
+  int total_non_empty_entries = 0;
   int max_entries = MAX2(1, spec._max_entries);
   int max_printed_entries = max_entries;
 
@@ -1823,7 +1842,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
       }
 
       nr_of_entries[idx] = pos;
-      total_entries += pos;
+      total_entries += expected_size;
+      total_non_empty_entries += pos;
     }
 
     if (entries[idx] != NULL) {
@@ -1907,7 +1927,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     curr_pos[max_pos] += 1;
 
     if (dump_entry(dump_stream, max, i + 1, total_size, total_count,
-                   total_entries, spec._filter, &filter_cache)) {
+                   total_non_empty_entries, spec._filter, &filter_cache)) {
       printed_size += max->_size;
       printed_count += max->_count;
       printed_entries += 1;
@@ -1931,7 +1951,15 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   dump_stream->cr();
-  dump_stream->print_cr("Printed %d stacks", printed_entries);
+  dump_stream->print_cr("Printed %'d stacks", printed_entries);
+
+  if (_track_free) {
+    dump_stream->print_cr("Total unique stacks: %'d (%'d including stacks with no alive allocations)",
+                          total_non_empty_entries, total_entries);
+  } else {
+    dump_stream->print_cr("Total unique stacks: %'d", total_non_empty_entries);
+  }
+
   dump_stream->print_raw("Total allocated bytes: ");
   print_mem(dump_stream, total_size);
   dump_stream->cr();
@@ -1977,6 +2005,15 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     if (_track_free) {
       print_allocation_stats(msg_stream, _alloc_maps_alloc, _alloc_maps_mask, _alloc_maps_size,
                              _alloc_maps_lock, NR_OF_ALLOC_MAPS, "alloc maps");
+    }
+
+    if (uses_filter) {
+      msg_stream->cr();
+      msg_stream->print_raw_cr("Statistic for filter cache:");
+      msg_stream->print("Allocated memory: ");
+      print_mem(dump_stream, filter_cache.allocated(), 0);
+      msg_stream->cr();
+      msg_stream->print_cr("Load factor     : %.3f",  filter_cache.load());
     }
   }
 
