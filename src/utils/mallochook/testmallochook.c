@@ -181,8 +181,12 @@ int main(int argc, char** argv) {
   };
 
   register_hooks_t* register_hooks = dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+  get_real_funcs_t* get_real_funcs = dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
   print("Regsiter func: ");
   print_address(register_hooks);
+  print("\n");
+  print("get_real_funcs func: ");
+  print_address(get_real_funcs);
   print("\n");
 
   test_hooks(&hooks, register_hooks);

@@ -8,6 +8,7 @@
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 
@@ -18,7 +19,8 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class MallocHooksTest {
-    static native void doRandomMemOps(int nrOfOps, int maxLiveAllocations, int seed);
+    static native void doRandomMemOps(int nrOfOps, int maxLiveAllocations, int seed,
+                                      long[] sizes, long[] counts);
 
     private static final String LD_PRELOAD = Platform.isOSX() ? "DYLD_INSERT_LIBRARIES" : "LD_PRELOAD";
     private static final String LIB_SUFFIX = Platform.isOSX() ? ".dylib" : ".so";
@@ -49,7 +51,7 @@ public class MallocHooksTest {
                                 LD_PRELOAD + "=\"" +  getLdPrelodEnv() + "\"");
         } else if (args[0].equals("stress")) {
             doStress(args);
-            System.out.println("Done");
+
             while (true) {
               Thread.sleep(1000);
             }
@@ -62,8 +64,14 @@ public class MallocHooksTest {
         int nrOfOps = Integer.parseInt(args[1]);
         int maxLiveAllocations = Integer.parseInt(args[2]);
         int seed = Integer.parseInt(args[3]);
+        long[] sizes = new long[8];
+        long[] counts = new long[8];
 
-        doRandomMemOps(nrOfOps, maxLiveAllocations, seed);
+        doRandomMemOps(nrOfOps, maxLiveAllocations, seed, sizes, counts);
+
+        for (int i = 0; i < sizes.length; ++i) {
+            System.out.println(sizes[i] + " " + counts[i]);
+        }
     }
 
     private static void testNoRecursiveCallsForFallbacks() throws Exception {
@@ -115,11 +123,25 @@ public class MallocHooksTest {
        }
     }
 
+    private static void readResult(Process p, long[] bytes, long[] counts) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        for (int i = 0; i < bytes.length; ++i) {
+           String[] parts = br.readLine().split(" ");
+           bytes[i] = Long.parseLong(parts[0]);
+           counts[i] = Long.parseLong(parts[1]);
+        }
+    }
+
     private static void testTracking() throws Exception {
         ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369973, 
                                       "-XX:-MallocTraceTrackFrees", "-XX:MallocTraceStackDepth=2");
         Process p = pb.start();
-        p.getInputStream().read(); // Wait until we get some output, so we know the stress was run.
+        long[] bytes = new long[8];
+        long[] counts = new long[8];
+        readResult(p, bytes, counts);
+        for (int i = 0; i < bytes.length; ++i) {
+            System.out.println(bytes[i] + " " + counts[i]);
+        }
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
                                         "-filter=Java_MallocHooksTest_doRandomMemOps");
         oa.shouldHaveExitValue(0);

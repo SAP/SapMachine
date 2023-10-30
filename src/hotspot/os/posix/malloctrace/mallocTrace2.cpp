@@ -445,6 +445,7 @@ public:
 
 
 static register_hooks_t* register_hooks;
+static get_real_funcs_t* get_real_funcs;
 
 #if defined(__APPLE__)
 #define LD_PRELOAD "DYLD_INSERT_LIBRARIES"
@@ -513,9 +514,10 @@ static void remove_malloc_hooks_from_env() {
 
 static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
   if (register_hooks == NULL) {
-    register_hooks  = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+    register_hooks = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+    get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
 
-    if (register_hooks == NULL) {
+    if ((register_hooks == NULL) || (get_real_funcs == NULL)) {
       if (UseMallocHooks) {
         st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
                          "This usually happens if the VM is not loaded via the JDK launcher (e.g. " \
@@ -538,7 +540,9 @@ static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
     }
   }
 
-  return register_hooks(hooks);
+  register_hooks(hooks);
+
+  return get_real_funcs();
 }
 
 typedef int backtrace_func_t(void** stacks, int max_depth);

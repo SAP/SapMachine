@@ -55,11 +55,13 @@ typedef struct {
   malloc_size_func_t* malloc_size;
 } real_funcs_t;
 
-typedef real_funcs_t* register_hooks_t(registered_hooks_t* registered_hooks);
+typedef registered_hooks_t* register_hooks_t(registered_hooks_t* registered_hooks);
 typedef registered_hooks_t* active_hooks_t();
+typedef real_funcs_t* get_real_funcs_t();
 
-#define REGISTER_HOOKS_NAME "register_hooks"
-#define ACTIVE_HOOKS_NAME "active_hooks"
+#define REGISTER_HOOKS_NAME "malloc_hooks_register_hooks"
+#define ACTIVE_HOOKS_NAME "malloc_hooks_active_hooks"
+#define GET_REAL_FUNCS_NAME "malloc_hooks_get_real_funcs"
 
 #endif
 

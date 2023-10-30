@@ -491,11 +491,13 @@ static registered_hooks_t empty_registered_hooks = {
   NULL
 };
 
-static volatile registered_hooks_t* registered_hooks = &empty_registered_hooks;
+static registered_hooks_t* volatile registered_hooks = &empty_registered_hooks;
 
 static real_funcs_t real_funcs;
 
-EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
+EXPORT registered_hooks_t* malloc_hooks_register_hooks(registered_hooks_t* hooks) {
+  registered_hooks_t* old_hooks = registered_hooks;
+
   if (hooks == NULL) {
     print("Deregistered hooks\n");
     registered_hooks = &empty_registered_hooks;
@@ -504,6 +506,18 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
     registered_hooks = hooks;
   }
 
+  return old_hooks == &empty_registered_hooks ? NULL : old_hooks;
+}
+
+EXPORT registered_hooks_t* malloc_hooks_active_hooks() {
+  if (registered_hooks == &empty_registered_hooks) {
+    return NULL;
+  }
+
+  return (registered_hooks_t*) registered_hooks;
+}
+
+EXPORT real_funcs_t* malloc_hooks_get_real_funcs() {
   real_funcs.malloc = malloc_for_fallback;
   real_funcs.calloc = calloc_for_fallback;
   real_funcs.realloc = realloc_for_fallback;
@@ -517,15 +531,6 @@ EXPORT real_funcs_t* register_hooks(registered_hooks_t* hooks) {
 
   return &real_funcs;
 }
-
-EXPORT registered_hooks_t* active_hooks() {
-  if (registered_hooks == &empty_registered_hooks) {
-    return NULL;
-  }
-
-  return (registered_hooks_t*) registered_hooks;
-}
-
 
 #if TEST_LEVEL > 0
 

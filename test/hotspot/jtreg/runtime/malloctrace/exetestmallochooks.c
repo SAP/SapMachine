@@ -133,8 +133,10 @@ static void* test_pvalloc_hook(size_t size, void* caller, pvalloc_func_t* real_p
 }
 
 static void test_no_recursive_calls() {
-    register_hooks_t* register_func = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
-    check(register_func != NULL, "Could not get register function");
+    register_hooks_t* register_hooks = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+    check(register_hooks != NULL, "Could not get register function");
+    get_real_funcs_t* get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
+    check(get_real_funcs != NULL, "Could not get get_real_funcs function");
 
     registered_hooks_t test_hooks = {
         test_malloc_hook,
@@ -148,7 +150,8 @@ static void test_no_recursive_calls() {
         test_pvalloc_hook
     };
 
-    real_funcs_t* funcs = register_func(&test_hooks);
+    register_hooks(&test_hooks);
+    real_funcs_t* funcs = get_real_funcs();
 
     // Check that all the real functions do not trigger the hooks.
     void* ptr;
@@ -202,7 +205,7 @@ static void test_no_recursive_calls() {
 #endif
 
     write_string("Testing hooks finished \n");
-    register_func(NULL);
+    register_hooks(NULL);
 }
 
 int main(int argc, char** argv) {
