@@ -4,12 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 #if !defined(__APPLE__)
 #include <malloc.h>
 #endif
 
 #include "jni.h"
+
+#include "mallochooks.h"
 
 #define MAX_ALLOC 8192
 #define MAX_CALLOC 64
@@ -30,12 +33,28 @@ int next_rand(int last, int base) {
 #define VALLOC 6
 #define PVALLOC 7
 
-#define TRACK(what, size) if (1) {sizes[(what)] += (size); counts[(what)] += 1; }
+#define TRACK(what, size) \
+if (roots[idx] != NULL) { \
+    if (trackLive) { \
+        sizes[(what)] += funcs->malloc_size(roots[idx]); \
+    } else { \
+        sizes[(what)] += (size); \
+    } \
+    counts[(what)] += 1; \
+    source[(idx)] = (what); \
+} else { \
+    source[(idx)] = -1; \
+}
 
 JNIEXPORT void JNICALL
 Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint maxLiveAllocations, jint seed,
-                                    jlongArray resultSizes, jlongArray resultCounts) {
-    void** roots = calloc(maxLiveAllocations, sizeof(void*));
+                                    jboolean trackLive, jlongArray resultSizes, jlongArray resultCounts) {
+    get_real_funcs_t* get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
+    real_funcs_t* funcs = get_real_funcs();
+
+    void** roots = funcs->calloc(maxLiveAllocations, sizeof(void*));
+    signed char* source = (signed char*) funcs->calloc(maxLiveAllocations, sizeof(char));
+
     int i;
     int rand = 1;
     jlong sizes[] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -63,13 +82,8 @@ Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint 
             } else if (what < 24) {
                 void* mem;
                 int result = posix_memalign(&mem, 64, malloc_size + 1);
-
-                if (result == 0) {
-                  roots[idx] = mem;
-                  TRACK(POSIX_MEMALIGN, malloc_size + 1);
-                } else {
-                  roots[idx] = NULL;
-                }
+                roots[idx] = result != 0 ? NULL : mem;
+                TRACK(POSIX_MEMALIGN, malloc_size + 1);
             } else if (what < 26) {
 #if !defined(__APPLE__)
                 roots[idx] = memalign(64, malloc_size + 1);
@@ -95,13 +109,29 @@ Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint 
             rand = next_rand(rand, seed);
 
             if ((rand & 3) != 0) {
+                if (trackLive) {
+                    sizes[source[idx]] -= funcs->malloc_size(roots[idx]);
+                    counts[source[idx]] -= 1;
+                }
                 free(roots[idx]);
                 roots[idx] = NULL;
+                source[idx] = -1;
             } else {
                 rand = next_rand(rand, seed);
+                size_t old_size = funcs->malloc_size(roots[idx]);
                 int malloc_size = rand & (MAX_ALLOC - 1);
                 roots[idx] = realloc(roots[idx], malloc_size + 1);
-                TRACK(REALLOC, malloc_size + 1);
+                if (roots[idx] != NULL) {
+                    if (trackLive) {
+                        sizes[source[idx]] -= old_size;
+                        counts[source[idx]] -= 1;
+                    }
+                }
+                if (trackLive) {
+                    TRACK(REALLOC, malloc_size + 1);
+                } else if (old_size < (size_t) (malloc_size + 1)) {
+                    TRACK(REALLOC, malloc_size + 1 - old_size);
+                }
             }
         }
     }

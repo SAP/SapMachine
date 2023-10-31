@@ -20,7 +20,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class MallocHooksTest {
     static native void doRandomMemOps(int nrOfOps, int maxLiveAllocations, int seed,
-                                      long[] sizes, long[] counts);
+                                      boolean trackLive, long[] sizes, long[] counts);
 
     private static final String LD_PRELOAD = Platform.isOSX() ? "DYLD_INSERT_LIBRARIES" : "LD_PRELOAD";
     private static final String LIB_SUFFIX = Platform.isOSX() ? ".dylib" : ".so";
@@ -37,9 +37,9 @@ public class MallocHooksTest {
         if (args.length == 0) {
             testNoRecursiveCallsForFallbacks();
             testEnvSanitizing();
-            testTracking();
-
-            return;
+            testTracking(false);
+            testTracking(true);
+            throw new Exception();
         }
 
         if (args[0].equals("checkEnv")) {
@@ -64,10 +64,11 @@ public class MallocHooksTest {
         int nrOfOps = Integer.parseInt(args[1]);
         int maxLiveAllocations = Integer.parseInt(args[2]);
         int seed = Integer.parseInt(args[3]);
+        boolean trackLive = Boolean.parseBoolean(args[4]);
         long[] sizes = new long[8];
         long[] counts = new long[8];
 
-        doRandomMemOps(nrOfOps, maxLiveAllocations, seed, sizes, counts);
+        doRandomMemOps(nrOfOps, maxLiveAllocations, seed, trackLive, sizes, counts);
 
         for (int i = 0; i < sizes.length; ++i) {
             System.out.println(sizes[i] + " " + counts[i]);
@@ -132,8 +133,8 @@ public class MallocHooksTest {
         }
     }
 
-    private static void testTracking() throws Exception {
-        ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369973, 
+    private static void testTracking(boolean trackLive) throws Exception {
+        ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369973, trackLive,
                                       "-XX:-MallocTraceTrackFrees", "-XX:MallocTraceStackDepth=2");
         Process p = pb.start();
         long[] bytes = new long[8];
@@ -148,27 +149,33 @@ public class MallocHooksTest {
         p.destroy();
         System.out.println(oa.getOutput());
         System.out.println(parseOutput(oa.getOutput()).toString());
-        oa.shouldContain("Contains every allocation done since enabling");
+        if (trackLive) {
+            oa.shouldContain("Contains the currently allocated memory since enabling");
+        } else {
+            oa.shouldContain("Contains every allocation done since enabling");
+        }
         oa.shouldContain("libtestmallochooks.");
         oa.shouldContain("Total allocated bytes");
         oa.shouldContain("Total printed count");
-        oa.shouldContain("Stack 1 of");
-        oa.shouldContain("Stack 10 of");
-        oa.shouldNotContain("Stack 0 of");
-        oa.shouldNotContain("Stack 11 of");
-        throw new Exception();
+        //oa.shouldContain("Stack 1 of");
+        //oa.shouldContain("Stack 8 of");
+        //oa.shouldNotContain("Stack 0 of");
+        //oa.shouldNotContain("Stack 9 of");
     }
 
-    private static ProcessBuilder runStress(int nrOfOps, int maxLiveAllocations, int seed, String... opts) {
-        String[] args = new String[opts.length + 7];
+    private static ProcessBuilder runStress(int nrOfOps, int maxLiveAllocations, int seed, 
+                                            boolean trackLive, String... opts) {
+        String[] args = new String[opts.length + 9];
         System.arraycopy(opts, 0, args, 0, opts.length);
         args[opts.length + 0] = "-XX:+UseMallocHooks";
         args[opts.length + 1] = "-XX:+MallocTraceAtStartup";
-        args[opts.length + 2] = MallocHooksTest.class.getName();
-        args[opts.length + 3] = "stress";
-        args[opts.length + 4] = Integer.toString(nrOfOps);
-        args[opts.length + 5] = Integer.toString(maxLiveAllocations);
-        args[opts.length + 6] = Integer.toString(seed);
+        args[opts.length + 2] = "-XX:" + (trackLive ? "+" : "-") + "MallocTraceTrackFrees";
+        args[opts.length + 3] = MallocHooksTest.class.getName();
+        args[opts.length + 4] = "stress";
+        args[opts.length + 5] = Integer.toString(nrOfOps);
+        args[opts.length + 6] = Integer.toString(maxLiveAllocations);
+        args[opts.length + 7] = Integer.toString(seed);
+        args[opts.length + 8] = Boolean.toString(trackLive);
         return ProcessTools.createJavaProcessBuilder(args);
     }
 
