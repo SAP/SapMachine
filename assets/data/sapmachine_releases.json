@@ -9,13 +9,13 @@
         {
             "id": "21",
             "label": "SapMachine 21",
-            "lts": true,
+            "lts": false,
             "ea": false
         },
         {
             "id": "21-ea",
             "label": "SapMachine 21",
-            "lts": true,
+            "lts": false,
             "ea": true
         },
         {
@@ -100,6 +100,11 @@
             "key": "windows-x64-installer",
             "value": "Windows x64 Installer",
             "ordinal": 9
+        },
+        {
+            "key": "aix-ppc64",
+            "value": "AIX",
+            "ordinal": 10
         }
     ],
     "assets": {
