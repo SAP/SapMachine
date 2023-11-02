@@ -447,7 +447,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, LogEvents, true, DIAGNOSTIC,                                \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  /* SapMachine 2019-05-28: more events */                                  \
+  /* SapMachine 2019-05-28: More events */                                  \
   product(int, LogEventsBufferEntries, 75, DIAGNOSTIC,                      \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
@@ -508,7 +508,7 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
-  /* SapMachine 2019-02-20 : vitals */                                      \
+  /* SapMachine 2019-02-20: Vitals */                                       \
   product(bool, EnableVitals, true,                                         \
           "Enable sampling of vitals: memory, cpu utilization and various " \
           "VM core statistics; display via jcmd \"VM.vitals\".")            \
@@ -1174,7 +1174,7 @@ const int ObjectAlignmentInBytes = 8;
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  /* SapMachine 2018-12-18 Enable this per default. */                      \
+  /* SapMachine 2018-12-18: Enable this per default. */                     \
   product(bool, ExtensiveErrorReports,                                      \
           PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
           "Error reports are more extensive.")                              \
