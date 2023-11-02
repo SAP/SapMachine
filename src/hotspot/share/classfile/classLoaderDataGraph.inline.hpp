@@ -32,7 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 
-// SapMachine 2019-09-01: vitals.
+// SapMachine 2019-09-01: Vitals
 #include "runtime/globals.hpp"
 #include "vitals/vitals.hpp"
 
@@ -57,7 +57,7 @@ size_t ClassLoaderDataGraph::num_array_classes() {
 
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
   Atomic::add(&_num_instance_classes, count, memory_order_relaxed);
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_loaded(count);
   }
@@ -66,7 +66,7 @@ void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
   size_t old_count = Atomic::fetch_then_add(&_num_instance_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_unloaded(count);
   }
@@ -74,7 +74,7 @@ void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
   Atomic::add(&_num_array_classes, count, memory_order_relaxed);
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_loaded(count);
   }
@@ -83,7 +83,7 @@ void ClassLoaderDataGraph::inc_array_classes(size_t count) {
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
   size_t old_count = Atomic::fetch_then_add(&_num_array_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   if (EnableVitals) {
     sapmachine_vitals::counters::inc_classes_unloaded(count);
   }

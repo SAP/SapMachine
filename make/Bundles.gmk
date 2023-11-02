@@ -172,6 +172,7 @@ ifeq ($(call isTargetOs, macosx)+$(DEBUG_LEVEL), true+release)
 else
   JDK_IMAGE_HOMEDIR := $(JDK_IMAGE_DIR)
   JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
+  # SapMachine 2020-11-04: Adapt bundle names
   JDK_BUNDLE_SUBDIR := sapmachine-jdk-$(VERSION_NUMBER)
   JRE_BUNDLE_SUBDIR := sapmachine-jre-$(VERSION_NUMBER)
   ifneq ($(DEBUG_LEVEL), release)

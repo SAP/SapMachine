@@ -68,7 +68,7 @@
 #java/awt/font/Rotate/RotatedTextTest.java                                    8219641 linux-all
 
 # SapMachine 2023-07-26
-# These two tests fail very often on our windows machines. This seems to be caused by network 
+# These two tests fail very often on our windows machines. This seems to be caused by network
 # filtering in our infrastructure in case of a lot of datagram packets in a very short time.
 java/net/DatagramSocket/SendSize.java                                                  windows-x64
 java/nio/channels/DatagramChannel/ReceiveISA.java                                      windows-x64

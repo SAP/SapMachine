@@ -98,7 +98,7 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-// SapMachine 2019-09-01: vitals.
+// SapMachine 2019-09-01: Vitals
 #include "runtime/globals.hpp"
 #include "vitals/vitals.hpp"
 
@@ -355,7 +355,7 @@ void print_statistics() {
     CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
   }
 
-  // SapMachine 2019-09-01: vitals.
+  // SapMachine 2019-09-01: Vitals
   if (DumpVitalsAtExit) {
     sapmachine_vitals::dump_reports();
   }
@@ -521,7 +521,7 @@ void before_exit(JavaThread* thread, bool halt) {
     }
   }
 
-  // SapMachine 2021-09-01: shutdown vitals thread
+  // SapMachine 2021-09-01: Shutdown vitals thread
   if (EnableVitals) {
     sapmachine_vitals::cleanup();
   }

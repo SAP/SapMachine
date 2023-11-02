@@ -67,6 +67,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+// SapMachine 2019-02-20: Vitals
+#include "vitals/vitals.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -74,13 +76,13 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-// SapMachine 2019-02-20 : vitals
-#include "vitals/vitals.hpp"
-#ifdef LINUX
-#include "vitals_linux_himemreport.hpp"
+#ifdef AIX
+#include "loadlib_aix.hpp"
 #endif
-// SapMachine 2021-09-01: malloc-trace
 #ifdef LINUX
+// SapMachine 2019-02-20: Vitals
+#include "vitals_linux_himemreport.hpp"
+// SapMachine 2021-09-01: malloc-trace
 #include "malloctrace/mallocTrace.hpp"
 #endif
 
@@ -1317,7 +1319,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     NativeHeapTrimmer::print_state(st);
     st->cr();
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   STEP("Vitals")
      if (_verbose) {
        sapmachine_vitals::print_info_t info;
@@ -1384,6 +1386,8 @@ void VMError::report(outputStream* st, bool _verbose) {
 void VMError::print_vm_info(outputStream* st) {
 
   char buf[O_BUFLEN];
+  AIX_ONLY(LoadedLibraries::reload());
+
   report_vm_version(st, buf, sizeof(buf));
 
   // STEP("printing summary")
@@ -1519,7 +1523,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   // STEP("Vitals")
   sapmachine_vitals::print_info_t info;
   sapmachine_vitals::default_settings(&info);
