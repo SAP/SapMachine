@@ -18,6 +18,8 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import static jdk.test.lib.Asserts.*;
+
 public class MallocHooksTest {
     static native void doRandomMemOps(int nrOfOps, int maxLiveAllocations, int seed,
                                       boolean trackLive, long[] sizes, long[] counts);
@@ -39,7 +41,7 @@ public class MallocHooksTest {
             testEnvSanitizing();
             testTracking(false);
             testTracking(true);
-            throw new Exception();
+            return;
         }
 
         if (args[0].equals("checkEnv")) {
@@ -118,37 +120,22 @@ public class MallocHooksTest {
         return new OutputAnalyzer(pb.start());
     }
 
-    private static MallocTraceResult parseOutput(String output) throws Exception {
-       try (BufferedReader br = new BufferedReader(new StringReader(output))) {
-           return new MallocTraceResult(br);
-       }
-    }
-
-    private static void readResult(Process p, long[] bytes, long[] counts) throws Exception {
-        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        for (int i = 0; i < bytes.length; ++i) {
-           String[] parts = br.readLine().split(" ");
-           bytes[i] = Long.parseLong(parts[0]);
-           counts[i] = Long.parseLong(parts[1]);
-        }
-    }
-
     private static void testTracking(boolean trackLive) throws Exception {
         ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369973, trackLive,
                                       "-XX:-MallocTraceTrackFrees", "-XX:MallocTraceStackDepth=2");
         Process p = pb.start();
-        long[] bytes = new long[8];
-        long[] counts = new long[8];
-        readResult(p, bytes, counts);
-        for (int i = 0; i < bytes.length; ++i) {
-            System.out.println(bytes[i] + " " + counts[i]);
-        }
+        MallocTraceExpectedStatistic expected = new MallocTraceExpectedStatistic(p);
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
                                         "-filter=Java_MallocHooksTest_doRandomMemOps");
         oa.shouldHaveExitValue(0);
         p.destroy();
+        MallocTraceResult actual = MallocTraceResult.fromString(oa.getOutput());
         System.out.println(oa.getOutput());
-        System.out.println(parseOutput(oa.getOutput()).toString());
+        System.out.println(expected);
+        System.out.println(actual);
+
+        expected.check(actual);
+
         if (trackLive) {
             oa.shouldContain("Contains the currently allocated memory since enabling");
         } else {
@@ -309,6 +296,13 @@ class MallocTraceResult {
             }
         }
     }
+
+    public static MallocTraceResult fromString(String output) throws Exception {
+       try (BufferedReader br = new BufferedReader(new StringReader(output))) {
+           return new MallocTraceResult(br);
+       }
+    }
+
     public int nrOfStacks() {
         return stacks.size();
     }
@@ -328,4 +322,53 @@ class MallocTraceResult {
     }
 }
 
+class MallocTraceExpectedStatistic {
+    private static  String[] funcs = new String[] {"malloc", "calloc", "realloc", "posix_memalign",
+                                                   "memalign", "aligned_alloc", "valloc", "pvalloc"};
+    private long[] bytes = new long[funcs.length];
+    private long[] counts = new long[funcs.length];
+
+    public MallocTraceExpectedStatistic(Process p) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+        for (int i = 0; i < bytes.length; ++i) {
+           String[] parts = br.readLine().split(" ");
+           bytes[i] = Long.parseLong(parts[0]);
+           counts[i] = Long.parseLong(parts[1]);
+        }
+    }
+
+    public void check(MallocTraceResult actual) throws Exception {
+        for (int i = 0; i < funcs.length; ++i) {
+            if (counts[i] == 0) {
+                continue; // Not supported by platform
+            }
+
+            boolean found = false;
+
+            for (int j = 0; j < actual.nrOfStacks(); ++j) {
+                Stack stack = actual.getStack(j);
+
+                if (stack.getFunction(0).startsWith(funcs[i] + (Platform.isOSX() ? "_interpose " : " "))) {
+                    assertFalse(found, "Found entry for " + funcs[i] + " more than once");
+                    assertEquals(bytes[i], stack.getBytes());
+                    assertEquals(counts[i], stack.getCount());
+                    found = true;
+                }
+            }
+
+            assertTrue(found, "Didn't found entry for " + funcs[i]);
+        }
+    }
+
+    public String toString() {
+        StringBuilder result = new StringBuilder("Expacted results:" + System.lineSeparator());
+
+        for (int i = 0; i < funcs.length; ++i) {
+            result.append(funcs[i] + ": " + bytes[i] + " bytes, " + counts[i] + " counts" + System.lineSeparator());
+        }
+
+        return result.toString();
+    }
+}
 

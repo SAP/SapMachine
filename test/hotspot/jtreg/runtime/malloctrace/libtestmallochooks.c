@@ -78,31 +78,31 @@ Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint 
                 rand = next_rand(rand, seed);
                 int calloc_count = rand & (MAX_CALLOC - 1);
                 roots[idx] = calloc(calloc_count + 1, calloc_size + 1);
-                TRACK(CALLOC, (calloc_count + 1) * (calloc_count + 1));
+                TRACK(CALLOC, (calloc_count + 1) * (calloc_size + 1));
             } else if (what < 24) {
                 void* mem;
                 int result = posix_memalign(&mem, 64, malloc_size + 1);
                 roots[idx] = result != 0 ? NULL : mem;
-                TRACK(POSIX_MEMALIGN, malloc_size + 1);
+                TRACK(POSIX_MEMALIGN, result != 0 ? 0 : funcs->malloc_size(mem));
             } else if (what < 26) {
 #if !defined(__APPLE__)
                 roots[idx] = memalign(64, malloc_size + 1);
-                TRACK(MEMALIGN, malloc_size + 1);
+                TRACK(MEMALIGN, roots[idx] == NULL ? 0 : funcs->malloc_size(roots[idx]));
 #endif
             } else if (what < 28) {
 #if !defined(__APPLE__)
                 roots[idx] = aligned_alloc(64, malloc_size + 1);
-                TRACK(ALIGNED_ALLOC, malloc_size + 1);
+                TRACK(ALIGNED_ALLOC, roots[idx] == NULL ? 0 : funcs->malloc_size(roots[idx]));
 #endif
             } else if (what < 30) {
 #if defined(__GLIBC__) || defined(__APPLE__)
                 roots[idx] = valloc(malloc_size + 1);
-                TRACK(VALLOC, malloc_size + 1);
+                TRACK(VALLOC, roots[idx] == NULL ? 0 : funcs->malloc_size(roots[idx]));
 #endif
             } else {
 #if defined(__GLIBC__)
                 roots[idx] = pvalloc(malloc_size + 1);
-                TRACK(PVALLOC, malloc_size + 1);
+                TRACK(PVALLOC, roots[idx] == NULL ? 0 : funcs->malloc_size(roots[idx]));
 #endif
             }
         } else {
