@@ -594,6 +594,14 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we do a dump of the malloc trace in regular "         \
           "intervals.")                                                     \
                                                                             \
+  product(bool, MallocTraceDumpOnError, false,                              \
+          "If enabled and the malloc trace is enabled too we do an "        \
+          "emergency dump on native out-of-memory errors.")                 \
+                                                                            \
+  product(uintx, MallocTraceRainyDayFund, 1* M,                             \
+          "The size of the rainy day fund to use when doing an emergency "  \
+          "dump.")                                                          \
+                                                                            \
   product(ccstr, MallocTraceDumpFilter, "",                                 \
           "If set, we only print stacks which contains functions which "    \
           "match the given string.")                                        \

@@ -69,6 +69,11 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 
+// SapMachine 2023-08-15: malloc trace2
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTrace2.hpp"
+#endif
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -221,6 +226,11 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
+  // SapMachine RS 2023-11-03: Check if we should to an emrgency dump for the malloc trace.
+#if defined(LINUX) || defined(__APPLE__)
+  sap::MallocStatistic::emergencyDump();
+#endif
+
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 

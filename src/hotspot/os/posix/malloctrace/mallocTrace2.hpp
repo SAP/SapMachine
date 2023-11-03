@@ -16,6 +16,7 @@ struct TraceSpec {
   bool _force;
   bool _track_free;
   bool _detailed_stats;
+  int _rainy_day_fund;
 
   TraceSpec() :
     _stack_depth(10),
@@ -23,7 +24,8 @@ struct TraceSpec {
     _only_nth(0),
     _force(false),
     _track_free(false),
-    _detailed_stats(false) {
+    _detailed_stats(false),
+    _rainy_day_fund(0) {
   }
 };
 
@@ -68,6 +70,9 @@ public:
 
   // Dumps the statistic.
   static bool dump(outputStream* st, DumpSpec const& spec);
+
+  // Does the emergency dump.
+  static void emergencyDump();
 
   // Shuts down the statistic on error.
   static void shutdown();

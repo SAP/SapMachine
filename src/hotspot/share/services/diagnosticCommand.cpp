@@ -72,8 +72,8 @@
 // SapMachine 2021-09-01: malloc-trace
 #include "malloctrace/mallocTraceDCmd.hpp"
 #endif
-#if defined(LINUX) || defined(__APPLE__)
 // SapMachine 2023-08-15: malloc trace2
+#if defined(LINUX) || defined(__APPLE__)
 #include "malloctrace/mallocTrace2.hpp"
 #endif
 

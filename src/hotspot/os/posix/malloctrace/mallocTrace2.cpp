@@ -7,6 +7,7 @@
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/ostream.hpp"
@@ -575,6 +576,7 @@ private:
   static registered_hooks_t _malloc_stat_hooks;
   static Lock               _malloc_stat_lock;
   static pthread_key_t      _malloc_suspended;
+  static pthread_key_t      _malloc_rd_enabled;
 
   // the +1 is for cache line reasons, so we ensure the last use entry
   // doesn't share a cache line with another object.
@@ -602,6 +604,11 @@ private:
   static volatile uint64_t  _not_tracked_ptrs;
   static volatile uint64_t  _failed_frees;
 
+  static void*              _rainy_day_fund;
+  static registered_hooks_t _rainy_day_hooks;
+  static Lock               _rainy_day_fund_lock;
+  static volatile registered_hooks_t* _rainy_day_hooks_ptr;
+
   // The hooks.
   static void* malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
   static void* calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size);
@@ -612,6 +619,18 @@ private:
   static void* aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size);
   static void* valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size);
   static void* pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
+
+  // The hooks used after we use the rainy day fund
+  static void* malloc_hook_rd(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
+  static void* calloc_hook_rd(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size);
+  static void* realloc_hook_rd(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size);
+  static void  free_hook_rd(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size);
+  static int   posix_memalign_hook_rd(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size);
+  static void* memalign_hook_rd(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size);
+  static void* aligned_alloc_hook_rd(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size);
+  static void* valloc_hook_rd(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size);
+  static void* pvalloc_hook_rd(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
+  static void wait_for_rainy_day_fund();
 
   static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
   static void record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames);
@@ -633,6 +652,7 @@ private:
 
 public:
   static void initialize();
+  static bool rainy_day_fund_used();
   static bool enable(outputStream* st, TraceSpec const& spec);
   static bool disable(outputStream* st);
   static bool dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec);
@@ -651,6 +671,18 @@ registered_hooks_t MallocStatisticImpl::_malloc_stat_hooks = {
   MallocStatisticImpl::pvalloc_hook
 };
 
+registered_hooks_t  MallocStatisticImpl::_rainy_day_hooks = {
+  MallocStatisticImpl::malloc_hook_rd,
+  MallocStatisticImpl::calloc_hook_rd,
+  MallocStatisticImpl::realloc_hook_rd,
+  MallocStatisticImpl::free_hook_rd,
+  MallocStatisticImpl::posix_memalign_hook_rd,
+  MallocStatisticImpl::memalign_hook_rd,
+  MallocStatisticImpl::aligned_alloc_hook_rd,
+  MallocStatisticImpl::valloc_hook_rd,
+  MallocStatisticImpl::pvalloc_hook_rd
+};
+
 real_funcs_t*     MallocStatisticImpl::_funcs;
 backtrace_func_t* MallocStatisticImpl::_backtrace;
 char const*       MallocStatisticImpl::_backtrace_name;
@@ -664,6 +696,7 @@ bool              MallocStatisticImpl::_tried_to_load_backtrace;
 int               MallocStatisticImpl::_max_frames;
 Lock              MallocStatisticImpl::_malloc_stat_lock;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
+pthread_key_t     MallocStatisticImpl::_malloc_rd_enabled;
 StatEntry**       MallocStatisticImpl::_stack_maps[NR_OF_STACK_MAPS];
 Lock              MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS + 1];
 int               MallocStatisticImpl::_stack_maps_mask[NR_OF_STACK_MAPS];
@@ -684,6 +717,11 @@ volatile uint64_t MallocStatisticImpl::_stack_walk_count;
 volatile uint64_t MallocStatisticImpl::_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_not_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_failed_frees;
+void*             MallocStatisticImpl::_rainy_day_fund;
+Lock              MallocStatisticImpl::_rainy_day_fund_lock;
+
+volatile registered_hooks_t*
+                  MallocStatisticImpl::_rainy_day_hooks_ptr = &MallocStatisticImpl::_rainy_day_hooks;
 
 #define CAPTURE_STACK() \
   address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
@@ -981,6 +1019,85 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
   return result;
 }
 
+
+void* MallocStatisticImpl::malloc_hook_rd(size_t size, void* caller_address, malloc_func_t* real_malloc,
+                                          malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_malloc(size);
+}
+
+void* MallocStatisticImpl::calloc_hook_rd(size_t elems, size_t size, void* caller_address,
+                                         calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_calloc(elems, size);
+}
+
+void* MallocStatisticImpl::realloc_hook_rd(void* ptr, size_t size, void* caller_address,
+                                           realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_realloc(ptr, size);
+}
+
+void  MallocStatisticImpl::free_hook_rd(void* ptr, void* caller_address, free_func_t* real_free,
+                                        malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  real_free(ptr);
+}
+
+int   MallocStatisticImpl::posix_memalign_hook_rd(void** ptr, size_t align, size_t size, void* caller_address,
+                                                 posix_memalign_func_t* real_posix_memalign,
+                                                 malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_posix_memalign(ptr, align, size);
+}
+
+void* MallocStatisticImpl::memalign_hook_rd(size_t align, size_t size, void* caller_address,
+                                            memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_memalign(align, size);
+}
+
+void* MallocStatisticImpl::aligned_alloc_hook_rd(size_t align, size_t size, void* caller_address,
+                                                 aligned_alloc_func_t* real_aligned_alloc,
+                                                 malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_aligned_alloc(align, size);
+}
+
+void* MallocStatisticImpl::valloc_hook_rd(size_t size, void* caller_address, valloc_func_t* real_valloc,
+                                          malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_valloc(size);
+}
+
+void* MallocStatisticImpl::pvalloc_hook_rd(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc,
+                                           malloc_size_func_t real_malloc_size)
+{
+  wait_for_rainy_day_fund();
+
+  return real_pvalloc(size);
+}
+
+void MallocStatisticImpl::wait_for_rainy_day_fund() {
+  Locker locker(_rainy_day_fund_lock);
+}
+
 static bool is_same_stack(StatEntry* to_check, int nr_of_frames, address* frames) {
   for (int i = 0; i < nr_of_frames; ++i) {
     if (to_check->frames()[i] != frames[i]) {
@@ -1240,6 +1357,12 @@ void MallocStatisticImpl::cleanup() {
   for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
     cleanup_for_alloc_map(i);
   }
+
+  if (_funcs != NULL) {
+    _funcs->free(_rainy_day_fund);
+    _rainy_day_fund = NULL;
+  }
+
 }
 
 void MallocStatisticImpl::resize_stack_map(int map, int new_mask) {
@@ -1292,6 +1415,10 @@ void MallocStatisticImpl::resize_alloc_map(int map, int new_mask) {
   }
 }
 
+bool MallocStatisticImpl::rainy_day_fund_used() {
+  return _rainy_day_hooks_ptr == NULL;
+}
+
 void MallocStatisticImpl::initialize() {
   if (_initialized) {
     return;
@@ -1300,11 +1427,24 @@ void MallocStatisticImpl::initialize() {
   _initialized = true;
 
   if (pthread_mutex_init(&_malloc_stat_lock._lock, NULL) != 0) {
-    fatal("Could not initialize lock");
+    fatal("Could not initialize lock 1");
+  }
+
+  pthread_mutexattr_t attr;
+
+  pthread_mutexattr_init(&attr);
+  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+
+  if (pthread_mutex_init(&_rainy_day_fund_lock._lock, &attr) != 0) {
+    fatal("Could not initialize lock 2");
   }
 
   if (pthread_key_create(&_malloc_suspended, NULL) != 0) {
-    fatal("Could not initialize key");
+    fatal("Could not initialize key 1");
+  }
+
+  if (pthread_key_create(&_malloc_rd_enabled, NULL) != 0) {
+    fatal("Could not initialize key 2");
   }
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
@@ -1451,6 +1591,17 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   // Never set _funcs to NULL, even if we fail. It's just safer that way.
   _funcs = result;
   _entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
+
+  if (spec._rainy_day_fund > 0) {
+    _rainy_day_fund = _funcs->malloc(spec._rainy_day_fund);
+
+    if (_rainy_day_fund == NULL) {
+      st->print_cr("Could not allocate rainy day fund of %d bytes", spec._rainy_day_fund);
+      cleanup();
+
+      return false;
+    }
+  }
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
     void* mem = _funcs->malloc(sizeof(Allocator));
@@ -1764,8 +1915,30 @@ static int sort_by_count(const void* p1, const void* p2) {
 }
 
 bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec) {
+  bool used_rainy_day_fund = false;
+
   if (!spec._on_error) {
     initialize();
+  } else if (_initialized) {
+    // Make sure all other threads don't allocate memory anymore
+    if (Atomic::cmpxchg(&_rainy_day_hooks_ptr, &_rainy_day_hooks, (registered_hooks_t*) NULL) != NULL) {
+      used_rainy_day_fund = true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+
+  Locker locker(_rainy_day_fund_lock, !used_rainy_day_fund);
+
+  if (used_rainy_day_fund) {
+    setup_hooks(&_rainy_day_hooks, NULL);
+
+    // Free rainy day fund so we have some memory to use.
+    _funcs->free(_rainy_day_fund);
+    _rainy_day_fund = NULL;
+    msg_stream->print_raw_cr("Emergency dump of malloc trace statistic ...");
   }
 
   // Hide allocations done by this thread during dumping if requested.
@@ -2057,6 +2230,10 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
   pthread_setspecific(_malloc_suspended, NULL);
 
+  if (used_rainy_day_fund) {
+    setup_hooks(&_malloc_stat_hooks, NULL);
+  }
+
   return true;
 }
 
@@ -2072,22 +2249,10 @@ void MallocStatisticImpl::shutdown() {
   }
 }
 
-class MallocTraceDumpPeriodicTask : public PeriodicTask {
-private:
-  char const* _file;
-
-public:
-  MallocTraceDumpPeriodicTask(char const* file, size_t timeout) :
-    PeriodicTask(timeout),
-    _file(file) {
-  }
-
-  virtual void task();
-};
-
-void MallocTraceDumpPeriodicTask::task() {
+static void dump_from_flags(bool on_error) {
   DumpSpec spec;
-  spec._dump_file = NULL;
+  char const* file = MallocTraceDumpOutput;
+  spec._on_error = on_error;
   spec._filter = MallocTraceDumpFilter;
   spec._sort_by_count = MallocTraceDumpSortByCount;
   spec._max_entries = MallocTraceDumpMaxEntries;
@@ -2095,26 +2260,26 @@ void MallocTraceDumpPeriodicTask::task() {
   spec._hide_dump_allocs = MallocTraceDumpHideDumpAlllocs;
   spec._internal_stats = MallocTraceDumpInternalStats;
 
-  if (is_non_empty_string(_file)) {
-    if (strcmp("stdout", _file) == 0) {
+  if (is_non_empty_string(file)) {
+    if (strcmp("stdout", file) == 0) {
       fdStream fds(1);
       mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
-    } else if (strcmp("stderr", _file) == 0) {
+    } else if (strcmp("stderr", file) == 0) {
       fdStream fds(2);
       mallocStatImpl::MallocStatisticImpl::dump(&fds, &fds, spec);
     } else {
-      char const* pid_tag = strstr(_file, "@pid");
+      char const* pid_tag = strstr(file, "@pid");
 
       if (pid_tag != NULL) {
-        size_t len = strlen(_file);
-        size_t first = pid_tag - _file;
+        size_t len = strlen(file);
+        size_t first = pid_tag - file;
         char buf[32768];
         jio_snprintf(buf, sizeof(buf), "%.*s" UINTX_FORMAT "%s",
-                    first, _file, os::current_process_id(), pid_tag + 4);
+                    first, file, os::current_process_id(), pid_tag + 4);
         fileStream fs(buf, "at");
         mallocStatImpl::MallocStatisticImpl::dump(&fs, &fs, spec);
       } else {
-        fileStream fs(_file, "at");
+        fileStream fs(file, "at");
         mallocStatImpl::MallocStatisticImpl::dump(&fs, &fs, spec);
       }
     }
@@ -2122,6 +2287,20 @@ void MallocTraceDumpPeriodicTask::task() {
     stringStream ss;
     mallocStatImpl::MallocStatisticImpl::dump(&ss, &ss, spec);
   }
+}
+
+class MallocTraceDumpPeriodicTask : public PeriodicTask {
+
+public:
+  MallocTraceDumpPeriodicTask() :
+    PeriodicTask(1000 * MallocTraceDumpInterval) {
+  }
+
+  virtual void task();
+};
+
+void MallocTraceDumpPeriodicTask::task() {
+  dump_from_flags(false);
 }
 
 } // namespace mallocStatImpl
@@ -2154,6 +2333,10 @@ void MallocStatistic::initialize() {
     spec._track_free = MallocTraceTrackFrees;
     spec._detailed_stats = MallocTraceDetailedStats;
 
+    if (MallocTraceDumpOnError) {
+      spec._rainy_day_fund = (int) MallocTraceRainyDayFund;
+    }
+
     if (!enable(&ss, spec) && MallocTraceExitIfFail) {
       fprintf(stderr, "%s", ss.base());
       os::exit(1);
@@ -2161,8 +2344,7 @@ void MallocStatistic::initialize() {
   }
 
   if (MallocTraceAtStartup && MallocTraceDump) {
-    mallocStatImpl::MallocTraceDumpPeriodicTask* task = new mallocStatImpl::MallocTraceDumpPeriodicTask(
-        MallocTraceDumpOutput, 1000 * MallocTraceDumpInterval);
+    mallocStatImpl::MallocTraceDumpPeriodicTask* task = new mallocStatImpl::MallocTraceDumpPeriodicTask();
     task->enroll();
   }
 }
@@ -2206,6 +2388,15 @@ bool MallocStatistic::dump(outputStream* st, DumpSpec const& spec) {
   }
 
   return mallocStatImpl::MallocStatisticImpl::dump(st, st, spec);
+}
+
+void MallocStatistic::emergencyDump() {
+  // Check enabled at all or already done.
+  if (!MallocTraceDumpOnError || mallocStatImpl::MallocStatisticImpl::rainy_day_fund_used()) {
+    return;
+  }
+
+  mallocStatImpl::dump_from_flags(true);
 }
 
 void MallocStatistic::shutdown() {
