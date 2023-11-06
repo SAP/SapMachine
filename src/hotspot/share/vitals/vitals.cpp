@@ -1217,10 +1217,9 @@ static bool get_nmt_values(nmt_values_t* out) {
     out->overhead =
         vm_snapshot.by_type(MEMFLAGS::mtNMT)->committed() +
         mlc_snapshot->by_type(MEMFLAGS::mtNMT)->malloc_size() +
-        mlc_snapshot->malloc_overhead()->size();
+        mlc_snapshot->malloc_overhead();
     out->malloced_num =
-        // I misuse the tracking overhead counter, since all malloc allocations should have been counted here
-        mlc_snapshot->malloc_overhead()->count();
+        mlc_snapshot->total_count();
     return true;
   }
 #endif // INCLUDE_NMT
