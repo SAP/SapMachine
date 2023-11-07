@@ -1981,10 +1981,10 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   size_t total_size = 0;
   int total_entries = 0;
   int total_non_empty_entries = 0;
-  int max_entries = MAX2(1, spec._max_entries);
+  int max_entries = MAX2(1, spec._dump_fraction > 0 ? INT_MAX : spec._max_entries);
   int max_printed_entries = max_entries;
 
-  if ((spec._dump_fraction > 0) || uses_filter) {
+  if (uses_filter) {
     max_entries = INT_MAX;
   }
 
@@ -2405,7 +2405,7 @@ void MallocStatistic::shutdown() {
 
 MallocTraceEnableDCmd::MallocTraceEnableDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
-  _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "5"),
+  _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "12"),
   _use_backtrace("-use-backtrace", "If true we try to use the backtrace() method to sample " \
                  "the stack traces.", "BOOLEAN", false, "true"),
   _only_nth("-only-nth", "If > 1 we only track about every n'th allocation. Note that we round " \
@@ -2462,7 +2462,7 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
              "the target VM", "STRING", false),
   _filter("-filter", "If given we only print a stack if it contains a function matching " \
           "the given string.", "STRING", false),
-  _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "-1"),
+  _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "10"),
   _dump_fraction("-fraction", "If > 0 we dunp the given fraction of allocated bytes " \
                  "(or allocated objects if sorted by count). In that case the -max-entries " \
                  "option is ignored", "INT", false, "0"),
