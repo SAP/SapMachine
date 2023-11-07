@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.io.IOException;
 public class TestVitalsValidSampleInterval {
 
     static void runTest(int interval) throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:VitalsSampleInterval=" + interval,
                 "-XX:MaxMetaspaceSize=16m",
                 "-Xlog:vitals=debug",
@@ -52,5 +52,4 @@ public class TestVitalsValidSampleInterval {
         runTest(1);
         runTest(23);
     }
-
 }

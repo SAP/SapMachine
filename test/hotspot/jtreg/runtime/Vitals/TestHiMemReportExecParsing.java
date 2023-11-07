@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.io.IOException;
 public class TestHiMemReportExecParsing {
 
     static void do_test(String execString, boolean shouldSucceed, String... shouldContain) throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-Xlog:vitals", "-XX:HiMemReportExec=" + execString,
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -92,5 +92,4 @@ public class TestHiMemReportExecParsing {
                 break;
         }
     }
-
 }

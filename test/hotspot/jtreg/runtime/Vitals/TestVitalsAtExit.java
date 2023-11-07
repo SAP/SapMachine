@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class TestVitalsAtExit {
     }
 
     static void testPrint() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+EnableVitals",
                 "-XX:+PrintVitalsAtExit",
                 "-XX:VitalsSampleInterval=1",
@@ -77,7 +77,7 @@ public class TestVitalsAtExit {
     }
 
     static void testDump() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+EnableVitals",
                 "-XX:+DumpVitalsAtExit",
                 "-XX:VitalsFile=abcd",
@@ -101,5 +101,4 @@ public class TestVitalsAtExit {
         VitalsTestHelper.fileMatchesVitalsTextMode(text_dump);
         VitalsTestHelper.fileMatchesVitalsCSVMode(csv_dump);
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class TestHiMemReportArgParsing {
     static void testValidNonExistingReportDir() throws IOException {
         File subdir = VitalsUtils.createSubTestDir("test-outputdir-1", false);
         VitalsUtils.fileShouldNotExist(subdir);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(), "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -96,7 +96,7 @@ public class TestHiMemReportArgParsing {
     static void testValidExistingReportDir() throws IOException {
         File subdir = VitalsUtils.createSubTestDir("test-outputdir-2", true);
         VitalsUtils.fileShouldExist(subdir);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(), "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -116,7 +116,7 @@ public class TestHiMemReportArgParsing {
     static void testInValidReportDir() throws IOException {
         File f = new File("/tmp/gibsnicht/gibsnicht/gibsnicht");
         VitalsUtils.fileShouldNotExist(f);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportDir=" + f.getAbsolutePath(), "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -133,7 +133,7 @@ public class TestHiMemReportArgParsing {
      * test +HiMemReport without any further options. It should come up with a reasonable limit.
      */
     static void testHiMemReportOn() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -149,7 +149,7 @@ public class TestHiMemReportArgParsing {
      * test that -HiMemReport means off
      */
     static void testHiMemReportOff() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:-HiMemReport", "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -162,7 +162,7 @@ public class TestHiMemReportArgParsing {
      * test that HiMemReport is off by default
      */
     static void testHiMemReportOffByDefault() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-Xlog:vitals",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -187,5 +187,4 @@ public class TestHiMemReportArgParsing {
         else
             throw new RuntimeException("Invalid test " + args[0]);
     }
-
 }
