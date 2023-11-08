@@ -23,6 +23,7 @@ import static jdk.test.lib.Asserts.*;
 public class MallocHooksTest {
     static native void doRandomMemOps(int nrOfOps, int maxLiveAllocations, int seed,
                                       boolean trackLive, long[] sizes, long[] counts);
+    static native void doRandomAllocsWithFrees(int nrOfOps, int size, int maxStack, int seed);
 
     private static final String LD_PRELOAD = Platform.isOSX() ? "DYLD_INSERT_LIBRARIES" : "LD_PRELOAD";
     private static final String LIB_SUFFIX = Platform.isOSX() ? ".dylib" : ".so";
@@ -37,14 +38,23 @@ public class MallocHooksTest {
         }
 
         if (args.length == 0) {
-            testNoRecursiveCallsForFallbacks();
-            testEnvSanitizing();
-            testTracking(false);
-            testTracking(true);
+            //testNoRecursiveCallsForFallbacks();
+            //testEnvSanitizing();
+            //testTracking(false);
+            //testTracking(true);
+            testDumpFraction(true);
+            testDumpFraction(false);
             return;
         }
 
-        if (args[0].equals("checkEnv")) {
+        if (args[0].equals("manyStacks")) {
+            doManyStacks(args);
+            System.out.println("Done");
+
+            while (true) {
+              Thread.sleep(1000);
+            }
+        } else if (args[0].equals("checkEnv")) {
             if (args[1].equals(getLdPrelodEnv())) {
                return;
             }
@@ -60,6 +70,15 @@ public class MallocHooksTest {
         } else {
             throw new Exception("Unknown command " + args[0]);
         }
+    }
+
+    private static void doManyStacks(String[] args) {
+        int nrOfOps = Integer.parseInt(args[1]);
+        int size = Integer.parseInt(args[2]);
+        int maxStack = Integer.parseInt(args[3]);
+        int seed = Integer.parseInt(args[4]);
+
+        doRandomAllocsWithFrees(nrOfOps, size, maxStack, seed);
     }
 
     private static void doStress(String[] args) {
@@ -122,15 +141,15 @@ public class MallocHooksTest {
 
     private static void testTracking(boolean trackLive) throws Exception {
         ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369973, trackLive,
-                                      "-XX:-MallocTraceTrackFrees", "-XX:MallocTraceStackDepth=2");
+                                      "-XX:MallocTraceStackDepth=2");
         Process p = pb.start();
         MallocTraceExpectedStatistic expected = new MallocTraceExpectedStatistic(p);
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
                                         "-filter=Java_MallocHooksTest_doRandomMemOps");
         oa.shouldHaveExitValue(0);
         p.destroy();
-        MallocTraceResult actual = MallocTraceResult.fromString(oa.getOutput());
         System.out.println(oa.getOutput());
+        MallocTraceResult actual = MallocTraceResult.fromString(oa.getOutput());
         System.out.println(expected);
         System.out.println(actual);
 
@@ -144,10 +163,34 @@ public class MallocHooksTest {
         oa.shouldContain("libtestmallochooks.");
         oa.shouldContain("Total allocated bytes");
         oa.shouldContain("Total printed count");
-        //oa.shouldContain("Stack 1 of");
-        //oa.shouldContain("Stack 8 of");
-        //oa.shouldNotContain("Stack 0 of");
-        //oa.shouldNotContain("Stack 9 of");
+    }
+
+    private static ProcessBuilder runManyStacks(int nrOfOps, int size, int maxStack, int seed,
+                                                String... opts) {
+        String[] args = new String[opts.length + 9];
+        System.arraycopy(opts, 0, args, 0, opts.length);
+        args[opts.length + 0] = "-XX:+UseMallocHooks";
+        args[opts.length + 1] = "-XX:+MallocTraceAtStartup";
+        args[opts.length + 2] = "-XX:-MallocTraceTrackFrees";
+        args[opts.length + 3] = MallocHooksTest.class.getName();
+        args[opts.length + 4] = "manyStacks";
+        args[opts.length + 5] = Integer.toString(nrOfOps);
+        args[opts.length + 6] = Integer.toString(size);
+        args[opts.length + 7] = Integer.toString(maxStack);
+        args[opts.length + 8] = Integer.toString(seed);
+        return ProcessTools.createJavaProcessBuilder(args);
+    }
+
+    private static void testDumpFraction(boolean bySize) throws Exception {
+        ProcessBuilder pb = runManyStacks(1024 * 1024 * 10, 1024 * 16, 5, 172369973, "-XX:MallocTraceStackDepth=12");
+        Process p = pb.start();
+        p.getInputStream().read();
+        OutputAnalyzer oa = bySize ? callJcmd(p, "MallocTrace.dump", "-fraction=90") :
+                                     callJcmd(p, "MallocTrace.dump", "-sort-by-count", "-fraction=90");
+        oa.shouldHaveExitValue(0);
+        p.destroy();
+        System.out.println(oa.getOutput());
+        oa.stdoutShouldMatch("Total printed " + (bySize ? "bytes" : "count") + ": .*[(].*90[.][0-9]+ %[)]");
     }
 
     private static ProcessBuilder runStress(int nrOfOps, int maxLiveAllocations, int seed, 

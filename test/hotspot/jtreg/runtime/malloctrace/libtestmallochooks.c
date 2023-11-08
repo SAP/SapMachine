@@ -46,6 +46,105 @@ if (roots[idx] != NULL) { \
     source[(idx)] = -1; \
 }
 
+static void do_alloc_with_stack_impl(int size, int type);
+static void do_alloc_with_stack2(int size, int type, int stack);
+
+static void do_alloc_with_stack1(int size, int type, int stack) {
+    int new_stack = stack / 2;
+
+    if (new_stack == 0) {
+        do_alloc_with_stack_impl(size, type);
+    } else if (new_stack & 1) {
+        do_alloc_with_stack1(size, type, new_stack);
+    } else {
+        do_alloc_with_stack2(size, type, new_stack);
+    }
+
+    // Inhibit tail call optimization.
+    if (stack < 0) {
+      abort();
+    }
+}
+
+static void do_alloc_with_stack2(int size, int type, int stack) {
+    int new_stack = stack / 2;
+
+    if (new_stack == 0) {
+        do_alloc_with_stack_impl(size, type);
+    } else if (new_stack & 1) {
+        do_alloc_with_stack1(size, type, new_stack);
+    } else {
+        do_alloc_with_stack2(size, type, new_stack);
+    }
+
+    // Inhibit tail call optimization.
+    if (stack < 0) {
+      abort();
+    }
+}
+
+static void do_alloc_with_stack_impl(int size, int type) {
+    void* mem = NULL;
+
+    switch (type & 7) {
+        case 0:
+            mem = malloc(size);
+            break;
+        case 1:
+            mem = calloc(1, size);
+            break;
+        case 2:
+            mem = realloc(NULL, size);
+            break;
+        case 3:
+            posix_memalign(&mem, 128, size);
+            break;
+#if !defined(__APPLE__)
+        case 4:
+            mem = memalign(128, size);
+            break;
+#endif
+#if !defined(__APPLE__)
+        case 5:
+            mem = aligned_alloc(128, size);
+            break;
+#endif
+#if defined(__GLIBC__) || defined(__APPLE__)
+        case 6:
+            mem = valloc(size);
+            break;
+#endif
+#if defined(__GLIBC__)
+        case 7:
+            mem = pvalloc(size);
+            break;
+#endif
+        default:
+            mem = malloc(size);
+    }
+
+    free(mem);
+}
+
+JNIEXPORT void JNICALL
+Java_MallocHooksTest_doRandomAllocsWithFrees(JNIEnv *env, jclass cls, jint nrOfOps, jint size,
+                                             jint maxStack, jint seed) {
+    int i;
+    int rand = 1;
+    int stack_rand = 1;
+
+    for (i = 0; i < nrOfOps; ++i) {
+        rand = next_rand(rand, seed);
+        stack_rand = next_rand(rand, seed);
+
+        if (stack_rand & 1) {
+            do_alloc_with_stack1(size, rand & 7, stack_rand & ((1 << maxStack) - 1));
+        } else {
+            do_alloc_with_stack2(size, rand & 7, stack_rand & ((1 << maxStack) - 1));
+        }
+    }
+}
+
 JNIEXPORT void JNICALL
 Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint maxLiveAllocations, jint seed,
                                     jboolean trackLive, jlongArray resultSizes, jlongArray resultCounts) {
