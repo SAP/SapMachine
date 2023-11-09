@@ -676,7 +676,7 @@ EXPORT void REPLACE_NAME(free)(void* ptr) {
 #if !defined(MALLOC_REPLACEMENT)
   // We might see remnants of the fallback allocations here.
   if ((ptr >= (void*) fallback_buffer) && (ptr < (void*) fallback_buffer_end)) {
-    // Nothinng to do
+    // Nothing to do
   } else
 #endif
   if (tmp_hook != NULL) {
