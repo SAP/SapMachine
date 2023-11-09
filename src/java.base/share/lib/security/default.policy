@@ -211,6 +211,7 @@ grant codeBase "jrt:/jdk.zipfs" {
     permission java.lang.RuntimePermission "fileSystemProvider";
     permission java.lang.RuntimePermission "accessUserInformation";
     permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "user.name", "read";
 };
 
 // permissions needed by applications using java.desktop module

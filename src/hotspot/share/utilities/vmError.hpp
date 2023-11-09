@@ -198,5 +198,10 @@ public:
   // returns an address which is guaranteed to generate a SIGSEGV on read,
   // for test purposes, which is not NULL and contains bits in every word
   static void* get_segfault_address();
+
+  // SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks
+  //  to tty on CrashOnOutOfMemoryError
+  static void print_stack(outputStream* st);
+
 };
 #endif // SHARE_VM_UTILITIES_VMERROR_HPP
