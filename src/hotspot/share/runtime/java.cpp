@@ -94,6 +94,15 @@
 #include "jfr/jfr.hpp"
 #endif
 
+// SapMachine 2019-09-01: vitals.
+#include "runtime/globals.hpp"
+#include "vitals/vitals.hpp"
+
+// SapMachine 2021-09-01: malloc-trace
+#ifdef LINUX
+#include "malloctrace/mallocTrace.hpp"
+#endif
+
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
@@ -346,6 +355,15 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
+  // SapMachine 2019-09-01: vitals.
+  if (DumpVitalsAtExit) {
+    sapmachine_vitals::dump_reports();
+  }
+  if (PrintVitalsAtExit) {
+    tty->print_cr("Vitals:");
+    sapmachine_vitals::print_report(tty);
+  }
+
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -390,6 +408,14 @@ void print_statistics() {
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
+  }
+
+  // SapMachine 2019-09-01: vitals.
+  if (DumpVitalsAtExit) {
+    sapmachine_vitals::dump_reports();
+  }
+  if (PrintVitalsAtExit) {
+    sapmachine_vitals::print_report(tty);
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
@@ -494,6 +520,12 @@ void before_exit(JavaThread* thread, bool halt) {
   if (DumpPerfMapAtExit) {
     CodeCache::write_perf_map();
   }
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
+  // SapMachine 2021-09-01: malloc-trace
+  if (PrintMallocTraceAtExit) {
+    sap::MallocTracer::print(tty, true);
+  }
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 #endif
 
   if (JvmtiExport::should_post_thread_life()) {
@@ -537,6 +569,11 @@ void before_exit(JavaThread* thread, bool halt) {
       tty->print_cr("ERROR: fail_cnt=" SIZE_FORMAT, fail_cnt);
       guarantee(fail_cnt == 0, "unexpected StringTable verification failures");
     }
+  }
+
+  // SapMachine 2021-09-01: shutdown vitals thread
+  if (EnableVitals) {
+    sapmachine_vitals::cleanup();
   }
 
   #undef BEFORE_EXIT_NOT_RUN
