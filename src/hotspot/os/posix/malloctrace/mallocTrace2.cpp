@@ -906,9 +906,9 @@ void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t
     if (should_track(hash)) {
       record_free(ptr, hash, real_malloc_size(ptr));
     }
-
-    real_free(ptr);
   }
+
+  real_free(ptr);
 }
 
 int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address,
