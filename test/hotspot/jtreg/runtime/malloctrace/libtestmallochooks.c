@@ -138,10 +138,12 @@ Java_MallocHooksTest_doRandomAllocsWithFrees(JNIEnv *env, jclass cls, jint nrOfO
         stack_rand = next_rand(rand, seed);
 
         if (stack_rand & 1) {
-            do_alloc_with_stack1(size, rand & 7, stack_rand & ((1 << maxStack) - 1));
+            do_alloc_with_stack1(size, rand, stack_rand & ((1 << maxStack) - 1));
         } else {
-            do_alloc_with_stack2(size, rand & 7, stack_rand & ((1 << maxStack) - 1));
+            do_alloc_with_stack2(size, rand, stack_rand & ((1 << maxStack) - 1));
         }
+
+        rand = stack_rand;
     }
 }
 

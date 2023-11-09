@@ -38,12 +38,16 @@ public class MallocHooksTest {
         }
 
         if (args.length == 0) {
-            //testNoRecursiveCallsForFallbacks();
-            //testEnvSanitizing();
-            //testTracking(false);
-            //testTracking(true);
+            testNoRecursiveCallsForFallbacks();
+            testEnvSanitizing();
+            testTracking(false);
+            testTracking(true);
             testDumpFraction(true);
             testDumpFraction(false);
+            testPartialTrackint(false, 2, 0.2);
+            testPartialTrackint(true, 2, 0.2);
+            testPartialTrackint(false, 10, 0.3);
+            testPartialTrackint(true, 10, 0.3);
             return;
         }
 
@@ -139,8 +143,43 @@ public class MallocHooksTest {
         return new OutputAnalyzer(pb.start());
     }
 
+    private static void testPartialTrackint(boolean trackLive, int nth, double diff) throws Exception {
+        ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369977, trackLive,
+                                      "-Djava.library.path=" + System.getProperty("java.library.path"),
+                                      "-XX:MallocTraceStackDepth=2",
+                                      "-XX:+MallocTraceDetailedStats",
+                                      "-XX:MallocTraceOnlyNth=" + nth);
+        Process p = pb.start();
+        MallocTraceExpectedStatistic expected = new MallocTraceExpectedStatistic(p);
+        OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
+                                        "-filter=Java_MallocHooksTest_doRandomMemOps",
+                                        "-internal-stats");
+        oa.shouldHaveExitValue(0);
+        p.destroy();
+        System.out.println(oa.getOutput());
+        MallocTraceResult actual = MallocTraceResult.fromString(oa.getOutput());
+        System.out.println(expected);
+        System.out.println(actual);
+
+        double real_nth = Double.parseDouble(oa.getOutput().split("about every ")[1].split(" ")[0]);
+        assertGTE(real_nth, (1 - diff) * nth);
+        assertLTE(real_nth, (1 + diff) * nth);
+
+        expected.check(actual, nth, diff);
+
+        if (trackLive) {
+            oa.shouldContain("Contains the currently allocated memory since enabling");
+        } else {
+            oa.shouldContain("Contains every allocation done since enabling");
+        }
+        oa.shouldContain("libtestmallochooks.");
+        oa.shouldContain("Total allocated bytes");
+        oa.shouldContain("Total printed count");
+    }
+
     private static void testTracking(boolean trackLive) throws Exception {
         ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369973, trackLive,
+                                      "-Djava.library.path=" + System.getProperty("java.library.path"),
                                       "-XX:MallocTraceStackDepth=2");
         Process p = pb.start();
         MallocTraceExpectedStatistic expected = new MallocTraceExpectedStatistic(p);
@@ -178,18 +217,20 @@ public class MallocHooksTest {
         args[opts.length + 6] = Integer.toString(size);
         args[opts.length + 7] = Integer.toString(maxStack);
         args[opts.length + 8] = Integer.toString(seed);
-        return ProcessTools.createJavaProcessBuilder(args);
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static void testDumpFraction(boolean bySize) throws Exception {
-        ProcessBuilder pb = runManyStacks(1024 * 1024 * 10, 1024 * 16, 5, 172369973, "-XX:MallocTraceStackDepth=12");
-        Process p = pb.start();
+        ProcessBuilder pb = runManyStacks(1024 * 1024 * 10, 1024 * 16, 5, 172369973,
+                                          "-Djava.library.path=" + System.getProperty("java.library.path"),
+                                          "-XX:MallocTraceStackDepth=12");
+        Process p = ProcessTools.startProcess("runManyStack", pb, x -> System.out.println("> " + x), null, -1, null);
         p.getInputStream().read();
         OutputAnalyzer oa = bySize ? callJcmd(p, "MallocTrace.dump", "-fraction=90") :
                                      callJcmd(p, "MallocTrace.dump", "-sort-by-count", "-fraction=90");
+        System.out.println(oa.getOutput());
         oa.shouldHaveExitValue(0);
         p.destroy();
-        System.out.println(oa.getOutput());
         oa.stdoutShouldMatch("Total printed " + (bySize ? "bytes" : "count") + ": .*[(].*90[.][0-9]+ %[)]");
     }
 
@@ -206,16 +247,17 @@ public class MallocHooksTest {
         args[opts.length + 6] = Integer.toString(maxLiveAllocations);
         args[opts.length + 7] = Integer.toString(seed);
         args[opts.length + 8] = Boolean.toString(trackLive);
-        return ProcessTools.createJavaProcessBuilder(args);
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static ProcessBuilder checkEnvProc(String env) {
-        return ProcessTools.createJavaProcessBuilder(MallocHooksTest.class.getName(), "checkEnv", env);
+        String[] args = {MallocHooksTest.class.getName(), "checkEnv", env};
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static ProcessBuilder checkEnvProcWithHooks(String env) {
-        return ProcessTools.createJavaProcessBuilder("-XX:+UseMallocHooks", MallocHooksTest.class.getName(),
-                                                     "checkEnv", env);
+        String[] args = {"-XX:+UseMallocHooks", MallocHooksTest.class.getName(),"checkEnv", env};
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static String getLdPrelodEnv() {
@@ -382,6 +424,10 @@ class MallocTraceExpectedStatistic {
     }
 
     public void check(MallocTraceResult actual) throws Exception {
+        check(actual, 1, 0.0);
+    }
+
+    public void check(MallocTraceResult actual, int nth, double diff) throws Exception {
         for (int i = 0; i < funcs.length; ++i) {
             if (counts[i] == 0) {
                 continue; // Not supported by platform
@@ -394,8 +440,13 @@ class MallocTraceExpectedStatistic {
 
                 if (stack.getFunction(0).startsWith(funcs[i] + (Platform.isOSX() ? "_interpose " : " "))) {
                     assertFalse(found, "Found entry for " + funcs[i] + " more than once");
-                    assertEquals(bytes[i], stack.getBytes());
-                    assertEquals(counts[i], stack.getCount());
+                    long expected_bytes = bytes[i] / nth;
+                    long expected_count = counts[i] / nth;
+                    // Check we are in the range of +/- 20 percent.
+                    assertLTE(stack.getBytes(), (long) (expected_bytes * (1 + diff)));
+                    assertGTE(stack.getBytes(), (long) (expected_bytes * (1 - diff)));
+                    assertLTE(stack.getCount(), (long) (expected_count * (1 + diff)));
+                    assertGTE(stack.getCount(), (long) (expected_count * (1 - diff)));
                     found = true;
                 }
             }
