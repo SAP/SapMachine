@@ -812,9 +812,7 @@ bool MallocStatisticImpl::should_track(uint64_t hash) {
   return (hash & _to_track_mask) < _to_track_limit;
 }
 
-static bool malloc_not_suspended() {
-  return pthread_getspecific(_malloc_suspended) == NULL;
-}
+#define malloc_not_suspended() (pthread_getspecific(_malloc_suspended) == NULL)
 
 void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc,
                                        malloc_size_func_t real_malloc_size) {
