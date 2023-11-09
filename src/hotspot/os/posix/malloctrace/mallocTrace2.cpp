@@ -812,12 +812,17 @@ bool MallocStatisticImpl::should_track(uint64_t hash) {
   return (hash & _to_track_mask) < _to_track_limit;
 }
 
-void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) {
+static bool malloc_not_suspended() {
+  return pthread_getspecific(_malloc_suspended) == NULL;
+}
+
+void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc,
+                                       malloc_size_func_t real_malloc_size) {
   void* result = real_malloc(size);
   uint64_t hash = ptr_hash(result);
   address real_func = (address) malloc;
 
-  if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
     CAPTURE_STACK();
 
     if (_track_free) {
@@ -830,12 +835,13 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc
   return result;
 }
 
-void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
+void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address,
+                                       calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
   void* result = real_calloc(elems, size);
   uint64_t hash = ptr_hash(result);
   address real_func = (address) calloc;
 
-  if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
     CAPTURE_STACK();
 
     if (_track_free) {
@@ -848,7 +854,8 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
   return result;
 }
 
-void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
+void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address,
+                                        realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
   size_t old_size = ptr != NULL ? real_malloc_size(ptr) : 0;
   uint64_t old_hash = ptr_hash(ptr);
   address real_func = (address) realloc;
@@ -877,10 +884,10 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
     CAPTURE_STACK();
 
     if (_track_free) {
-      if (should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+      if (should_track(hash) && malloc_not_suspended()) {
         record_allocation(result, hash, nr_of_frames, frames);
       }
-    } else if ((old_size < size) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+    } else if ((old_size < size) && should_track(hash) && malloc_not_suspended()) {
       // Track the additional allocate bytes. This is somewhat wrong, since
       // we don't know the requested size of the original allocation and
       // old_size might be greater.
@@ -891,7 +898,8 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
   return result;
 }
 
-void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
+void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free,
+                                    malloc_size_func_t real_malloc_size) {
   if ((ptr != NULL) && _track_free) {
     uint64_t hash = ptr_hash(ptr);
 
@@ -903,12 +911,14 @@ void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t
   }
 }
 
-int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
+int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address,
+                                             posix_memalign_func_t* real_posix_memalign,
+                                             malloc_size_func_t real_malloc_size) {
   int result = real_posix_memalign(ptr, align, size);
   uint64_t hash = ptr_hash(*ptr);
   address real_func = (address) posix_memalign;
 
-  if ((result == 0) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result == 0) && should_track(hash) && malloc_not_suspended()) {
     CAPTURE_STACK();
 
     if (_track_free) {
@@ -923,7 +933,8 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
   return result;
 }
 
-void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
+void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address,
+                                         memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
   void* result = real_memalign(align, size);
   uint64_t hash = ptr_hash(result);
 #if !defined(__APPLE__)
@@ -932,7 +943,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
   address real_func = (address) memalign_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
     CAPTURE_STACK();
 
     if (_track_free) {
@@ -947,7 +958,9 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
   return result;
 }
 
-void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size) {
+void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address,
+                                              aligned_alloc_func_t* real_aligned_alloc,
+                                              malloc_size_func_t real_malloc_size) {
   void* result = real_aligned_alloc(align, size);
   uint64_t hash = ptr_hash(result);
 #if !defined(__APPLE__)
@@ -956,7 +969,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
   address real_func = (address) aligned_alloc_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
     CAPTURE_STACK();
 
     if (_track_free) {
@@ -971,7 +984,8 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
   return result;
 }
 
-void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size) {
+void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc,
+                                       malloc_size_func_t real_malloc_size) {
   void* result = real_valloc(size);
   uint64_t hash = ptr_hash(result);
 #if defined(__GLIBC__) || defined(__APPLE__)
@@ -980,7 +994,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc
   address real_func = (address) valloc_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
     CAPTURE_STACK();
 
     if (_track_free) {
@@ -995,7 +1009,8 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc
   return result;
 }
 
-void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size) {
+void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc,
+                                        malloc_size_func_t real_malloc_size) {
   void* result = real_pvalloc(size);
   uint64_t hash = ptr_hash(result);
 #if defined(__GLIBC__)
@@ -1004,7 +1019,7 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
   address real_func = (address) pvalloc_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && (pthread_getspecific(_malloc_suspended) == NULL)) {
+  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
     CAPTURE_STACK();
 
     if (_track_free) {
@@ -1107,7 +1122,6 @@ static bool is_same_stack(StatEntry* to_check, int nr_of_frames, address* frames
 
   return true;
 }
-
 
 static size_t hash_for_frames(int nr_of_frames, address* frames) {
   size_t result = 0;
