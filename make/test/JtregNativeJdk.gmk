@@ -56,7 +56,7 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
 
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
-  BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c
+  BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c exelauncher.c
 
   #SapMachine 2018-12-11: Eclude libCreateNewProcessGroupOnSpawnTest.c from
   #                       native compilation because test is non-Windows only
@@ -70,8 +70,10 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
   ifeq ($(call isTargetOs, linux), true)
+    BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava
   else ifeq ($(call isTargetOs, solaris), true)
+    BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -lthread -ldl
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava
   endif
   UNIX_LDFLAGS_JLI := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli
@@ -80,6 +82,7 @@ else
 endif
 
 ifeq ($(call isTargetOs, macosx), true)
+  BUILD_JDK_JTREG_EXCLUDE += exelauncher.c
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestMainKeyWindow := \
       -framework Cocoa
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestDynamicStore := \
