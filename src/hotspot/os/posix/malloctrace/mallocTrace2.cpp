@@ -51,6 +51,99 @@ static bool is_non_empty_string(char const* str) {
   return (str != NULL) && (str[0] != '\0');
 }
 
+static uint64_t parse_timespan_part(char const* start, char const* end, char const** error) {
+  char buf[32];
+
+  // Strip trailing spaces.
+  while ((end > start) && (end[-1] == ' ')) {
+    end--;
+  }
+
+  if (start == end) {
+    *error = "empty time";
+    return 0;
+  }
+
+  if (((size_t) (end - start)) >= sizeof(buf) - 1) {
+    *error = "time too long";
+    return 0;
+  }
+
+  memcpy(buf, start, end - start);
+  buf[end - start] = '\0';
+
+  char* found_end;
+  uint64_t result = (uint64_t) strtoull(buf, &found_end, 10);
+
+  if ((found_end != end) && (*found_end != '\0')) {
+    *error = "Could not parse integer";
+  }
+
+  return (uint64_t) atoll(buf);
+}
+
+static uint64_t parse_timespan(char const* spec, char const** error = NULL) {
+  uint64_t result = 0;
+  char const* start = spec;
+  char const* pos = start;
+  char const* backup_error;
+  uint64_t limit_in_days = 365;
+
+  if (error == NULL) {
+    error = &backup_error;
+  }
+
+  *error = NULL;
+
+  while (*pos != '\0') {
+    switch (*pos) {
+      case ' ':
+        if (pos == start) {
+          start++;
+        }
+        break;
+
+      case 's':
+        result += parse_timespan_part(start, pos, error);
+        start = pos + 1;
+        break;
+
+      case 'm':
+        result += 60 * parse_timespan_part(start, pos, error);
+        start = pos + 1;
+        break;
+
+      case 'h':
+        result += 60 * 60 * parse_timespan_part(start, pos, error);
+        start = pos + 1;
+        break;
+
+      case 'd':
+        result += 24 * 60 * 60 * parse_timespan_part(start, pos, error);
+        start = pos + 1;
+        break;
+
+      default:
+        if ((*pos < '0') || (*pos > '9')) {
+          *error = "Unexpected character";
+          return 0;
+        }
+    }
+
+    pos++;
+  }
+
+  if (pos != start) {
+    *error = "time wihtout unit";
+  }
+
+  if (result / (24 * 60 * 60) > limit_in_days) {
+    *error = "time too large";
+  }
+
+  return result;
+}
+
 // Keep sap namespace free from implementation classes.
 namespace mallocStatImpl {
 
@@ -538,8 +631,6 @@ static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
 
       st->print_raw_cr("VM arguments:");
       Arguments::print_summary_on(st);
-      st->print_raw_cr("Loaded libraries:");
-      os::print_dll_info(st);
 
       return NULL;
     }
@@ -2302,10 +2393,13 @@ static void dump_from_flags(bool on_error) {
 }
 
 class MallocTraceDumpPeriodicTask : public PeriodicTask {
+private:
+  int _left;
 
 public:
-  MallocTraceDumpPeriodicTask() :
-    PeriodicTask(1000 * MallocTraceDumpInterval) {
+  MallocTraceDumpPeriodicTask(uint64_t delay) :
+    PeriodicTask(1000 * delay),
+    _left(MallocTraceDumpCount - 1) {
   }
 
   virtual void task();
@@ -2313,6 +2407,77 @@ public:
 
 void MallocTraceDumpPeriodicTask::task() {
   dump_from_flags(false);
+  --_left;
+
+  if (_left == 0) {
+    disenroll();
+  }
+}
+
+class MallocTraceDumpInitialTask : public PeriodicTask {
+
+public:
+  MallocTraceDumpInitialTask(uint64_t delay) :
+    PeriodicTask(1000 * delay) {
+  }
+
+  virtual void task();
+};
+
+void MallocTraceDumpInitialTask::task() {
+  dump_from_flags(false);
+
+  if (MallocTraceDumpCount > 1) {
+    uint64_t delay = MAX2((uint64_t) 1, parse_timespan(MallocTraceDumpInterval));
+
+    mallocStatImpl::MallocTraceDumpPeriodicTask* task = new mallocStatImpl::MallocTraceDumpPeriodicTask(delay);
+    task->enroll();
+  }
+
+  disenroll();
+}
+
+void enable_from_flags() {
+  TraceSpec spec;
+  stringStream ss;
+
+  spec._stack_depth = (int) MallocTraceStackDepth;
+  spec._use_backtrace = MallocTraceUseBacktrace;
+  spec._only_nth = (int) MallocTraceOnlyNth;
+  spec._track_free = MallocTraceTrackFrees;
+  spec._detailed_stats = MallocTraceDetailedStats;
+
+  if (MallocTraceDumpOnError) {
+    spec._rainy_day_fund = (int) MallocTraceRainyDayFund;
+  }
+
+  if (!MallocStatistic::enable(&ss, spec) && MallocTraceExitIfFail) {
+    fprintf(stderr, "Could not enable malloc trace via -XX:+MallocTraceAtStartup: %s", ss.base());
+    os::exit(1);
+  }
+}
+
+static void enable_delayed_dump() {
+  if (MallocTraceDumpCount > 0) {
+    uint64_t delay = MAX2((uint64_t) 1, parse_timespan(MallocTraceDumpDelay));
+    mallocStatImpl::MallocTraceDumpInitialTask* task = new mallocStatImpl::MallocTraceDumpInitialTask(delay);
+    task->enroll();
+  }
+}
+
+class MallocTraceEnablePeriodicTask : public PeriodicTask {
+
+public:
+  MallocTraceEnablePeriodicTask(uint64_t delay) :
+    PeriodicTask(1000 * delay) {
+  }
+
+  virtual void task();
+};
+
+void MallocTraceEnablePeriodicTask::task() {
+  enable_from_flags();
+  enable_delayed_dump();
 }
 
 } // namespace mallocStatImpl
@@ -2336,28 +2501,28 @@ void MallocStatistic::initialize() {
   mallocStatImpl::MallocStatisticImpl::initialize();
 
   if (MallocTraceAtStartup) {
-    TraceSpec spec;
-    stringStream ss;
-
-    spec._stack_depth = (int) MallocTraceStackDepth;
-    spec._use_backtrace = MallocTraceUseBacktrace;
-    spec._only_nth = (int) MallocTraceOnlyNth;
-    spec._track_free = MallocTraceTrackFrees;
-    spec._detailed_stats = MallocTraceDetailedStats;
-
-    if (MallocTraceDumpOnError) {
-      spec._rainy_day_fund = (int) MallocTraceRainyDayFund;
+#define CHECK_TIMESPAN_ARG(argument) \
+    char const* error_##argument; \
+    parse_timespan(argument, &error_##argument); \
+    if (error_##argument != NULL) { \
+      fprintf(stderr, "Could not parse argument '%s' of -XX:" #argument ": %s\n", argument, error_##argument); \
+      os::exit(1); \
     }
 
-    if (!enable(&ss, spec) && MallocTraceExitIfFail) {
-      fprintf(stderr, "%s", ss.base());
-      os::exit(1);
-    }
-  }
+    // Check interval specs now, so we don't fail later.
+    CHECK_TIMESPAN_ARG(MallocTraceEnableDelay);
+    CHECK_TIMESPAN_ARG(MallocTraceDumpDelay);
+    CHECK_TIMESPAN_ARG(MallocTraceDumpInterval);
 
-  if (MallocTraceAtStartup && MallocTraceDump) {
-    mallocStatImpl::MallocTraceDumpPeriodicTask* task = new mallocStatImpl::MallocTraceDumpPeriodicTask();
-    task->enroll();
+    uint64_t delay = parse_timespan(MallocTraceEnableDelay);
+
+    if (delay > 0) {
+      mallocStatImpl::MallocTraceEnablePeriodicTask* task = new mallocStatImpl::MallocTraceEnablePeriodicTask(delay);
+      task->enroll();
+    } else {
+      mallocStatImpl::enable_from_flags();
+      mallocStatImpl::enable_delayed_dump();
+    }
   }
 }
 
@@ -2419,7 +2584,7 @@ MallocTraceEnableDCmd::MallocTraceEnableDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
   _stack_depth("-stack-depth", "The maximum stack depth to track", "INT", false, "12"),
   _use_backtrace("-use-backtrace", "If true we try to use the backtrace() method to sample " \
-                 "the stack traces.", "BOOLEAN", false, "true"),
+                 "the stack traces.", "BOOLEAN", false, "false"),
   _only_nth("-only-nth", "If > 1 we only track about every n'th allocation. Note that we round " \
             "the given number to the closest power of 2.", "INT", false, "1"),
   _force("-force", "If the trace is already enabled, we disable it first.", "BOOLEAN", false, "false"),

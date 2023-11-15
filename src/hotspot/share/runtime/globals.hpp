@@ -567,6 +567,11 @@ const int ObjectAlignmentInBytes = 8;
           "If set the malloc trace enabled at startup also tracks "         \
           "deallocation of memory")                                         \
                                                                             \
+  product(ccstr, MallocTraceEnableDelay, "0s",                              \
+          "If > 0 seconds and MallocTraceAtStartup is enabled, we delay "   \
+          "the startup by the given amount of time. Can use s, m, h or d "  \
+          "to specify the delay.")                                          \
+                                                                            \
   product(uintx, MallocTraceStackDepth, 12,                                 \
           "The maximum depth of stack traces for the malloc trace "         \
           "enabled at startup.")                                            \
@@ -590,10 +595,6 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we collect more detailed statistics for the malloc "  \
           "trace enabled at startup. This costs some performance.")         \
                                                                             \
-  product(bool, MallocTraceDump, false,                                     \
-          "If enabled we do a dump of the malloc trace in regular "         \
-          "intervals.")                                                     \
-                                                                            \
   product(bool, MallocTraceDumpOnError, false,                              \
           "If enabled and the malloc trace is enabled too we do an "        \
           "emergency dump on native out-of-memory errors.")                 \
@@ -609,8 +610,15 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, MallocTraceDumpInternalStats, false,                        \
           "If enabled we include internal statistics in the dump. ")        \
                                                                             \
-  product(uintx, MallocTraceDumpInterval, 60,                               \
-          "The interval in seconds for the test dump.")                     \
+  product(uintx, MallocTraceDumpCount, 0,                                   \
+          "The number of dumps to perform.")                                \
+                                                                            \
+  product(ccstr, MallocTraceDumpDelay, "1h",                                \
+          "The delay after the trace was enabled at which to start the "    \
+          "regular dumps.")                                                 \
+                                                                            \
+  product(ccstr, MallocTraceDumpInterval, "1h",                             \
+          "The interval for the dump for the dumps.")                       \
                                                                             \
   product(bool, MallocTraceDumpSortByCount, false,                          \
           "If given we sort the output by allocation count instead of "     \
