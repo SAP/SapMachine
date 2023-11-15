@@ -97,7 +97,9 @@ static void do_alloc_with_stack_impl(int size, int type) {
             mem = realloc(NULL, size);
             break;
         case 3:
-            posix_memalign(&mem, 128, size);
+            if (posix_memalign(&mem, 128, size) != 0) {
+                mem = NULL;
+            }
             break;
 #if !defined(__APPLE__)
         case 4:
