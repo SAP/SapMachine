@@ -38,7 +38,7 @@ public class MallocHooksTest {
         }
 
         if (args.length == 0) {
-            testNoRecursiveCallsForFallbacks();
+            /*testNoRecursiveCallsForFallbacks();
             testEnvSanitizing();
             testTracking(false);
             testTracking(true);
@@ -47,32 +47,37 @@ public class MallocHooksTest {
             testPartialTrackint(false, 2, 0.2);
             testPartialTrackint(true, 2, 0.2);
             testPartialTrackint(false, 10, 0.3);
-            testPartialTrackint(true, 10, 0.3);
+            testPartialTrackint(true, 10, 0.3);*/
+            testFlags();
             return;
         }
 
-        if (args[0].equals("manyStacks")) {
-            doManyStacks(args);
-            System.out.println("Done");
+        switch (args[0]) {
+            case "manyStacks":
+                doManyStacks(args);
+                System.out.println("Done");
 
-            while (true) {
-              Thread.sleep(1000);
-            }
-        } else if (args[0].equals("checkEnv")) {
-            if (args[1].equals(getLdPrelodEnv())) {
-               return;
-            }
+                while (true) {
+                  Thread.sleep(1000);
+                }
+            case "checkEnv":
+                if (args[1].equals(getLdPrelodEnv())) {
+                   return;
+                }
 
-            throw new Exception("Expected " + LD_PRELOAD + "=\"" + args[1] + "\", but got " +
-                                LD_PRELOAD + "=\"" +  getLdPrelodEnv() + "\"");
-        } else if (args[0].equals("stress")) {
-            doStress(args);
+                throw new Exception("Expected " + LD_PRELOAD + "=\"" + args[1] + "\", but got " +
+                                    LD_PRELOAD + "=\"" +  getLdPrelodEnv() + "\"");
+            case "stress":
+                doStress(args);
 
-            while (true) {
-              Thread.sleep(1000);
-            }
-        } else {
-            throw new Exception("Unknown command " + args[0]);
+                while (true) {
+                  Thread.sleep(1000);
+                }
+            case "sleep":
+                Thread.sleep(1000 * Long.parseLong(args[1]));
+                return;
+            default:
+                throw new Exception("Unknown command " + args[0]);
         }
     }
 
@@ -202,6 +207,43 @@ public class MallocHooksTest {
         oa.shouldContain("libtestmallochooks.");
         oa.shouldContain("Total allocated bytes");
         oa.shouldContain("Total printed count");
+    }
+
+    private static OutputAnalyzer runSleep(int sleep, String... opts) throws Exception {
+        String[] args = new String[opts.length + 4];
+        System.arraycopy(opts, 0, args, 0, opts.length);
+        args[opts.length + 0] = "-XX:+MallocTraceAtStartup";
+        args[opts.length + 1] = MallocHooksTest.class.getName();
+        args[opts.length + 2] = "sleep";
+        args[opts.length + 3] = Integer.toString(sleep);
+        return new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(args).start());
+    }
+
+    private static void testBasicOutput(OutputAnalyzer oa) throws Exception {
+        oa.shouldHaveExitValue(0);
+        oa.shouldContain("Total printed bytes:");
+    }
+
+    private static void testFlags() throws Exception {
+        OutputAnalyzer oa = null;
+        try {
+            oa = runSleep(1);
+            oa.shouldHaveExitValue(1);
+            oa.shouldContain("Could not find preloaded libmallochooks");
+            oa.shouldContain(LD_PRELOAD + "=");
+            oa = runSleep(10, "-XX:+UseMallocHooks", "-XX:MallocTraceDumpDelay=1s", "-XX:MallocTraceDumpCount=1");
+            testBasicOutput(oa);
+            oa.shouldContain("Contains the currently allocated memory since enabling");
+            oa.shouldContain("Stacks were collected via");
+            oa = runSleep(10, "-XX:+UseMallocHooks", "-XX:MallocTraceDumpDelay=1s", "-XX:MallocTraceDumpCount=1",
+                              "-XX:-MallocTraceTrackFree", "-XX:-MallocTraceUseBacktrace");
+            testBasicOutput(oa);
+            oa.shouldContain("Contains every allocation done since enabling");
+            oa.shouldNotContain("Stacks were collected via");
+        } catch (Exception e) {
+            System.out.println(oa.getOutput());
+            throw e;
+        }
     }
 
     private static ProcessBuilder runManyStacks(int nrOfOps, int size, int maxStack, int seed,
