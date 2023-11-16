@@ -2444,7 +2444,7 @@ void enable_from_flags() {
   spec._stack_depth = (int) MallocTraceStackDepth;
   spec._use_backtrace = MallocTraceUseBacktrace;
   spec._only_nth = (int) MallocTraceOnlyNth;
-  spec._track_free = MallocTraceTrackFrees;
+  spec._track_free = MallocTraceTrackFree;
   spec._detailed_stats = MallocTraceDetailedStats;
 
   if (MallocTraceDumpOnError) {

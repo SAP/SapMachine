@@ -563,7 +563,7 @@ const int ObjectAlignmentInBytes = 8;
           "print an error message and exit. Otherwise the error is "        \
           "silently ignored.")                                              \
                                                                             \
-  product(bool, MallocTraceTrackFrees, true,                                \
+  product(bool, MallocTraceTrackFree, true,                                 \
           "If set the malloc trace enabled at startup also tracks "         \
           "deallocation of memory")                                         \
                                                                             \
