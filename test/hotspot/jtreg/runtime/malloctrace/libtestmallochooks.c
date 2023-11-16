@@ -6,8 +6,13 @@
 #include <unistd.h>
 #include <dlfcn.h>
 
-#if !defined(__APPLE__)
+#if defined(__APPLE__)
+#define NO_OPT_ATTR __attribute__((optnone))
+#elif defined(LINUX)
 #include <malloc.h>
+#define NO_OPT_ATTR __attribute__((optimize(0)))
+#else
+#error "Should not be compiled"
 #endif
 
 #include "jni.h"
@@ -49,7 +54,7 @@ if (roots[idx] != NULL) { \
 static void do_alloc_with_stack_impl(int size, int type);
 static void do_alloc_with_stack2(int size, int type, int stack);
 
-static void do_alloc_with_stack1(int size, int type, int stack) {
+static void NO_OPT_ATTR do_alloc_with_stack1(int size, int type, int stack) {
     int new_stack = stack / 2;
 
     if (new_stack == 0) {
@@ -58,15 +63,10 @@ static void do_alloc_with_stack1(int size, int type, int stack) {
         do_alloc_with_stack1(size, type, new_stack);
     } else {
         do_alloc_with_stack2(size, type, new_stack);
-    }
-
-    // Inhibit tail call optimization.
-    if (stack < 0) {
-      abort();
     }
 }
 
-static void do_alloc_with_stack2(int size, int type, int stack) {
+static void NO_OPT_ATTR do_alloc_with_stack2(int size, int type, int stack) {
     int new_stack = stack / 2;
 
     if (new_stack == 0) {
@@ -75,11 +75,6 @@ static void do_alloc_with_stack2(int size, int type, int stack) {
         do_alloc_with_stack1(size, type, new_stack);
     } else {
         do_alloc_with_stack2(size, type, new_stack);
-    }
-
-    // Inhibit tail call optimization.
-    if (stack < 0) {
-      abort();
     }
 }
 
