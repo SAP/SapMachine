@@ -767,7 +767,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 //     // inner_incr := AddI(inner_phi, intcon(stride))
 //     inner_incr = inner_phi + stride;
 //     if (inner_incr < inner_iters_actual) {
-//       ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+//       ... use phi=>(outer_phi+inner_phi) ...
 //       continue;
 //     }
 //     else break;
@@ -977,10 +977,6 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // loop iv phi
   Node* iv_add = loop_nest_replace_iv(phi, inner_phi, outer_phi, head, bt);
 
-  // Replace inner loop long iv incr with inner loop int incr + outer
-  // loop iv phi
-  loop_nest_replace_iv(incr, inner_incr, outer_phi, head, bt);
-
   set_subtree_ctrl(inner_iters_actual_int, body_populated);
 
   LoopNode* inner_head = create_inner_head(loop, head, exit_test);
@@ -1029,7 +1025,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   //       back_control: fallthrough;
   //     else
   //       inner_exit_branch: break;  //exit_branch->clone()
-  //     ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+  //     ... use phi=>(outer_phi+inner_phi) ...
   //     inner_phi = inner_phi + stride;  // inner_incr
   //   }
   //   outer_exit_test:  //exit_test->clone(), in(0):=inner_exit_branch
@@ -4448,6 +4444,7 @@ void PhaseIdealLoop::build_and_optimize() {
   NOT_PRODUCT( C->verify_graph_edges(); )
   worklist.push(C->top());
   build_loop_late( visited, worklist, nstack );
+  if (C->failing()) { return; }
 
   if (_verify_only) {
     C->restore_major_progress(old_progress);
@@ -4702,6 +4699,7 @@ void PhaseIdealLoop::verify() const {
   bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);
+  if (C->failing()) return;
 
   // Verify ctrl and idom of every node.
   success &= verify_idom_and_nodes(C->root(), &phase_verify);
@@ -5954,6 +5952,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
       } else {
         // All of n's children have been processed, complete post-processing.
         build_loop_late_post(n);
+        if (C->failing()) { return; }
         if (nstack.is_empty()) {
           // Finished all nodes on stack.
           // Process next node on the worklist.
@@ -6100,13 +6099,15 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   Node *legal = LCA;            // Walk 'legal' up the IDOM chain
   Node *least = legal;          // Best legal position so far
   while( early != legal ) {     // While not at earliest legal
-#ifdef ASSERT
     if (legal->is_Start() && !early->is_Root()) {
+#ifdef ASSERT
       // Bad graph. Print idom path and fail.
       dump_bad_graph("Bad graph detected in build_loop_late", n, early, LCA);
       assert(false, "Bad graph detected in build_loop_late");
-    }
 #endif
+      C->record_method_not_compilable("Bad graph detected in build_loop_late");
+      return;
+    }
     // Find least loop nesting depth
     legal = idom(legal);        // Bump up the IDOM tree
     // Check for lower nesting depth

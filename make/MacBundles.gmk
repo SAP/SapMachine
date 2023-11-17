@@ -38,7 +38,7 @@ ifeq ($(call isTargetOs, macosx), true)
 
   MACOSX_PLIST_SRC := $(TOPDIR)/make/data/bundle
 
-  # SapMachine 2023-06-24 ea bundles should have build number in CFBundleName
+  # SapMachine 2023-06-24: ea bundles should have build number in CFBundleName
   ifeq ($(VERSION_PRE), ea)
     BUNDLE_NAME := $(MACOSX_BUNDLE_NAME_BASE) $(VERSION_STRING)
   else

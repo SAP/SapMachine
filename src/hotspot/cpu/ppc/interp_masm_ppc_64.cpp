@@ -887,6 +887,12 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // Test if reserved zone needs to be enabled.
     Label no_reserved_zone_enabling;
 
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    lwz(R0, in_bytes(JavaThread::stack_guard_state_offset()), R16_thread);
+    cmpwi(CCR0, R0, StackOverflow::stack_guard_enabled);
+    beq_predict_taken(CCR0, no_reserved_zone_enabling);
+
     // Compare frame pointers. There is no good stack pointer, as with stack
     // frame compression we can get different SPs when we do calls. A subsequent
     // call could have a smaller SP, so that this compare succeeds for an
@@ -961,7 +967,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      fast_lock(object, /* mark word */ header, tmp, slow_case);
+      lightweight_lock(object, /* mark word */ header, tmp, slow_case);
       b(count_locking);
     } else if (LockingMode == LM_LEGACY) {
 
@@ -1111,7 +1117,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
       ld(header, oopDesc::mark_offset_in_bytes(), object);
       andi_(R0, header, markWord::monitor_value);
       bne(CCR0, slow_case);
-      fast_unlock(object, header, slow_case);
+      lightweight_unlock(object, header, slow_case);
     } else {
       addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 

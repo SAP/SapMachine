@@ -149,12 +149,21 @@ void VM_Version::setup_cpu_available_features() {
 
 void VM_Version::os_aux_features() {
   uint64_t auxv = getauxval(AT_HWCAP);
-  int i = 0;
-  while (_feature_list[i] != nullptr) {
+  for (int i = 0; _feature_list[i] != nullptr; i++) {
+    if (_feature_list[i]->feature_bit() == HWCAP_ISA_V) {
+      // Special case for V: some dev boards only support RVV version 0.7, while
+      // the OpenJDK only supports RVV version 1.0. These two versions are not
+      // compatible with each other. Given the V bit is set through HWCAP on
+      // some custom kernels, regardless of the version, it can lead to
+      // generating V instructions on boards that don't support RVV version 1.0
+      // (ex: Sipeed LicheePi), leading to a SIGILL.
+      // That is an acceptable workaround as only Linux Kernel v6.5+ supports V,
+      // and that version already support hwprobe anyway
+      continue;
+    }
     if ((_feature_list[i]->feature_bit() & auxv) != 0) {
       _feature_list[i]->enable_feature();
     }
-    i++;
   }
 }
 
@@ -224,19 +233,11 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_I.enable_feature();
-  ext_M.enable_feature();
-  ext_A.enable_feature();
-  ext_F.enable_feature();
-  ext_D.enable_feature();
-  ext_C.enable_feature();
-  ext_H.enable_feature();
-  ext_V.enable_feature();
-
   ext_Zicbom.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
+  // If we running on a pre-6.5 kernel
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbs.enable_feature();

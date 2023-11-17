@@ -690,7 +690,7 @@ void InterpreterMacroAssembler::remove_activation(
   // Check that all monitors are unlocked
   {
     Label loop, exception, entry, restart;
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     const Address monitor_block_top(
       fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
     const Address monitor_block_bot(
@@ -763,6 +763,12 @@ void InterpreterMacroAssembler::remove_activation(
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
 
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    lw(t0, Address(xthread, JavaThread::stack_guard_state_offset()));
+    subw(t0, t0, StackOverflow::stack_guard_enabled);
+    beqz(t0, no_reserved_zone_enabling);
+
     ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
     ble(t1, t0, no_reserved_zone_enabling);
 
@@ -829,7 +835,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      fast_lock(obj_reg, tmp, t0, t1, slow_case);
+      lightweight_lock(obj_reg, tmp, t0, t1, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -942,7 +948,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
       bnez(t0, slow_case);
-      fast_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
+      lightweight_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
       j(count);
 
       bind(slow_case);

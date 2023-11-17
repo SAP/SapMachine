@@ -43,7 +43,7 @@ ALL_MODULES := $(call FindAllModules)
 
 $(eval $(call ReadImportMetaData))
 
-# SapMachine 2021-09-24 : add jcmd to JRE
+# SapMachine 2021-09-24: add jcmd to JRE
 JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
     $(PLATFORM_MODULES) jdk.jdwp.agent jdk.jcmd)
 JDK_MODULES += $(ALL_MODULES)
@@ -268,9 +268,6 @@ else
   endif
 endif
 
-FILTERED_PDBS := %jimage.stripped.pdb %jpackage.stripped.pdb %java.stripped.pdb \
-    %jimage.pdb %jpackage.pdb %java.pdb %jimage.map %jpackage.map %java.map
-
 # Param 1 - either JDK or JRE
 SetupCopyDebuginfo = \
     $(foreach m, $(ALL_$1_MODULES), \
@@ -284,8 +281,8 @@ SetupCopyDebuginfo = \
       $(eval $(call SetupCopyFiles, COPY_$1_CMDS_DEBUGINFO_$m, \
           SRC := $(SUPPORT_OUTPUTDIR)/modules_cmds/$m, \
           DEST := $($1_IMAGE_DIR)/$(CMDS_TARGET_SUBDIR), \
-          FILES := $(filter-out $(FILTERED_PDBS), $(call FindDebuginfoFiles, \
-              $(SUPPORT_OUTPUTDIR)/modules_cmds/$m)), \
+          FILES := $(call FindDebuginfoFiles, \
+              $(SUPPORT_OUTPUTDIR)/modules_cmds/$m), \
       )) \
       $(eval $1_TARGETS += $$(COPY_$1_CMDS_DEBUGINFO_$m)) \
     )

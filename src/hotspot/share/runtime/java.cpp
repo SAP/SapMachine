@@ -97,7 +97,7 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-// SapMachine 2019-09-01: vitals.
+// SapMachine 2019-09-01: Vitals
 #include "runtime/globals.hpp"
 #include "vitals/vitals.hpp"
 
@@ -342,7 +342,7 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  // SapMachine 2019-09-01: vitals.
+  // SapMachine 2019-09-01: Vitals
   if (DumpVitalsAtExit) {
     sapmachine_vitals::dump_reports();
   }
@@ -399,7 +399,7 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  // SapMachine 2019-09-01: vitals.
+  // SapMachine 2019-09-01: Vitals
   if (DumpVitalsAtExit) {
     sapmachine_vitals::dump_reports();
   }

@@ -67,6 +67,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+// SapMachine 2019-02-20: Vitals
+#include "vitals/vitals.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -74,8 +76,7 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-// SapMachine 2019-02-20 : vitals
-#include "vitals/vitals.hpp"
+// SapMachine 2019-02-20: Vitals
 #ifdef LINUX
 #include "vitals_linux_himemreport.hpp"
 #endif
@@ -1104,6 +1105,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_stack_location(st, _context, continuation);
     st->cr();
 
+  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+    st->print_cr("Lock stack of current Java thread (top to bottom):");
+    JavaThread::cast(_thread)->lock_stack().print_on(st);
+    st->cr();
+
   STEP_IF("printing code blobs if possible", _verbose)
     const int printed_capacity = max_error_log_print_code;
     address printed[printed_capacity];
@@ -1306,7 +1312,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     NativeHeapTrimmer::print_state(st);
     st->cr();
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   STEP("Vitals")
      if (_verbose) {
        sapmachine_vitals::print_info_t info;
@@ -1508,7 +1514,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   // STEP("Vitals")
   sapmachine_vitals::print_info_t info;
   sapmachine_vitals::default_settings(&info);
