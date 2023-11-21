@@ -1677,9 +1677,10 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           assert(!n_loop->is_member(get_loop(x_ctrl)), "should have moved out of loop");
           register_new_node(x, x_ctrl);
 
-          // Chain of AddP: (AddP base (AddP base )) must keep the same base after sinking so:
-          // 1- We don't add a CastPP here when the first one is sunk so if the second one is not, their bases remain
-          // the same.
+          // Chain of AddP nodes: (AddP base (AddP base (AddP base )))
+          // All AddP nodes must keep the same base after sinking so:
+          // 1- We don't add a CastPP here until the last one of the chain is sunk: if part of the chain is not sunk,
+          // their bases remain the same.
           // (see 2- below)
           assert(!x->is_AddP() || !x->in(AddPNode::Address)->is_AddP() ||
                  x->in(AddPNode::Address)->in(AddPNode::Base) == x->in(AddPNode::Base) ||
@@ -1693,21 +1694,22 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               Node* in = x->in(k);
               if (in != nullptr && n_loop->is_member(get_loop(get_ctrl(in)))) {
                 const Type* in_t = _igvn.type(in);
-                cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t, ConstraintCastNode::UnconditionalDependency);
+                cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t,
+                                                              ConstraintCastNode::UnconditionalDependency, nullptr);
               }
               if (cast != nullptr) {
-                register_new_node(cast, x_ctrl);
+                Node* prev = _igvn.hash_find_insert(cast);
+                if (prev != nullptr && get_ctrl(prev) == x_ctrl) {
+                  cast->destruct(&_igvn);
+                  cast = prev;
+                } else {
+                  register_new_node(cast, x_ctrl);
+                }
                 x->replace_edge(in, cast);
-                // Chain of AddP:
-                // 2- A CastPP of the base is only added now that both AddP nodes are sunk
+                // Chain of AddP nodes:
+                // 2- A CastPP of the base is only added now that all AddP nodes are sunk
                 if (x->is_AddP() && k == AddPNode::Base) {
-                  for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
-                    Node* u = x->fast_out(i);
-                    if (u->is_AddP() && u->in(AddPNode::Base) == n->in(AddPNode::Base)) {
-                      _igvn.replace_input_of(u, AddPNode::Base, cast);
-                      assert(u->find_out_with(Op_AddP) == nullptr, "more than 2 chained AddP nodes?");
-                    }
-                  }
+                  update_addp_chain_base(x, n->in(AddPNode::Base), cast);
                 }
                 break;
               }
@@ -1718,6 +1720,22 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         _igvn.remove_dead_node(n);
       }
       _dom_lca_tags_round = 0;
+    }
+  }
+}
+
+void PhaseIdealLoop::update_addp_chain_base(Node* x, Node* old_base, Node* new_base) {
+  ResourceMark rm;
+  Node_List wq;
+  wq.push(x);
+  while (wq.size() != 0) {
+    Node* n = wq.pop();
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* u = n->fast_out(i);
+      if (u->is_AddP() && u->in(AddPNode::Base) == old_base) {
+        _igvn.replace_input_of(u, AddPNode::Base, new_base);
+        wq.push(u);
+      }
     }
   }
 }
@@ -2013,17 +2031,6 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   return (CmpNode*)cmp;
 }
 
-//------------------------------sink_use---------------------------------------
-// If 'use' was in the loop-exit block, it now needs to be sunk
-// below the post-loop merge point.
-void PhaseIdealLoop::sink_use( Node *use, Node *post_loop ) {
-  if (!use->is_CFG() && get_ctrl(use) == post_loop->in(2)) {
-    set_ctrl(use, post_loop);
-    for (DUIterator j = use->outs(); use->has_out(j); j++)
-      sink_use(use->out(j), post_loop);
-  }
-}
-
 void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
                                                  IdealLoopTree* loop, IdealLoopTree* outer_loop,
                                                  Node_List*& split_if_set, Node_List*& split_bool_set,
@@ -2090,7 +2097,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       while( use->in(idx) != old ) idx++;
       Node *prev = use->is_CFG() ? use : get_ctrl(use);
       assert(!loop->is_member(get_loop(prev)) && !outer_loop->is_member(get_loop(prev)), "" );
-      Node *cfg = prev->_idx >= new_counter
+      Node* cfg = (prev->_idx >= new_counter && prev->is_Region())
         ? prev->in(2)
         : idom(prev);
       if( use->is_Phi() )     // Phi use is in prior block
@@ -2114,7 +2121,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 
       while(!outer_loop->is_member(get_loop(cfg))) {
         prev = cfg;
-        cfg = cfg->_idx >= new_counter ? cfg->in(2) : idom(cfg);
+        cfg = (cfg->_idx >= new_counter && cfg->is_Region()) ? cfg->in(2) : idom(cfg);
       }
       // If the use occurs after merging several exits from the loop, then
       // old value must have dominated all those exits.  Since the same old
@@ -2172,10 +2179,6 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
         if( hit )             // Go ahead and re-hash for hits.
           _igvn.replace_node( use, hit );
       }
-
-      // If 'use' was in the loop-exit block, it now needs to be sunk
-      // below the post-loop merge point.
-      sink_use( use, prev );
     }
   }
 }
@@ -2542,8 +2545,6 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         // We need a Region to merge the exit from the peeled body and the
         // exit from the old loop body.
         RegionNode *r = new RegionNode(3);
-        // Map the old use to the new merge point
-        old_new.map( use->_idx, r );
         uint dd_r = MIN2(dom_depth(newuse), dom_depth(use));
         assert(dd_r >= dom_depth(dom_lca(newuse, use)), "" );
 
@@ -2579,12 +2580,24 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           l -= uses_found;    // we deleted 1 or more copies of this edge
         }
 
+        assert(use->is_Proj(), "loop exit should be projection");
+        // lazy_replace() below moves all nodes that are:
+        // - control dependent on the loop exit or
+        // - have control set to the loop exit
+        // below the post-loop merge point. lazy_replace() takes a dead control as first input. To make it
+        // possible to use it, the loop exit projection is cloned and becomes the new exit projection. The initial one
+        // becomes dead and is "replaced" by the region.
+        Node* use_clone = use->clone();
+        register_control(use_clone, use_loop, idom(use), dom_depth(use));
         // Now finish up 'r'
         r->set_req(1, newuse);
-        r->set_req(2,    use);
+        r->set_req(2, use_clone);
         _igvn.register_new_node_with_optimizer(r);
         set_loop(r, use_loop);
         set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
+        lazy_replace(use, r);
+        // Map the (cloned) old use to the new merge point
+        old_new.map(use_clone->_idx, r);
       } // End of if a loop-exit test
     }
   }

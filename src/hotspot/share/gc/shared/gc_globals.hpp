@@ -690,12 +690,7 @@
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
           range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
-          constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
-                                                                            \
-  /* SapMachine 2023-09-25 */                                               \
-  product(bool, UseParallelLargeArrayScanning, false, EXPERIMENTAL,         \
-          "Parallelize scanning of large object arrays in old gen "         \
-          "when scanning roots for parallel young gc")
+          constraint(GCCardSizeInBytesConstraintFunc,AtParse)
   // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)

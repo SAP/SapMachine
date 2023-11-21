@@ -113,7 +113,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-// SapMachine 2019-02-20 : vitals
+// SapMachine 2019-02-20: Vitals
 #include "vitals/vitals.hpp"
 #ifdef LINUX
 #include "vitals_linux_himemreport.hpp"
@@ -782,7 +782,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   if (EnableVitals) {
     sapmachine_vitals::initialize();
   }
@@ -1029,7 +1029,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   // Make new thread known to active EscapeBarrier
   EscapeBarrier::thread_added(p);
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   sapmachine_vitals::counters::inc_threads_created(1);
 }
 
@@ -1335,7 +1335,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   cl.do_thread(WatcherThread::watcher_thread());
   cl.do_thread(AsyncLogWriter::instance());
 
-  // SapMachine 2019-11-07 : vitals
+  // SapMachine 2019-11-07: Vitals
   const Thread* vitals_sampler_thread = sapmachine_vitals::samplerthread();
   if (vitals_sampler_thread != NULL) {
     vitals_sampler_thread->print_on(st);
@@ -1343,7 +1343,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   }
 
 #ifdef LINUX
-  // SapMachine 2022-05-07 : HiMemReport
+  // SapMachine 2022-05-07: HiMemReport
   const Thread* himem_reporter_thread = sapmachine_vitals::himem_reporter_thread();
   if (himem_reporter_thread != NULL) {
     himem_reporter_thread->print_on(st);
@@ -1416,11 +1416,11 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
   print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
 
-  // SapMachine 2019-11-07 : vitals
+  // SapMachine 2019-11-07: Vitals
   print_on_error(const_cast<Thread*>(sapmachine_vitals::samplerthread()),
                  st, current, buf, buflen, &found_current);
 #ifdef LINUX
-  // SapMachine 2022-05-07 : HiMemReport
+  // SapMachine 2022-05-07: HiMemReport
   print_on_error(const_cast<Thread*>(sapmachine_vitals::himem_reporter_thread()),
                  st, current, buf, buflen, &found_current);
 #endif
