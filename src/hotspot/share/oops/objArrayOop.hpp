@@ -107,9 +107,6 @@ public:
   // special iterators for index ranges, returns size of object
   template <typename OopClosureType>
   void oop_iterate_range(OopClosureType* blk, int start, int end);
-  // Iterate over oop elements within mr, and metadata.
-  template <typename OopClosureType>
-  inline void oop_oop_iterate_bounded(OopClosureType* closure, MemRegion mr);
 };
 
 #endif // SHARE_OOPS_OBJARRAYOOP_HPP

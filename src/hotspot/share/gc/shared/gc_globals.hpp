@@ -693,12 +693,8 @@
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, max_juint)                                               \
-                                                                            \
-  /* SapMachine 2023-09-25 */                                               \
-  product(bool, UseParallelLargeArrayScanning, false, EXPERIMENTAL,         \
-          "Parallelize scanning of large object arrays in old gen "         \
-          "when scanning roots for parallel young gc")
+          range(0, max_juint)
+
 // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)

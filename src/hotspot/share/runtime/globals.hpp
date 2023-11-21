@@ -498,7 +498,7 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
-  /* SapMachine 2019-02-20 : vitals */                                      \
+  /* SapMachine 2019-02-20: Vitals */                                       \
   product(bool, EnableVitals, true,                                         \
           "Enable sampling of vitals: memory, cpu utilization and various " \
           "VM core statistics; display via jcmd \"VM.vitals\".")            \

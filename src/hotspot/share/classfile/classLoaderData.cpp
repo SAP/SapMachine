@@ -178,7 +178,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
 
   JFR_ONLY(INIT_ID(this);)
 
-  // SapMachine 2023-07-04 : vitals
+  // SapMachine 2023-07-04: Vitals
   if (EnableVitals) {
       sapmachine_vitals::counters::inc_cld_count(has_class_mirror_holder);
   }

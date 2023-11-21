@@ -65,8 +65,7 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
-
-// SapMachine 2019-02-20 : vitals
+// SapMachine 2019-02-20: Vitals
 #include "vitals/vitals.hpp"
 #ifdef LINUX
 #include "vitals_linux_himemreport.hpp"
@@ -1226,7 +1225,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   STEP("Vitals")
      if (_verbose) {
        sapmachine_vitals::print_info_t info;
@@ -1444,7 +1443,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   // STEP("Vitals")
   sapmachine_vitals::print_info_t info;
   sapmachine_vitals::default_settings(&info);

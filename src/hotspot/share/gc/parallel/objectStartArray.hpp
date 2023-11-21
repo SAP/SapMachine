@@ -147,11 +147,9 @@ class ObjectStartArray : public CHeapObj<mtGC> {
     return *block != clean_block;
   }
 
-  // Return true iff an object starts in
-  //   [start_addr, end_addr_aligned_up)
-  // where
-  //   end_addr_aligned_up = align_up(end_addr, _card_size)
-  // Precondition: start_addr is card-size aligned
+  // Return true if an object starts in the range of heap addresses.
+  // If an object starts at an address corresponding to
+  // "start", the method will return true.
   bool object_starts_in_range(HeapWord* start_addr, HeapWord* end_addr) const;
 };
 

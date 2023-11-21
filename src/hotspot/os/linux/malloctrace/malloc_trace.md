@@ -128,13 +128,13 @@ In measurements, the MallocTrace increased VM startup time by about 6%. The slow
 
 ### Limitations
 
-This facility uses Glibc malloc hooks. 
+This facility uses Glibc malloc hooks.
 
 Glibc malloc hooks are decidedly thread-unsafe, and we use them in a multithreaded context. Therefore what we can do with these hooks is very restricted.
 
 1) This is **not** a complete leak analysis tool! All we see with this facility is the "hotness" of malloc call sites. These may be innocuous; e.g., a malloc call site may be followed by a free call right away - it still would show up as a hot call site in the MallocTrace report.
 2) **Not every allocation** will be captured since there are small-time windows where the hooks need to be disabled.
 
-One should use the MallocTrace tool to analyze suspected C-heap leaks when NMT/SAP JVM malloc statistics show up empty. It shows you which malloc sites are hot; nothing more. 
+One should use the MallocTrace tool to analyze suspected C-heap leaks when NMT/SAP JVM malloc statistics show up empty. It shows you which malloc sites are hot; nothing more.
 
 It works with third-party code, even with code that just happens to run in the VM process, e.g., system libraries.
