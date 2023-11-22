@@ -113,10 +113,12 @@
                 {
                     "tag": "sapmachine-22+24",
                     "jdk": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B24/sapmachine-jdk-22-ea.24_linux-x64-musl_bin.tar.gz"
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B24/sapmachine-jdk-22-ea.24_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B24/sapmachine-jdk-22-ea.24_linux-x64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B24/sapmachine-jre-22-ea.24_linux-x64-musl_bin.tar.gz"
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B24/sapmachine-jre-22-ea.24_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B24/sapmachine-jre-22-ea.24_linux-x64_bin.tar.gz"
                     }
                 }
             ],
@@ -124,10 +126,12 @@
                 {
                     "tag": "sapmachine-22+24",
                     "jdk": {
-                        "linux-x64-musl": "sha256 54b44a5a353c7cf840828b55f3cc217b643eacbcc995b08a7e9f82e0f64b38c2"
+                        "linux-x64-musl": "sha256 54b44a5a353c7cf840828b55f3cc217b643eacbcc995b08a7e9f82e0f64b38c2",
+                        "linux-x64": "sha256 bd8d904a73bd2f32b8de2e395379f8ccb5672852eec123310f25e4d6166a3563"
                     },
                     "jre": {
-                        "linux-x64-musl": "sha256 3fe4c60b58e309c1f9a548f9e0adf6f0e018002ff9edf61187b05c7812240ee7"
+                        "linux-x64-musl": "sha256 3fe4c60b58e309c1f9a548f9e0adf6f0e018002ff9edf61187b05c7812240ee7",
+                        "linux-x64": "sha256 80c6913670397868c3993596e590b50fd6248e0b5b63c520bbfb5e3d1b5bb648"
                     }
                 }
             ]
