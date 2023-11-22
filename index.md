@@ -23,6 +23,8 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 * Creating tools for developers
     * [JFR Event Collection](https://sapmachine.io/jfrevents/): Information on all JFR events for a specific JDK
     * [AP-Loader](https://github.com/jvm-profiling-tools/ap-loader): AsyncProfiler in a single cross-platform JAR
+* [Blogging](https://github.com/SAP/SapMachine/wiki/Blogs) and [Presenting](https://github.com/SAP/SapMachine/wiki/Presentations) at Java conferences all over the globe 
+    
 
 ## Download
 
