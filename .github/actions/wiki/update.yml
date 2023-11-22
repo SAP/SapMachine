@@ -1,0 +1,26 @@
+# Runs wiki update actions every day at 20:00 UTC
+
+name: Update Wiki
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 20 * * *'
+
+jobs:
+  update-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update Wiki
+        run: |
+            git clone https://github.com/SAP/SapMachine.wiki.git
+            cd SapMachine.wiki
+            python3 ../scripts/update_blogs.py > out
+            if grep -q changed out; then
+                git commit -a -m "Update blog posts"
+                git push
+                echo "Blog post list updated"
+            fi
