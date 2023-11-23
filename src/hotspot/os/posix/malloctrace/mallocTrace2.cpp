@@ -415,8 +415,8 @@ class StatEntry {
 private:
   StatEntry* _next;
   uint64_t   _hash_and_nr_of_frames;
-  size_t     _size;
-  size_t     _count;
+  uint64_t   _size;
+  uint64_t   _count;
   address    _frames[1];
 
 public:
@@ -456,11 +456,11 @@ public:
     _count -= 1;
   }
 
-  size_t size() {
+  uint64_t size() {
     return _size;
   }
 
-  size_t count() {
+  uint64_t count() {
     return _count;
   }
 
@@ -476,8 +476,8 @@ public:
 
 struct StatEntryCopy {
   StatEntry* _entry;
-  size_t     _size;
-  size_t     _count;
+  uint64_t   _size;
+  uint64_t   _count;
 };
 
 // The entry for a single allocation. Note that we don't store the pointer itself
@@ -737,9 +737,8 @@ private:
   static void cleanup();
 
   static bool dump_entry(outputStream* st, StatEntryCopy* entry, int index,
-                         size_t total_size, size_t total_count, int total_entries,
+                         uint64_t total_size, uint64_t total_count, int total_entries,
                          char const* filter, AddressHashSet* filter_cache);
-  static void create_statistic(bool for_siez, size_t* bins);
 
 public:
   static void initialize();
@@ -1798,15 +1797,15 @@ static void print_percentage(outputStream* st, double f) {
   }
 }
 
-static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
-  size_t k = 1024;
+static void print_mem(outputStream* st, uint64_t mem, uint64_t total = 0) {
+  uint64_t k = 1024;
   double perc = 0.0;
   if (total > 0) {
     perc = 100.0 * mem / total;
   }
 
-  if ((ssize_t) mem < 0) {
-    mem = -((size_t) mem);
+  if ((int64_t) mem < 0) {
+    mem = -((int64_t) mem);
     st->print("*neg* ");
   }
 
@@ -1820,26 +1819,26 @@ static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
     }
   } else {
     int idx =0;
-    size_t curr = mem;
+    uint64_t curr = mem;
     double f = 1.0 / k;
 
     while (mem_prefix[idx] != NULL) {
       if (curr < 1000 * k) {
         if (curr < 100 * k) {
           if (total > 0) {
-            st->print("%'" PRId64 " (%.1f %s, ", (uint64_t) mem, f * curr, mem_prefix[idx]);
+            st->print("%'" PRId64 " (%.1f %s, ", mem, f * curr, mem_prefix[idx]);
             print_percentage(st, perc);
             st->print_raw(")");
           } else {
-            st->print("%'" PRId64 " (%.1f %s)", (uint64_t) mem, f * curr, mem_prefix[idx]);
+            st->print("%'" PRId64 " (%.1f %s)", mem, f * curr, mem_prefix[idx]);
           }
         } else {
           if (total > 0) {
-            st->print("%'" PRId64 " (%d %s, ", (uint64_t) mem, (int) (curr / k), mem_prefix[idx]);
+            st->print("%'" PRId64 " (%d %s, ", mem, (int) (curr / k), mem_prefix[idx]);
             print_percentage(st, perc);
             st->print_raw(")");
           } else {
-            st->print("%'" PRId64 " (%d %s)", (uint64_t) mem, (int) (curr / k), mem_prefix[idx]);
+            st->print("%'" PRId64 " (%d %s)", mem, (int) (curr / k), mem_prefix[idx]);
           }
         }
 
@@ -1850,11 +1849,11 @@ static void print_mem(outputStream* st, size_t mem, size_t total = 0) {
       idx += 1;
     }
 
-    st->print("%'" PRId64 " (%'" PRId64 "%s)", (uint64_t) mem, (uint64_t) curr, mem_prefix[idx - 1]);
+    st->print("%'" PRId64 " (%'" PRId64 "%s)", mem, curr, mem_prefix[idx - 1]);
   }
 }
 
-static void print_count(outputStream* st, size_t count, size_t total = 0) {
+static void print_count(outputStream* st, uint64_t count, uint64_t total = 0) {
   st->print("%'" PRId64, (int64_t) count);
 
   if (total > 0) {
@@ -1884,7 +1883,7 @@ static void print_frame(outputStream* st, address frame) {
 }
 
 bool MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int index,
-                                     size_t total_size, size_t total_count, int total_entries,
+                                     uint64_t total_size, uint64_t total_count, int total_entries,
                                      char const* filter, AddressHashSet* filter_cache) {
   // Use a temp buffer since the output stream might use unbuffered I/O.
   char ss_tmp[4096];
@@ -1951,10 +1950,10 @@ bool MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int
 
 static void print_allocation_stats(outputStream* st, Allocator** allocs, int* masks, Padded<int>* sizes,
                                    Lock* locks, int nr_of_maps, char const* type) {
-  size_t allocated = 0;
-  size_t unused = 0;
-  size_t total_entries = 0;
-  size_t total_slots = 0;
+  uint64_t allocated = 0;
+  uint64_t unused = 0;
+  uint64_t total_entries = 0;
+  uint64_t total_slots = 0;
 
   for (int i = 0; i < nr_of_maps; ++i) {
     Locker lock(locks[i]);
@@ -1974,7 +1973,7 @@ static void print_allocation_stats(outputStream* st, Allocator** allocs, int* ma
   print_mem(st, unused);
   st->cr();
   st->print_cr("Average load    : %.2f", total_entries / (double) total_slots);
-  st->print_cr("Nr. of entries  : %'" PRId64, (uint64_t) total_entries);
+  st->print_cr("Nr. of entries  : %'" PRId64, total_entries);
 }
 
 static int sort_by_size(const void* p1, const void* p2) {
@@ -2080,8 +2079,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   int nr_of_entries[NR_OF_STACK_MAPS];
 
   bool failed_alloc = false;
-  size_t total_count = 0;
-  size_t total_size = 0;
+  uint64_t total_count = 0;
+  uint64_t total_size = 0;
   int total_entries = 0;
   int total_non_empty_entries = 0;
   int max_entries = MAX2(1, spec._dump_fraction > 0 ? INT_MAX : spec._max_entries);
@@ -2183,14 +2182,14 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     }
   }
 
-  size_t size_limit = total_size;
-  size_t count_limit = total_count;
+  uint64_t size_limit = total_size;
+  uint64_t count_limit = total_count;
 
   if (spec._dump_fraction > 0) {
     if (spec._sort_by_count) {
-      count_limit = (size_t) (0.01 * total_count *  spec._dump_fraction);
+      count_limit = (uint64_t) (0.01 * total_count *  spec._dump_fraction);
     } else {
-      size_limit = (size_t) (0.01 * total_size *  spec._dump_fraction);
+      size_limit = (uint64_t) (0.01 * total_size *  spec._dump_fraction);
     }
   }
 
@@ -2199,8 +2198,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   int curr_pos[NR_OF_STACK_MAPS];
   memset(curr_pos, 0, NR_OF_STACK_MAPS * sizeof(int));
 
-  size_t printed_size = 0;
-  size_t printed_count = 0;
+  uint64_t printed_size = 0;
+  uint64_t printed_count = 0;
   int printed_entries = 0;
 
   for (int i = 0; i < max_entries; ++i) {
