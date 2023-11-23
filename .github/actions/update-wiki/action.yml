@@ -2,17 +2,12 @@
 
 name: Update Wiki
 
-on:
-  push:
-    branches:
-      - master
-  schedule:
-    - cron: '0 20 * * *'
+description: |
+  This workflow updates the wiki with the latest blog posts.
 
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
     - name: Update Wiki
       run: |
           git clone https://github.com/SAP/SapMachine.wiki.git

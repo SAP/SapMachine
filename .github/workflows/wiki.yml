@@ -1,9 +1,7 @@
 name: 'Wiki-related'
 
 on:
-  push:
-    branches:
-      - sapmachine
+  workflow_dispatch: {}
   schedule:
     - cron: '0 20 * * *'
 
