@@ -40,6 +40,8 @@
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtDCmd.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -67,17 +69,19 @@
 #include "utilities/macros.hpp"
 #include "utilities/parseInteger.hpp"
 #ifdef LINUX
+#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
-#include "trimCHeapDCmd.hpp"
 // SapMachine 2021-09-01: malloc-trace
 #include "malloctrace/mallocTraceDCmd.hpp"
+#include "trimCHeapDCmd.hpp"
+#include <errno.h>
 #endif
 // SapMachine 2023-08-15: malloc trace2
 #if defined(LINUX) || defined(__APPLE__)
 #include "malloctrace/mallocTrace2.hpp"
 #endif
 
-// SapMachine 2019-02-20 : vitals
+// SapMachine 2019-02-20: Vitals
 #include "vitals/vitalsDCmd.hpp"
 
 static void loadAgentModule(TRAPS) {
@@ -114,7 +118,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sapmachine_vitals::VitalsDCmd>(full_export, true, false));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
@@ -144,6 +148,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
   // SapMachine 2021-09-01: malloc-trace
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
 #endif
@@ -1172,3 +1178,45 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
+
+#ifdef LINUX
+
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+}
+
+void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
+  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+}
+
+SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_filename);
+}
+
+void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
+  stringStream default_name;
+  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
+  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  fileStream fs(name);
+  if (fs.is_open()) {
+    if (!MemTracker::enabled()) {
+      output()->print_cr("(NMT is disabled, will not annotate mappings).");
+    }
+    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+    // For the readers convenience, resolve path name.
+    char tmp[JVM_MAXPATHLEN];
+    const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
+    name = absname != nullptr ? absname : name;
+    output()->print_cr("Memory map dumped to \"%s\".", name);
+  } else {
+    output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));
+  }
+}
+
+#endif // LINUX

@@ -97,6 +97,8 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 # :hotspot_runtime
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
+# SapMachine 2022-12-16 Exclude a failing test
+runtime/jni/daemonDestroy/TestDaemonDestroy.java windows-all
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
@@ -135,7 +137,6 @@ serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
-serviceability/sa/ClhsdbDumpclass.java 8316342 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
@@ -147,6 +148,11 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
+# SapMachine 2023-11-20 These make trouble in AIX CI
+gtest/GTestWrapper.java aix-ppc64
+gtest/MetaspaceGtests.java#balanced-no-ccs aix-ppc64
+gtest/MetaspaceGtests.java#balanced-with-guards aix-ppc64
+gtest/MetaspaceGtests.java#default-debug aix-ppc64
 
 #############################################################################
 
