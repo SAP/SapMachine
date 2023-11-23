@@ -1,9 +1,7 @@
-# Runs update-wiki update actions every day at 20:00 UTC
-
 name: Update Wiki
 
 description: |
-  This workflow updates the wiki with the latest blog posts.
+  This action updates the wiki with the latest blog posts.
 
 runs:
   using: composite
@@ -19,6 +17,8 @@ runs:
               git commit -a -m "Update blog posts"
               git push
               echo "Blog post list updated"
+          else
+              echo "No updates"
           fi
       working-directory: .
       shell: bash

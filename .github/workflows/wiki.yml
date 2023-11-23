@@ -1,7 +1,9 @@
-name: 'Wiki-related'
+# Runs update-wiki update actions every day at 20:00 UTC
+
+name: 'Wiki Update'
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
   schedule:
     - cron: '0 20 * * *'
 
