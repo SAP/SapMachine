@@ -593,6 +593,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // SapMachine 2023-09-20: malloc trace2
 #if defined(LINUX) || defined(__APPLE__)
   sap::MallocStatistic::initialize();
+#else
+  if (MallocTraceAtStartup || UseMallocHooks) {
+    warning("Malloc trace is not supported on this platform");
+  }
 #endif
 
   JFR_ONLY(Jfr::on_create_vm_1();)
