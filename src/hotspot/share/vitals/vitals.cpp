@@ -873,6 +873,8 @@ public:
 
             bool should_log = (column->extremum() == MAX) && (sample->value(idx) > extremum_sample->value(idx));
             should_log |= (column->extremum() == MIN) && (sample->value(idx) < extremum_sample->value(idx));
+            should_log &= sample->value(idx) != INVALID_VALUE;
+            should_log |= extremum_sample->value(idx) == INVALID_VALUE;
 
             if (should_log) {
               Sample* last_extremum_sample = _last_extremum_samples.sample_at(idx);
