@@ -84,8 +84,8 @@ public:
       return false;
     }
 
-    size_t bytes_read = ::fread(_buf, 1, bufsize, f);
-    _buf[bufsize - 1] = '\0';
+    size_t bytes_read = ::fread(_buf, 1, bufsize - 1, f);
+    _buf[bytes_read] = '\0';
 
     ::fclose(f);
 
