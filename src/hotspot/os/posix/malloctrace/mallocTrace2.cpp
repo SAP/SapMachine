@@ -1601,14 +1601,14 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 
       st->print_raw_cr("Disabling already running trace first.");
     } else {
-      st->print_raw_cr("malloc statistic is already enabled!");
+      st->print_raw_cr("Malloc statistic is already enabled!");
 
       return false;
     }
   }
 
   if (_shutdown) {
-    st->print_raw_cr("malloc statistic is already shut down!");
+    st->print_raw_cr("Malloc statistic is already shut down!");
 
     return false;
   }
@@ -2079,7 +2079,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   Locker lock(_malloc_stat_lock, spec._on_error);
 
   if (!_enabled) {
-    msg_stream->print_raw_cr("malloc statistic not enabled!");
+    msg_stream->print_raw_cr("Malloc statistic not enabled!");
     pthread_setspecific(_malloc_suspended, NULL);
 
     return false;
@@ -2320,7 +2320,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     msg_stream->print_cr("Sampled %'" PRId64 " stacks, took %'" PRId64 " ns per stack on average.",
                          _stack_walk_count, per_stack);
     msg_stream->print_cr("Sampling took %.2f seconds in total", _stack_walk_time * 1e-9);
-    msg_stream->print_cr("Tracked alllocations : %'" PRId64, _tracked_ptrs);
+    msg_stream->print_cr("Tracked allocations  : %'" PRId64, _tracked_ptrs);
     msg_stream->print_cr("Untracked allocations: %'" PRId64, _not_tracked_ptrs);
     msg_stream->print_cr("Untracked frees      : %'" PRId64, _failed_frees);
 
@@ -2640,7 +2640,7 @@ void MallocTraceEnableDCmd::execute(DCmdSource source, TRAPS) {
   spec._detailed_stats = _detailed_stats.value();
 
   if (MallocStatistic::enable(_output, spec)) {
-    _output->print_raw_cr("Mallocstatistic enabled");
+    _output->print_raw_cr("Malloc statistic enabled");
   }
 }
 
@@ -2653,7 +2653,7 @@ void MallocTraceDisableDCmd::execute(DCmdSource source, TRAPS) {
   ThreadToNativeFromVM ttn(THREAD);
 
   if (MallocStatistic::disable(_output)) {
-    _output->print_raw_cr("Mallocstatistic disabled");
+    _output->print_raw_cr("Malloc statistic disabled.");
   }
 }
 

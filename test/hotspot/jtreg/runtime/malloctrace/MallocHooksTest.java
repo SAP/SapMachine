@@ -33,6 +33,7 @@
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class MallocHooksTest {
         }
 
         if (args.length == 0) {
-            /*testNoRecursiveCallsForFallbacks();
+            testNoRecursiveCallsForFallbacks();
             testEnvSanitizing();
             testTracking(false);
             testTracking(true);
@@ -72,19 +73,22 @@ public class MallocHooksTest {
             testPartialTrackint(false, 2, 0.2);
             testPartialTrackint(true, 2, 0.2);
             testPartialTrackint(false, 10, 0.3);
-            testPartialTrackint(true, 10, 0.3);*/
+            testPartialTrackint(true, 10, 0.3);
             testFlags();
+            testJcmdOptions();
             return;
         }
 
         switch (args[0]) {
             case "manyStacks":
+                System.loadLibrary("testmallochooks");
                 doManyStacks(args);
                 System.out.println("Done");
 
                 while (true) {
                   Thread.sleep(1000);
                 }
+
             case "checkEnv":
                 if (args[1].equals(getLdPrelodEnv())) {
                    return;
@@ -92,15 +96,30 @@ public class MallocHooksTest {
 
                 throw new Exception("Expected " + LD_PRELOAD + "=\"" + args[1] + "\", but got " +
                                     LD_PRELOAD + "=\"" +  getLdPrelodEnv() + "\"");
+
             case "stress":
+                System.loadLibrary("testmallochooks");
                 doStress(args);
 
                 while (true) {
                   Thread.sleep(1000);
                 }
+
             case "sleep":
+                System.out.print("*");
+                System.out.flush();
                 Thread.sleep(1000 * Long.parseLong(args[1]));
                 return;
+
+            case "wait":
+                System.loadLibrary("testmallochooks");
+                System.out.print("*");
+                System.out.flush();
+
+                while (true) {
+                     doRandomMemOps(1000000, 32768, 1348763421, false, new long[8], new long[8]);
+                }
+
             default:
                 throw new Exception("Unknown command " + args[0]);
         }
@@ -170,7 +189,160 @@ public class MallocHooksTest {
         realArgs[0] = JDKToolFinder.getJDKTool("jcmd");
         realArgs[1] = Long.toString(getPid(p));
         pb.command(realArgs);
-        return new OutputAnalyzer(pb.start());
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        System.out.println(oa.getOutput());
+        oa.shouldHaveExitValue(0);
+        return oa;
+    }
+
+    private static Process runWait(String... opts) throws Exception {
+        String[] args = new String[opts.length + 3];
+        System.arraycopy(opts, 0, args, 0, opts.length);
+        args[opts.length + 0] = "-Djava.library.path=" + System.getProperty("java.library.path");
+        args[opts.length + 1] = MallocHooksTest.class.getName();
+        args[opts.length + 2] = "wait";
+        Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
+        // Make sure java is running when we return
+        p.getInputStream().read();
+        return p;
+    }
+
+    private static void testJcmdOptions() throws Exception {
+      // Check we cannot enable if already enabled.
+      Process p = runWait("-XX:+UseMallocHooks", "-XX:+MallocTraceAtStartup");
+      OutputAnalyzer oa = callJcmd(p, "MallocTrace.enable");
+      oa.shouldContain("Malloc statistic is already enabled");
+      oa = callJcmd(p, "MallocTrace.enable", "-force");
+      oa.shouldNotContain("Malloc statistic is already enabled");
+      oa.shouldContain("Malloc statistic enabled");
+      oa.shouldContain("Disabling already running trace first");
+      oa.shouldContain("Tracking all allocated memory");
+      oa = callJcmd(p, "MallocTrace.disable");
+      oa.shouldContain("Malloc statistic disabled");
+      oa = callJcmd(p, "MallocTrace.disable");
+      oa.shouldNotContain("Malloc statistic disabled");
+      oa.shouldContain("Malloc statistic is already disabled");
+      oa = callJcmd(p, "MallocTrace.enable", "-detailed-stats");
+      oa.shouldContain("Malloc statistic enabled");
+      oa.shouldContain("Collecting detailed statistics");
+      oa = callJcmd(p, "MallocTrace.dump", "-internal-stats");
+      oa.shouldMatch("Sampled [0-9,.]+ stacks, took [0-9,.]+ ns per stack on average");
+      oa.shouldMatch("Sampling took [0-9,.]+ seconds in total");
+      oa.shouldContain("Tracked allocations");
+      oa.shouldContain("Untracked allocations");
+      oa.shouldMatch("Untracked frees[ ]*:[ ]*0");
+      oa.shouldContain("Statistic for stack maps");
+      oa.shouldNotContain("Statistic for alloc maps");
+      oa = callJcmd(p, "MallocTrace.enable", "-force", "-use-backtrace", "-only-nth=4");
+      oa.shouldContain("Malloc statistic enabled"); // We cannot assume this machine has backtrace available.
+      oa = callJcmd(p, "MallocTrace.enable", "-force", "-track-free");
+      oa.shouldContain("Tracking live memory");
+      oa = callJcmd(p, "MallocTrace.dump", "-dump-file=stdout");
+      oa.shouldContain("Dumping done in");
+      oa.shouldNotContain("Total unique stacks");
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+          while (!br.readLine().startsWith("Total unique stacks")) {
+          }
+      }
+      p.destroy();
+      p = runWait("-XX:+UseMallocHooks");
+      oa = callJcmd(p, "MallocTrace.enable");
+      oa = callJcmd(p, "MallocTrace.dump", "-dump-file=stderr");
+      oa.shouldContain("Dumping done in");
+      oa.shouldNotContain("Total unique stacks");
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+          while (!br.readLine().startsWith("Total unique stacks")) {
+          }
+      }
+      p.destroy();
+      p = runWait("-XX:+UseMallocHooks");
+      oa = callJcmd(p, "MallocTrace.enable");
+      oa = callJcmd(p, "MallocTrace.dump", "-dump-file=malloctrace.txt");
+      oa.shouldContain("Dumping done in");
+      oa.shouldNotContain("Total unique stacks");
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("malloctrace.txt")))) {
+          while (!br.readLine().startsWith("Total unique stacks")) {
+          }
+      }
+      p.destroy();
+      p = runWait("-XX:+UseMallocHooks");
+      oa = callJcmd(p, "MallocTrace.enable", "-force", "-stack-depth=2");
+      oa = callJcmd(p, "MallocTrace.dump", "-dump-file=stderr");
+      oa.shouldContain("Dumping done in");
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+          MallocTraceResult result = new MallocTraceResult(br);
+          int maxDepth = 0;
+          long lastSize = Long.MAX_VALUE;
+
+          for (int i = 0; i < result.nrOfStacks(); ++i) {
+              Stack stack = result.getStack(i);
+              maxDepth = Math.max(maxDepth, stack.getStackDepth());
+              assertLTE(stack.getBytes(), lastSize);
+              lastSize = stack.getBytes();
+          }
+
+          assertLTE(maxDepth, 2);
+      }
+      p.destroy();
+      p = runWait("-XX:+UseMallocHooks");
+      oa = callJcmd(p, "MallocTrace.enable", "-force", "-stack-depth=8");
+      oa = callJcmd(p, "MallocTrace.dump", "-dump-file=stderr", "-sort-by-count");
+      oa.shouldContain("Dumping done in");
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+          MallocTraceResult result = new MallocTraceResult(br);
+          int maxDepth = 0;
+          long lastCount = Long.MAX_VALUE;
+
+          for (int i = 0; i < result.nrOfStacks(); ++i) {
+              Stack stack = result.getStack(i);
+              maxDepth = Math.max(maxDepth, stack.getStackDepth());
+              assertLTE(stack.getCount(), lastCount);
+              lastCount = stack.getCount();
+          }
+
+          assertLTE(maxDepth, 8);
+      }
+      p.destroy();
+      p = runWait("-XX:+UseMallocHooks");
+      oa = callJcmd(p, "MallocTrace.enable", "-force", "-stack-depth=8");
+      oa = callJcmd(p, "MallocTrace.dump", "-dump-file=stderr", "-filter=Java_MallocHooksTest_doRandomMemOps");
+      oa.shouldContain("Dumping done in");
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+          MallocTraceResult result = new MallocTraceResult(br);
+
+          for (int i = 0; i < result.nrOfStacks(); ++i) {
+              Stack stack = result.getStack(i);
+              boolean found = false;
+
+              for (int j = 0; j < stack.getStackDepth(); ++j) {
+                  if (stack.getFunction(j).contains("Java_MallocHooksTest_doRandomMemOps")) {
+                      found = true;
+                      break;
+                  }
+              }
+
+              assertTrue(found);
+          }
+      }
+      p.destroy();
+      p = runWait("-XX:+UseMallocHooks");
+      oa = callJcmd(p, "MallocTrace.enable", "-force", "-stack-depth=8");
+      oa = callJcmd(p, "MallocTrace.dump", "-dump-file=stderr", "-filter=should_not_be_found");
+      oa.shouldContain("Dumping done in");
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+          while (true) {
+              String line = br.readLine();
+
+              if (line.startsWith("Printed 0 stacks")) {
+                  break;
+              }
+
+              if (line.startsWith("Stack ")) {
+                  throw new Exception(line);
+              }
+          }
+      }
+      p.destroy();
     }
 
     private static void testPartialTrackint(boolean trackLive, int nth, double diff) throws Exception {
@@ -184,9 +356,7 @@ public class MallocHooksTest {
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
                                         "-filter=Java_MallocHooksTest_doRandomMemOps",
                                         "-internal-stats");
-        oa.shouldHaveExitValue(0);
         p.destroy();
-        System.out.println(oa.getOutput());
         MallocTraceResult actual = MallocTraceResult.fromString(oa.getOutput());
         System.out.println(expected);
         System.out.println(actual);
@@ -215,9 +385,7 @@ public class MallocHooksTest {
         MallocTraceExpectedStatistic expected = new MallocTraceExpectedStatistic(p);
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
                                         "-filter=Java_MallocHooksTest_doRandomMemOps");
-        oa.shouldHaveExitValue(0);
         p.destroy();
-        System.out.println(oa.getOutput());
         MallocTraceResult actual = MallocTraceResult.fromString(oa.getOutput());
         System.out.println(expected);
         System.out.println(actual);
@@ -256,12 +424,14 @@ public class MallocHooksTest {
             oa.shouldHaveExitValue(1);
             oa.shouldContain("Could not find preloaded libmallochooks");
             oa.shouldContain(LD_PRELOAD + "=");
-            oa = runSleep(10, "-XX:+UseMallocHooks", "-XX:MallocTraceDumpDelay=1s", "-XX:MallocTraceDumpCount=1");
+            oa = runSleep(10, "-XX:+UseMallocHooks", "-XX:MallocTraceDumpDelay=1s",
+                              "-XX:MallocTraceDumpCount=1");
             testBasicOutput(oa);
             oa.shouldContain("Contains the currently allocated memory since enabling");
             oa.shouldContain("Stacks were collected via");
-            oa = runSleep(10, "-XX:+UseMallocHooks", "-XX:MallocTraceDumpDelay=1s", "-XX:MallocTraceDumpCount=1",
-                              "-XX:-MallocTraceTrackFree", "-XX:-MallocTraceUseBacktrace");
+            oa = runSleep(10, "-XX:+UseMallocHooks", "-XX:MallocTraceDumpDelay=1s",
+                              "-XX:MallocTraceDumpCount=1", "-XX:-MallocTraceTrackFree",
+                              "-XX:-MallocTraceUseBacktrace");
             testBasicOutput(oa);
             oa.shouldContain("Contains every allocation done since enabling");
             oa.shouldNotContain("Stacks were collected via");
@@ -277,7 +447,7 @@ public class MallocHooksTest {
         System.arraycopy(opts, 0, args, 0, opts.length);
         args[opts.length + 0] = "-XX:+UseMallocHooks";
         args[opts.length + 1] = "-XX:+MallocTraceAtStartup";
-        args[opts.length + 2] = "-XX:-MallocTraceTrackFrees";
+        args[opts.length + 2] = "-XX:-MallocTraceTrackFree";
         args[opts.length + 3] = MallocHooksTest.class.getName();
         args[opts.length + 4] = "manyStacks";
         args[opts.length + 5] = Integer.toString(nrOfOps);
@@ -295,7 +465,6 @@ public class MallocHooksTest {
         p.getInputStream().read();
         OutputAnalyzer oa = bySize ? callJcmd(p, "MallocTrace.dump", "-fraction=90") :
                                      callJcmd(p, "MallocTrace.dump", "-sort-by-count", "-fraction=90");
-        System.out.println(oa.getOutput());
         oa.shouldHaveExitValue(0);
         p.destroy();
         oa.stdoutShouldMatch("Total printed " + (bySize ? "bytes" : "count") + ": .*[(].*90[.][0-9]+ %[)]");
@@ -307,7 +476,7 @@ public class MallocHooksTest {
         System.arraycopy(opts, 0, args, 0, opts.length);
         args[opts.length + 0] = "-XX:+UseMallocHooks";
         args[opts.length + 1] = "-XX:+MallocTraceAtStartup";
-        args[opts.length + 2] = "-XX:" + (trackLive ? "+" : "-") + "MallocTraceTrackFrees";
+        args[opts.length + 2] = "-XX:" + (trackLive ? "+" : "-") + "MallocTraceTrackFree";
         args[opts.length + 3] = MallocHooksTest.class.getName();
         args[opts.length + 4] = "stress";
         args[opts.length + 5] = Integer.toString(nrOfOps);
@@ -335,10 +504,6 @@ public class MallocHooksTest {
 
     private static String absPath(String file) {
         return new File(file).getAbsolutePath().toString();
-    }
-
-    static {
-        System.loadLibrary("testmallochooks");
     }
 }
 
@@ -484,7 +649,9 @@ class MallocTraceExpectedStatistic {
         BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
         for (int i = 0; i < bytes.length; ++i) {
-           String[] parts = br.readLine().split(" ");
+           String line = br.readLine();
+           System.out.println(i + ": " + line);
+           String[] parts = line.split(" ");
            bytes[i] = Long.parseLong(parts[0]);
            counts[i] = Long.parseLong(parts[1]);
         }
