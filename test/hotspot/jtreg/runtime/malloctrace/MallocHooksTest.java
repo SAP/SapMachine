@@ -434,7 +434,7 @@ public class MallocHooksTest {
                               "-XX:-MallocTraceUseBacktrace");
             testBasicOutput(oa);
             oa.shouldContain("Contains every allocation done since enabling");
-            oa.shouldNotContain("Stacks were collected via");
+            oa.shouldContain("Stacks were collected via the fallback mechanism.");
         } catch (Exception e) {
             System.out.println(oa.getOutput());
             throw e;
