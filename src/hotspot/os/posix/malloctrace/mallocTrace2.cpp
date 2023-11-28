@@ -2087,6 +2087,8 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
 
   if (_backtrace != NULL) {
     dump_stream->print_cr("Stacks were collected via %s.", _backtrace_name);
+  } else {
+    dump_stream->print_cr("Stacks were collected via the fallback mechanism.");
   }
 
   if (_track_free) {
