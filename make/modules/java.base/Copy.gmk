@@ -279,9 +279,9 @@ TARGETS += $(CREATE_CLASSFILE_CONSTANTS_H)
 ################################################################################
 
 ################################################################################
-# Copy mallochook.h
+# SapMachine RS 2023-11-28: Copy mallochook.h
 
-ifeq ($(call isTargetOs, windows), false)
+ifeq ($(call isTargetOs, linux macosx), true)
 
   $(eval $(call SetupCopyFiles, CREATE_MALLOC_HOOKS_H, \
       FILES := $(TOPDIR)/src/java.base/unix/native/libmallochooks/mallochooks.h, \
