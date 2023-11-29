@@ -210,7 +210,6 @@ ifeq ($(call isTargetOs, aix), true)
 
 endif
 
-##########################################################################################
 # SapMachine 2023-11-28: build libmallochooks
 
 ifeq ($(call isTargetOs, linux macosx), true)
