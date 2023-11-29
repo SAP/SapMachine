@@ -850,7 +850,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
     return jvmtype;
 }
 
-// SapMachine RS 2023-09-18
+// SapMachine 2023-09-18: new malloc trace
 jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
 #if defined(__APPLE__) || defined(LINUX)
     jboolean uses_new_trace = JNI_FALSE;

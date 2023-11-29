@@ -852,7 +852,7 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libfast-math := -ffast-math
-# SapMachine RS 2023-10-04
+# SapMachine 2023-10-04: Added link flags for malloc hooks tests
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exetestmallochooks := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libtestmallochooks := -ldl
 else

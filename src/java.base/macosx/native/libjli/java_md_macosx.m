@@ -377,7 +377,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
                  jrepath, FILESEP, FILESEP);
 
-    /* SpaMachine RS 2023-09-18 */
+    /* SapMachine 2023-09-18: New malloc trace */
     if (ShouldPreloadLibMallocHooks(*pargc, *pargv)) {
         char const* env_name = "DYLD_INSERT_LIBRARIES";
         char const* libpath = "/lib/libmallochooks.dylib";

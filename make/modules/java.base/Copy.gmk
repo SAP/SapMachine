@@ -277,9 +277,7 @@ $(eval $(call SetupTextFileProcessing, CREATE_CLASSFILE_CONSTANTS_H, \
 TARGETS += $(CREATE_CLASSFILE_CONSTANTS_H)
 
 ################################################################################
-
-################################################################################
-# SapMachine RS 2023-11-28: Copy mallochook.h
+# SapMachine 2023-11-28: Copy mallochook.h
 
 ifeq ($(call isTargetOs, linux macosx), true)
 

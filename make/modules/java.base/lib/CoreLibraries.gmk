@@ -211,7 +211,7 @@ ifeq ($(call isTargetOs, aix), true)
 endif
 
 ##########################################################################################
-# SapMachine RS 2023-11-28
+# SapMachine 2023-11-28: build libmallochooks
 
 ifeq ($(call isTargetOs, linux macosx), true)
   LIBJLI_SRC_DIRS := $(call FindSrcDirsForComponent, java.base, libmallochooks)

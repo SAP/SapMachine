@@ -346,7 +346,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     mustsetenv = RequiresSetenv(jvmpath);
     JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
 
-    /* SapMachine RS 2023-09-18 */
+    /* SapMachine 2023-09-18: new malloc trace */
 #if defined(LINUX)
     if (ShouldPreloadLibMallocHooks(*pargc, *pargv) == JNI_TRUE) {
         char const* env_name = "LD_PRELOAD";

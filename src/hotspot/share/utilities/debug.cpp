@@ -226,7 +226,7 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
-  // SapMachine RS 2023-11-03: Check if we should to an emrgency dump for the malloc trace.
+  // SapMachine 2023-11-03: Check if we should to an emergency dump for the malloc trace.
 #if defined(LINUX) || defined(__APPLE__)
   if ((vm_err_type == OOM_MALLOC_ERROR) || (vm_err_type == OOM_MMAP_ERROR)) {
     sap::MallocStatistic::emergencyDump();
