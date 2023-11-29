@@ -133,8 +133,15 @@ bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
     return false;
   }
 
+  assert(is_aligned(start_addr, CardTable::card_size), "precondition");
+
+  if (start_addr == end_addr) {
+    // No objects in empty range.
+    return false;
+  }
+
   jbyte* start_block = block_for_addr(start_addr);
-  jbyte* end_block = block_for_addr(end_addr);
+  jbyte* end_block = block_for_addr(end_addr - 1);
 
   for (jbyte* block = start_block; block <= end_block; block++) {
     if (*block != clean_block) {
