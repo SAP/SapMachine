@@ -522,6 +522,9 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
+# SapMachine 2023-08-31
+# Seems we're running into timeouts on our macosx-x64 CI machine from time to time
+java/foreign/StdLibTest.java macosx-x64
 java/foreign/TestMismatch.java 8249684 macosx-all
 
 ############################################################################
@@ -532,7 +535,8 @@ java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
-java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
+# SapMachine 2020-07-14 We see this on more linux boxes
+java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 
 ############################################################################
 
