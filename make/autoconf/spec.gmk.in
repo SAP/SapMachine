@@ -899,10 +899,10 @@ GRAAL_BUILDER_IMAGE_SUBDIR := graal-builder-jdk
 GRAAL_BUILDER_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(GRAAL_BUILDER_IMAGE_SUBDIR)
 
 # Macosx bundles directory definitions
-JDK_MACOSX_BUNDLE_SUBDIR := jdk-bundle
-JRE_MACOSX_BUNDLE_SUBDIR := jre-bundle
-JDK_MACOSX_BUNDLE_SUBDIR_SIGNED := jdk-bundle-signed
-JRE_MACOSX_BUNDLE_SUBDIR_SIGNED := jre-bundle-signed
+JDK_MACOSX_BUNDLE_SUBDIR := sapmachine-jdk-bundle
+JRE_MACOSX_BUNDLE_SUBDIR := sapmachine-jre-bundle
+JDK_MACOSX_BUNDLE_SUBDIR_SIGNED := sapmachine-jdk-bundle-signed
+JRE_MACOSX_BUNDLE_SUBDIR_SIGNED := sapmachine-jre-bundle-signed
 JDK_MACOSX_BUNDLE_DIR = $(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR)
 JRE_MACOSX_BUNDLE_DIR = $(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR)
 JDK_MACOSX_BUNDLE_DIR_SIGNED = $(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR_SIGNED)
@@ -931,17 +931,17 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 else
   JDK_BUNDLE_EXTENSION := tar.gz
 endif
-JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
-JRE_BUNDLE_NAME := jre-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
-JDK_SYMBOLS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
-TEST_DEMOS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests-demos$(DEBUG_PART).tar.gz
-TEST_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests$(DEBUG_PART).tar.gz
-DOCS_JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+JDK_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
+JRE_BUNDLE_NAME := sapmachine-jre-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
+JDK_SYMBOLS_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
+TEST_DEMOS_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin-tests-demos$(DEBUG_PART).tar.gz
+TEST_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin-tests$(DEBUG_PART).tar.gz
+DOCS_JDK_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
 DOCS_JAVASE_BUNDLE_NAME := javase-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
-DOCS_REFERENCE_BUNDLE_NAME := jdk-reference-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
-STATIC_LIBS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs$(DEBUG_PART).tar.gz
-STATIC_LIBS_GRAAL_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs-graal$(DEBUG_PART).tar.gz
-JCOV_BUNDLE_NAME := jdk-jcov-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
+DOCS_REFERENCE_BUNDLE_NAME := sapmachine-jdk-reference-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+STATIC_LIBS_BUNDLE_NAME := sapmachine-jdk-$(BASE_NAME)_bin-static-libs$(DEBUG_PART).tar.gz
+STATIC_LIBS_GRAAL_BUNDLE_NAME := sapmachine-$(BASE_NAME)_bin-static-libs-graal$(DEBUG_PART).tar.gz
+JCOV_BUNDLE_NAME := sapmachine-jdk-jcov-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
 
 JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JDK_BUNDLE_NAME)
 JRE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JRE_BUNDLE_NAME)

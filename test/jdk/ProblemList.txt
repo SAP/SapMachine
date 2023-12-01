@@ -489,6 +489,8 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+# SapMachine 2023-11-20 We see this timeout on our linux ppc64le test boxes
+java/lang/Thread/virtual/stress/Skynet.java#ZGenerational       linux-ppc64le
 
 ############################################################################
 
