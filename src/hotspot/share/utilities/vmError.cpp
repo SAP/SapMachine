@@ -57,6 +57,16 @@
 #include "jfr/jfr.hpp"
 #endif
 
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
+#ifdef LINUX
+#include "vitals_linux_himemreport.hpp"
+#endif
+// SapMachine 2021-09-01: malloc-trace
+#ifdef LINUX
+#include "malloctrace/mallocTrace.hpp"
+#endif
+
 #ifndef PRODUCT
 #include <signal.h>
 #endif // PRODUCT
@@ -961,11 +971,14 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing flags")
 
     if (_verbose) {
+      // SapMachine 2021-09-07:
+      // - print all values, not only default
+      // - comments are unnecessary bloat
       JVMFlag::printFlags(
         st,
-        true, // with comments
+        false, // with comments
         false, // no ranges
-        true); // skip defaults
+        false); // skip defaults
       st->cr();
     }
 
@@ -1002,6 +1015,23 @@ void VMError::report(outputStream* st, bool _verbose) {
        MemTracker::error_report(st);
      }
 
+  // SapMachine 2019-02-20 : vitals
+  STEP("Vitals")
+     if (_verbose) {
+       sapmachine_vitals::print_info_t info;
+       sapmachine_vitals::default_settings(&info);
+       info.sample_now = true;
+       st->print_cr("Vitals:");
+       sapmachine_vitals::print_report(st, &info);
+     }
+
+#ifdef LINUX
+  STEP("Vitals HiMemReport")
+    st->cr();
+  sapmachine_vitals::print_himemreport_state(st);
+    st->cr();
+#endif // LINUX
+
   STEP("printing system")
 
      if (_verbose) {
@@ -1036,6 +1066,17 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->print_cr("vm_info: %s", Abstract_VM_Version::internal_vm_info_string());
        st->cr();
      }
+
+  // SapMachine 2021-09-01: malloc-trace
+#if defined(LINUX) && defined(HAVE_GLIBC_MALLOC_HOOKS)
+  STEP("printing Malloc Trace info")
+
+    if (_verbose) {
+      st->print_cr("sapmachine malloc trace");
+      sap::MallocTracer::print_on_error(st);
+      st->cr();
+    }
+#endif
 
   // print a defined marker to show that error handling finished correctly.
   STEP("printing end marker")
@@ -1173,6 +1214,21 @@ void VMError::print_vm_info(outputStream* st) {
 
   MemTracker::error_report(st);
 
+  // SapMachine 2019-02-20 : vitals
+  // STEP("Vitals")
+  sapmachine_vitals::print_info_t info;
+  sapmachine_vitals::default_settings(&info);
+  info.sample_now = true;
+  st->print_cr("Vitals:");
+  sapmachine_vitals::print_report(st, &info);
+
+#ifdef LINUX
+  // STEP("Vitals HiMemReport")
+  st->cr();
+  sapmachine_vitals::print_himemreport_state(st);
+  st->cr();
+#endif // LINUX
+
   // STEP("printing system")
 
   st->cr();
@@ -1198,6 +1254,12 @@ void VMError::print_vm_info(outputStream* st) {
 
   st->print_cr("vm_info: %s", Abstract_VM_Version::internal_vm_info_string());
   st->cr();
+
+#if defined(LINUX) && defined(HAVE_GLIBC_MALLOC_HOOKS)
+  // SapMachine 2021-09-01: malloc-trace
+  st->print_cr("sapmachine malloc trace");
+  sap::MallocTracer::print_on_error(st);
+#endif
 
   // print a defined marker to show that error handling finished correctly.
   // STEP("printing end marker")
@@ -1899,3 +1961,12 @@ void VMError::controlled_crash(int how) {
 }
 #endif // !PRODUCT
 
+// SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks
+//  to tty on CrashOnOutOfMemoryError
+void VMError::print_stack(outputStream* st) {
+  Thread* t = Thread::current_or_null_safe();
+  char buf[1024];
+  if (t != NULL && t->is_Java_thread()) {
+    VMError::print_stack_trace(st, (JavaThread*) t, buf, sizeof(buf), false);
+  }
+}
