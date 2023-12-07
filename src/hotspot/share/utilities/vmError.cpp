@@ -75,10 +75,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
-
-#ifdef AIX
-#include "loadlib_aix.hpp"
-#endif
 #ifdef LINUX
 // SapMachine 2019-02-20: Vitals
 #include "vitals_linux_himemreport.hpp"
@@ -733,6 +729,11 @@ void VMError::report(outputStream* st, bool _verbose) {
                    "Runtime Environment to continue.");
     }
 
+  // avoid the cache update for malloc/mmap errors
+  if (should_report_bug(_id)) {
+    os::prepare_native_symbols();
+  }
+
 #ifdef ASSERT
   // Error handler self tests
   // Meaning of codes passed through in the tests.
@@ -1386,7 +1387,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 void VMError::print_vm_info(outputStream* st) {
 
   char buf[O_BUFLEN];
-  AIX_ONLY(LoadedLibraries::reload());
+  os::prepare_native_symbols();
 
   report_vm_version(st, buf, sizeof(buf));
 

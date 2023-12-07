@@ -487,58 +487,10 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
-# SapMachine 2020-07-14 We see this on more linux boxes
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
 # SapMachine 2023-11-20 We see this timeout on our linux ppc64le test boxes
 java/lang/Thread/virtual/stress/Skynet.java#ZGenerational       linux-ppc64le
-
-############################################################################
-
-# jdk_foreign
-
-# SapMachine 2023-11-19 failing Panama tests on AIX
-java/foreign/arraystructs/TestArrayStructs.java#interpreted                            aix-all
-java/foreign/arraystructs/TestArrayStructs.java#specialized                            aix-all
-java/foreign/capturecallstate/TestCaptureCallState.java                                aix-all
-java/foreign/critical/TestCritical.java                                                aix-all
-java/foreign/critical/TestCriticalUpcall.java                                          aix-all
-java/foreign/critical/TestStressAllowHeap.java                                         aix-all
-java/foreign/dontrelease/TestDontRelease.java                                          aix-all
-java/foreign/enablenativeaccess/TestEnableNativeAccess.java                            aix-all
-java/foreign/enablenativeaccess/TestEnableNativeAccessJarManifest.java                 aix-all
-java/foreign/largestub/TestLargeStub.java                                              aix-all
-java/foreign/loaderLookup/TestLoaderLookupJNI.java                                     aix-all
-java/foreign/nested/TestNested.java                                                    aix-all
-java/foreign/normalize/TestNormalize.java                                              aix-all
-java/foreign/passheapsegment/TestPassHeapSegment.java                                  aix-all
-java/foreign/stackwalk/TestAsyncStackWalk.java#default_gc                              aix-all
-java/foreign/stackwalk/TestReentrantUpcalls.java                                       aix-all
-java/foreign/stackwalk/TestStackWalk.java#default_gc                                   aix-all
-java/foreign/trivial/TestCritical.java                                                 aix-all
-java/foreign/trivial/TestCriticalUpcall.java                                           aix-all
-java/foreign/upcalldeopt/TestUpcallDeopt.java                                          aix-all
-java/foreign/virtual/TestVirtualCalls.java                                             aix-all
-java/foreign/SafeFunctionAccessTest.java#interpreted                                   aix-all
-java/foreign/SafeFunctionAccessTest.java#specialized                                   aix-all
-java/foreign/StdLibTest.java                                                           aix-all
-java/foreign/TestAddressDereference.java                                               aix-all
-java/foreign/TestDowncallScope.java                                                    aix-all
-java/foreign/TestDowncallStack.java                                                    aix-all
-java/foreign/TestFunctionDescriptor.java                                               aix-all
-java/foreign/TestIllegalLink.java                                                      aix-all
-java/foreign/TestIntrinsics.java                                                       aix-all
-java/foreign/TestLinker.java                                                           aix-all
-java/foreign/TestNative.java                                                           aix-all
-java/foreign/TestStringEncoding.java                                                   aix-all
-java/foreign/TestStringEncodingJumbo.java                                              aix-all
-java/foreign/TestUpcallAsync.java                                                      aix-all
-java/foreign/TestUpcallException.java                                                  aix-all
-java/foreign/TestUpcallHighArity.java                                                  aix-all
-java/foreign/TestUpcallScope.java                                                      aix-all
-java/foreign/TestUpcallStack.java                                                      aix-all
-java/foreign/TestUpcallStructScope.java                                                aix-all
-java/foreign/TestVarArgs.java                                                          aix-all
 
 ############################################################################
 
@@ -620,6 +572,7 @@ java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-a
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 java/nio/file/Path/ToRealPath.java                              8315273 windows-all
+java/nio/file/Files/probeContentType/Basic.java                 8320943 windows-all
 
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
@@ -672,12 +625,6 @@ com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
-sun/security/tools/keytool/NssTest.java                         8295343 generic-all
-sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 generic-all
-sun/security/pkcs11/rsa/TestSignatures.java                     8295343 generic-all
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 generic-all
-sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 generic-all
-sun/security/pkcs11/KeyStore/Basic.java                         8295343 generic-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 sun/security/pkcs11/Provider/MultipleLogins.sh                  8319128 linux-aarch64
 
@@ -716,6 +663,7 @@ javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 7105441 macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
+javax/swing/JFileChooser/8194044/FileSystemRootTest.java 8320944 windows-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
 javax/swing/JTabbedPane/4624207/bug4624207.java 8064922 macosx-all
