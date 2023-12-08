@@ -1,0 +1,24 @@
+name: Update Wiki
+
+description: |
+  This action updates the wiki with the latest blog posts.
+
+runs:
+  using: composite
+  steps:
+    - name: Update Wiki
+      run: |
+          git clone https://github.com/SAP/SapMachine.wiki.git
+          cd SapMachine.wiki
+          pip3 install feedparser
+          python3 scripts/update_blogs.py update > ../out
+          cat ../out
+          if grep -q changed ../out; then
+              git commit -a -m "Update blog posts"
+              git push
+              echo "Blog post list updated"
+          else
+              echo "No updates"
+          fi
+      working-directory: .
+      shell: bash
