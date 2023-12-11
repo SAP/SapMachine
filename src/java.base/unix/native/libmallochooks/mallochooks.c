@@ -441,6 +441,8 @@ static void assign_function(void** dest, char const* symbol) {
 
 #endif
 
+static real_funcs_t real_funcs;
+
 static void LIB_INIT init(void) {
 #if !defined(MALLOC_REPLACEMENT) || !defined(REALLOC_REPLACEMENT) || !defined(FREE_REPLACEMENT) || !defined(MEMALIGN_REPLACEMENT) || !defined(ALIGNED_ALLOC_REPLACEMENT)
   void* real_malloc;
@@ -500,6 +502,17 @@ static void LIB_INIT init(void) {
   assign_function((void**) &pvalloc_for_fallback, "pvalloc");
 #endif
 
+  real_funcs.malloc = malloc_for_fallback;
+  real_funcs.calloc = calloc_for_fallback;
+  real_funcs.realloc = realloc_for_fallback;
+  real_funcs.free = free_for_fallback;
+  real_funcs.posix_memalign = posix_memalign_for_fallback;
+  real_funcs.memalign = memalign_for_fallback;
+  real_funcs.aligned_alloc = aligned_alloc_for_fallback;
+  real_funcs.valloc = valloc_for_fallback;
+  real_funcs.pvalloc = pvalloc_for_fallback;
+  real_funcs.malloc_size = get_allocated_size;
+
   assign_function_post_test();
 }
 
@@ -516,8 +529,6 @@ static registered_hooks_t empty_registered_hooks = {
 };
 
 static registered_hooks_t* volatile registered_hooks = &empty_registered_hooks;
-
-static real_funcs_t real_funcs;
 
 EXPORT registered_hooks_t* malloc_hooks_register_hooks(registered_hooks_t* hooks) {
   registered_hooks_t* old_hooks = registered_hooks;
@@ -542,17 +553,6 @@ EXPORT registered_hooks_t* malloc_hooks_active_hooks() {
 }
 
 EXPORT real_funcs_t* malloc_hooks_get_real_funcs() {
-  real_funcs.malloc = malloc_for_fallback;
-  real_funcs.calloc = calloc_for_fallback;
-  real_funcs.realloc = realloc_for_fallback;
-  real_funcs.free = free_for_fallback;
-  real_funcs.posix_memalign = posix_memalign_for_fallback;
-  real_funcs.memalign = memalign_for_fallback;
-  real_funcs.aligned_alloc = aligned_alloc_for_fallback;
-  real_funcs.valloc = valloc_for_fallback;
-  real_funcs.pvalloc = pvalloc_for_fallback;
-  real_funcs.malloc_size = get_allocated_size;
-
   return &real_funcs;
 }
 
@@ -629,7 +629,7 @@ EXPORT void* REPLACE_NAME(malloc)(size_t size) {
   LOG_SIZE(size);
 
   if (tmp_hook != NULL) {
-    result = tmp_hook(size, __builtin_return_address(0), malloc_for_fallback, get_allocated_size);
+    result = tmp_hook(size, __builtin_return_address(0));
   } else {
     result = malloc_for_fallback(size);
   }
@@ -649,7 +649,7 @@ EXPORT void* REPLACE_NAME(calloc)(size_t elems, size_t size) {
   LOG_SIZE(size);
 
   if (tmp_hook != NULL) {
-    result = tmp_hook(elems, size, __builtin_return_address(0), calloc_for_fallback, get_allocated_size);
+    result = tmp_hook(elems, size, __builtin_return_address(0));
   } else {
     result = calloc_for_fallback(elems, size);
   }
@@ -680,7 +680,7 @@ EXPORT void* REPLACE_NAME(realloc)(void* ptr, size_t size) {
   } else
 #endif
   if (tmp_hook != NULL) {
-    result = tmp_hook(ptr, size, __builtin_return_address(0), realloc_for_fallback, get_allocated_size);
+    result = tmp_hook(ptr, size, __builtin_return_address(0));
   } else {
     result = realloc_for_fallback(ptr, size);
   }
@@ -704,7 +704,7 @@ EXPORT void REPLACE_NAME(free)(void* ptr) {
   } else
 #endif
   if (tmp_hook != NULL) {
-    tmp_hook(ptr, __builtin_return_address(0), free_for_fallback, get_allocated_size);
+    tmp_hook(ptr, __builtin_return_address(0));
   } else {
     free_for_fallback(ptr);
   }
@@ -721,7 +721,7 @@ EXPORT int REPLACE_NAME(posix_memalign)(void** ptr, size_t align, size_t size) {
   LOG_SIZE(size);
 
   if (tmp_hook != NULL) {
-    result = tmp_hook(ptr, align, size, __builtin_return_address(0), posix_memalign_for_fallback, get_allocated_size);
+    result = tmp_hook(ptr, align, size, __builtin_return_address(0));
   } else {
     result = posix_memalign_for_fallback(ptr, align, size);
   }
@@ -743,7 +743,7 @@ EXPORT void* REPLACE_NAME(memalign)(size_t align, size_t size) {
   LOG_SIZE(size);
 
   if (tmp_hook != NULL) {
-    result = tmp_hook(align, size, __builtin_return_address(0), memalign_for_fallback, get_allocated_size);
+    result = tmp_hook(align, size, __builtin_return_address(0));
   } else {
     result = memalign_for_fallback(align, size);
   }
@@ -764,7 +764,7 @@ EXPORT void* REPLACE_NAME(aligned_alloc)(size_t align, size_t size) {
   LOG_SIZE(size);
 
   if (tmp_hook != NULL) {
-    result = tmp_hook(align, size, __builtin_return_address(0), aligned_alloc_for_fallback, get_allocated_size);
+    result = tmp_hook(align, size, __builtin_return_address(0));
   } else {
     result = aligned_alloc_for_fallback(align, size);
   }
@@ -784,7 +784,7 @@ EXPORT void* REPLACE_NAME(valloc)(size_t size) {
   LOG_SIZE(size);
 
   if (tmp_hook != NULL) {
-    result = tmp_hook(size, __builtin_return_address(0), valloc_for_fallback, get_allocated_size);
+    result = tmp_hook(size, __builtin_return_address(0));
   } else {
     result = valloc_for_fallback(size);
   }
@@ -805,7 +805,7 @@ EXPORT void* REPLACE_NAME(pvalloc)(size_t size) {
   LOG_SIZE(size);
 
   if (tmp_hook != NULL) {
-    result = tmp_hook(size, __builtin_return_address(0), pvalloc_for_fallback, get_allocated_size);
+    result = tmp_hook(size, __builtin_return_address(0));
   } else {
     result = pvalloc_for_fallback(size);
   }

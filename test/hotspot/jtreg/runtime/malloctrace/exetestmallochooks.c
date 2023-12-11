@@ -58,99 +58,93 @@ static void check(bool condition, char const* msg) {
   }
 }
 
+static real_funcs_t* funcs;
+
 static bool no_hooks_should_be_called;
 
-static void* test_malloc_hook(size_t size, void* caller, malloc_func_t* real_malloc,
-                              malloc_size_func_t real_malloc_size) {
+static void* test_malloc_hook(size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called malloc hook when should not");
     no_hooks_should_be_called = true;
 
-    void* result = real_malloc(size);
+    void* result = funcs->malloc(size);
     no_hooks_should_be_called = false;
 
     return result;
 }
 
-static void* test_calloc_hook(size_t elems, size_t size, void* caller, calloc_func_t* real_calloc,
-                       malloc_size_func_t real_malloc_size) {
+static void* test_calloc_hook(size_t elems, size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called calloc hook when should not");
     no_hooks_should_be_called = true;
 
-    void* result = real_calloc(elems, size);
+    void* result = funcs->calloc(elems, size);
     no_hooks_should_be_called = false;
 
     return result;
 }
 
-static void* test_realloc_hook(void* ptr, size_t size, void* caller, realloc_func_t* real_realloc,
-                        malloc_size_func_t real_malloc_size) {
+static void* test_realloc_hook(void* ptr, size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called realloc hook when should not");
     no_hooks_should_be_called = true;
 
-    void* result = real_realloc(ptr, size);
+    void* result = funcs->realloc(ptr, size);
     no_hooks_should_be_called = false;
 
     return result;
 }
 
-static void test_free_hook(void* ptr, void* caller, free_func_t* real_free, malloc_size_func_t real_malloc_size) {
+static void test_free_hook(void* ptr, void* caller) {
     check(!no_hooks_should_be_called, "Called free hook when should not");
     no_hooks_should_be_called = true;
 
-    real_free(ptr);
+    funcs->free(ptr);
     no_hooks_should_be_called = false;
 }
 
-static int test_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller,
-                             posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size) {
+static int test_posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called posix_memalign hook when should not");
     no_hooks_should_be_called = true;
 
-    int result = real_posix_memalign(ptr, align, size);
+    int result = funcs->posix_memalign(ptr, align, size);
     no_hooks_should_be_called = false;
 
     return result;
 }
 
-static void* test_memalign_hook(size_t align, size_t size, void* caller, memalign_func_t* real_memalign,
-                         malloc_size_func_t real_malloc_size) {
+static void* test_memalign_hook(size_t align, size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called memalign hook when should not");
     no_hooks_should_be_called = true;
 
-    void* result = real_memalign(align, size);
+    void* result = funcs->memalign(align, size);
     no_hooks_should_be_called = false;
 
     return result;
 }
 
-static void* test_aligned_alloc_hook(size_t align, size_t size, void* caller, aligned_alloc_func_t* real_aligned_alloc,
-                              malloc_size_func_t real_malloc_size) {
+static void* test_aligned_alloc_hook(size_t align, size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called aligned_alloc hook when should not");
     no_hooks_should_be_called = true;
 
-    void* result = real_aligned_alloc(align, size);
+    void* result = funcs->aligned_alloc(align, size);
     no_hooks_should_be_called = false;
 
     return result;
 }
 
-static void* test_valloc_hook(size_t size, void* caller, valloc_func_t* real_valloc,
-                       malloc_size_func_t real_malloc_size) {
+static void* test_valloc_hook(size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called valloc hook when should not");
     no_hooks_should_be_called = true;
 
-    void* result = real_valloc(size);
+    void* result = funcs->valloc(size);
     no_hooks_should_be_called = false;
 
     return result;
 }
 
-static void* test_pvalloc_hook(size_t size, void* caller, pvalloc_func_t* real_pvalloc,
-                        malloc_size_func_t real_malloc_size) {
+static void* test_pvalloc_hook(size_t size, void* caller) {
     check(!no_hooks_should_be_called, "Called pvalloc hook when should not");
     no_hooks_should_be_called = true;
 
-    void* result = real_pvalloc(size);
+    void* result = funcs->pvalloc(size);
     no_hooks_should_be_called = false;
 
     return result;
@@ -174,8 +168,8 @@ static void test_no_recursive_calls() {
         test_pvalloc_hook
     };
 
+    funcs = get_real_funcs();
     register_hooks(&test_hooks);
-    real_funcs_t* funcs = get_real_funcs();
 
     // Check that all the real functions do not trigger the hooks.
     void* ptr;

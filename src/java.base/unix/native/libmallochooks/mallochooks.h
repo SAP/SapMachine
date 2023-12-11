@@ -36,23 +36,15 @@ typedef void* valloc_func_t(size_t size);
 typedef void* pvalloc_func_t(size_t size);
 
 typedef size_t malloc_size_func_t(void* ptr);
-typedef void*  malloc_hook_t(size_t size, void* caller, malloc_func_t* real_malloc,
-                             malloc_size_func_t real_malloc_size);
-typedef void* calloc_hook_t(size_t elems, size_t size, void* caller, calloc_func_t* real_calloc,
-                            malloc_size_func_t real_malloc_size);
-typedef void* realloc_hook_t(void* ptr, size_t size, void* caller, realloc_func_t* real_realloc,
-                             malloc_size_func_t real_malloc_size);
-typedef void  free_hook_t(void* ptr, void* caller, free_func_t* real_free, malloc_size_func_t real_malloc_size);
-typedef int   posix_memalign_hook_t(void** ptr, size_t align, size_t size, void* caller,
-                                    posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size);
-typedef void* memalign_hook_t(size_t align, size_t size, void* caller, memalign_func_t* real_memalign,
-                              malloc_size_func_t real_malloc_size);
-typedef void* aligned_alloc_hook_t(size_t align, size_t size, void* caller, aligned_alloc_func_t* real_aligned_alloc,
-                                   malloc_size_func_t real_malloc_size);
-typedef void* valloc_hook_t(size_t size, void* caller, valloc_func_t* real_valloc,
-                            malloc_size_func_t real_malloc_size);
-typedef void* pvalloc_hook_t(size_t size, void* caller, pvalloc_func_t* real_pvalloc,
-                             malloc_size_func_t real_malloc_size);
+typedef void*  malloc_hook_t(size_t size, void* caller);
+typedef void*  calloc_hook_t(size_t elems, size_t size, void* caller);
+typedef void*  realloc_hook_t(void* ptr, size_t size, void* caller);
+typedef void   free_hook_t(void* ptr, void* caller);
+typedef int    posix_memalign_hook_t(void** ptr, size_t align, size_t size, void* caller);
+typedef void*  memalign_hook_t(size_t align, size_t size, void* caller);
+typedef void*  aligned_alloc_hook_t(size_t align, size_t size, void* caller);
+typedef void*  valloc_hook_t(size_t size, void* caller);
+typedef void*  pvalloc_hook_t(size_t size, void* caller);
 
 typedef struct {
   malloc_hook_t* malloc_hook;

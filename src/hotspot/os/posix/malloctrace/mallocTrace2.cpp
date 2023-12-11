@@ -636,37 +636,6 @@ static void remove_malloc_hooks_from_env() {
   }
 }
 
-static real_funcs_t* setup_hooks(registered_hooks_t* hooks, outputStream* st) {
-  if (register_hooks == NULL) {
-    register_hooks = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
-    get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
-
-    if ((register_hooks == NULL) || (get_real_funcs == NULL)) {
-      if (UseMallocHooks) {
-        st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
-                         "This usually happens if the VM is not loaded via the JDK launcher (e.g. " \
-                         "java.exe). In this case you must preload the library by setting the " \
-                         "following environment variable: ");
-        print_needed_preload_env(st);
-      } else {
-        st->print_cr("Could not find preloaded libmallochooks. Try using -XX:+UseMallocHooks " \
-                     "Vm option to automatically preload it using the JDK launcher. Or you can set " \
-                     "the following environment variable: ");
-        print_needed_preload_env(st);
-      }
-
-      st->print_raw_cr("VM arguments:");
-      Arguments::print_summary_on(st);
-
-      return NULL;
-    }
-  }
-
-  register_hooks(hooks);
-
-  return get_real_funcs();
-}
-
 typedef int backtrace_func_t(void** stacks, int max_depth);
 
 // A value usable in arrays.
@@ -727,26 +696,26 @@ private:
   static volatile registered_hooks_t* _rainy_day_hooks_ptr;
 
   // The hooks.
-  static void* malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
-  static void* calloc_hook(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size);
-  static void* realloc_hook(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size);
-  static void  free_hook(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size);
-  static int   posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size);
-  static void* memalign_hook(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size);
-  static void* aligned_alloc_hook(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size);
-  static void* valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size);
-  static void* pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
+  static void* malloc_hook(size_t size, void* caller_address);
+  static void* calloc_hook(size_t elems, size_t size, void* caller_address);
+  static void* realloc_hook(void* ptr, size_t size, void* caller_address);
+  static void  free_hook(void* ptr, void* caller_address);
+  static int   posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address);
+  static void* memalign_hook(size_t align, size_t size, void* caller_address);
+  static void* aligned_alloc_hook(size_t align, size_t size, void* caller_address);
+  static void* valloc_hook(size_t size, void* caller_address);
+  static void* pvalloc_hook(size_t size, void* caller_address);
 
   // The hooks used after we use the rainy day fund
-  static void* malloc_hook_rd(size_t size, void* caller_address, malloc_func_t* real_malloc, malloc_size_func_t real_malloc_size) ;
-  static void* calloc_hook_rd(size_t elems, size_t size, void* caller_address, calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size);
-  static void* realloc_hook_rd(void* ptr, size_t size, void* caller_address, realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size);
-  static void  free_hook_rd(void* ptr, void* caller_address, free_func_t* real_free, malloc_size_func_t real_malloc_size);
-  static int   posix_memalign_hook_rd(void** ptr, size_t align, size_t size, void* caller_address, posix_memalign_func_t* real_posix_memalign, malloc_size_func_t real_malloc_size);
-  static void* memalign_hook_rd(size_t align, size_t size, void* caller_address, memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size);
-  static void* aligned_alloc_hook_rd(size_t align, size_t size, void* caller_address, aligned_alloc_func_t* real_aligned_alloc, malloc_size_func_t real_malloc_size);
-  static void* valloc_hook_rd(size_t size, void* caller_address, valloc_func_t* real_valloc, malloc_size_func_t real_malloc_size);
-  static void* pvalloc_hook_rd(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc, malloc_size_func_t real_malloc_size);
+  static void* malloc_hook_rd(size_t size, void* caller_address);
+  static void* calloc_hook_rd(size_t elems, size_t size, void* caller_address);
+  static void* realloc_hook_rd(void* ptr, size_t size, void* caller_addresse);
+  static void  free_hook_rd(void* ptr, void* caller_address);
+  static int   posix_memalign_hook_rd(void** ptr, size_t align, size_t size, void* caller_address);
+  static void* memalign_hook_rd(size_t align, size_t size, void* caller_address);
+  static void* aligned_alloc_hook_rd(size_t align, size_t size, void* caller_address);
+  static void* valloc_hook_rd(size_t size, void* caller_address);
+  static void* pvalloc_hook_rd(size_t size, void* caller_address);
   static void wait_for_rainy_day_fund();
 
   static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
@@ -755,6 +724,8 @@ private:
 
   static uint64_t ptr_hash(void* ptr);
   static bool should_track(uint64_t hash);
+
+  static bool setup_hooks(registered_hooks_t* hooks, outputStream* st);
 
   static void resize_stack_map(int map, int new_mask);
   static void resize_alloc_map(int map, int new_mask);
@@ -897,6 +868,39 @@ static void after_child_fork() {
   }
 }
 
+
+bool MallocStatisticImpl::setup_hooks(registered_hooks_t* hooks, outputStream* st) {
+  if (register_hooks == NULL) {
+    register_hooks = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
+    get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
+
+    if ((register_hooks == NULL) || (get_real_funcs == NULL)) {
+      if (UseMallocHooks) {
+        st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
+                         "This usually happens if the VM is not loaded via the JDK launcher (e.g. " \
+                         "java.exe). In this case you must preload the library by setting the " \
+                         "following environment variable: ");
+        print_needed_preload_env(st);
+      } else {
+        st->print_cr("Could not find preloaded libmallochooks. Try using -XX:+UseMallocHooks " \
+                     "Vm option to automatically preload it using the JDK launcher. Or you can set " \
+                     "the following environment variable: ");
+        print_needed_preload_env(st);
+      }
+
+      st->print_raw_cr("VM arguments:");
+      Arguments::print_summary_on(st);
+
+      return false;
+    }
+  }
+
+  _funcs = get_real_funcs();
+  register_hooks(hooks);
+
+  return true;
+}
+
 uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   if (!_track_free && (_to_track_mask == 0)) {
     return 0;
@@ -930,9 +934,8 @@ bool MallocStatisticImpl::should_track(uint64_t hash) {
 
 #define malloc_not_suspended() (pthread_getspecific(_malloc_suspended) == NULL)
 
-void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc_func_t* real_malloc,
-                                       malloc_size_func_t real_malloc_size) {
-  void* result = real_malloc(size);
+void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address) {
+  void* result = _funcs->malloc(size);
   uint64_t hash = ptr_hash(result);
   address real_func = (address) malloc;
 
@@ -949,9 +952,8 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address, malloc
   return result;
 }
 
-void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address,
-                                       calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size) {
-  void* result = real_calloc(elems, size);
+void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address) {
+  void* result = _funcs->calloc(elems, size);
   uint64_t hash = ptr_hash(result);
   address real_func = (address) calloc;
 
@@ -968,9 +970,8 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
   return result;
 }
 
-void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address,
-                                        realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size) {
-  size_t old_size = ptr != NULL ? real_malloc_size(ptr) : 0;
+void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address) {
+  size_t old_size = ptr != NULL ? _funcs->malloc_size(ptr) : 0;
   uint64_t old_hash = ptr_hash(ptr);
   address real_func = (address) realloc;
 
@@ -983,7 +984,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
     freed_entry = record_free(ptr, old_hash, old_size);
   }
 
-  void* result = real_realloc(ptr, size);
+  void* result = _funcs->realloc(ptr, size);
 
   if ((result == NULL) && (freed_entry != NULL) && (size > 0)) {
     // We failed, but we already removed the freed memory, so we have to re-add it.
@@ -1012,23 +1013,20 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
   return result;
 }
 
-void MallocStatisticImpl::free_hook(void* ptr, void* caller_address, free_func_t* real_free,
-                                    malloc_size_func_t real_malloc_size) {
+void MallocStatisticImpl::free_hook(void* ptr, void* caller_address) {
   if ((ptr != NULL) && _track_free) {
     uint64_t hash = ptr_hash(ptr);
 
     if (should_track(hash)) {
-      record_free(ptr, hash, real_malloc_size(ptr));
+      record_free(ptr, hash, _funcs->malloc_size(ptr));
     }
   }
 
-  real_free(ptr);
+  _funcs->free(ptr);
 }
 
-int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address,
-                                             posix_memalign_func_t* real_posix_memalign,
-                                             malloc_size_func_t real_malloc_size) {
-  int result = real_posix_memalign(ptr, align, size);
+int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address) {
+  int result = _funcs->posix_memalign(ptr, align, size);
   uint64_t hash = ptr_hash(*ptr);
   address real_func = (address) posix_memalign;
 
@@ -1040,16 +1038,15 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(real_malloc_size(*ptr), nr_of_frames, frames);
+      record_allocation_size(_funcs->malloc_size(*ptr), nr_of_frames, frames);
     }
   }
 
   return result;
 }
 
-void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address,
-                                         memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size) {
-  void* result = real_memalign(align, size);
+void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address) {
+  void* result = _funcs->memalign(align, size);
   uint64_t hash = ptr_hash(result);
 #if !defined(__APPLE__)
   address real_func = (address) memalign;
@@ -1065,17 +1062,15 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
   return result;
 }
 
-void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address,
-                                              aligned_alloc_func_t* real_aligned_alloc,
-                                              malloc_size_func_t real_malloc_size) {
-  void* result = real_aligned_alloc(align, size);
+void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address) {
+  void* result = _funcs->aligned_alloc(align, size);
   uint64_t hash = ptr_hash(result);
 #if !defined(__APPLE__)
   address real_func = (address) aligned_alloc;
@@ -1091,16 +1086,15 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
   return result;
 }
 
-void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc_func_t* real_valloc,
-                                       malloc_size_func_t real_malloc_size) {
-  void* result = real_valloc(size);
+void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
+  void* result = _funcs->valloc(size);
   uint64_t hash = ptr_hash(result);
 #if defined(__GLIBC__) || defined(__APPLE__)
   address real_func = (address) valloc;
@@ -1116,16 +1110,15 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address, valloc
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
   return result;
 }
 
-void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc,
-                                        malloc_size_func_t real_malloc_size) {
-  void* result = real_pvalloc(size);
+void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address) {
+  void* result = _funcs->pvalloc(size);
   uint64_t hash = ptr_hash(result);
 #if defined(__GLIBC__)
   address real_func = (address) pvalloc;
@@ -1141,7 +1134,7 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(real_malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
@@ -1149,78 +1142,58 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address, pvall
 }
 
 
-void* MallocStatisticImpl::malloc_hook_rd(size_t size, void* caller_address, malloc_func_t* real_malloc,
-                                          malloc_size_func_t real_malloc_size)
-{
+void* MallocStatisticImpl::malloc_hook_rd(size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_malloc(size);
+  return _funcs->malloc(size);
 }
 
-void* MallocStatisticImpl::calloc_hook_rd(size_t elems, size_t size, void* caller_address,
-                                         calloc_func_t* real_calloc, malloc_size_func_t real_malloc_size)
-{
+void* MallocStatisticImpl::calloc_hook_rd(size_t elems, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_calloc(elems, size);
+  return _funcs->calloc(elems, size);
 }
 
-void* MallocStatisticImpl::realloc_hook_rd(void* ptr, size_t size, void* caller_address,
-                                           realloc_func_t* real_realloc, malloc_size_func_t real_malloc_size)
-{
+void* MallocStatisticImpl::realloc_hook_rd(void* ptr, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_realloc(ptr, size);
+  return _funcs->realloc(ptr, size);
 }
 
-void  MallocStatisticImpl::free_hook_rd(void* ptr, void* caller_address, free_func_t* real_free,
-                                        malloc_size_func_t real_malloc_size)
-{
+void MallocStatisticImpl::free_hook_rd(void* ptr, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  real_free(ptr);
+  _funcs->free(ptr);
 }
 
-int   MallocStatisticImpl::posix_memalign_hook_rd(void** ptr, size_t align, size_t size, void* caller_address,
-                                                 posix_memalign_func_t* real_posix_memalign,
-                                                 malloc_size_func_t real_malloc_size)
-{
+int MallocStatisticImpl::posix_memalign_hook_rd(void** ptr, size_t align, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_posix_memalign(ptr, align, size);
+  return _funcs->posix_memalign(ptr, align, size);
 }
 
-void* MallocStatisticImpl::memalign_hook_rd(size_t align, size_t size, void* caller_address,
-                                            memalign_func_t* real_memalign, malloc_size_func_t real_malloc_size)
-{
+void* MallocStatisticImpl::memalign_hook_rd(size_t align, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_memalign(align, size);
+  return _funcs->memalign(align, size);
 }
 
-void* MallocStatisticImpl::aligned_alloc_hook_rd(size_t align, size_t size, void* caller_address,
-                                                 aligned_alloc_func_t* real_aligned_alloc,
-                                                 malloc_size_func_t real_malloc_size)
-{
+void* MallocStatisticImpl::aligned_alloc_hook_rd(size_t align, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_aligned_alloc(align, size);
+  return _funcs->aligned_alloc(align, size);
 }
 
-void* MallocStatisticImpl::valloc_hook_rd(size_t size, void* caller_address, valloc_func_t* real_valloc,
-                                          malloc_size_func_t real_malloc_size)
-{
+void* MallocStatisticImpl::valloc_hook_rd(size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_valloc(size);
+  return _funcs->valloc(size);
 }
 
-void* MallocStatisticImpl::pvalloc_hook_rd(size_t size, void* caller_address, pvalloc_func_t* real_pvalloc,
-                                           malloc_size_func_t real_malloc_size)
-{
+void* MallocStatisticImpl::pvalloc_hook_rd(size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return real_pvalloc(size);
+  return _funcs->pvalloc(size);
 }
 
 void MallocStatisticImpl::wait_for_rainy_day_fund() {
@@ -1710,14 +1683,12 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   }
 
   _max_frames = spec._stack_depth;
-  real_funcs_t* result = setup_hooks(&_malloc_stat_hooks, st);
 
-  if (result == NULL) {
+  if (!setup_hooks(&_malloc_stat_hooks, st)) {
     return false;
   }
 
   // Never set _funcs to NULL, even if we fail. It's just safer that way.
-  _funcs = result;
   _entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
 
   if (spec._rainy_day_fund > 0) {
@@ -1803,7 +1774,6 @@ bool MallocStatisticImpl::disable(outputStream* st) {
   _enabled = false;
   setup_hooks(NULL, st);
   cleanup();
-  _funcs = NULL;
 
   return true;
 }
@@ -2667,7 +2637,7 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
   _filter("-filter", "If given we only print a stack if it contains a function matching " \
           "the given string.", "STRING", false),
   _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "10"),
-  _dump_fraction("-fraction", "If > 0 we dunp the given fraction of allocated bytes " \
+  _dump_fraction("-fraction", "If > 0 we dump the given fraction of allocated bytes " \
                  "(or allocated objects if sorted by count). In that case the -max-entries " \
                  "option is ignored", "INT", false, "0"),
   _sort_by_count("-sort-by-count", "If given the stacks are sorted according to the number " \
