@@ -75,14 +75,15 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
-
+#ifdef LINUX
 // SapMachine 2019-02-20: Vitals
-#ifdef LINUX
 #include "vitals_linux_himemreport.hpp"
-#endif
 // SapMachine 2021-09-01: malloc-trace
-#ifdef LINUX
 #include "malloctrace/mallocTrace.hpp"
+#endif
+
+#ifdef AIX
+#include "loadlib_aix.hpp"
 #endif
 
 #ifndef PRODUCT
@@ -1379,6 +1380,8 @@ void VMError::report(outputStream* st, bool _verbose) {
 void VMError::print_vm_info(outputStream* st) {
 
   char buf[O_BUFLEN];
+  AIX_ONLY(LoadedLibraries::reload());
+
   report_vm_version(st, buf, sizeof(buf));
 
   // STEP("printing summary")
