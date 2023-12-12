@@ -237,10 +237,12 @@
                 {
                     "tag": "sapmachine-21.0.2+2",
                     "jdk": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jdk-21.0.2-ea.2_linux-x64-musl_bin.tar.gz"
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jdk-21.0.2-ea.2_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jdk-21.0.2-ea.2_linux-x64_bin.tar.gz"
                     },
                     "jre": {
-                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jre-21.0.2-ea.2_linux-x64-musl_bin.tar.gz"
+                        "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jre-21.0.2-ea.2_linux-x64-musl_bin.tar.gz",
+                        "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jre-21.0.2-ea.2_linux-x64_bin.tar.gz"
                     }
                 }
             ],
@@ -248,10 +250,12 @@
                 {
                     "tag": "sapmachine-21.0.2+2",
                     "jdk": {
-                        "linux-x64-musl": "sha256 f95edb7ada03bf0eb9e92c8e32993c7b14620daf95f5cfc723d689f73522458a"
+                        "linux-x64-musl": "sha256 f95edb7ada03bf0eb9e92c8e32993c7b14620daf95f5cfc723d689f73522458a",
+                        "linux-x64": "sha256 320e13af77180100792e1ebff3f118fbcb38f3b890b1dce7c1823b513480acd7"
                     },
                     "jre": {
-                        "linux-x64-musl": "sha256 42202d2a2055dbdde7e665bd6936051b7af01b4e657b218ab5face4a8545e1e5"
+                        "linux-x64-musl": "sha256 42202d2a2055dbdde7e665bd6936051b7af01b4e657b218ab5face4a8545e1e5",
+                        "linux-x64": "sha256 a7d9f07f4050ca28a78ae65a039dcf6e80acb721ce4a111e433c884bfb5c6613"
                     }
                 }
             ]
