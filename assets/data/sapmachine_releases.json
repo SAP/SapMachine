@@ -1,6 +1,12 @@
 {
     "majors": [
         {
+            "id": "23-ea",
+            "label": "SapMachine 23",
+            "lts": false,
+            "ea": true
+        },
+        {
             "id": "22-ea",
             "label": "SapMachine 22",
             "lts": false,
@@ -108,6 +114,34 @@
         }
     ],
     "assets": {
+        "23-ea": {
+            "releases": [
+                {
+                    "tag": "sapmachine-23+1",
+                    "jdk": {
+                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B1/sapmachine-jdk-23-ea.1_macos-aarch64_bin.dmg",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B1/sapmachine-jdk-23-ea.1_macos-aarch64_bin.tar.gz"
+                    },
+                    "jre": {
+                        "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B1/sapmachine-jre-23-ea.1_macos-aarch64_bin.dmg",
+                        "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B1/sapmachine-jre-23-ea.1_macos-aarch64_bin.tar.gz"
+                    }
+                }
+            ],
+            "checksums": [
+                {
+                    "tag": "sapmachine-23+1",
+                    "jdk": {
+                        "macos-aarch64-installer": "sha256 542ee75d4b457dce2639ba9dbe4529e0834af375399bb3b86ac5908f2dca1bd8",
+                        "macos-aarch64": "sha256 81a8df4aefac49ffaced985ab3c7e36c0289eaf18866a9f4a792a7171f5179ab"
+                    },
+                    "jre": {
+                        "macos-aarch64-installer": "sha256 eb7822fe37487ef01536bd46c8e83fd4e8f8b8df8e92712405742bc9e78bfd5c",
+                        "macos-aarch64": "sha256 6817ceea4f4d87f69814bb98a366f1d278f424d8ecb4b9418d5eb3433ae232ea"
+                    }
+                }
+            ]
+        },
         "22-ea": {
             "releases": [
                 {
