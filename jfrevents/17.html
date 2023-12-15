@@ -74,6 +74,8 @@
                 <div class="btn-group event-selector" role="group" title="Select new events">
                     <input type="radio" class="btn-check" data-version="8" name="btn-all-events" id="btn-all-events" autocomplete="off" checked onchange="showEvents(8)">
                     <label class="btn btn-outline-primary" for="btn-all-events" title="All events supported in JDK 17">All</label>
+                    <input type="radio" class="btn-check" data-version="12" name="btn-new-since-12-events" id="btn-new-since-12-events" autocomplete="off" onchange="showEvents(12)">
+                    <label class="btn btn-outline-primary" for="btn-new-since-12-events" title="New events introduced since JDK 12, after the last LTS release">since 12</label>
                     <input type="radio" class="btn-check" data-version="17" name="btn-new-in-17-events" id="btn-new-in-17-events" autocomplete="off" onchange="showEvents(17)">
                     <label class="btn btn-outline-primary" for="btn-new-in-17-events" title="New events introduced in JDK 17" >in 17</label>
                 </div>

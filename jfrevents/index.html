@@ -74,6 +74,8 @@
                 <div class="btn-group event-selector" role="group" title="Select new events">
                     <input type="radio" class="btn-check" data-version="8" name="btn-all-events" id="btn-all-events" autocomplete="off" checked onchange="showEvents(8)">
                     <label class="btn btn-outline-primary" for="btn-all-events" title="All events supported in JDK 21">All</label>
+                    <input type="radio" class="btn-check" data-version="18" name="btn-new-since-18-events" id="btn-new-since-18-events" autocomplete="off" onchange="showEvents(18)">
+                    <label class="btn btn-outline-primary" for="btn-new-since-18-events" title="New events introduced since JDK 18, after the last LTS release">since 18</label>
                     <input type="radio" class="btn-check" data-version="21" name="btn-new-in-21-events" id="btn-new-in-21-events" autocomplete="off" onchange="showEvents(21)">
                     <label class="btn btn-outline-primary" for="btn-new-in-21-events" title="New events introduced in JDK 21" >in 21</label>
                 </div>
