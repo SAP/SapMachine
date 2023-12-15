@@ -104,19 +104,21 @@
     margin-top: -0.7em;
     margin-bottom: -0.5em;
 }
-@media (min-width: 768px) {
+@media (min-width: 992px) {
     nav.navbar {
         height: 3em;
     }
+    .event-selector {
+        margin-right: 1.5em;
+    }
 }
 
-@media (max-width: 767px) {
-    .navbar-text .nav-link {
-        margin-left: -0.23cm;
-        margin-top: -0.2cm;
-    }
+@media (max-width: 991px) {
     .jdk-label {
         display: inline;
+    }
+    .event-selector {
+        margin-bottom: 1em;
     }
 }
 
@@ -193,4 +195,7 @@ h2 {
 }
 summary {
     padding-bottom: 0.1cm;
+}
+a.hidden-toc-section {
+    font-size: 0px !important;
 }
