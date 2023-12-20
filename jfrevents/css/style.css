@@ -104,7 +104,7 @@
     margin-top: -0.7em;
     margin-bottom: -0.5em;
 }
-@media (min-width: 992px) {
+@media (min-width: 1200px) {
     nav.navbar {
         height: 3em;
     }
@@ -113,11 +113,14 @@
     }
 }
 
-@media (max-width: 991px) {
+@media (max-width: 1199px) {
+    .sapmachine-logo {
+        margin-bottom: 0px;
+    }
     .jdk-label {
         display: inline;
     }
-    .event-selector {
+    .event-selector, #aiButton {
         margin-bottom: 1em;
     }
 }
@@ -198,4 +201,17 @@ summary {
 }
 a.hidden-toc-section {
     font-size: 0px !important;
+}
+.ai-generated-description {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+.ai-generated-description .badge {
+    opacity: 0.9;
+}
+.ai-generated-description .disclaimer {
+    font-style: italic;
+}
+#aiButton {
+  margin-right: 1.5em;
 }
