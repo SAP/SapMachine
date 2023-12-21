@@ -119,6 +119,7 @@
                 {
                     "tag": "sapmachine-22+28",
                     "jdk": {
+                        "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jdk-22-ea.28_aix-ppc64_bin.tar.gz",
                         "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jdk-22-ea.28_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jdk-22-ea.28_linux-x64-musl_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jdk-22-ea.28_linux-x64_bin.tar.gz",
@@ -129,6 +130,7 @@
                         "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jdk-22-ea.28_windows-x64_bin.zip"
                     },
                     "jre": {
+                        "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jre-22-ea.28_aix-ppc64_bin.tar.gz",
                         "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jre-22-ea.28_linux-ppc64le_bin.tar.gz",
                         "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jre-22-ea.28_linux-x64-musl_bin.tar.gz",
                         "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B28/sapmachine-jre-22-ea.28_linux-x64_bin.tar.gz",
@@ -144,6 +146,7 @@
                 {
                     "tag": "sapmachine-22+28",
                     "jdk": {
+                        "aix-ppc64": "sha256 f716fed8bf22d99c4b301f5388f168c38385ca541e7c3a8f94aa676b0d8760e8",
                         "linux-ppc64le": "sha256 cd09f21c12ba0d865da30704bd1d1849a88de2f28e0f487ea05f6201f6d22e1a",
                         "linux-x64-musl": "sha256 92d7120cb887012685c739675373d9c481b0eb9c86fbe1a68116803784319f8c",
                         "linux-x64": "sha256 30d5baeda15751235fc1d26ae60aacc1f46268e778af194c6d8431ca2f7ca353",
@@ -152,6 +155,7 @@
                         "windows-x64": "sha256 6066d264a8d036bb20fd30a811db8eac4ea8f91e3f214bcb0ac8d6f27ea9c039"
                     },
                     "jre": {
+                        "aix-ppc64": "sha256 b1d253a82902865de20634414b33616e866c8bbd89a9acc4b3292a4e2c4d6fca",
                         "linux-ppc64le": "sha256 07eccd6c8a3dd9ec12191c8d8f85fdaa85ea540fd3619775cf2596b5f20c397f",
                         "linux-x64-musl": "sha256 d27dcf520bc3c6feb41b8c73d10f4bba7f409f28f14f68d045f1a30ff22f107e",
                         "linux-x64": "sha256 9f9f3839c7acd92a698d612fad73d289617dc68edc2ac4c14a796baf14a6de63",
