@@ -6,13 +6,6 @@
         "ea": "false",
         "assets": {
           "jdk": {
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19.0.2-beta_linux-x64-musl_bin.tar.gz",
-                "checksum": "0859d24774a45da3a26e648d733948c437d891c66570a54ee9e23dac5c76e7e1",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2/sapmachine-jdk-19.0.2-beta_linux-x64-musl_bin.tar.gz"
-              }
-            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19.0.2_linux-aarch64_bin.tar.gz",
@@ -32,6 +25,13 @@
                 "name": "sapmachine-jdk-19.0.2_linux-x64_bin.tar.gz",
                 "checksum": "e7b27e8b5b4ca2a172b0a6299eaba9cf7e0cceeea11aeb37fd3ff1ef71cff018",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2/sapmachine-jdk-19.0.2_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19.0.2-beta_linux-x64-musl_bin.tar.gz",
+                "checksum": "0859d24774a45da3a26e648d733948c437d891c66570a54ee9e23dac5c76e7e1",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2/sapmachine-jdk-19.0.2-beta_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -72,13 +72,6 @@
             }
           },
           "jre": {
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19.0.2-beta_linux-x64-musl_bin.tar.gz",
-                "checksum": "0d6fea887dcb83bf85f1e10e5bce9002ee1aa219725a2911c0d3faecdc011dd5",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2/sapmachine-jre-19.0.2-beta_linux-x64-musl_bin.tar.gz"
-              }
-            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jre-19.0.2_linux-aarch64_bin.tar.gz",
@@ -98,6 +91,13 @@
                 "name": "sapmachine-jre-19.0.2_linux-x64_bin.tar.gz",
                 "checksum": "2055444242d4bc3124235b2bb4ca7f2c75a2546cd98d8df6f2033d09f1baad6c",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2/sapmachine-jre-19.0.2_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19.0.2-beta_linux-x64-musl_bin.tar.gz",
+                "checksum": "0d6fea887dcb83bf85f1e10e5bce9002ee1aa219725a2911c0d3faecdc011dd5",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2/sapmachine-jre-19.0.2-beta_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -165,6 +165,13 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jdk-19.0.2-ea.1_linux-x64_bin.tar.gz"
               }
             },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz",
+                "checksum": "063d3f3c3061b12dc773f92ce47bc4204f3d764293ba15efb352f5aba9133c2c",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jdk-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz"
+              }
+            },
             "macos-aarch64": {
               "dmg": {
                 "name": "sapmachine-jdk-19.0.2-ea.1_macos-aarch64_bin.dmg",
@@ -200,13 +207,6 @@
                 "checksum": "e25ec9230bda6ff9cca39b115fbcc59cae3467499f2dbfd36dd1eed1e1b70472",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jdk-19.0.2-ea.1_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz",
-                "checksum": "063d3f3c3061b12dc773f92ce47bc4204f3d764293ba15efb352f5aba9133c2c",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jdk-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -229,6 +229,13 @@
                 "name": "sapmachine-jre-19.0.2-ea.1_linux-x64_bin.tar.gz",
                 "checksum": "51d8de13c6131b1d3d8bf520caaba661f500fc90d2f9691d5d76bf134783f3b9",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jre-19.0.2-ea.1_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz",
+                "checksum": "77a7cd5523729f933c6869b357f28d46e6e970bb4b2f7c48cbd8789e912fe86a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jre-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -266,13 +273,6 @@
                 "checksum": "c501192fdb7316b46201fabfaf9c8e386ba3bfb5c05579bf39b8c4c5b5e2e9d0",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jre-19.0.2-ea.1_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz",
-                "checksum": "77a7cd5523729f933c6869b357f28d46e6e970bb4b2f7c48cbd8789e912fe86a",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.2%2B1/sapmachine-jre-19.0.2-eabeta.1_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -284,13 +284,6 @@
         "ea": "false",
         "assets": {
           "jdk": {
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19.0.1-beta_linux-x64-musl_bin.tar.gz",
-                "checksum": "06929eb7f24a9cbaeb73952f41a3213377064833f904eab1b2f60e607e3333f6",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1/sapmachine-jdk-19.0.1-beta_linux-x64-musl_bin.tar.gz"
-              }
-            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19.0.1_linux-aarch64_bin.tar.gz",
@@ -310,6 +303,13 @@
                 "name": "sapmachine-jdk-19.0.1_linux-x64_bin.tar.gz",
                 "checksum": "a8aa60ce6e9bb67388cf23bb710c742d4a5132a55da2f21113d082e91b6453d1",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1/sapmachine-jdk-19.0.1_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19.0.1-beta_linux-x64-musl_bin.tar.gz",
+                "checksum": "06929eb7f24a9cbaeb73952f41a3213377064833f904eab1b2f60e607e3333f6",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1/sapmachine-jdk-19.0.1-beta_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -350,13 +350,6 @@
             }
           },
           "jre": {
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19.0.1-beta_linux-x64-musl_bin.tar.gz",
-                "checksum": "43d4b2f318c5f6e480480fa960bd4ba973fbc48d7005a92acabc89195d4467df",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1/sapmachine-jre-19.0.1-beta_linux-x64-musl_bin.tar.gz"
-              }
-            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jre-19.0.1_linux-aarch64_bin.tar.gz",
@@ -376,6 +369,13 @@
                 "name": "sapmachine-jre-19.0.1_linux-x64_bin.tar.gz",
                 "checksum": "f230c375581eda3c6a542bf987dc877e2b55421f1af5ed054077e20fe4bc78a8",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1/sapmachine-jre-19.0.1_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19.0.1-beta_linux-x64-musl_bin.tar.gz",
+                "checksum": "43d4b2f318c5f6e480480fa960bd4ba973fbc48d7005a92acabc89195d4467df",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1/sapmachine-jre-19.0.1-beta_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -443,6 +443,13 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jdk-19.0.1-ea.10_linux-x64_bin.tar.gz"
               }
             },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz",
+                "checksum": "4997beca62f899f90be4ec7dd3e1c5de11221bcb9bda5e2bf16be0cd8cc2976a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jdk-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz"
+              }
+            },
             "macos-aarch64": {
               "dmg": {
                 "name": "sapmachine-jdk-19.0.1-ea.10_macos-aarch64_bin.dmg",
@@ -478,13 +485,6 @@
                 "checksum": "45728446ad3dada62fb5abad55827b48d039a0e7db4bd9123be43f2780413e25",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jdk-19.0.1-ea.10_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz",
-                "checksum": "4997beca62f899f90be4ec7dd3e1c5de11221bcb9bda5e2bf16be0cd8cc2976a",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jdk-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -507,6 +507,13 @@
                 "name": "sapmachine-jre-19.0.1-ea.10_linux-x64_bin.tar.gz",
                 "checksum": "22675092b5e4a2411ad334046a7375c21548ee4458b8638d37c5cf260e2b91cc",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jre-19.0.1-ea.10_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz",
+                "checksum": "faaf50ed812901f2ebe10e3c55cee4dab601d15232f1c2e1c3420710dc8f51c8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jre-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -544,13 +551,6 @@
                 "checksum": "5fb0fb9d919e69f8d3e313b071db73b9d6e4b24e6d5a88ec9438eacb525572df",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jre-19.0.1-ea.10_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz",
-                "checksum": "faaf50ed812901f2ebe10e3c55cee4dab601d15232f1c2e1c3420710dc8f51c8",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B10/sapmachine-jre-19.0.1-eabeta.10_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -579,6 +579,13 @@
                 "name": "sapmachine-jdk-19.0.1-ea.1_linux-x64_bin.tar.gz",
                 "checksum": "2c6c0c39bfcb3ab29e44ba51f40f84e93e46946f156b7cdd0b13fe58e5d5aea7",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jdk-19.0.1-ea.1_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz",
+                "checksum": "cb5bd64acecf15a8458f3359b28a00fc9d1a793514836a77dd0c77deecf46fd3",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jdk-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -616,13 +623,6 @@
                 "checksum": "1c694f1c30b62225ea7353e7fb9e02b149b4e40ea63a7723d1a7d1cc7565dff6",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jdk-19.0.1-ea.1_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz",
-                "checksum": "cb5bd64acecf15a8458f3359b28a00fc9d1a793514836a77dd0c77deecf46fd3",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jdk-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -645,6 +645,13 @@
                 "name": "sapmachine-jre-19.0.1-ea.1_linux-x64_bin.tar.gz",
                 "checksum": "7d4d13e76d5c99cfbe93739e6997f937a4e9135a843eaf347fa9203fda0150cd",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jre-19.0.1-ea.1_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz",
+                "checksum": "0ccc255d22a74190225be9a1d9dc1b4eca873e168b944deb350a34955d59b86e",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jre-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -682,13 +689,6 @@
                 "checksum": "ae70e22ff686552eae691191ee4039822fdb05112e1eadd2c18aa903de814767",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jre-19.0.1-ea.1_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz",
-                "checksum": "0ccc255d22a74190225be9a1d9dc1b4eca873e168b944deb350a34955d59b86e",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19.0.1%2B1/sapmachine-jre-19.0.1-eabeta.1_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -700,13 +700,6 @@
         "ea": "false",
         "assets": {
           "jdk": {
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-beta_linux-x64-musl_bin.tar.gz",
-                "checksum": "3976486008f96dba54efb53ba1551e011a659864e46a152967321032eba4262a",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19/sapmachine-jdk-19-beta_linux-x64-musl_bin.tar.gz"
-              }
-            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19_linux-aarch64_bin.tar.gz",
@@ -726,6 +719,13 @@
                 "name": "sapmachine-jdk-19_linux-x64_bin.tar.gz",
                 "checksum": "0bbd853c82524ff19a09eb0e7ad847eb846792d951435d74a138dec65e736879",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19/sapmachine-jdk-19_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-beta_linux-x64-musl_bin.tar.gz",
+                "checksum": "3976486008f96dba54efb53ba1551e011a659864e46a152967321032eba4262a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19/sapmachine-jdk-19-beta_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -766,13 +766,6 @@
             }
           },
           "jre": {
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-beta_linux-x64-musl_bin.tar.gz",
-                "checksum": "68d8e20c38fed5649192f2181dcff2b8c7a888fd9d7f71668a64c02cd8c429be",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19/sapmachine-jre-19-beta_linux-x64-musl_bin.tar.gz"
-              }
-            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jre-19_linux-aarch64_bin.tar.gz",
@@ -792,6 +785,13 @@
                 "name": "sapmachine-jre-19_linux-x64_bin.tar.gz",
                 "checksum": "84961c9dd962e5abae90d2ecae9f74d1cc697d73d3f6597ca10c1c1ef53aaf67",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19/sapmachine-jre-19_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-beta_linux-x64-musl_bin.tar.gz",
+                "checksum": "68d8e20c38fed5649192f2181dcff2b8c7a888fd9d7f71668a64c02cd8c429be",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19/sapmachine-jre-19-beta_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -859,6 +859,13 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jdk-19-ea.36_linux-x64_bin.tar.gz"
               }
             },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.36_linux-x64-musl_bin.tar.gz",
+                "checksum": "b5b803379c29bec3267b97657709312ac9eddea9a737e4f84ee0c58ecb0d04fc",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jdk-19-eabeta.36_linux-x64-musl_bin.tar.gz"
+              }
+            },
             "macos-aarch64": {
               "dmg": {
                 "name": "sapmachine-jdk-19-ea.36_macos-aarch64_bin.dmg",
@@ -894,13 +901,6 @@
                 "checksum": "a5b86abd3321934c9c3c2b31e19975a996e6513021edcf8cbbefb6032528315c",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jdk-19-ea.36_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.36_linux-x64-musl_bin.tar.gz",
-                "checksum": "b5b803379c29bec3267b97657709312ac9eddea9a737e4f84ee0c58ecb0d04fc",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jdk-19-eabeta.36_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -923,6 +923,13 @@
                 "name": "sapmachine-jre-19-ea.36_linux-x64_bin.tar.gz",
                 "checksum": "ff970977227d74d4d2d71c634b407195b9ff812cfbf90bab55a658d25462d0df",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jre-19-ea.36_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.36_linux-x64-musl_bin.tar.gz",
+                "checksum": "f0525aa2e35735c2e8866a3a3efbf8704fdcbaefe030ece4d6147da25612ac72",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jre-19-eabeta.36_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -960,13 +967,6 @@
                 "checksum": "b4504a21c0ec8e232b55bfa2e8be57ce7ab138b7d3f5df9dbb4cef14fe459174",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jre-19-ea.36_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.36_linux-x64-musl_bin.tar.gz",
-                "checksum": "f0525aa2e35735c2e8866a3a3efbf8704fdcbaefe030ece4d6147da25612ac72",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B36/sapmachine-jre-19-eabeta.36_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -995,6 +995,13 @@
                 "name": "sapmachine-jdk-19-ea.35_linux-x64_bin.tar.gz",
                 "checksum": "6c7194f0069d237260eaaa5cbf74ecdf1750d24676575a34124b0e2953ada6e8",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jdk-19-ea.35_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.35_linux-x64-musl_bin.tar.gz",
+                "checksum": "acbe66fa53f682f1725511041b4be466a5a9d39d90beb9487e94d37760c8fc5a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jdk-19-eabeta.35_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1032,13 +1039,6 @@
                 "checksum": "44470a36287f86646906e8ebbb4228c3a0abbeafbab4c7a5da950c39fa62efba",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jdk-19-ea.35_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.35_linux-x64-musl_bin.tar.gz",
-                "checksum": "acbe66fa53f682f1725511041b4be466a5a9d39d90beb9487e94d37760c8fc5a",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jdk-19-eabeta.35_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -1061,6 +1061,13 @@
                 "name": "sapmachine-jre-19-ea.35_linux-x64_bin.tar.gz",
                 "checksum": "fa1ecbf65afd5cbd6eb9f8f9f003aed67a3bcf8b09c5f2a4d90a8b8f07419e09",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jre-19-ea.35_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.35_linux-x64-musl_bin.tar.gz",
+                "checksum": "8eb580046cfb491e31ff16f6cb8ed8ee5210ef422b3f33f1de260dc01b2d6838",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jre-19-eabeta.35_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1098,13 +1105,6 @@
                 "checksum": "a293d2faa972db3fc3d663f3989d9e0aa50aaedc7704f5d4873b24d569f1fd1e",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jre-19-ea.35_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.35_linux-x64-musl_bin.tar.gz",
-                "checksum": "8eb580046cfb491e31ff16f6cb8ed8ee5210ef422b3f33f1de260dc01b2d6838",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B35/sapmachine-jre-19-eabeta.35_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -1133,6 +1133,13 @@
                 "name": "sapmachine-jdk-19-ea.34_linux-x64_bin.tar.gz",
                 "checksum": "c42259fbf51f9a66f6ba286a89a0dc1fd6562bfb03b4396583a64d45005ae258",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jdk-19-ea.34_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.34_linux-x64-musl_bin.tar.gz",
+                "checksum": "16c330e12a756a709f8472da5e28c7c6daecd9fc1b639aab861ca487d022b982",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jdk-19-eabeta.34_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1170,13 +1177,6 @@
                 "checksum": "026a35d54ee1d9a6d2f51d7a61d5b181129c5d06484491a43fede60d5a2c5e82",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jdk-19-ea.34_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.34_linux-x64-musl_bin.tar.gz",
-                "checksum": "16c330e12a756a709f8472da5e28c7c6daecd9fc1b639aab861ca487d022b982",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jdk-19-eabeta.34_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -1199,6 +1199,13 @@
                 "name": "sapmachine-jre-19-ea.34_linux-x64_bin.tar.gz",
                 "checksum": "991815a8250361e394f5caa9550b9d3b1cb6b37306e02d1ad6f62a8f836a3466",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jre-19-ea.34_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.34_linux-x64-musl_bin.tar.gz",
+                "checksum": "b23ee48a17bc43fac88daf7cebe4c2bda6f04a2668f611ebb7dfc41d0f2195fb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jre-19-eabeta.34_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1236,13 +1243,6 @@
                 "checksum": "4584e1aa000c367e06a996e25a4acf7cd13e700e7e3ff88cb057bfa362ed5f9b",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jre-19-ea.34_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.34_linux-x64-musl_bin.tar.gz",
-                "checksum": "b23ee48a17bc43fac88daf7cebe4c2bda6f04a2668f611ebb7dfc41d0f2195fb",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B34/sapmachine-jre-19-eabeta.34_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -1271,6 +1271,13 @@
                 "name": "sapmachine-jdk-19-ea.33_linux-x64_bin.tar.gz",
                 "checksum": "cfd0b6be4e660c5cf137d6a013803d95b32f1edbd060fb2ecc2f3cd64e37a13a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jdk-19-ea.33_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.33_linux-x64-musl_bin.tar.gz",
+                "checksum": "89486e43ff1d23a67a95804d51ab142631b350d71312ed05ab863dd27d06fabb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jdk-19-eabeta.33_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1308,13 +1315,6 @@
                 "checksum": "fdad5200fe8e557bb734738d5890d443e573fb9a2e831ec1b8b064fa62844ad7",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jdk-19-ea.33_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.33_linux-x64-musl_bin.tar.gz",
-                "checksum": "89486e43ff1d23a67a95804d51ab142631b350d71312ed05ab863dd27d06fabb",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jdk-19-eabeta.33_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -1337,6 +1337,13 @@
                 "name": "sapmachine-jre-19-ea.33_linux-x64_bin.tar.gz",
                 "checksum": "c05a9e99e2abbc1d178c1d03f9c8920dfdcb5eab6eaabb35764521b5e875b26f",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jre-19-ea.33_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.33_linux-x64-musl_bin.tar.gz",
+                "checksum": "aa5c81e3b4c8c755f8c7a5fc3bd1b447a8172e22b26ad888b990c16c61f6690a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jre-19-eabeta.33_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1374,13 +1381,6 @@
                 "checksum": "580fbb773242f6339c43c84213f2d48cb8478ac20fbca5255de49e1e22a4396c",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jre-19-ea.33_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.33_linux-x64-musl_bin.tar.gz",
-                "checksum": "aa5c81e3b4c8c755f8c7a5fc3bd1b447a8172e22b26ad888b990c16c61f6690a",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B33/sapmachine-jre-19-eabeta.33_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -1409,6 +1409,13 @@
                 "name": "sapmachine-jdk-19-ea.32_linux-x64_bin.tar.gz",
                 "checksum": "47f97681345e9ad7778f20a7274e9f290ea7df9eaf10bfc43e66cb14ca85186c",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jdk-19-ea.32_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.32_linux-x64-musl_bin.tar.gz",
+                "checksum": "6873a9a0ea9f9c1fe80288206f8447cb117099be8cd21b91545257e14ef881c8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jdk-19-eabeta.32_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1446,13 +1453,6 @@
                 "checksum": "c8ae536198c3c121bef42e7ba88043233b8db83120927526bcb55a7c03d0a8ed",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jdk-19-ea.32_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.32_linux-x64-musl_bin.tar.gz",
-                "checksum": "6873a9a0ea9f9c1fe80288206f8447cb117099be8cd21b91545257e14ef881c8",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jdk-19-eabeta.32_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -1475,6 +1475,13 @@
                 "name": "sapmachine-jre-19-ea.32_linux-x64_bin.tar.gz",
                 "checksum": "f6c514278bec40b940f4bfcc47d6a0ac9ebe7580d26be3ad0014b334659615e6",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jre-19-ea.32_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.32_linux-x64-musl_bin.tar.gz",
+                "checksum": "719bee4f99256e7a75ec37c55de890725817893983d4ceabc7c720ad6fb068b2",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jre-19-eabeta.32_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1512,13 +1519,6 @@
                 "checksum": "833bcb7d789a0641247c4bc0de5318e6510654aac912c27d2b261101e205679f",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jre-19-ea.32_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.32_linux-x64-musl_bin.tar.gz",
-                "checksum": "719bee4f99256e7a75ec37c55de890725817893983d4ceabc7c720ad6fb068b2",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B32/sapmachine-jre-19-eabeta.32_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -1547,6 +1547,13 @@
                 "name": "sapmachine-jdk-19-ea.31_linux-x64_bin.tar.gz",
                 "checksum": "57f24a0186c288fb849ca2ff5017b7109fe78798307e5700ea05942ed4376cd5",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jdk-19-ea.31_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.31_linux-x64-musl_bin.tar.gz",
+                "checksum": "10a5284c7fa9095ac62f029b86ecee8f0004d37a4cd41a0213e4dbf9d3e4fc30",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jdk-19-eabeta.31_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1584,13 +1591,6 @@
                 "checksum": "b5b79ab95954a75402959797e9cbe65931d72398d39dfbedcd471fb8259574ad",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jdk-19-ea.31_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.31_linux-x64-musl_bin.tar.gz",
-                "checksum": "10a5284c7fa9095ac62f029b86ecee8f0004d37a4cd41a0213e4dbf9d3e4fc30",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jdk-19-eabeta.31_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -1613,6 +1613,13 @@
                 "name": "sapmachine-jre-19-ea.31_linux-x64_bin.tar.gz",
                 "checksum": "0f47f6b6e5167890f4e67df93d06f04de9360b6519ecfbeda0783add04064597",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jre-19-ea.31_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.31_linux-x64-musl_bin.tar.gz",
+                "checksum": "3aaa604614760f14871d0c3491313b180143ca62fcbe503ba551a6f1e8aca2d2",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jre-19-eabeta.31_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1650,13 +1657,6 @@
                 "checksum": "33041d93d5f6f1c6b4d0c2adedc0beba28ca2423af6976973fdf2f2b02efd8de",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jre-19-ea.31_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.31_linux-x64-musl_bin.tar.gz",
-                "checksum": "3aaa604614760f14871d0c3491313b180143ca62fcbe503ba551a6f1e8aca2d2",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B31/sapmachine-jre-19-eabeta.31_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -1685,6 +1685,13 @@
                 "name": "sapmachine-jdk-19-ea.30_linux-x64_bin.tar.gz",
                 "checksum": "4b793a71d8c8e0adcfe9b891a7539ae1e927b8854af05f897a0ba2dc85851845",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jdk-19-ea.30_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.30_linux-x64-musl_bin.tar.gz",
+                "checksum": "19b69b1458735c1a99b2b59c3b7262c6ecbc9dd3f25e1a74be6b88bac68b1d94",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jdk-19-eabeta.30_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1722,13 +1729,6 @@
                 "checksum": "cc2f27afb653724c67bbaac747670db6f1202eac8de6ecac63c121cb85a8dc6a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jdk-19-ea.30_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.30_linux-x64-musl_bin.tar.gz",
-                "checksum": "19b69b1458735c1a99b2b59c3b7262c6ecbc9dd3f25e1a74be6b88bac68b1d94",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jdk-19-eabeta.30_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -1751,6 +1751,13 @@
                 "name": "sapmachine-jre-19-ea.30_linux-x64_bin.tar.gz",
                 "checksum": "10e43fd3044cc19c10525c4e5f0208be867f17b9dc2de17fc08fef6bd910ed69",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jre-19-ea.30_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.30_linux-x64-musl_bin.tar.gz",
+                "checksum": "6be37ddef6c5f2bf61f7a9d0b82c8d5c8b314cb1d73121d2c84a9bb5481f7201",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jre-19-eabeta.30_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1788,13 +1795,6 @@
                 "checksum": "b82d3b6c00dfa1dd61c5587c554fed33c0f5549a2598c4fd462fc55fb7293cd3",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jre-19-ea.30_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.30_linux-x64-musl_bin.tar.gz",
-                "checksum": "6be37ddef6c5f2bf61f7a9d0b82c8d5c8b314cb1d73121d2c84a9bb5481f7201",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B30/sapmachine-jre-19-eabeta.30_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -1823,6 +1823,13 @@
                 "name": "sapmachine-jdk-19-ea.29_linux-x64_bin.tar.gz",
                 "checksum": "06b1993437227ca8193e25147e1070f3d0bd4f7ef1272025b6b8445a38bb01ab",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jdk-19-ea.29_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.29_linux-x64-musl_bin.tar.gz",
+                "checksum": "c3c7aab83e7a0c759a467cc764aacd5a0bd1a3e1e94a5a4013cdfb09df48f4bb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jdk-19-eabeta.29_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1860,13 +1867,6 @@
                 "checksum": "9695948e4ff7924bbec0fe396f0b1c86523d57758525585c448f7aaecee0c3f1",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jdk-19-ea.29_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.29_linux-x64-musl_bin.tar.gz",
-                "checksum": "c3c7aab83e7a0c759a467cc764aacd5a0bd1a3e1e94a5a4013cdfb09df48f4bb",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jdk-19-eabeta.29_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -1889,6 +1889,13 @@
                 "name": "sapmachine-jre-19-ea.29_linux-x64_bin.tar.gz",
                 "checksum": "ce7a4008894261a3bd218ef7c9c8d737a47432ddece4df4c5d78f1571dc81e52",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jre-19-ea.29_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.29_linux-x64-musl_bin.tar.gz",
+                "checksum": "5f0827ed6c7f9cdb3da76f8e086ea935044f3906ab678169a801e4eb0b7d92fe",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jre-19-eabeta.29_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1926,13 +1933,6 @@
                 "checksum": "d7ec90602eb6df47e3fe499300a349ccb8c6a574e2076d643d115086099ca91b",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jre-19-ea.29_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.29_linux-x64-musl_bin.tar.gz",
-                "checksum": "5f0827ed6c7f9cdb3da76f8e086ea935044f3906ab678169a801e4eb0b7d92fe",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B29/sapmachine-jre-19-eabeta.29_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -1961,6 +1961,13 @@
                 "name": "sapmachine-jdk-19-ea.28_linux-x64_bin.tar.gz",
                 "checksum": "3b6e99b1e255f2979dabe38d972c4a7ad47d9dcb05eeb4843b4095537a3c8cfa",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jdk-19-ea.28_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.28_linux-x64-musl_bin.tar.gz",
+                "checksum": "5742aa10cc6da8571b284fe05d4009a6d95d683b5a7d05d9bdbab55d8c5f0507",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jdk-19-eabeta.28_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -1997,13 +2004,6 @@
                 "checksum": "ba9941e114354e1916662cb0394b63ab553166cda075be55581e93c2ac979882",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jdk-19-ea.28_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.28_linux-x64-musl_bin.tar.gz",
-                "checksum": "5742aa10cc6da8571b284fe05d4009a6d95d683b5a7d05d9bdbab55d8c5f0507",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jdk-19-eabeta.28_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -2026,6 +2026,13 @@
                 "name": "sapmachine-jre-19-ea.28_linux-x64_bin.tar.gz",
                 "checksum": "569fd470ebb7749070c86afd817d5611230b349b3b68a637c15ee05df25d6b05",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jre-19-ea.28_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.28_linux-x64-musl_bin.tar.gz",
+                "checksum": "94a3a6fbe99c35a2bde2c1941a50b11d1646aff5b4c2baad12bbc79dc97bf143",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jre-19-eabeta.28_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2062,13 +2069,6 @@
                 "checksum": "cf02931afc322bea9b0abd79d9714c3737fa6a2582ed253f5df2ac5e43da3e44",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jre-19-ea.28_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.28_linux-x64-musl_bin.tar.gz",
-                "checksum": "94a3a6fbe99c35a2bde2c1941a50b11d1646aff5b4c2baad12bbc79dc97bf143",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B28/sapmachine-jre-19-eabeta.28_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -2097,6 +2097,13 @@
                 "name": "sapmachine-jdk-19-ea.27_linux-x64_bin.tar.gz",
                 "checksum": "29c9c21acc2c0bdd3095f94b92ef98839e2dcbd9d54c4a7f7f84b06bc4ca0a3d",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jdk-19-ea.27_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.27_linux-x64-musl_bin.tar.gz",
+                "checksum": "60d79538fa472bee894f05173c7340db6addad6b854877411e15ccf388227f98",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jdk-19-eabeta.27_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2133,13 +2140,6 @@
                 "checksum": "65842dc1097e5dde649b98f6b21379771cd12cb3724f73e32d8ecda86bd650fb",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jdk-19-ea.27_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.27_linux-x64-musl_bin.tar.gz",
-                "checksum": "60d79538fa472bee894f05173c7340db6addad6b854877411e15ccf388227f98",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jdk-19-eabeta.27_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -2162,6 +2162,13 @@
                 "name": "sapmachine-jre-19-ea.27_linux-x64_bin.tar.gz",
                 "checksum": "3eb95cfb3c78c0239d8954827054627d7360d6efc78f34c1e9e1c10ccc350537",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jre-19-ea.27_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.27_linux-x64-musl_bin.tar.gz",
+                "checksum": "5cc713087ac0a33dc0a61931f52d019bd001b9a9122ed85b243f479fd3e0a3f6",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jre-19-eabeta.27_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2198,13 +2205,6 @@
                 "checksum": "7ed3564ba811ea7470b6b01674771d56a8bbe369c9b6b5ce9ae4b0d9952843b3",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jre-19-ea.27_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.27_linux-x64-musl_bin.tar.gz",
-                "checksum": "5cc713087ac0a33dc0a61931f52d019bd001b9a9122ed85b243f479fd3e0a3f6",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B27/sapmachine-jre-19-eabeta.27_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -2233,6 +2233,13 @@
                 "name": "sapmachine-jdk-19-ea.26_linux-x64_bin.tar.gz",
                 "checksum": "3f10198ecf5d4d5da2ad3c20ae848f3a2ed90d07069dd9acef6f1fc28073583e",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jdk-19-ea.26_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.26_linux-x64-musl_bin.tar.gz",
+                "checksum": "60d79d7070a2164f94fe38df32bdc0c7e20c1cbb1df423e1737158f6243aaa6b",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jdk-19-eabeta.26_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2269,13 +2276,6 @@
                 "checksum": "12031d8dd8e5acda111ca38b5106455d7c0abf0e78016be73e270caff0c098c0",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jdk-19-ea.26_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.26_linux-x64-musl_bin.tar.gz",
-                "checksum": "60d79d7070a2164f94fe38df32bdc0c7e20c1cbb1df423e1737158f6243aaa6b",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jdk-19-eabeta.26_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -2298,6 +2298,13 @@
                 "name": "sapmachine-jre-19-ea.26_linux-x64_bin.tar.gz",
                 "checksum": "7edad171dcdb0b18c4dc291b9f9f0175bffdab5ea98ed53a9b7cf81928ff27ce",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jre-19-ea.26_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.26_linux-x64-musl_bin.tar.gz",
+                "checksum": "81252463a64bb95174e1f50fc399ae9d14600d36982ae2b20a3c50691c5cede5",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jre-19-eabeta.26_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2334,13 +2341,6 @@
                 "checksum": "7ccba189ae85d8626c9b05bc803b51bb4afe390e01a15a06921e4f6820027266",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jre-19-ea.26_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.26_linux-x64-musl_bin.tar.gz",
-                "checksum": "81252463a64bb95174e1f50fc399ae9d14600d36982ae2b20a3c50691c5cede5",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B26/sapmachine-jre-19-eabeta.26_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -2369,6 +2369,13 @@
                 "name": "sapmachine-jdk-19-ea.25_linux-x64_bin.tar.gz",
                 "checksum": "3b5809f6182d8299f123d534eb0d6af048c06a4b46d5a957b773cfe92a8bf49e",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jdk-19-ea.25_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.25_linux-x64-musl_bin.tar.gz",
+                "checksum": "c2928cfaa8784dbf54aaca073efd65a7af33d8d3c770cf6740ad12def8a401d9",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jdk-19-eabeta.25_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2405,13 +2412,6 @@
                 "checksum": "39614cd2496ebdd58bc0abc641631032feed9c8905c3debef625ff6140753c08",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jdk-19-ea.25_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.25_linux-x64-musl_bin.tar.gz",
-                "checksum": "c2928cfaa8784dbf54aaca073efd65a7af33d8d3c770cf6740ad12def8a401d9",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jdk-19-eabeta.25_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -2434,6 +2434,13 @@
                 "name": "sapmachine-jre-19-ea.25_linux-x64_bin.tar.gz",
                 "checksum": "be87dbf2d2854ee63962fc3cea7f2a49b0ef39e66e990c8475b55a39186fa50e",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jre-19-ea.25_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.25_linux-x64-musl_bin.tar.gz",
+                "checksum": "00fb71a34eedb2c12ad0c2b183535ec99147890a0a9833d4edbc1da9206d7fd9",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jre-19-eabeta.25_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2470,13 +2477,6 @@
                 "checksum": "8f011c7a49a6d82b6b4c97a92b6bc3b36a5ca06c776813f3d6a5eeadaf84d008",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jre-19-ea.25_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.25_linux-x64-musl_bin.tar.gz",
-                "checksum": "00fb71a34eedb2c12ad0c2b183535ec99147890a0a9833d4edbc1da9206d7fd9",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B25/sapmachine-jre-19-eabeta.25_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -2505,6 +2505,13 @@
                 "name": "sapmachine-jdk-19-ea.24_linux-x64_bin.tar.gz",
                 "checksum": "c9d1d23e5498ceaa30d4f6714956f17cf55f650020a861c87db3b5963cce90e7",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jdk-19-ea.24_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.24_linux-x64-musl_bin.tar.gz",
+                "checksum": "c3602d87b1d8c6c25f2389201c4554f3fc2f1a7e4f6bdda33c337c1bb4563fb9",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jdk-19-eabeta.24_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2541,13 +2548,6 @@
                 "checksum": "58bdca3722ebf9a7b5a00235d1e5ec33d42ee385ac0619df6f6378a19f5987ce",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jdk-19-ea.24_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.24_linux-x64-musl_bin.tar.gz",
-                "checksum": "c3602d87b1d8c6c25f2389201c4554f3fc2f1a7e4f6bdda33c337c1bb4563fb9",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jdk-19-eabeta.24_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -2570,6 +2570,13 @@
                 "name": "sapmachine-jre-19-ea.24_linux-x64_bin.tar.gz",
                 "checksum": "1545ab1cf95a5017826930fc6a6cba0bf0d8e2ad03be829860395698464760b4",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jre-19-ea.24_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.24_linux-x64-musl_bin.tar.gz",
+                "checksum": "9485b992562909d592f3ee280bbda1988327cf2b5edbe1c9d4b0e79b9f354678",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jre-19-eabeta.24_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2606,13 +2613,6 @@
                 "checksum": "345722862c589549d490385ce9b91da254e39a4c04284d4dd6ad1e838fff187f",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jre-19-ea.24_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.24_linux-x64-musl_bin.tar.gz",
-                "checksum": "9485b992562909d592f3ee280bbda1988327cf2b5edbe1c9d4b0e79b9f354678",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B24/sapmachine-jre-19-eabeta.24_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -2641,6 +2641,13 @@
                 "name": "sapmachine-jdk-19-ea.23_linux-x64_bin.tar.gz",
                 "checksum": "0530e5dd1a7ed2206e38373832901e4ce10fef1fefe58a6ab78d1a49432bac95",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jdk-19-ea.23_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.23_linux-x64-musl_bin.tar.gz",
+                "checksum": "5ab409cf188e0d99e8d026d7b6bd9f1ccc1d09666f2a81e11be5a0b61bf2c12a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jdk-19-eabeta.23_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2677,13 +2684,6 @@
                 "checksum": "cff9f7741871df8dbb07a97493ade8af29f716baa0ffe8720c716a45a37bbabd",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jdk-19-ea.23_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.23_linux-x64-musl_bin.tar.gz",
-                "checksum": "5ab409cf188e0d99e8d026d7b6bd9f1ccc1d09666f2a81e11be5a0b61bf2c12a",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jdk-19-eabeta.23_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
@@ -2706,6 +2706,13 @@
                 "name": "sapmachine-jre-19-ea.23_linux-x64_bin.tar.gz",
                 "checksum": "edd349aeaecd9fb9f03b8cbeeed04b065cbe427e5a44ff08e5f3c13ddc51803a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jre-19-ea.23_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.23_linux-x64-musl_bin.tar.gz",
+                "checksum": "147162ec82bd85822d5c473f4bc3def80c39608ade1cdf8253aade8e86039ce7",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jre-19-eabeta.23_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2742,13 +2749,6 @@
                 "checksum": "80e8d74a0b3f659b445381f016b9bd7ce33ea2f1dbbd59d9c2b0869b44f8f2a0",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jre-19-ea.23_windows-x64_bin.zip"
               }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.23_linux-x64-musl_bin.tar.gz",
-                "checksum": "147162ec82bd85822d5c473f4bc3def80c39608ade1cdf8253aade8e86039ce7",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B23/sapmachine-jre-19-eabeta.23_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -2758,6 +2758,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.22_linux-aarch64_bin.tar.gz",
+                "checksum": "74e87ae9ab531dbe54ea35f139a793d301d061ac546e80523e2186c8417ea2ff",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jdk-19-eabeta.22_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.22_linux-ppc64le_bin.tar.gz",
@@ -2770,6 +2777,13 @@
                 "name": "sapmachine-jdk-19-ea.22_linux-x64_bin.tar.gz",
                 "checksum": "8b93ddba700027403a9de710d6984e08f31af6d1e9edcae3b5ef94bb479a6e19",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jdk-19-ea.22_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.22_linux-x64-musl_bin.tar.gz",
+                "checksum": "78518579eac70e7d57210adbf13fe3bc70ab9699392576163262ae472b677ab4",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jdk-19-eabeta.22_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2806,23 +2820,16 @@
                 "checksum": "7ce5b9a6ee3836b83ec129fd7c4d19839aba800bf207c4bf204cb9ec9dde1454",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jdk-19-ea.22_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.22_linux-aarch64_bin.tar.gz",
-                "checksum": "74e87ae9ab531dbe54ea35f139a793d301d061ac546e80523e2186c8417ea2ff",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jdk-19-eabeta.22_linux-aarch64_bin.tar.gz"
-              }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.22_linux-x64-musl_bin.tar.gz",
-                "checksum": "78518579eac70e7d57210adbf13fe3bc70ab9699392576163262ae472b677ab4",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jdk-19-eabeta.22_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.22_linux-aarch64_bin.tar.gz",
+                "checksum": "bef178d4cfc315aef878ab643f61e9cd344d8523da31a1e233c1937a48dc3614",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jre-19-eabeta.22_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.22_linux-ppc64le_bin.tar.gz",
@@ -2835,6 +2842,13 @@
                 "name": "sapmachine-jre-19-ea.22_linux-x64_bin.tar.gz",
                 "checksum": "f2b21f01d3fdef5ab1da48054065876e57488e86c765654a6a3e4ecb0d86901a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jre-19-ea.22_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.22_linux-x64-musl_bin.tar.gz",
+                "checksum": "0e0eb49299dd2e54d38b5d853859d29759de6f715ec9f8f16b8ec43c94a23af9",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jre-19-eabeta.22_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2871,20 +2885,6 @@
                 "checksum": "fe40df6167a4fd4db707962d53a2fb42a98cb6c3fb7203d09744a7b1777044df",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jre-19-ea.22_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.22_linux-aarch64_bin.tar.gz",
-                "checksum": "bef178d4cfc315aef878ab643f61e9cd344d8523da31a1e233c1937a48dc3614",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jre-19-eabeta.22_linux-aarch64_bin.tar.gz"
-              }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.22_linux-x64-musl_bin.tar.gz",
-                "checksum": "0e0eb49299dd2e54d38b5d853859d29759de6f715ec9f8f16b8ec43c94a23af9",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B22/sapmachine-jre-19-eabeta.22_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -2894,6 +2894,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.21_linux-aarch64_bin.tar.gz",
+                "checksum": "0de708a4675877759152478f4dae473db22d71c34fbb178c13237524cdd6520b",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jdk-19-eabeta.21_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.21_linux-ppc64le_bin.tar.gz",
@@ -2906,6 +2913,13 @@
                 "name": "sapmachine-jdk-19-ea.21_linux-x64_bin.tar.gz",
                 "checksum": "adf07114f91aebd116eef435f5bf70272728cd8c0f2b30221e76de69140dd947",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jdk-19-ea.21_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.21_linux-x64-musl_bin.tar.gz",
+                "checksum": "2ec0f3d0b311b143f827e7f78e456a1dec29cc1d2d6a8909f38b6e4d6e5bab98",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jdk-19-eabeta.21_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -2942,23 +2956,16 @@
                 "checksum": "93fb587420610ebc2470b5a335a408ec2a8a31394f41ded40222eba051f25470",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jdk-19-ea.21_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.21_linux-aarch64_bin.tar.gz",
-                "checksum": "0de708a4675877759152478f4dae473db22d71c34fbb178c13237524cdd6520b",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jdk-19-eabeta.21_linux-aarch64_bin.tar.gz"
-              }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.21_linux-x64-musl_bin.tar.gz",
-                "checksum": "2ec0f3d0b311b143f827e7f78e456a1dec29cc1d2d6a8909f38b6e4d6e5bab98",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jdk-19-eabeta.21_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.21_linux-aarch64_bin.tar.gz",
+                "checksum": "2b5046c8cadfdf0f9740bb12a31c2faf8d96b7486622657d5480acf4e42d91dd",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jre-19-eabeta.21_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.21_linux-ppc64le_bin.tar.gz",
@@ -2971,6 +2978,13 @@
                 "name": "sapmachine-jre-19-ea.21_linux-x64_bin.tar.gz",
                 "checksum": "3f552008b5212ef1efd80a9d439fe527701fa3cffc094fdcee11668c1afcbfb9",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jre-19-ea.21_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.21_linux-x64-musl_bin.tar.gz",
+                "checksum": "8d2f76ee2ed3b67d969363ed110b41df6f3607a8376b5422efb4f83f45396260",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jre-19-eabeta.21_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -3007,20 +3021,6 @@
                 "checksum": "29277a48672a9a1c34ebc75b485b71a511d2e04b9a003818ffa17de04276c818",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jre-19-ea.21_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.21_linux-aarch64_bin.tar.gz",
-                "checksum": "2b5046c8cadfdf0f9740bb12a31c2faf8d96b7486622657d5480acf4e42d91dd",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jre-19-eabeta.21_linux-aarch64_bin.tar.gz"
-              }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.21_linux-x64-musl_bin.tar.gz",
-                "checksum": "8d2f76ee2ed3b67d969363ed110b41df6f3607a8376b5422efb4f83f45396260",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B21/sapmachine-jre-19-eabeta.21_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -3030,6 +3030,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.20_linux-aarch64_bin.tar.gz",
+                "checksum": "279b19d0b0fe7663b147c725d6de1cf069e52e5f0dc62a3226a4e9ca8a8713b6",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jdk-19-eabeta.20_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.20_linux-ppc64le_bin.tar.gz",
@@ -3042,6 +3049,13 @@
                 "name": "sapmachine-jdk-19-ea.20_linux-x64_bin.tar.gz",
                 "checksum": "0e35f2faac9518808384a6821ad4fbfec6ff4bb5b02175d1350800a65dc99d74",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jdk-19-ea.20_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.20_linux-x64-musl_bin.tar.gz",
+                "checksum": "e0575780f1066027a4d240c50c1b3aaa64618d2994b12b06cb30faef3b5c0d00",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jdk-19-eabeta.20_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -3078,23 +3092,16 @@
                 "checksum": "e1a5ab2727223eef0f268dce0bbe5a7c87f3da15841c78a4a7ef54c61daebdcf",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jdk-19-ea.20_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.20_linux-aarch64_bin.tar.gz",
-                "checksum": "279b19d0b0fe7663b147c725d6de1cf069e52e5f0dc62a3226a4e9ca8a8713b6",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jdk-19-eabeta.20_linux-aarch64_bin.tar.gz"
-              }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.20_linux-x64-musl_bin.tar.gz",
-                "checksum": "e0575780f1066027a4d240c50c1b3aaa64618d2994b12b06cb30faef3b5c0d00",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jdk-19-eabeta.20_linux-x64-musl_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.20_linux-aarch64_bin.tar.gz",
+                "checksum": "d482cb8df3e63aab168bebcc81a2ec642677099c443c16e5e06d3eb36deac3c6",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jre-19-eabeta.20_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.20_linux-ppc64le_bin.tar.gz",
@@ -3107,6 +3114,13 @@
                 "name": "sapmachine-jre-19-ea.20_linux-x64_bin.tar.gz",
                 "checksum": "e71502ad99f896c7976df8cfa62ca62307702416db7dc8cabe487ca287af8b8a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jre-19-ea.20_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.20_linux-x64-musl_bin.tar.gz",
+                "checksum": "2c51ef57ed63c9c05c4db6bf572d126f2ad28314184d38f73999c89d44b47b8b",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jre-19-eabeta.20_linux-x64-musl_bin.tar.gz"
               }
             },
             "macos-aarch64": {
@@ -3143,20 +3157,6 @@
                 "checksum": "6fdab5f8da0603bbf6fe4e6a82279baedc62cd2a261312151c73d0a3ab2c2928",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jre-19-ea.20_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.20_linux-aarch64_bin.tar.gz",
-                "checksum": "d482cb8df3e63aab168bebcc81a2ec642677099c443c16e5e06d3eb36deac3c6",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jre-19-eabeta.20_linux-aarch64_bin.tar.gz"
-              }
-            },
-            "linux-x64-musl": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.20_linux-x64-musl_bin.tar.gz",
-                "checksum": "2c51ef57ed63c9c05c4db6bf572d126f2ad28314184d38f73999c89d44b47b8b",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B20/sapmachine-jre-19-eabeta.20_linux-x64-musl_bin.tar.gz"
-              }
             }
           }
         }
@@ -3166,6 +3166,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.19_linux-aarch64_bin.tar.gz",
+                "checksum": "413cfb4dc882fa3c0c07c5ef81b5b6d23a98c1275ad46a94f602e0757a259366",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B19/sapmachine-jdk-19-eabeta.19_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.19_linux-ppc64le_bin.tar.gz",
@@ -3214,16 +3221,16 @@
                 "checksum": "69f41cd5491134a9293a7c7357b7b36068a88c7c3420debcd521a567af2d10d3",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B19/sapmachine-jdk-19-ea.19_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.19_linux-aarch64_bin.tar.gz",
-                "checksum": "413cfb4dc882fa3c0c07c5ef81b5b6d23a98c1275ad46a94f602e0757a259366",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B19/sapmachine-jdk-19-eabeta.19_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.19_linux-aarch64_bin.tar.gz",
+                "checksum": "a00855e9c3d6937ca7954db8780ef7d4f0ea5edd0a07260d63fb9aa1923e88f5",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B19/sapmachine-jre-19-eabeta.19_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.19_linux-ppc64le_bin.tar.gz",
@@ -3272,13 +3279,6 @@
                 "checksum": "bb003113ba373c1f6ab2ad6a498d299047d7e657a474eb761bb5b4f26515ae4d",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B19/sapmachine-jre-19-ea.19_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.19_linux-aarch64_bin.tar.gz",
-                "checksum": "a00855e9c3d6937ca7954db8780ef7d4f0ea5edd0a07260d63fb9aa1923e88f5",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B19/sapmachine-jre-19-eabeta.19_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -3288,6 +3288,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.18_linux-aarch64_bin.tar.gz",
+                "checksum": "86602e3b60ef51393e249cc43cafb5db6b6ba9a4588172c376f71a377be93962",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B18/sapmachine-jdk-19-eabeta.18_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.18_linux-ppc64le_bin.tar.gz",
@@ -3336,16 +3343,16 @@
                 "checksum": "3e71f6b6cb66019bc74238f02e6a8feceb09b3308c14350af84e22fde0112e91",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B18/sapmachine-jdk-19-ea.18_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.18_linux-aarch64_bin.tar.gz",
-                "checksum": "86602e3b60ef51393e249cc43cafb5db6b6ba9a4588172c376f71a377be93962",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B18/sapmachine-jdk-19-eabeta.18_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.18_linux-aarch64_bin.tar.gz",
+                "checksum": "37d7a581a147a29938eb89637267355c7e9121c8ec7d50c02c05d2a4a8a003b7",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B18/sapmachine-jre-19-eabeta.18_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.18_linux-ppc64le_bin.tar.gz",
@@ -3394,13 +3401,6 @@
                 "checksum": "2c47f2b7207647c272145fa8248df571bb49bfb8d3a5991c3c274074f35df6ba",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B18/sapmachine-jre-19-ea.18_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.18_linux-aarch64_bin.tar.gz",
-                "checksum": "37d7a581a147a29938eb89637267355c7e9121c8ec7d50c02c05d2a4a8a003b7",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B18/sapmachine-jre-19-eabeta.18_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -3410,6 +3410,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.17_linux-aarch64_bin.tar.gz",
+                "checksum": "1df989fe8f243b6c069050d91310b37b9042df9aae5fd316063f7547ea8b09b9",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B17/sapmachine-jdk-19-eabeta.17_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.17_linux-ppc64le_bin.tar.gz",
@@ -3458,16 +3465,16 @@
                 "checksum": "586ca3dc811b8f8b767b7ea53cde30fb4c00fe37433690db058cd2c306715c7d",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B17/sapmachine-jdk-19-ea.17_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.17_linux-aarch64_bin.tar.gz",
-                "checksum": "1df989fe8f243b6c069050d91310b37b9042df9aae5fd316063f7547ea8b09b9",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B17/sapmachine-jdk-19-eabeta.17_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.17_linux-aarch64_bin.tar.gz",
+                "checksum": "17ee25222539555f40b1edbc694ec3d51e37fd454007617279d78fe15c13961d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B17/sapmachine-jre-19-eabeta.17_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.17_linux-ppc64le_bin.tar.gz",
@@ -3516,13 +3523,6 @@
                 "checksum": "8bc594bad386df6468034c24e78f54f76315aa6659e3edc30f21c9cfef1b8866",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B17/sapmachine-jre-19-ea.17_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.17_linux-aarch64_bin.tar.gz",
-                "checksum": "17ee25222539555f40b1edbc694ec3d51e37fd454007617279d78fe15c13961d",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B17/sapmachine-jre-19-eabeta.17_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -3532,6 +3532,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.16_linux-aarch64_bin.tar.gz",
+                "checksum": "f160e4b1e6f5bdfba24d8fbc65e27f52ddd1f8f9b759f142c2901b87b620a140",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B16/sapmachine-jdk-19-eabeta.16_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.16_linux-ppc64le_bin.tar.gz",
@@ -3580,16 +3587,16 @@
                 "checksum": "9bf75ab9d6941289b26b28e1bd5b78f0e3022a1bcb88f67bb48c4bd519fb2b55",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B16/sapmachine-jdk-19-ea.16_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.16_linux-aarch64_bin.tar.gz",
-                "checksum": "f160e4b1e6f5bdfba24d8fbc65e27f52ddd1f8f9b759f142c2901b87b620a140",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B16/sapmachine-jdk-19-eabeta.16_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.16_linux-aarch64_bin.tar.gz",
+                "checksum": "3960d058a89569bed3dbff0eaf7678f0354a36113e764ba5cba9f2127507c978",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B16/sapmachine-jre-19-eabeta.16_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.16_linux-ppc64le_bin.tar.gz",
@@ -3638,13 +3645,6 @@
                 "checksum": "3fc0f53dfc7d087e4c6cea958c945dfb82131aa0111bb5355c6152e8f996faff",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B16/sapmachine-jre-19-ea.16_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.16_linux-aarch64_bin.tar.gz",
-                "checksum": "3960d058a89569bed3dbff0eaf7678f0354a36113e764ba5cba9f2127507c978",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B16/sapmachine-jre-19-eabeta.16_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -3654,6 +3654,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.15_linux-aarch64_bin.tar.gz",
+                "checksum": "e4316508f16b5b587b38e5129d5b40ddd9cedcbb31335abb8c94575177de448e",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B15/sapmachine-jdk-19-eabeta.15_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.15_linux-ppc64le_bin.tar.gz",
@@ -3702,16 +3709,16 @@
                 "checksum": "50a9b81e35de01a9be437edf2221955a3431f24bab6e5e8b6303187d0f7f22fd",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B15/sapmachine-jdk-19-ea.15_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.15_linux-aarch64_bin.tar.gz",
-                "checksum": "e4316508f16b5b587b38e5129d5b40ddd9cedcbb31335abb8c94575177de448e",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B15/sapmachine-jdk-19-eabeta.15_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.15_linux-aarch64_bin.tar.gz",
+                "checksum": "2f85ebd77cc321b91d14c64f47eea86ba7f160322078a6d13a6a0aa7d9a85791",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B15/sapmachine-jre-19-eabeta.15_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.15_linux-ppc64le_bin.tar.gz",
@@ -3760,13 +3767,6 @@
                 "checksum": "9b3f41e4422b3e0b2ceb9444c2152e738ce9f0dd2a61636b4ab2dd076c633916",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B15/sapmachine-jre-19-ea.15_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.15_linux-aarch64_bin.tar.gz",
-                "checksum": "2f85ebd77cc321b91d14c64f47eea86ba7f160322078a6d13a6a0aa7d9a85791",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B15/sapmachine-jre-19-eabeta.15_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -3776,6 +3776,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.14_linux-aarch64_bin.tar.gz",
+                "checksum": "32fa0015aff25f80e179e1f00bc10674fdb0d40b66585092c32da816a9ac45f3",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B14/sapmachine-jdk-19-eabeta.14_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.14_linux-ppc64le_bin.tar.gz",
@@ -3824,16 +3831,16 @@
                 "checksum": "b4db8f5e5570db39265d45c51a1abf6a8df7d208569cf77ba51d4c875d165102",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B14/sapmachine-jdk-19-ea.14_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.14_linux-aarch64_bin.tar.gz",
-                "checksum": "32fa0015aff25f80e179e1f00bc10674fdb0d40b66585092c32da816a9ac45f3",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B14/sapmachine-jdk-19-eabeta.14_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.14_linux-aarch64_bin.tar.gz",
+                "checksum": "c78140876de1170d887a755811d79488088102750fc1d46fa30ed0c81557634e",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B14/sapmachine-jre-19-eabeta.14_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.14_linux-ppc64le_bin.tar.gz",
@@ -3882,13 +3889,6 @@
                 "checksum": "226263b90c8efae269e44954a113292801a256979f1337a3b642819cfabef0bc",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B14/sapmachine-jre-19-ea.14_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.14_linux-aarch64_bin.tar.gz",
-                "checksum": "c78140876de1170d887a755811d79488088102750fc1d46fa30ed0c81557634e",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B14/sapmachine-jre-19-eabeta.14_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -3898,6 +3898,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.13_linux-aarch64_bin.tar.gz",
+                "checksum": "8f868bbb8cb4e68db389d5081f77ed7687f85e2704248a1987e881dd1a30eb87",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B13/sapmachine-jdk-19-eabeta.13_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.13_linux-ppc64le_bin.tar.gz",
@@ -3946,16 +3953,16 @@
                 "checksum": "eab7cb055bb0ed4648140a4cb8e22b2fef2bf60e405646d44c2582faab5613f1",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B13/sapmachine-jdk-19-ea.13_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.13_linux-aarch64_bin.tar.gz",
-                "checksum": "8f868bbb8cb4e68db389d5081f77ed7687f85e2704248a1987e881dd1a30eb87",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B13/sapmachine-jdk-19-eabeta.13_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.13_linux-aarch64_bin.tar.gz",
+                "checksum": "aa2060deeb05072155db88c6cc05cff39d4329a9a0e854a29823b3dfbfbff2f8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B13/sapmachine-jre-19-eabeta.13_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.13_linux-ppc64le_bin.tar.gz",
@@ -4004,13 +4011,6 @@
                 "checksum": "4061bf7f0ece7da81bd1c3ce3d8f3dbae3735b4238ab16f5efe60e7e9351efae",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B13/sapmachine-jre-19-ea.13_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.13_linux-aarch64_bin.tar.gz",
-                "checksum": "aa2060deeb05072155db88c6cc05cff39d4329a9a0e854a29823b3dfbfbff2f8",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B13/sapmachine-jre-19-eabeta.13_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4020,6 +4020,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.12_linux-aarch64_bin.tar.gz",
+                "checksum": "b742a163b1b2a90c81a4982d9da15347eb4bc293e413ec5cc4d7914a769fe5c4",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B12/sapmachine-jdk-19-eabeta.12_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.12_linux-ppc64le_bin.tar.gz",
@@ -4068,16 +4075,16 @@
                 "checksum": "11b9a1548d02cc155ae3c9bc7d7d362eb76f66ba569ef57f4c99df44bd5070e9",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B12/sapmachine-jdk-19-ea.12_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.12_linux-aarch64_bin.tar.gz",
-                "checksum": "b742a163b1b2a90c81a4982d9da15347eb4bc293e413ec5cc4d7914a769fe5c4",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B12/sapmachine-jdk-19-eabeta.12_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.12_linux-aarch64_bin.tar.gz",
+                "checksum": "8bca6f7636d1b39c1e2af89969c91612b850ec6c61fa6eb5604ddb1897eb4ace",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B12/sapmachine-jre-19-eabeta.12_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.12_linux-ppc64le_bin.tar.gz",
@@ -4126,13 +4133,6 @@
                 "checksum": "72528ce17c4c710843623efb771d198272ceb42f41c8d191618be0b52e672f46",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B12/sapmachine-jre-19-ea.12_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.12_linux-aarch64_bin.tar.gz",
-                "checksum": "8bca6f7636d1b39c1e2af89969c91612b850ec6c61fa6eb5604ddb1897eb4ace",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B12/sapmachine-jre-19-eabeta.12_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4142,6 +4142,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.11_linux-aarch64_bin.tar.gz",
+                "checksum": "15fd01fefad2f49af024af7fde7b498793194e0efde156fa1499848723fa162c",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B11/sapmachine-jdk-19-eabeta.11_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.11_linux-ppc64le_bin.tar.gz",
@@ -4190,16 +4197,16 @@
                 "checksum": "3560b015159fc1b2c561269b8c9e5a70ccef9dec723c4a3f0076ce7834d02784",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B11/sapmachine-jdk-19-ea.11_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.11_linux-aarch64_bin.tar.gz",
-                "checksum": "15fd01fefad2f49af024af7fde7b498793194e0efde156fa1499848723fa162c",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B11/sapmachine-jdk-19-eabeta.11_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.11_linux-aarch64_bin.tar.gz",
+                "checksum": "53f92ef5fa79848535c5056f402c5fb7cd6687f9f362db54f9242da55f7305ba",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B11/sapmachine-jre-19-eabeta.11_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.11_linux-ppc64le_bin.tar.gz",
@@ -4248,13 +4255,6 @@
                 "checksum": "c67bb599756d3f551d9a71331d5a6f369ae14e8b017512053b49499f57933bb7",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B11/sapmachine-jre-19-ea.11_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.11_linux-aarch64_bin.tar.gz",
-                "checksum": "53f92ef5fa79848535c5056f402c5fb7cd6687f9f362db54f9242da55f7305ba",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B11/sapmachine-jre-19-eabeta.11_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4264,6 +4264,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.10_linux-aarch64_bin.tar.gz",
+                "checksum": "0687ec4a9a39d7a2ef2ae049a9f4e5ae19ec46a0599da58d4c7581a8d72abe74",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B10/sapmachine-jdk-19-eabeta.10_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.10_linux-ppc64le_bin.tar.gz",
@@ -4312,16 +4319,16 @@
                 "checksum": "956e9ca66bead711519cf2c7b9f0093a0fa4083df456cb192466d3c0d0f2f961",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B10/sapmachine-jdk-19-ea.10_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.10_linux-aarch64_bin.tar.gz",
-                "checksum": "0687ec4a9a39d7a2ef2ae049a9f4e5ae19ec46a0599da58d4c7581a8d72abe74",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B10/sapmachine-jdk-19-eabeta.10_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.10_linux-aarch64_bin.tar.gz",
+                "checksum": "64507dac17a5202275546476e2d8176a92181fd9c4802ddcebd90085621f85c2",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B10/sapmachine-jre-19-eabeta.10_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.10_linux-ppc64le_bin.tar.gz",
@@ -4370,13 +4377,6 @@
                 "checksum": "fa1f15b46047fc4c610c1b6b3770c697275ddb5b406fdb56508ab7a1fbc63f6c",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B10/sapmachine-jre-19-ea.10_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.10_linux-aarch64_bin.tar.gz",
-                "checksum": "64507dac17a5202275546476e2d8176a92181fd9c4802ddcebd90085621f85c2",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B10/sapmachine-jre-19-eabeta.10_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4386,6 +4386,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.9_linux-aarch64_bin.tar.gz",
+                "checksum": "c843744d31004442b3a515ad4bea9c95827499b3bea9577ea6d8385e91715aca",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jdk-19-eabeta.9_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.9_linux-ppc64le_bin.tar.gz",
@@ -4434,16 +4441,16 @@
                 "checksum": "a5fdb4ca1a220758452188f0e327395c8bc72dc4d75ce5f65232763c6d8ddf33",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jdk-19-ea.9_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.9_linux-aarch64_bin.tar.gz",
-                "checksum": "c843744d31004442b3a515ad4bea9c95827499b3bea9577ea6d8385e91715aca",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jdk-19-eabeta.9_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.9_linux-aarch64_bin.tar.gz",
+                "checksum": "ed8e3c7baee1791aaf8cc356843b73531ea8c29d49bea1d61be05f3cc9c095d2",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jre-19-eabeta.9_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.9_linux-ppc64le_bin.tar.gz",
@@ -4492,13 +4499,6 @@
                 "checksum": "c46a79875aba79f1ff130b8f8271776876f2c257b8e8ae0fe2b8a3544339b539",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jre-19-ea.9_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.9_linux-aarch64_bin.tar.gz",
-                "checksum": "ed8e3c7baee1791aaf8cc356843b73531ea8c29d49bea1d61be05f3cc9c095d2",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B9/sapmachine-jre-19-eabeta.9_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4508,6 +4508,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.8_linux-aarch64_bin.tar.gz",
+                "checksum": "06aeecd7c9ceedcebffe6869889b8ad6742e0b67505f4d040ad4923fc1f8efe2",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B8/sapmachine-jdk-19-eabeta.8_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.8_linux-ppc64le_bin.tar.gz",
@@ -4556,16 +4563,16 @@
                 "checksum": "3461b5125652e2ec0d725d386bf42ed9414fe4f6b5256c08446814f441173d56",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B8/sapmachine-jdk-19-ea.8_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.8_linux-aarch64_bin.tar.gz",
-                "checksum": "06aeecd7c9ceedcebffe6869889b8ad6742e0b67505f4d040ad4923fc1f8efe2",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B8/sapmachine-jdk-19-eabeta.8_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.8_linux-aarch64_bin.tar.gz",
+                "checksum": "4458ddc9e3fb5fd2d5c3a37a83edb8721b78279b5177698be14176342903a21d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B8/sapmachine-jre-19-eabeta.8_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.8_linux-ppc64le_bin.tar.gz",
@@ -4614,13 +4621,6 @@
                 "checksum": "d1b90de5aac7db0bf8cfb1ae65207fa28d4bda3bfc2f76dca4c0222c6b093de4",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B8/sapmachine-jre-19-ea.8_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.8_linux-aarch64_bin.tar.gz",
-                "checksum": "4458ddc9e3fb5fd2d5c3a37a83edb8721b78279b5177698be14176342903a21d",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B8/sapmachine-jre-19-eabeta.8_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4630,6 +4630,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.7_linux-aarch64_bin.tar.gz",
+                "checksum": "93a6a7d541fd8aebe1ee2eef67aa19f266e164185b021daae63541a13819e8cc",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B7/sapmachine-jdk-19-eabeta.7_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.7_linux-ppc64le_bin.tar.gz",
@@ -4678,16 +4685,16 @@
                 "checksum": "5ec3075646e53485aa2ac36ab083c62cb5dfd55342295e81ad7041df5781f761",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B7/sapmachine-jdk-19-ea.7_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.7_linux-aarch64_bin.tar.gz",
-                "checksum": "93a6a7d541fd8aebe1ee2eef67aa19f266e164185b021daae63541a13819e8cc",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B7/sapmachine-jdk-19-eabeta.7_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.7_linux-aarch64_bin.tar.gz",
+                "checksum": "877d9736b9b42f8c436aa2acc6d6662efb1805e3bc8aafaa1ba88a05b2c9d2a8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B7/sapmachine-jre-19-eabeta.7_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.7_linux-ppc64le_bin.tar.gz",
@@ -4736,13 +4743,6 @@
                 "checksum": "60437ef5266084d855ac9056f07e655d871caf644d23c1be254a9784a9d17890",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B7/sapmachine-jre-19-ea.7_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.7_linux-aarch64_bin.tar.gz",
-                "checksum": "877d9736b9b42f8c436aa2acc6d6662efb1805e3bc8aafaa1ba88a05b2c9d2a8",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B7/sapmachine-jre-19-eabeta.7_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4752,6 +4752,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.6_linux-aarch64_bin.tar.gz",
+                "checksum": "eda524638cc9411f45c4bf096ecafa926782a4b419e06919c87e227de65b5b5f",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B6/sapmachine-jdk-19-eabeta.6_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.6_linux-ppc64le_bin.tar.gz",
@@ -4800,16 +4807,16 @@
                 "checksum": "915d1130d0d9b9cab3518d572d8284fa4a60ca91afb32756b22719a2b7989b64",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B6/sapmachine-jdk-19-ea.6_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.6_linux-aarch64_bin.tar.gz",
-                "checksum": "eda524638cc9411f45c4bf096ecafa926782a4b419e06919c87e227de65b5b5f",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B6/sapmachine-jdk-19-eabeta.6_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.6_linux-aarch64_bin.tar.gz",
+                "checksum": "16145c4346ec39922e57c14d0c08ed0befb97df65348963454c32c3283de327a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B6/sapmachine-jre-19-eabeta.6_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.6_linux-ppc64le_bin.tar.gz",
@@ -4858,13 +4865,6 @@
                 "checksum": "c20b62b4248aa61ef83e768efb9f337f81550ca2dfcb04b4f8ca0cbbe29e2c21",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B6/sapmachine-jre-19-ea.6_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.6_linux-aarch64_bin.tar.gz",
-                "checksum": "16145c4346ec39922e57c14d0c08ed0befb97df65348963454c32c3283de327a",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B6/sapmachine-jre-19-eabeta.6_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4874,6 +4874,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.5_linux-aarch64_bin.tar.gz",
+                "checksum": "1e9dc2e87e9ea5b809790a8259bf484ada73406e0a05cdfd8e6467cf20b3637b",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jdk-19-eabeta.5_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.5_linux-ppc64le_bin.tar.gz",
@@ -4922,16 +4929,16 @@
                 "checksum": "6b68ff99315ccbbe44bdaf9621940fb35e247a28684a212e01df169a6790e6d6",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jdk-19-ea.5_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.5_linux-aarch64_bin.tar.gz",
-                "checksum": "1e9dc2e87e9ea5b809790a8259bf484ada73406e0a05cdfd8e6467cf20b3637b",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jdk-19-eabeta.5_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.5_linux-aarch64_bin.tar.gz",
+                "checksum": "bb1a61d49792bd1dbdcc7dc4b74b62cdc4dc78527a205227bcac6b61b62a04df",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jre-19-eabeta.5_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.5_linux-ppc64le_bin.tar.gz",
@@ -4980,13 +4987,6 @@
                 "checksum": "fd840bbaf9192f1c3bfa968ed110edc22a9cc68c76d20ffef2398774dd568f58",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jre-19-ea.5_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.5_linux-aarch64_bin.tar.gz",
-                "checksum": "bb1a61d49792bd1dbdcc7dc4b74b62cdc4dc78527a205227bcac6b61b62a04df",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B5/sapmachine-jre-19-eabeta.5_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -4996,6 +4996,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.4_linux-aarch64_bin.tar.gz",
+                "checksum": "ff9f4631287ba1266a254a5366b7fc559526d688b279d4f65b3003ab8ab3c6a9",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B4/sapmachine-jdk-19-eabeta.4_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.4_linux-ppc64le_bin.tar.gz",
@@ -5044,16 +5051,16 @@
                 "checksum": "9b9e3314d308724ed3d1cac50341b034f9fbb8a8ca9be2414aa94694ff4d996b",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B4/sapmachine-jdk-19-ea.4_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.4_linux-aarch64_bin.tar.gz",
-                "checksum": "ff9f4631287ba1266a254a5366b7fc559526d688b279d4f65b3003ab8ab3c6a9",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B4/sapmachine-jdk-19-eabeta.4_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.4_linux-aarch64_bin.tar.gz",
+                "checksum": "01be98d885f294db65f954a2ae00ac6fc9bb356a4d60f307e012cc8664f3b9ac",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B4/sapmachine-jre-19-eabeta.4_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.4_linux-ppc64le_bin.tar.gz",
@@ -5102,13 +5109,6 @@
                 "checksum": "49c73865a95e967a6385eca020ff8fca4c2b1a9de008ac8fca31198fe42c03e9",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B4/sapmachine-jre-19-ea.4_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.4_linux-aarch64_bin.tar.gz",
-                "checksum": "01be98d885f294db65f954a2ae00ac6fc9bb356a4d60f307e012cc8664f3b9ac",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B4/sapmachine-jre-19-eabeta.4_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -5118,6 +5118,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.3_linux-aarch64_bin.tar.gz",
+                "checksum": "3767a2338fc81b33b7deddc632784fcb85dc186528708a54906fced1135c3dc8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jdk-19-eabeta.3_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.3_linux-ppc64le_bin.tar.gz",
@@ -5166,16 +5173,16 @@
                 "checksum": "b6fd3b3a12318072f33562450ab8df8b1c88143bab5c0474bfe8c6206979d2b1",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jdk-19-ea.3_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.3_linux-aarch64_bin.tar.gz",
-                "checksum": "3767a2338fc81b33b7deddc632784fcb85dc186528708a54906fced1135c3dc8",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jdk-19-eabeta.3_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.3_linux-aarch64_bin.tar.gz",
+                "checksum": "a40d693d74d1339b8b202cc5a710db72907ce5da1cac37f0a4f412a68362b83e",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jre-19-eabeta.3_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.3_linux-ppc64le_bin.tar.gz",
@@ -5224,13 +5231,6 @@
                 "checksum": "6685423dc452fc58b08f87b658bfc4b4e04133fa1abf3ac85725edb292945504",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jre-19-ea.3_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.3_linux-aarch64_bin.tar.gz",
-                "checksum": "a40d693d74d1339b8b202cc5a710db72907ce5da1cac37f0a4f412a68362b83e",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B3/sapmachine-jre-19-eabeta.3_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -5240,6 +5240,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.2_linux-aarch64_bin.tar.gz",
+                "checksum": "5eaed09babd829dbe036b974e0312af703173837efb97424a567bed2365663cb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jdk-19-eabeta.2_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.2_linux-ppc64le_bin.tar.gz",
@@ -5288,16 +5295,16 @@
                 "checksum": "a0a7f665b02c5c1289ae96c2a4d6b19576c58a7e3c4ef513ca18143e1f81b48a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jdk-19-ea.2_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.2_linux-aarch64_bin.tar.gz",
-                "checksum": "5eaed09babd829dbe036b974e0312af703173837efb97424a567bed2365663cb",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jdk-19-eabeta.2_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.2_linux-aarch64_bin.tar.gz",
+                "checksum": "8cdca73daa9d77b48b834052e987dd943e1c89044dfa6645e2290a8e84cc40b9",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jre-19-eabeta.2_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.2_linux-ppc64le_bin.tar.gz",
@@ -5346,13 +5353,6 @@
                 "checksum": "78e35382f3d6f5f52471ffbd94019314b3e45dfcfc4a91ee7f8b448ba01c9452",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jre-19-ea.2_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.2_linux-aarch64_bin.tar.gz",
-                "checksum": "8cdca73daa9d77b48b834052e987dd943e1c89044dfa6645e2290a8e84cc40b9",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B2/sapmachine-jre-19-eabeta.2_linux-aarch64_bin.tar.gz"
-              }
             }
           }
         }
@@ -5362,6 +5362,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-19-eabeta.1_linux-aarch64_bin.tar.gz",
+                "checksum": "d7d3c7caf386f3a072d0d8d62bb58fba2e3a42c8effe85411c8061f867e596ee",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jdk-19-eabeta.1_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-19-ea.1_linux-ppc64le_bin.tar.gz",
@@ -5410,16 +5417,16 @@
                 "checksum": "b2b21b6195035a43c335ed86a96abd34f470c78a379766bff96c1053cf39b81d",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jdk-19-ea.1_windows-x64_bin.zip"
               }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jdk-19-eabeta.1_linux-aarch64_bin.tar.gz",
-                "checksum": "d7d3c7caf386f3a072d0d8d62bb58fba2e3a42c8effe85411c8061f867e596ee",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jdk-19-eabeta.1_linux-aarch64_bin.tar.gz"
-              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-19-eabeta.1_linux-aarch64_bin.tar.gz",
+                "checksum": "9149dd71ba9c680a2f7849f0d646281f88d7bf42c6d6cc6e80056e79df998db8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jre-19-eabeta.1_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-19-ea.1_linux-ppc64le_bin.tar.gz",
@@ -5467,13 +5474,6 @@
                 "name": "sapmachine-jre-19-ea.1_windows-x64_bin.zip",
                 "checksum": "1b4edd2950a0ff87845e239ef08fdb386b4f65502dad6f2ddc5b9fda7b1bed9a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jre-19-ea.1_windows-x64_bin.zip"
-              }
-            },
-            "linux-aarch64": {
-              "tar.gz": {
-                "name": "sapmachine-jre-19-eabeta.1_linux-aarch64_bin.tar.gz",
-                "checksum": "9149dd71ba9c680a2f7849f0d646281f88d7bf42c6d6cc6e80056e79df998db8",
-                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-19%2B1/sapmachine-jre-19-eabeta.1_linux-aarch64_bin.tar.gz"
               }
             }
           }
