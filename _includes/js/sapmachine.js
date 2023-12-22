@@ -10,7 +10,7 @@ All rights reserved. Confidential and proprietary.
 	var _jsondata = [];
 	
 	// check for get parameter "tracing=true" to enable console output
-	var isTracingActive = false;
+	var isTracingActive = true;
 	var url = window.location.href;
 	var traceParam = "tracing";
     traceParam = traceParam.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
@@ -247,22 +247,28 @@ All rights reserved. Confidential and proprietary.
 					}
 				}
 
-				var urls;
-				
+				var urls = [];
+				var counter = 0;
 				if (imageTypeSelector) {
 					if (imageType) {
-						urls = this._assets[majorData.id]['releases'][0][imageType];
+						for (let i = 0; i < this._assets[majorData.id]['releases'].length; i++) {
+							if (this._assets[majorData.id]['releases'][i][imageType] !== undefined) {
+								for (let [key, value] of Object.entries(this._assets[majorData.id]['releases'][i][imageType])) {
+									platforms[counter++] = key;
+								}
+							}
+						}
 					}
 				} else if (platformSelector) {
-					urls = this._assets[majorData.id]['releases'][0]['urls'];
-				}
-
-				var i = 0;
-				if (urls !== undefined) {
-					for (let [key, value] of Object.entries(urls)) {
-						platforms[i++] = key;
+					for (let i = 0; i < this._assets[majorData.id]['releases'].length; i++) {
+						if (this._assets[majorData.id]['releases'][i]['urls'] !== undefined) {
+							for (let [key, value] of Object.entries(this._assets[majorData.id]['releases'][i]['urls'])) {
+								platforms[counter++] = key;
+							}
+						}
 					}
 				}
+
 			}
 			return platforms;
 		}
