@@ -6,6 +6,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "aix-ppc64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-22-ea.29_aix-ppc64_bin.tar.gz",
+                "checksum": "945d4d17238b9829334545448cce166789f3819e673d3739e3ea467e7196b662",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jdk-22-ea.29_aix-ppc64_bin.tar.gz"
+              }
+            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-22-ea.29_linux-aarch64_bin.tar.gz",
@@ -53,6 +60,13 @@
             }
           },
           "jre": {
+            "aix-ppc64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-22-ea.29_aix-ppc64_bin.tar.gz",
+                "checksum": "906b02c1280b7d1c9b3fb9bc7f3b18c2812eb21aa7e813a0c241f83fef2e4f98",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jre-22-ea.29_aix-ppc64_bin.tar.gz"
+              }
+            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jre-22-ea.29_linux-aarch64_bin.tar.gz",
