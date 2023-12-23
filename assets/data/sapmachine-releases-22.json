@@ -24,6 +24,18 @@
                 "checksum": "f22a5ab6e4d6859db6f9e7487410a5ec2962f9aa7488dc5d3a7a59521e287a24",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jdk-22-ea.29_macos-aarch64_bin.tar.gz"
               }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-22-ea.29_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jdk-22-ea.29_macos-x64_bin.dmg",
+                "checksum": "a394b6be946439f2fb6501a800947918ad64bc37be828c41d6f6d4d0f1ab1afc"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-22-ea.29_macos-x64_bin.tar.gz",
+                "checksum": "4238dcafc11c8a5a70a31d22dfbade99e7fce36c29c129b17cbcc5ada6071407",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jdk-22-ea.29_macos-x64_bin.tar.gz"
+              }
             }
           },
           "jre": {
@@ -44,6 +56,18 @@
                 "name": "sapmachine-jre-22-ea.29_macos-aarch64_bin.tar.gz",
                 "checksum": "8a4c193c5d88eeec94e5825cc4c3b529bfa5657ae78dbe77650090429cec8d77",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jre-22-ea.29_macos-aarch64_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-22-ea.29_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jre-22-ea.29_macos-x64_bin.dmg",
+                "checksum": "6f2d67b85dae7ba87689d7405a86b5d2c098ccdda8dbc868031fa199fa066691"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-22-ea.29_macos-x64_bin.tar.gz",
+                "checksum": "8651b3c570672b521680f5b532ba21f1a12782de66816ff43d7fd15e05c1ccb6",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B29/sapmachine-jre-22-ea.29_macos-x64_bin.tar.gz"
               }
             }
           }
