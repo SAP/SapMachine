@@ -12,6 +12,18 @@
                 "checksum": "944552bd38bcfe9e08d320bde1abd7056638698a2b2918885963e7037532a9a3",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B3/sapmachine-jdk-23-ea.3_linux-x64-musl_bin.tar.gz"
               }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-23-ea.3_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B3/sapmachine-jdk-23-ea.3_macos-x64_bin.dmg",
+                "checksum": "54b5b7a2f33857651d502116aa3228031d7ee5ae717d7bf10f7d5626909c27bc"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-23-ea.3_macos-x64_bin.tar.gz",
+                "checksum": "bf5b2316c1eeb634bb2e77970cd90630dbd63a7acf3ebea303a91346ab8e40b7",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B3/sapmachine-jdk-23-ea.3_macos-x64_bin.tar.gz"
+              }
             }
           },
           "jre": {
@@ -20,6 +32,18 @@
                 "name": "sapmachine-jre-23-ea.3_linux-x64-musl_bin.tar.gz",
                 "checksum": "13f4b446c1cafe967dd6d2331983557f6d3927e62228fca4872826014cabc435",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B3/sapmachine-jre-23-ea.3_linux-x64-musl_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-23-ea.3_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B3/sapmachine-jre-23-ea.3_macos-x64_bin.dmg",
+                "checksum": "8c53d61397875132e192d3d18960e186bd34ef502c4f4db259f0bc5055d6ca7d"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-23-ea.3_macos-x64_bin.tar.gz",
+                "checksum": "64d1093be2b47555f13f17b3b14a0543f06459e50ee5454eef2088adde41e3bf",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B3/sapmachine-jre-23-ea.3_macos-x64_bin.tar.gz"
               }
             }
           }
