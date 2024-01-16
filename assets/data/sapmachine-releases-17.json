@@ -6,6 +6,13 @@
         "ea": "false",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-17.0.10_linux-aarch64_bin.tar.gz",
+                "checksum": "595dfc28d7219b1485a140ff0bf6244e71d0c87309cdd1d46e207b97817b2657",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jdk-17.0.10_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-x64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-17.0.10_linux-x64_bin.tar.gz",
@@ -22,6 +29,13 @@
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-17.0.10_linux-aarch64_bin.tar.gz",
+                "checksum": "06c013c6184f77f26a3b5d935d2b9fbb8345370ce92cf761b217a1a46619d873",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jre-17.0.10_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-x64": {
               "tar.gz": {
                 "name": "sapmachine-jre-17.0.10_linux-x64_bin.tar.gz",
