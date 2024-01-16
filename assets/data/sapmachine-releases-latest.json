@@ -112,6 +112,10 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jdk-22-ea.31_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 5c05a7d4ccefd2626d0c3e2c569abd87aae6f794ac40808064c588e8b99a7b16"
           },
+          "linux-ppc64le": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jdk-22-ea.31_linux-ppc64le_bin.tar.gz",
+            "checksum": "sha256 c30fa6c3136029899c02ecebe537f59f788c46ca45819858e72550c721cf3268"
+          },
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jdk-22-ea.31_linux-x64_bin.tar.gz",
             "checksum": "sha256 88254f28dc35aab2d16b22a4240be17a87795258874bdde342317447e6975270"
@@ -129,6 +133,10 @@
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jre-22-ea.31_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 68a7f9474b0d2c6e21a61988cd693f4c0aa72f60ac638c4f01f4800e6e9b37d3"
+          },
+          "linux-ppc64le": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jre-22-ea.31_linux-ppc64le_bin.tar.gz",
+            "checksum": "sha256 13e8d4a643e51b73c38e6fd007893a49052202f71da35f4f4b4f21947cf6d78b"
           },
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jre-22-ea.31_linux-x64_bin.tar.gz",
@@ -151,10 +159,6 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jdk-22-ea.30_aix-ppc64_bin.tar.gz",
             "checksum": "sha256 325fc76a80c32bfd52da57da115322090fff6e563963ce59cfda1a7a852cccec"
           },
-          "linux-ppc64le": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jdk-22-ea.30_linux-ppc64le_bin.tar.gz",
-            "checksum": "sha256 cffd435e6898bdc39542b87ce9164b5989e7c4667e911d4ebeba80e7d1512ed0"
-          },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jdk-22-ea.30_macos-aarch64_bin.dmg",
             "checksum": "sha256 8554a5c489cf28888d5ff0a76f52fb8d64ade8d71dc20ba693bd31c78eed14a8"
@@ -176,10 +180,6 @@
           "aix-ppc64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jre-22-ea.30_aix-ppc64_bin.tar.gz",
             "checksum": "sha256 afb0b251ef07f7897f11f9bd42f82eb20a15c1194502d360d312e90eeab20bc2"
-          },
-          "linux-ppc64le": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jre-22-ea.30_linux-ppc64le_bin.tar.gz",
-            "checksum": "sha256 642beda15ed05a0250dce6af54b2631d737c2a732ea0c5c4ea7e7c5175b9b029"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jre-22-ea.30_macos-aarch64_bin.dmg",
