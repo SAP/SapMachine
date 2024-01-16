@@ -119,6 +119,10 @@
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jdk-22-ea.31_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 077960aac22caa86b19c3877da1558e9489f9964817145ee4c320259b5bd5a0b"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jdk-22-ea.31_windows-x64_bin.zip",
+            "checksum": "sha256 c46c97b92ba79007bbe3f0686637c183909a40f3c903b3faf057010856d45dbb"
           }
         },
         "jre": {
@@ -133,6 +137,10 @@
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jre-22-ea.31_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 e96e028ff7e84610e5f1ac577e6007150ba7d8a7acce813cf6147c9787f36650"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B31/sapmachine-jre-22-ea.31_windows-x64_bin.zip",
+            "checksum": "sha256 f4a05d430ffae0ee69a082ad4d4c468879a85031ba74d8fe822e991fd1aa6fb4"
           }
         }
       },
@@ -162,10 +170,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jdk-22-ea.30_macos-x64_bin.tar.gz",
             "checksum": "sha256 e8755945a847cca833c8e3a65b247037e940118b3cc3a6f51b98e98395843be4"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jdk-22-ea.30_windows-x64_bin.zip",
-            "checksum": "sha256 62cfd3d1ce779c5093bb003785e11232e6a7e709114817cb8c9f628fd85b1331"
           }
         },
         "jre": {
@@ -192,10 +196,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jre-22-ea.30_macos-x64_bin.tar.gz",
             "checksum": "sha256 70e55d227dee79cd800eb1fa36f52e931c12cfd7d38cecd132d2885f64cd9b3a"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B30/sapmachine-jre-22-ea.30_windows-x64_bin.zip",
-            "checksum": "sha256 dc13167c3fa853fb0c3ffb2a633359284aa6a791d0474663760344cb7b6ef96b"
           }
         }
       }
