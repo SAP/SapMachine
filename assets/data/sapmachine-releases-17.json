@@ -34,6 +34,18 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jdk-17.0.10_linux-x64-musl_bin.tar.gz"
               }
             },
+            "macos-aarch64": {
+              "dmg": {
+                "name": "sapmachine-jdk-17.0.10_macos-aarch64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jdk-17.0.10_macos-aarch64_bin.dmg",
+                "checksum": "8849d4cdd83447050dc48ffc32374a1611fa3d2b345ff4f5f0bf57b18a7e0897"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-17.0.10_macos-aarch64_bin.tar.gz",
+                "checksum": "5f52866432a5b4df193b332cce51195e5f3b1bdd5507338c10c125d8a3e2bbdc",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jdk-17.0.10_macos-aarch64_bin.tar.gz"
+              }
+            },
             "windows-x64": {
               "zip": {
                 "name": "sapmachine-jdk-17.0.10_windows-x64_bin.zip",
@@ -69,6 +81,18 @@
                 "name": "sapmachine-jre-17.0.10_linux-x64-musl_bin.tar.gz",
                 "checksum": "885ff6ff1517d4d0048f92b138b880dfa47af340be79b578757fba94509e6e22",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jre-17.0.10_linux-x64-musl_bin.tar.gz"
+              }
+            },
+            "macos-aarch64": {
+              "dmg": {
+                "name": "sapmachine-jre-17.0.10_macos-aarch64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jre-17.0.10_macos-aarch64_bin.dmg",
+                "checksum": "23d50cb52368eddcdd38553460e11e60e6e885d88a3842a2ed484634136bb073"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-17.0.10_macos-aarch64_bin.tar.gz",
+                "checksum": "fc7a970aaa2efce2c9a9533a82bc5686700a0bcaa246f1199be6f2300c2304a7",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jre-17.0.10_macos-aarch64_bin.tar.gz"
               }
             },
             "windows-x64": {
