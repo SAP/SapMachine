@@ -77,10 +77,10 @@
                 <div class="btn-group variant-selector" role="group" title="Select new events">
                     <input type="radio" class="btn-check" data-variant="all" name="btn-all-variants" id="btn-all-variants" autocomplete="off" checked onchange="showVariant('all')">
                     <label class="btn btn-outline-primary" for="btn-all-variants" title="All events supported in JDK 23.1.1">All</label>
-                    <input type="radio" class="btn-check" data-variant="jdk-only" name="btn-jdk-only-variants" id="btn-jdk-only-variants" autocomplete="off" onchange="showVariant('jdk-only')">
-                    <label class="btn btn-outline-primary" for="btn-jdk-only-variants" title="Events only supported in JDK 23.1.1">JDK only</label>
-                    <input type="radio" class="btn-check" data-variant="graal-only" name="btn-graal-only-variants" id="btn-graal-only-variants" autocomplete="off" onchange="showVariant('graal-only')">
-                    <label class="btn btn-outline-primary" for="btn-graal-only-variants" title="Events only supported in Graal VM 23.1.1">Graal only</label>
+                    <input type="radio" class="btn-check" data-variant="jdk" name="btn-jdk-variants" id="btn-jdk-variants" autocomplete="off" onchange="showVariant('jdk')">
+                    <label class="btn btn-outline-primary" for="btn-jdk-variants" title="Events supported in JDK">JDK only</label>
+                    <input type="radio" class="btn-check" data-variant="graal" name="btn-graal-variants" id="btn-graal-variants" autocomplete="off" onchange="showVariant('graal')">
+                    <label class="btn btn-outline-primary" for="btn-graal-variants" title="Events supported in Graal VM">Graal only</label>
                 </div>
                 <span class="navbar-text logo-span">
                     <a class="nav-link" aria-current="page" href="https://sapmachine.io"><img src="img/sapmachine.svg" class="sapmachine-logo"/></a>
@@ -117203,6 +117203,15 @@ function shouldShow(jdks, graalOnly, jdkOnly) {
     if (variant === "jdk-only" && !jdkOnly) {
         return false;
     }
+    if (variant === "all" && (graalOnly || jdkOnly)) {
+        return false;
+    }
+    if (variant === "graal" && jdkOnly) {
+        return false;
+    }
+    if (variant === "jdk" && graalOnly) {
+        return false;
+    }
     return true;
 }
 
@@ -117222,7 +117231,7 @@ function pushURLState(name, value) {
 }
 
 window.version = getURLState("version", -1);
-window.variant = getURLState("variant", ""); // "all", "graal-only", or "jdk-only"
+window.variant = getURLState("variant", ""); // "all", "graal", "jdk"//, "graal-only", or "jdk-only"
 
 $(function() {
     if (window.version !== -1 || window.variant !== "") {

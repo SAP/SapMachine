@@ -95176,6 +95176,15 @@ function shouldShow(jdks, graalOnly, jdkOnly) {
     if (variant === "jdk-only" && !jdkOnly) {
         return false;
     }
+    if (variant === "all" && (graalOnly || jdkOnly)) {
+        return false;
+    }
+    if (variant === "graal" && jdkOnly) {
+        return false;
+    }
+    if (variant === "jdk" && graalOnly) {
+        return false;
+    }
     return true;
 }
 
@@ -95195,7 +95204,7 @@ function pushURLState(name, value) {
 }
 
 window.version = getURLState("version", -1);
-window.variant = getURLState("variant", ""); // "all", "graal-only", or "jdk-only"
+window.variant = getURLState("variant", ""); // "all", "graal", "jdk"//, "graal-only", or "jdk-only"
 
 $(function() {
     if (window.version !== -1 || window.variant !== "") {
