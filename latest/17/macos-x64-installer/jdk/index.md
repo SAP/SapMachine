@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 17 Release for macos-x64-installer
-checksum: sha256 0d8e3ba48615fce3893cb4caf056edc75399469ac96c1d2764b8ed8f308707c8
+checksum: sha256 d28da6a312a09f72a0aab45cbecd479c1c00ab8da35dfbc1baa1849acd8bbb68
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.9/sapmachine-jdk-17.0.9_macos-x64_bin.dmg
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jdk-17.0.10_macos-x64_bin.dmg
 ---
