@@ -23,42 +23,32 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8316533
- * @summary Oop of abstract class A with no subclass is subtype checked after null-check
- * @run driver compiler.types.TestSubTypeOfAbstractClass
+ * @bug 8321974
+ * @summary Test that the TypeAryPtr::_klass field is properly initialized on use.
+ * @comment This test only reproduces the issue with release builds of the JVM because
+ *          verification code in debug builds leads to eager initialization of the field.
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,TestUninitializedKlassField::test*
+ *                   -XX:-TieredCompilation TestUninitializedKlassField
  */
 
-/**
- * @test
- * @bug 8316533
- * @summary Oop of abstract class A is subtype checked after null-check
- * @requires vm.compiler2.enabled
- * @run main/othervm -XX:CompileCommand=compileonly,*A::test
- *                   -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
- *                   compiler.types.TestSubTypeOfAbstractClass
- */
-
-package compiler.types;
-
-public class TestSubTypeOfAbstractClass {
-
-    abstract class A {
-        public static A get_null() {
-            return null;
-        }
-
-        public static boolean test() {
-            // NullCheck -> CastPP with type A:NotNull
-            // But A is abstract with no subclass, hence this type is impossible
-            return get_null() instanceof A;
+public class TestUninitializedKlassField {
+    static void test(long array2[]) {
+        long array1[] = new long[1];
+        // Loop is needed to create a backedge phi that is processed only during IGVN.
+        for (int i = 0; i < 1; i++) {
+            // CmpPNode::sub will check if classes of array1 and array2 are unrelated
+            // and the subtype checks will crash if the _klass field is not initialized.
+            if (array2 != array1) {
+                array1 = new long[2];
+            }
         }
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 10_000; i++ ) {
-            A.test();
+        for (int i = 0; i < 50_000; ++i) {
+            test(null);
         }
     }
 }

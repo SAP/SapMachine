@@ -2771,7 +2771,7 @@ void MacroAssembler::load_reserved(Register dst,
       break;
     case uint32:
       lr_w(dst, addr, acquire);
-      zero_extend(t0, t0, 32);
+      zero_extend(dst, dst, 32);
       break;
     default:
       ShouldNotReachHere();
@@ -4340,6 +4340,57 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   sub(cnt, cnt, tmp1);
   add(base, base, CacheLineSize);
   bge(cnt, tmp1, loop);
+}
+
+// java.lang.Math.round(float a)
+// Returns the closest int to the argument, with ties rounding to positive infinity.
+void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
+  // this instructions calling sequence provides performance improvement on all tested devices;
+  // don't change it without re-verification
+  Label done;
+  mv(t0, jint_cast(0.5f));
+  fmv_w_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_s(t0, src, src); // replacing fclass with feq as performance optimization
+  mv(dst, zr);
+  beqz(t0, done);
+
+  // dst = (src + 0.5f) rounded down towards negative infinity
+  //   Adding 0.5f to some floats exceeds the precision limits for a float and rounding takes place.
+  //   RDN is required for fadd_s, RNE gives incorrect results:
+  //     --------------------------------------------------------------------
+  //     fadd.s rne (src + 0.5f): src = 8388609.000000  ftmp = 8388610.000000
+  //     fcvt.w.s rdn: ftmp = 8388610.000000 dst = 8388610
+  //     --------------------------------------------------------------------
+  //     fadd.s rdn (src + 0.5f): src = 8388609.000000  ftmp = 8388609.000000
+  //     fcvt.w.s rdn: ftmp = 8388609.000000 dst = 8388609
+  //     --------------------------------------------------------------------
+  fadd_s(ftmp, src, ftmp, RoundingMode::rdn);
+  fcvt_w_s(dst, ftmp, RoundingMode::rdn);
+
+  bind(done);
+}
+
+// java.lang.Math.round(double a)
+// Returns the closest long to the argument, with ties rounding to positive infinity.
+void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
+  // this instructions calling sequence provides performance improvement on all tested devices;
+  // don't change it without re-verification
+  Label done;
+  mv(t0, julong_cast(0.5));
+  fmv_d_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_d(t0, src, src); // replacing fclass with feq as performance optimization
+  mv(dst, zr);
+  beqz(t0, done);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
+  fadd_d(ftmp, src, ftmp, RoundingMode::rdn); // RDN is required here otherwise some inputs produce incorrect results
+  fcvt_l_d(dst, ftmp, RoundingMode::rdn);
+
+  bind(done);
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
