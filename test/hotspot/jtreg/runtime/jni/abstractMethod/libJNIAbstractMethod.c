@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,23 @@
  * questions.
  *
  */
+#include <jni.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-package gc.stress.gclocker;
+JNIEXPORT void JNICALL Java_TestJNIAbstractMethod_invokeAbstractM(JNIEnv* env,
+                                                                  jclass this_cls,
+                                                                  jclass target_cls,
+                                                                  jobject receiver) {
 
-/*
- * @test TestGCLockerWithSerial
- * @library /
- * @requires vm.gc.Serial
- * @requires vm.flavor != "minimal"
- * @summary Stress Serial's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseSerialGC gc.stress.gclocker.TestGCLockerWithSerial
- */
-public class TestGCLockerWithSerial {
-    public static void main(String[] args) {
-        String[] testArgs = {"2", "Tenured Gen"};
-        TestGCLocker.main(testArgs);
-    }
+  jmethodID mid = (*env)->GetMethodID(env, target_cls, "abstractM", "()V");
+  if (mid == NULL) {
+    fprintf(stderr, "Error looking up method abstractM\n");
+    (*env)->ExceptionDescribe(env);
+    exit(1);
+  }
+
+  printf("Invoking abstract method ...\n");
+  (*env)->CallVoidMethod(env, receiver, mid);  // Should raise exception
+
 }

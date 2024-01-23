@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-package gc.stress.gclocker;
 
 /*
- * @test TestGCLockerWithParallel
- * @library /
- * @requires vm.gc.Parallel
- * @summary Stress Parallel's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseParallelGC gc.stress.gclocker.TestGCLockerWithParallel
+ * @test
+ * @bug 8000245 8000615
+ * @summary Test any TimeZone Locale provider related issues
+ * @library /test/lib
+ * @build LocaleProviders
+ *        providersrc.spi.src.tznp
+ *        providersrc.spi.src.tznp8013086
+ * @modules java.base/sun.util.locale.provider
+ * @run junit/othervm LocaleProvidersTimeZone
  */
-public class TestGCLockerWithParallel {
-    public static void main(String[] args) {
-        String[] testArgs = {"2", "PS Old Gen"};
-        TestGCLocker.main(testArgs);
+
+import org.junit.jupiter.api.Test;
+
+public class LocaleProvidersTimeZone {
+
+    /*
+     * 8000245 and 8000615: Ensure preference is followed, even with a custom
+     * SPI defined.
+     */
+    @Test
+    public void timeZoneWithCustomProvider() throws Throwable {
+        LocaleProviders.test("JRE", "tzNameTest", "Europe/Moscow");
+        LocaleProviders.test("COMPAT", "tzNameTest", "Europe/Moscow");
+        LocaleProviders.test("JRE", "tzNameTest", "America/Los_Angeles");
+        LocaleProviders.test("COMPAT", "tzNameTest", "America/Los_Angeles");
     }
 }
