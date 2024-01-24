@@ -47,10 +47,10 @@
 #endif
 
 // To test in jtreg tests use
-// JTREG="JAVA_OPTIONS=-XX:+UseMallocHooks -XX:+MallocTraceAtStartup -XX:+MallocTraceDump -XX:MallocTraceDumpInterval=10 -XX:MallocTraceDumpOutput=`pwd`/mtrace_@pid.txt -XX:ErrorFile=`pwd`/hs_err%p.log"
+// JTREG="JAVA_OPTIONS=-XX:+UseMallocHooks -XX:+MallocTraceAtStartup -XX:MallocTraceDumpCount=10 -XX:MallocTraceDumpInterval=10s -XX:MallocTraceDumpDelay=10s -XX:MallocTraceDumpOutput=`pwd`/mtrace_@pid.txt -XX:ErrorFile=`pwd`/hs_err%p.log"
 
 // A simple smoke test
-// jconsole -J-XX:+UseMallocHooks -J-XX:+MallocTraceAtStartup -J-XX:+MallocTraceDump -J-XX:MallocTraceStackDepth=12 -J-XX:MallocTraceDumpInterval=10
+// jconsole -J-XX:+UseMallocHooks -J-XX:+MallocTraceAtStartup -J-XX:MallocTraceDumpCount=10 -J-XX:MallocTraceStackDepth=12 -J-XX:MallocTraceDumpInterval=10s -J-XX:MallocTraceDumpDelay=10s
 
 
 // Some compile time constants for the maps.
