@@ -87,4 +87,17 @@ ifeq ($(call isTargetOs, macosx aix linux), true)
   TARGETS += $(BUILD_JSPAWNHELPER)
 endif
 
+# SapMachine 2024-01-24: Build a lean version of jcmd on Linux
+ifeq ($(call isTargetOs, linux), true)
+  $(eval $(call SetupJdkExecutable, BUILD_LEANJCMD, \
+      NAME := leanjcmd, \
+      SRC := $(TOPDIR)/src/$(MODULE)/unix/native/leanjcmd, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKEXE) -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
+      LDFLAGS := $(LDFLAGS_JDKEXE), \
+  ))
+
+  TARGETS += $(BUILD_LEANJCMD)
+endif
+
 ################################################################################
