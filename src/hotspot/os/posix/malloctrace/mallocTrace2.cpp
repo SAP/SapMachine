@@ -1747,10 +1747,6 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     }
   }
 
-  if (_funcs == NULL) {
-    return false;
-  }
-
   _enabled = true;
   return true;
 }
