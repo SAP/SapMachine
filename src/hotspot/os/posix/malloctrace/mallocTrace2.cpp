@@ -664,7 +664,6 @@ private:
   static registered_hooks_t _malloc_stat_hooks;
   static Lock               _malloc_stat_lock;
   static pthread_key_t      _malloc_suspended;
-  static pthread_key_t      _malloc_rd_enabled;
 
   // the +1 is for cache line reasons, so we ensure the last use entry
   // doesn't share a cache line with another object.
@@ -785,7 +784,6 @@ bool              MallocStatisticImpl::_tried_to_load_backtrace;
 int               MallocStatisticImpl::_max_frames;
 Lock              MallocStatisticImpl::_malloc_stat_lock;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
-pthread_key_t     MallocStatisticImpl::_malloc_rd_enabled;
 StatEntry**       MallocStatisticImpl::_stack_maps[NR_OF_STACK_MAPS];
 Lock              MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS + 1];
 int               MallocStatisticImpl::_stack_maps_mask[NR_OF_STACK_MAPS];
@@ -1530,7 +1528,7 @@ void MallocStatisticImpl::initialize() {
   _initialized = true;
 
   if (pthread_mutex_init(&_malloc_stat_lock._lock, NULL) != 0) {
-    fatal("Could not initialize lock 1");
+    fatal("Could not initialize malloc stat lock");
   }
 
   pthread_mutexattr_t attr;
@@ -1539,26 +1537,22 @@ void MallocStatisticImpl::initialize() {
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
   if (pthread_mutex_init(&_rainy_day_fund_lock._lock, &attr) != 0) {
-    fatal("Could not initialize lock 2");
+    fatal("Could not initialize rainy day fund lock");
   }
 
   if (pthread_key_create(&_malloc_suspended, NULL) != 0) {
-    fatal("Could not initialize key 1");
-  }
-
-  if (pthread_key_create(&_malloc_rd_enabled, NULL) != 0) {
-    fatal("Could not initialize key 2");
+    fatal("Could not initialize malloc suspend key");
   }
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
     if (pthread_mutex_init(&_stack_maps_lock[i]._lock, NULL) != 0) {
-      fatal("Could not initialize lock 3");
+      fatal("Could not initialize stack maps lock");
     }
   }
 
   for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
     if (pthread_mutex_init(&_alloc_maps_lock[i]._lock, NULL) != 0) {
-      fatal("Could not initialize lock 4");
+      fatal("Could not initialize alloc maps lock");
     }
   }
 }
