@@ -861,21 +861,6 @@ ALWAYSINLINE int MallocStatisticImpl::capture_stack(address* frames, address rea
   return nr_of_frames;
 }
 
-#if defined(ASSERT)
-static uint64_t ptr_hash_backup(void* ptr) {
-  uint64_t hash = (uint64_t) ptr;
-  hash = (~hash) + (hash << 21);
-  hash = hash ^ (hash >> 24);
-  hash = hash * 265;
-  hash = hash ^ (hash >> 14);
-  hash = hash * 21;
-  hash = hash ^ (hash >> 28);
-  hash = hash + (hash << 31);
-
-  return hash;
-}
-#endif
-
 static void after_child_fork() {
   if (register_hooks != NULL) {
     register_hooks(NULL);
@@ -928,8 +913,6 @@ uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   hash = (hash + (hash << 2)) + (hash << 4);
   hash = hash ^ (hash >> 28);
   hash = hash + (hash << 31);
-
-  assert(hash == ptr_hash_backup(ptr), "Must be the same");
 
   return hash;
 }
