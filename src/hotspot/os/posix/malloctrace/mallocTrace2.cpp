@@ -725,6 +725,7 @@ private:
 
   static uint64_t ptr_hash(void* ptr);
   static bool should_track(uint64_t hash);
+  static int capture_stack(address* frames, address real_func, address caller);
 
   static bool setup_hooks(registered_hooks_t* hooks, outputStream* st);
 
@@ -810,42 +811,55 @@ Lock              MallocStatisticImpl::_rainy_day_fund_lock;
 volatile registered_hooks_t*
                   MallocStatisticImpl::_rainy_day_hooks_ptr = &MallocStatisticImpl::_rainy_day_hooks;
 
-#define CAPTURE_STACK() \
-  address frames[MAX_FRAMES + FRAMES_TO_SKIP]; \
-  uint64_t ticks = _detailed_stats ? Ticks::now().nanoseconds() : 0; \
-  int nr_of_frames = 0; \
-  if (_max_frames <= 2) { \
-    /* Skip, since we will fill it it later anyway. */ \
-  } else if (_use_backtrace) { \
-    nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP); \
-  } else { \
-    /* We have to unblock SIGSEGV signal handling, since os::is_first_C_frame()
-       calls SafeFetch, which needs the proper handling of SIGSEGV. */ \
-    sigset_t curr, old; \
-    sigemptyset(&curr); \
-    sigaddset(&curr, SIGSEGV); \
-    pthread_sigmask(SIG_UNBLOCK, &curr, &old); \
-    frame fr = os::current_frame(); \
-    while (fr.pc() && nr_of_frames < _max_frames + FRAMES_TO_SKIP) { \
-      frames[nr_of_frames] = fr.pc(); \
-      nr_of_frames += 1; \
-      if (nr_of_frames >= _max_frames + FRAMES_TO_SKIP) break; \
-      if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) \
-        break; \
-      fr = os::get_sender_for_C_frame(&fr); \
-    } \
-    pthread_sigmask(SIG_SETMASK, &old, NULL); \
-  } \
-  /* We know at least the function and the caller. */ \
-  if (nr_of_frames < 2) { \
-    frames[0] = real_func; \
-    frames[1] = (address) caller_address; \
-    nr_of_frames = MAX2(2, _max_frames); \
-  } \
-  if (_detailed_stats) { \
-    Atomic::add(&_stack_walk_time, Ticks::now().nanoseconds() - ticks); \
-    Atomic::add(&_stack_walk_count, (uint64_t) 1); \
+ALWAYSINLINE int MallocStatisticImpl::capture_stack(address* frames, address real_func, address caller) {
+  uint64_t ticks = _detailed_stats ? Ticks::now().nanoseconds() : 0;
+  int nr_of_frames = 0;
+
+  if (_max_frames <= 2) {
+    // Skip, since we will fill it it later anyway.
+  } else if (_use_backtrace) {
+    nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP);
+  } else {
+    // We have to unblock SIGSEGV signal handling, since os::is_first_C_frame()
+    // calls SafeFetch, which needs the proper handling of SIGSEGV.
+    sigset_t curr, old;
+    sigemptyset(&curr);
+    sigaddset(&curr, SIGSEGV);
+    pthread_sigmask(SIG_UNBLOCK, &curr, &old);
+    frame fr = os::current_frame();
+
+    while (fr.pc() && nr_of_frames < _max_frames + FRAMES_TO_SKIP) {
+      frames[nr_of_frames] = fr.pc();
+      nr_of_frames += 1;
+
+      if (nr_of_frames >= _max_frames + FRAMES_TO_SKIP) {
+        break;
+      }
+
+      if (fr.fp() == NULL || fr.cb() != NULL || fr.sender_pc() == NULL || os::is_first_C_frame(&fr)) {
+        break;
+      }
+
+      fr = os::get_sender_for_C_frame(&fr);
+    }
+
+    pthread_sigmask(SIG_SETMASK, &old, NULL);
   }
+
+  // We know at least the function and the caller.
+  if (nr_of_frames < 2) {
+    frames[0] = real_func;
+    frames[1] = caller;
+    nr_of_frames = MAX2(2, _max_frames);
+  }
+
+  if (_detailed_stats) {
+    Atomic::add(&_stack_walk_time, Ticks::now().nanoseconds() - ticks);
+    Atomic::add(&_stack_walk_count, (uint64_t) 1);
+  }
+
+  return nr_of_frames;
+}
 
 #if defined(ASSERT)
 static uint64_t ptr_hash_backup(void* ptr) {
@@ -937,10 +951,10 @@ bool MallocStatisticImpl::should_track(uint64_t hash) {
 void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address) {
   void* result = _funcs->malloc(size);
   uint64_t hash = ptr_hash(result);
-  address real_func = (address) malloc;
 
   if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, (address) malloc, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -955,10 +969,10 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address) {
 void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address) {
   void* result = _funcs->calloc(elems, size);
   uint64_t hash = ptr_hash(result);
-  address real_func = (address) calloc;
 
   if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, (address) calloc, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -973,7 +987,6 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
 void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address) {
   size_t old_size = ptr != NULL ? _funcs->malloc_size(ptr) : 0;
   uint64_t old_hash = ptr_hash(ptr);
-  address real_func = (address) realloc;
 
   // We have to speculate the realloc does not fail, since realloc itself frees
   // the ptr potentially and another thread might get it from malloc and tries
@@ -996,7 +1009,8 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash)) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, (address) realloc, (address) caller_address);
 
     if (_track_free) {
       if (should_track(hash) && malloc_not_suspended()) {
@@ -1028,10 +1042,10 @@ void MallocStatisticImpl::free_hook(void* ptr, void* caller_address) {
 int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address) {
   int result = _funcs->posix_memalign(ptr, align, size);
   uint64_t hash = ptr_hash(*ptr);
-  address real_func = (address) posix_memalign;
 
   if ((result == 0) && should_track(hash) && malloc_not_suspended()) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, (address) posix_memalign, (address) caller_address);
 
     if (_track_free) {
       record_allocation(*ptr, hash, nr_of_frames, frames);
@@ -1055,7 +1069,8 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
 #endif
 
   if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1079,7 +1094,8 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
 #endif
 
   if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1103,7 +1119,8 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
 #endif
 
   if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1127,7 +1144,8 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address) {
 #endif
 
   if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
-    CAPTURE_STACK();
+    address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1306,9 +1324,8 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
       pthread_setspecific(_malloc_suspended, (void*) 1);
       shutdown();
 
-      address caller_address = (address) NULL;
-      address real_func = (address) NULL;
-      CAPTURE_STACK();
+      address frames[MAX_FRAMES + FRAMES_TO_SKIP];
+      int nr_of_frames = capture_stack(frames, (address) NULL, (address) NULL);
 
       fdStream ss(1);
       ss.print_cr("Same hash " UINT64_FORMAT " for %p and %p", (uint64_t) hash, ptr, entry->ptr());
