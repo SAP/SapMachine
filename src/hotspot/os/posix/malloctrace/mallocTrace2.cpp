@@ -90,13 +90,15 @@ static uint64_t parse_timespan_part(char const* start, char const* end, char con
     return 0;
   }
 
-  if (((size_t) (end - start)) >= sizeof(buf) - 1) {
+  size_t size = (size_t) (end - start);
+
+  if (size >= sizeof(buf)) {
     *error = "time too long";
     return 0;
   }
 
-  memcpy(buf, start, end - start);
-  buf[end - start] = '\0';
+  memcpy(buf, start, size);
+  buf[size] = '\0';
 
   char* found_end;
   uint64_t result = (uint64_t) strtoull(buf, &found_end, 10);
@@ -2395,7 +2397,7 @@ private:
 
 public:
   MallocTraceDumpPeriodicTask(uint64_t delay) :
-    PeriodicTask(1000 * delay),
+    PeriodicTask(MIN2((uint64_t) 2000000000, 1000 * delay)),
     _left(MallocTraceDumpCount - 1) {
   }
 
@@ -2415,7 +2417,7 @@ class MallocTraceDumpInitialTask : public PeriodicTask {
 
 public:
   MallocTraceDumpInitialTask(uint64_t delay) :
-    PeriodicTask(1000 * delay) {
+    PeriodicTask(MIN2((uint64_t) 2000000000, 1000 * delay)) {
   }
 
   virtual void task();
