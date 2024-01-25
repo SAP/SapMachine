@@ -40,55 +40,51 @@
 static int attach_file_fd = -1;
 static char attach_path[256];
 
-void finish(int return_value) {
+static void cleanup() {
   if (attach_file_fd >= 0) {
     unlink(attach_path);
   }
-
-  exit(return_value);
 }
 
-void fail(char const* msg) {
+static int file_exists(char const* path) {
+  struct stat stat_buf;
+
+  return stat(path, &stat_buf) == 0;
+}
+
+static void fail(char const* msg) {
   if (msg) {
     fprintf(stderr, "%s", msg);
   }
 
-  finish(1);
+  exit(1);
 }
 
-void fail_with_errno(char const* msg) {
+static void fail_with_errno(char const* msg) {
   perror(msg);
   fail(NULL);
 }
 
-void write_full(int fd, char const* buf, int size) {
+static void write_full(int fd, char const* buf, int size) {
   if (write(fd, buf, size) != size) {
     fail_with_errno("Could not write");
   }
 }
 
-void write_tag(int fd, char const* str) {
+static void write_tag(int fd, char const* str) {
   write_full(fd, str, strlen(str) + 1);
 }
 
-void write_string(int fd, char const* str) {
+static void write_string(int fd, char const* str) {
   write_full(fd, str, strlen(str));
 }
 
-void run_jcmd(pid_t pid, int argc, char *argv[]) {
+static void run_jcmd(pid_t pid, int argc, char *argv[]) {
   char pid_file[256];
   sprintf(pid_file, "/tmp/.java_pid%d", (int) pid);
 
-  struct stat stat_buf;
-
-  if (stat(pid_file, &stat_buf) != 0) {
-    // Not yet there
+  if (!file_exists(pid_file)) {
     return;
-  }
-
-  // Check if this should be an accessible VM before sending signals.
-  if ((geteuid() != 0) && (stat_buf.st_uid != geteuid()) && (stat_buf.st_gid != getegid())) {
-    fail("Wrong uid or gid to access the VM.\n");
   }
 
   int fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -153,21 +149,21 @@ void run_jcmd(pid_t pid, int argc, char *argv[]) {
     write(1, buf, c);
   }
 
-  finish(result_code);
+  exit(result_code == 0 ? 0 : 1);
 }
 
-// Create .attach_pid file if not already present.
-void trigger_attach(int pid) {
+static void trigger_attach(int pid) {
   snprintf(attach_path, sizeof(attach_path), "/tmp/.attach_pid%d", pid);
 
-  struct stat stat_buf;
-
-  if (stat(attach_path, &stat_buf) != 0) {
+  // Create .attach_pid file if not already present.
+  if (!file_exists(attach_path)) {
     attach_file_fd = creat(attach_path, S_IRWXU);
 
     if (attach_file_fd < 0) {
       fail_with_errno("Could not create .attach_pid file");
     }
+
+    atexit(cleanup);
   }
 
   if (kill(pid, SIGQUIT) != 0) {
