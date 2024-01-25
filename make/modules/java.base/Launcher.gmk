@@ -88,7 +88,7 @@ ifeq ($(call isTargetOs, macosx aix linux), true)
 endif
 
 # SapMachine 2024-01-24: Build a lean version of jcmd on Linux
-ifeq ($(call isTargetOs, linux), true)
+ifeq ($(call isTargetOs, macosx linux), true)
   $(eval $(call SetupJdkExecutable, BUILD_LEANJCMD, \
       NAME := leanjcmd, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/leanjcmd, \
