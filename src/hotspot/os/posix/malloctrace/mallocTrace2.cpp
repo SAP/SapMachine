@@ -1715,7 +1715,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     _stack_maps_limit[i] = (int) ((_stack_maps_mask[i] + 1) * MAX_STACK_MAP_LOAD);
     _stack_maps[i] = (StatEntry**) _funcs->calloc(_stack_maps_mask[i] + 1, sizeof(StatEntry*));
 
-    if (mem == NULL) {
+    if (_stack_maps[i] == NULL) {
       st->print_raw_cr("Could not allocate the stack map!");
       cleanup();
 
