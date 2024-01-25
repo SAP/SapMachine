@@ -1552,13 +1552,13 @@ void MallocStatisticImpl::initialize() {
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
     if (pthread_mutex_init(&_stack_maps_lock[i]._lock, NULL) != 0) {
-      fatal("Could not initialize lock");
+      fatal("Could not initialize lock 3");
     }
   }
 
   for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
     if (pthread_mutex_init(&_alloc_maps_lock[i]._lock, NULL) != 0) {
-      fatal("Could not initialize lock");
+      fatal("Could not initialize lock 4");
     }
   }
 }
