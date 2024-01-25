@@ -1211,8 +1211,8 @@ static bool is_same_stack(StatEntry* to_check, int nr_of_frames, address* frames
   return true;
 }
 
-static size_t hash_for_frames(int nr_of_frames, address* frames) {
-  size_t result = 0;
+static uint64_t hash_for_frames(int nr_of_frames, address* frames) {
+  uint64_t result = 0;
 
   for (int i = 0; i < nr_of_frames; ++i) {
     intptr_t frame_addr = (intptr_t) frames[i];
@@ -1230,7 +1230,7 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
 
   assert(nr_of_frames <= _max_frames, "Overflow");
 
-  size_t hash = hash_for_frames(nr_of_frames, frames);
+  uint64_t hash = hash_for_frames(nr_of_frames, frames);
   int idx = hash & (NR_OF_STACK_MAPS - 1);
   assert((idx >= 0) && (idx < NR_OF_STACK_MAPS), "invalid map index");
 
