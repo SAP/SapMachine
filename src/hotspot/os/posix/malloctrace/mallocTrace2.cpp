@@ -1567,7 +1567,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
       setup_hooks(NULL, st);
       cleanup();
 
-      st->print_raw_cr("Disabling already running trace first.");
+      st->print_raw_cr("Disabled already running trace first.");
     } else {
       st->print_raw_cr("Malloc statistic is already enabled!");
 

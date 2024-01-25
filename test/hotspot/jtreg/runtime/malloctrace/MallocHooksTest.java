@@ -214,7 +214,7 @@ public class MallocHooksTest {
       oa = callJcmd(p, "MallocTrace.enable", "-force");
       oa.shouldNotContain("Malloc statistic is already enabled");
       oa.shouldContain("Malloc statistic enabled");
-      oa.shouldContain("Disabling already running trace first");
+      oa.shouldContain("Disabled already running trace first");
       oa.shouldContain("Tracking all allocated memory");
       oa = callJcmd(p, "MallocTrace.disable");
       oa.shouldContain("Malloc statistic disabled");
