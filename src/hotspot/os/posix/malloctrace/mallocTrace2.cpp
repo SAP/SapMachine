@@ -455,6 +455,9 @@ public:
     _count(1) {
     memcpy(_frames, frames, sizeof(address) * nr_of_frames);
     assert(nr_of_frames <= MAX_FRAMES, "too many frames");
+    assert(hash == this->hash(), "Must be the same");
+    assert(nr_of_frames == this->nr_of_frames(), "Must be equal");
+
   }
   uint64_t hash() {
     return _hash_and_nr_of_frames / (MAX_FRAMES + 1);
@@ -1262,8 +1265,6 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
 
   if (mem != NULL) {
     StatEntry* entry = new (mem) StatEntry(hash, to_add, nr_of_frames, frames);
-    assert(hash == entry->hash(), "Must be the same");
-    assert(nr_of_frames == entry->nr_of_frames(), "Must be equal");
     entry->set_next(_stack_maps[idx][slot]);
     _stack_maps[idx][slot] = entry;
     _stack_maps_size[idx]._val += 1;
