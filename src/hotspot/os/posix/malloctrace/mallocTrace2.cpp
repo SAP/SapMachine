@@ -1493,6 +1493,8 @@ void MallocStatisticImpl::resize_stack_map(int map, int new_mask) {
 }
 
 void MallocStatisticImpl::resize_alloc_map(int map, int new_mask) {
+  assert(((new_mask + 1) & new_mask) == 0, "Must be a power of 2 minus 1");
+
   AllocEntry** new_map = (AllocEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
   AllocEntry** old_map = _alloc_maps[map];
 
