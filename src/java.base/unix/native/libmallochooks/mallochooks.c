@@ -126,12 +126,8 @@ static void print_size(size_t size);
 
 #endif
 
-static void print_error(char const* msg, int error_code) {
+static void print_error(char const* msg) {
   write_safe(2, msg, strlen(msg));
-
-  if (error_code > 0) {
-    exit(error_code);
-  }
 }
 
 #if !defined(MALLOC_REPLACEMENT)
@@ -169,7 +165,8 @@ static malloc_func_t* malloc_for_fallback = MALLOC_REPLACEMENT;
 #if !defined(FREE_REPLACEMENT)
 static void  fallback_free(void* ptr) {
   if (((char*) ptr < fallback_buffer) && ((char*) ptr >= fallback_buffer_end)) {
-    print_error("fallback free called with wrong pointer!\n", 1);
+    print_error("fallback free called with wrong pointer!\n");
+    exit(1);
   }
 }
 
@@ -218,7 +215,8 @@ static calloc_func_t* calloc_for_fallback = CALLOC_REPLACEMENT;
 #if !defined(REALLOC_REPLACEMENT)
 static void* fallback_realloc(void* ptr, size_t size) {
   if (((char*) ptr < fallback_buffer) && ((char*) ptr >= fallback_buffer_end)) {
-    print_error("fallback realloc called with wrong pointer!\n", 1);
+    print_error("fallback realloc called with wrong pointer!\n");
+    exit(1);
   }
 
   void* result = fallback_malloc(size);
@@ -420,8 +418,9 @@ static void assign_function(void** dest, char const* symbol) {
   *dest = dlsym(RTLD_NEXT, symbol);
 
   if (*dest == NULL) {
-    print_error(symbol, 0);
-    print_error(" not found!\n", 1);
+    print_error(symbol);
+    print_error(" not found!\n");
+    exit(1);
   }
 
   print("Found at ");
