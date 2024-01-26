@@ -1646,17 +1646,9 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   int only_nth = MIN2(1000, MAX2(1, spec._only_nth));
 
   if (only_nth > 1) {
-    for (int i = 1; i < 63; ++i) {
-      uint64_t pow = ((uint64_t) 1) << i;
-      _to_track_limit = pow / only_nth;
-      double diff = pow / (double) _to_track_limit - only_nth;
-
-      _to_track_mask = pow - 1;
-
-      if (diff > -0.1 && diff < 0.1) {
-        break;
-      }
-    }
+    uint64_t pow = ((uint64_t) 1) << 42;
+    _to_track_limit = pow / only_nth;
+    _to_track_mask = pow - 1;
 
     st->print_cr("Tracking about every %d allocations (%d / %d).", only_nth, (int) _to_track_mask, (int) _to_track_limit);
   } else {
