@@ -666,6 +666,7 @@ private:
   static int                _max_frames;
   static registered_hooks_t _malloc_stat_hooks;
   static Lock               _malloc_stat_lock;
+  static bool               _check_malloc_suspended;
   static pthread_key_t      _malloc_suspended;
 
   // the +1 is for cache line reasons, so we ensure the last use entry
@@ -698,6 +699,9 @@ private:
   static registered_hooks_t _rainy_day_hooks;
   static Lock               _rainy_day_fund_lock;
   static volatile registered_hooks_t* _rainy_day_hooks_ptr;
+
+  static void set_malloc_suspended(bool suspended);
+  static bool malloc_suspended();
 
   // The hooks.
   static void* malloc_hook(size_t size, void* caller_address);
@@ -787,6 +791,7 @@ bool              MallocStatisticImpl::_detailed_stats;
 bool              MallocStatisticImpl::_tried_to_load_backtrace;
 int               MallocStatisticImpl::_max_frames;
 Lock              MallocStatisticImpl::_malloc_stat_lock;
+bool              MallocStatisticImpl::_check_malloc_suspended;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
 StatEntry**       MallocStatisticImpl::_stack_maps[NR_OF_STACK_MAPS];
 Lock              MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS + 1];
@@ -932,13 +937,20 @@ bool MallocStatisticImpl::should_track(uint64_t hash) {
   return (hash & _to_track_mask) < _to_track_limit;
 }
 
-#define malloc_not_suspended() (pthread_getspecific(_malloc_suspended) == NULL)
+void MallocStatisticImpl::set_malloc_suspended(bool suspended) {
+  _check_malloc_suspended = suspended;
+  pthread_setspecific(_malloc_suspended, suspended ? (void*) 1 : NULL);
+}
+
+bool MallocStatisticImpl::malloc_suspended() {
+  return _check_malloc_suspended && (pthread_getspecific(_malloc_suspended) != NULL);
+}
 
 void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address) {
   void* result = _funcs->malloc(size);
   uint64_t hash = ptr_hash(result);
 
-  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
+  if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, (address) malloc, (address) caller_address);
 
@@ -956,7 +968,7 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
   void* result = _funcs->calloc(elems, size);
   uint64_t hash = ptr_hash(result);
 
-  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
+  if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, (address) calloc, (address) caller_address);
 
@@ -999,10 +1011,10 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
     int nr_of_frames = capture_stack(frames, (address) realloc, (address) caller_address);
 
     if (_track_free) {
-      if (should_track(hash) && malloc_not_suspended()) {
+      if (should_track(hash) && !malloc_suspended()) {
         record_allocation(result, hash, nr_of_frames, frames);
       }
-    } else if ((old_size < size) && should_track(hash) && malloc_not_suspended()) {
+    } else if ((old_size < size) && should_track(hash) && !malloc_suspended()) {
       // Track the additional allocate bytes. This is somewhat wrong, since
       // we don't know the requested size of the original allocation and
       // old_size might be greater.
@@ -1029,7 +1041,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
   int result = _funcs->posix_memalign(ptr, align, size);
   uint64_t hash = ptr_hash(*ptr);
 
-  if ((result == 0) && should_track(hash) && malloc_not_suspended()) {
+  if ((result == 0) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, (address) posix_memalign, (address) caller_address);
 
@@ -1054,7 +1066,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
   address real_func = (address) memalign_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
+  if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
@@ -1079,7 +1091,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
   address real_func = (address) aligned_alloc_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
+  if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
@@ -1104,7 +1116,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
   address real_func = (address) valloc_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
+  if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
@@ -1129,7 +1141,7 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address) {
   address real_func = (address) pvalloc_hook;
 #endif
 
-  if ((result != NULL) && should_track(hash) && malloc_not_suspended()) {
+  if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
 
@@ -1305,7 +1317,7 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   while (entry != NULL) {
     if (entry->hash() == hash) {
       char tmp[1024];
-      pthread_setspecific(_malloc_suspended, (void*) 1);
+      set_malloc_suspended(true);
       shutdown();
 
       address frames[MAX_FRAMES + FRAMES_TO_SKIP];
@@ -1464,7 +1476,6 @@ void MallocStatisticImpl::cleanup() {
     _funcs->free(_rainy_day_fund);
     _rainy_day_fund = NULL;
   }
-
 }
 
 void MallocStatisticImpl::resize_stack_map(int map, int new_mask) {
@@ -2026,20 +2037,19 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     msg_stream->print_raw_cr("Emergency dump of malloc trace statistic ...");
   }
 
-  // Hide allocations done by this thread during dumping if requested.
-  // Note that we always track  frees or we might end up trying to add
-  // an allocation with a pointer which is already in the aloc maps.
-  pthread_setspecific(_malloc_suspended, spec._hide_dump_allocs ? (void*) 1 : NULL);
-
   // We need to avoid having the trace disabled concurrently.
   Locker lock(_malloc_stat_lock, spec._on_error);
 
   if (!_enabled) {
     msg_stream->print_raw_cr("Malloc statistic not enabled!");
-    pthread_setspecific(_malloc_suspended, NULL);
 
     return false;
   }
+
+  // Hide allocations done by this thread during dumping if requested.
+  // Note that we always track frees or we might end up trying to add
+  // an allocation with a pointer which is already in the alloc maps.
+  set_malloc_suspended(spec._hide_dump_allocs);
 
   if (_backtrace != NULL) {
     dump_stream->print_cr("Stacks were collected via %s.", _backtrace_name);
@@ -2315,7 +2325,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
                        totalTime.milliseconds() * 0.001,
                        lockedTime.milliseconds() * 0.001);
 
-  pthread_setspecific(_malloc_suspended, NULL);
+  set_malloc_suspended(false);
 
   if (used_rainy_day_fund) {
     setup_hooks(&_malloc_stat_hooks, NULL);
