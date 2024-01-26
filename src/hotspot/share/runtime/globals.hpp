@@ -567,8 +567,8 @@ const int ObjectAlignmentInBytes = 8;
           "silently ignored.")                                              \
                                                                             \
   product(bool, MallocTraceTrackFree, true,                                 \
-          "If set the malloc trace enabled at startup also tracks "         \
-          "deallocation of memory")                                         \
+          "If set the malloc trace also tracks deallocation of memory "     \
+          "if enabled at startup.")                                         \
                                                                             \
   product(ccstr, MallocTraceEnableDelay, "0s",                              \
           "If > 0 seconds and MallocTraceAtStartup is enabled, we delay "   \
@@ -576,20 +576,20 @@ const int ObjectAlignmentInBytes = 8;
           "to specify the delay.")                                          \
                                                                             \
   product(uintx, MallocTraceStackDepth, 12,                                 \
-          "The maximum depth of stack traces for the malloc trace "         \
+          "The maximum depth of stack traces for the malloc trace if "      \
           "enabled at startup.")                                            \
                                                                             \
   product(uintx, MallocTraceOnlyNth, 1,                                     \
-          "if > 1 we only track about every n'th allocations for the "      \
-          "malloc traced enabled at startup.")                              \
+          "if > 1 we only track about every n'th allocation for the "       \
+          "malloc trace if enabled at startup.")                            \
           range(1, 1000)                                                    \
                                                                             \
   product(bool, MallocTraceUseBacktrace, true,                              \
-          "If set we use the backtrace() call to samples the stacks of "    \
-          "the malloc trace enabled at startup. Note that while this "      \
+          "If set we use the backtrace() call to sample the stacks of "     \
+          "the malloc trace if enabled at startup. Note that while this "   \
           "creates better stack traces, it is also slower and not "         \
           "supported on every system. If not supported, this option is "    \
-          "simply ignored.")                                                \
+          "silently ignored.")                                              \
                                                                             \
   product(ccstr, MallocTraceUnwindLibName, "libunwind.so.8",                \
           "The name of the libunwind to load.")                             \
@@ -618,10 +618,12 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstr, MallocTraceDumpDelay, "1h",                                \
           "The delay after the trace was enabled at which to start the "    \
-          "regular dumps.")                                                 \
+          "regular dumps. The format supports seconds, minutes, hours "     \
+          "and days, e.g. '1s 2m 3h 4d' or '20s'.")                         \
                                                                             \
   product(ccstr, MallocTraceDumpInterval, "1h",                             \
-          "The interval for the dump for the dumps.")                       \
+          "The interval for the dump for the dumps. The format supports "   \
+          "seconds, minutes, hours and days, e.g. '1s 2m 3h 4d' or '20s'.") \
                                                                             \
   product(bool, MallocTraceDumpSortByCount, false,                          \
           "If given we sort the output by allocation count instead of "     \
@@ -633,7 +635,7 @@ const int ObjectAlignmentInBytes = 8;
           "size.")                                                          \
                                                                             \
   product(uintx, MallocTraceDumpFraction, 0,                                \
-          "If > 0 we dunp the given fraction of allocated bytes "           \
+          "If > 0 we dump the given fraction of allocated bytes "           \
           "(or allocated objects if sorted by count). In that case the "    \
           "-XX:MallocTraceDumpMaxEntries option is ignored.")               \
                                                                             \
