@@ -63,7 +63,7 @@ struct DumpSpec {
   bool        _hide_dump_allocs;
   bool        _on_error;
   bool        _sort_by_count;
-  int         _dump_fraction;
+  int         _dump_percentage;
   bool        _internal_stats;
 
   DumpSpec() :
@@ -73,7 +73,7 @@ struct DumpSpec {
     _hide_dump_allocs(true),
     _on_error(false),
     _sort_by_count(false),
-    _dump_fraction(100),
+    _dump_percentage(100),
     _internal_stats(false) {
   }
 };
@@ -174,7 +174,7 @@ private:
   DCmdArgument<char*> _dump_file;
   DCmdArgument<char*> _filter;
   DCmdArgument<jlong> _max_entries;
-  DCmdArgument<jlong> _dump_fraction;
+  DCmdArgument<jlong> _dump_percentage;
   DCmdArgument<bool>  _sort_by_count;
   DCmdArgument<bool>  _internal_stats;
 

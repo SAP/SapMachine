@@ -67,8 +67,8 @@ public class MallocHooksTest {
             testEnvSanitizing();
             testTracking(false);
             testTracking(true);
-            testDumpFraction(true);
-            testDumpFraction(false);
+            testDumpPercentage(true);
+            testDumpPercentage(false);
             testPartialTrackint(false, 2, 0.2);
             testPartialTrackint(true, 2, 0.2);
             testPartialTrackint(false, 10, 0.3);
@@ -456,14 +456,14 @@ public class MallocHooksTest {
         return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
-    private static void testDumpFraction(boolean bySize) throws Exception {
+    private static void testDumpPercentage(boolean bySize) throws Exception {
         ProcessBuilder pb = runManyStacks(1024 * 1024 * 10, 1024 * 16, 5, 172369973,
                                           "-Djava.library.path=" + System.getProperty("java.library.path"),
                                           "-XX:MallocTraceStackDepth=12");
         Process p = ProcessTools.startProcess("runManyStack", pb, x -> System.out.println("> " + x), null, -1, null);
         p.getInputStream().read();
-        OutputAnalyzer oa = bySize ? callJcmd(p, "MallocTrace.dump", "-fraction=90") :
-                                     callJcmd(p, "MallocTrace.dump", "-sort-by-count", "-fraction=90");
+        OutputAnalyzer oa = bySize ? callJcmd(p, "MallocTrace.dump", "-percentage=90") :
+                                     callJcmd(p, "MallocTrace.dump", "-sort-by-count", "-percentage=90");
         oa.shouldHaveExitValue(0);
         p.destroy();
         oa.stdoutShouldMatch("Total printed " + (bySize ? "bytes" : "count") + ": .*[(].*90[.][0-9]+ %[)]");

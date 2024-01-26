@@ -2078,7 +2078,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   uint64_t total_size = 0;
   int total_entries = 0;
   int total_non_empty_entries = 0;
-  int max_entries = MAX2(1, spec._dump_fraction > 0 ? INT_MAX : spec._max_entries);
+  int max_entries = MAX2(1, spec._dump_percentage > 0 ? INT_MAX : spec._max_entries);
   int max_printed_entries = max_entries;
 
   if (uses_filter) {
@@ -2180,11 +2180,11 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   uint64_t size_limit = total_size;
   uint64_t count_limit = total_count;
 
-  if (spec._dump_fraction > 0) {
+  if (spec._dump_percentage > 0) {
     if (spec._sort_by_count) {
-      count_limit = (uint64_t) (0.01 * total_count *  spec._dump_fraction);
+      count_limit = (uint64_t) (0.01 * total_count *  spec._dump_percentage);
     } else {
-      size_limit = (uint64_t) (0.01 * total_size *  spec._dump_fraction);
+      size_limit = (uint64_t) (0.01 * total_size *  spec._dump_percentage);
     }
   }
 
@@ -2353,7 +2353,7 @@ static void dump_from_flags(bool on_error) {
   spec._filter = MallocTraceDumpFilter;
   spec._sort_by_count = MallocTraceDumpSortByCount;
   spec._max_entries = MallocTraceDumpMaxEntries;
-  spec._dump_fraction = MallocTraceDumpFraction;
+  spec._dump_percentage = MallocTraceDumpPercentage;
   spec._hide_dump_allocs = MallocTraceDumpHideDumpAlllocs;
   spec._internal_stats = MallocTraceDumpInternalStats;
 
@@ -2634,7 +2634,7 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
   _filter("-filter", "If given we only print a stack if it contains a function matching " \
           "the given string.", "STRING", false),
   _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "10"),
-  _dump_fraction("-fraction", "If > 0 we dump the given fraction of allocated bytes " \
+  _dump_percentage("-percentage", "If > 0 we dump the given percentage of allocated bytes " \
                  "(or allocated objects if sorted by count). In that case the -max-entries " \
                  "option is ignored", "INT", false, "0"),
   _sort_by_count("-sort-by-count", "If given the stacks are sorted according to the number " \
@@ -2645,7 +2645,7 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_dump_file);
   _dcmdparser.add_dcmd_option(&_filter);
   _dcmdparser.add_dcmd_option(&_max_entries);
-  _dcmdparser.add_dcmd_option(&_dump_fraction);
+  _dcmdparser.add_dcmd_option(&_dump_percentage);
   _dcmdparser.add_dcmd_option(&_sort_by_count);
   _dcmdparser.add_dcmd_option(&_internal_stats);
 }
@@ -2658,7 +2658,7 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
   spec._dump_file = _dump_file.value();
   spec._filter = _filter.value();
   spec._max_entries = _max_entries.value();
-  spec._dump_fraction = _dump_fraction.value();
+  spec._dump_percentage = _dump_percentage.value();
   spec._on_error = false;
   spec._sort_by_count = _sort_by_count.value();
   spec._internal_stats = _internal_stats.value();
