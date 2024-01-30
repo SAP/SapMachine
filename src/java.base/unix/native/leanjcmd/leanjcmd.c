@@ -66,8 +66,15 @@ static void fail_with_errno(char const* msg) {
 }
 
 static void write_full(int fd, char const* buf, int size) {
-  if (write(fd, buf, size) != size) {
-    fail_with_errno("Could not write");
+  ssize_t written;
+
+  while ((written = write(fd, buf, size)) != size) {
+    if (written <= 0) {
+      fail_with_errno("Could not write");
+    }
+
+    buf += written;
+    size -= written;
   }
 }
 
@@ -140,13 +147,13 @@ static void run_jcmd(pid_t pid, int argc, char *argv[]) {
 
   for (int i = 0; i < c; ++i) {
     if (buf[i] == '\n') {
-      write(1, buf + i + 1, c - i - 1);
+      write_full(1, buf + i + 1, c - i - 1);
       break;
     }
   }
 
   while ((c = read(fd, buf, sizeof(buf))) > 0) {
-    write(1, buf, c);
+    write_full(1, buf, c);
   }
 
   exit(result_code == 0 ? 0 : 1);
