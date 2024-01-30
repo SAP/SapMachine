@@ -1006,15 +1006,13 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 
   uint64_t hash = ptr_hash(result);
 
-  if ((result != NULL) && should_track(hash)) {
+  if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
     int nr_of_frames = capture_stack(frames, (address) realloc, (address) caller_address);
 
     if (_track_free) {
-      if (should_track(hash) && !malloc_suspended()) {
-        record_allocation(result, hash, nr_of_frames, frames);
-      }
-    } else if ((old_size < size) && should_track(hash) && !malloc_suspended()) {
+      record_allocation(result, hash, nr_of_frames, frames);
+    } else if (old_size < size) {
       // Track the additional allocate bytes. This is somewhat wrong, since
       // we don't know the requested size of the original allocation and
       // old_size might be greater.
