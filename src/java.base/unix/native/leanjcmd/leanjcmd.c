@@ -179,8 +179,10 @@ static void trigger_attach(int pid) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    fail("Missing pid!\n");
+  if ((argc < 2) || (strcmp("-help", argv[1]) == 0)) {
+    printf("%s", "leanjcmd works like jcmd, but only supports attaching to a pid.\n");
+    printf("%s", "Usage: leanjcmd -help | <pid> [<command> ...]\n");
+    exit(0);
   }
 
   char* endptr;
