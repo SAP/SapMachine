@@ -99,8 +99,6 @@ void* __libc_pvalloc(size_t size);
 #define PVALLOC_REPLACEMENT  __libc_pvalloc
 #endif
 
-#elif defined(_AIX)
-
 #elif defined(MUSL_LIBC)
 
 #define CALLOC_REPLACEMENT calloc_by_malloc
@@ -382,8 +380,6 @@ static size_t get_allocated_size(void* ptr) {
   return ((size_t*) ptr)[-1] & ~((size_t) 15);
 #elif defined(__APPLE__)
   return malloc_size(ptr);
-#elif defined(__AIX__)
-  return 0; // We don't know
 #elif defined (MUSL_LIBC)
   return malloc_usable_size(ptr);
 #endif
@@ -428,17 +424,8 @@ static void assign_function(void** dest, char const* symbol) {
   print("\n");
 }
 
-#if !defined(_AIX)
-
 #define LIB_INIT __attribute__((constructor))
 #define EXPORT __attribute__((visibility("default")))
-
-#else
-
-#define LIB_INIT
-#define EXPORT
-
-#endif
 
 static real_funcs_t real_funcs;
 
