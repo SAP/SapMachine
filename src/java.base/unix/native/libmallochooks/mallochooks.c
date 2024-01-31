@@ -101,15 +101,15 @@ void* __libc_pvalloc(size_t size);
 
 #elif defined(_AIX)
 
-#else
-  // This must be musl. Since they are cool they don't set a define.
-#define __THIS_IS_MUSL__
+#elif defined(MUSL_LIBC)
 
 #define CALLOC_REPLACEMENT calloc_by_malloc
 #define POSIX_MEMALIGN_REPLACEMENT posix_memalign_by_aligned_alloc
 #define VALLOC_REPLACEMENT NULL
 #define PVALLOC_REPLACEMENT NULL
 
+#else
+#error "Unexpected platform"
 #endif
 
 #if TEST_LEVEL > 0
@@ -176,7 +176,7 @@ static free_func_t* fallback_free = NULL;
 static free_func_t* free_for_fallback = FREE_REPLACEMENT;
 #endif
 
-#if defined(__THIS_IS_MUSL__)
+#if defined(MUSL_LIBC)
 /* musl calloc would call the redirected malloc, so we call the right malloc here. */
 static void* calloc_by_malloc(size_t elems, size_t size) {
   /* Check for overflow */
@@ -299,7 +299,7 @@ static aligned_alloc_func_t* aligned_alloc_for_fallback = ALIGNED_ALLOC_REPLACEM
 #endif
 #endif
 
-#if defined(__THIS_IS_MUSL__)
+#if defined(MUSL_LIBC)
 /* musl posix_memalign would call the redirected aligned_alloc, so we call the right aligned_alloc here. */
 static int posix_memalign_by_aligned_alloc(void** ptr, size_t align, size_t size) {
   void* result = aligned_alloc_for_fallback(align, size);
@@ -384,7 +384,7 @@ static size_t get_allocated_size(void* ptr) {
   return malloc_size(ptr);
 #elif defined(__AIX__)
   return 0; // We don't know
-#elif defined (__THIS_IS_MUSL__)
+#elif defined (MUSL_LIBC)
   return malloc_usable_size(ptr);
 #endif
 }
@@ -471,7 +471,7 @@ static void LIB_INIT init(void) {
 
   // Set the fallback for memlign to aligned_alloc on musl, since
   // the memalign implementation calls aligned_alloc.
-#if defined(__THIS_IS_MUSL__)
+#if defined(MUSL_LIBC)
   memalign_for_fallback = aligned_alloc_for_fallback;
 #endif
 
@@ -774,7 +774,7 @@ EXPORT void* REPLACE_NAME(aligned_alloc)(size_t align, size_t size) {
   return result;
 }
 
-#if !defined(__THIS_IS_MUSL__)
+#if !defined(MUSL_LIBC)
 EXPORT void* REPLACE_NAME(valloc)(size_t size) {
   valloc_hook_t* tmp_hook = registered_hooks->valloc_hook;
   void* result;
@@ -795,7 +795,7 @@ EXPORT void* REPLACE_NAME(valloc)(size_t size) {
 }
 #endif
 
-#if !defined(__THIS_IS_MUSL__)
+#if !defined(MUSL_LIBC)
 EXPORT void* REPLACE_NAME(pvalloc)(size_t size) {
   pvalloc_hook_t* tmp_hook = registered_hooks->pvalloc_hook;
   void* result;
@@ -900,7 +900,7 @@ static void* memalign_for_test(size_t align, size_t size) {
 }
 
 static void* valloc_for_test(size_t size) {
-#if defined(__THIS_IS_MUSL__)
+#if defined(MUSL_LIBC)
   // musl has no valloc
   return REPLACE_NAME(memalign)(getpagesize(), size);
 #else
@@ -909,7 +909,7 @@ static void* valloc_for_test(size_t size) {
 }
 
 static void* pvalloc_for_test(size_t size) {
-#if defined(__THIS_IS_MUSL__)
+#if defined(MUSL_LIBC)
   // musl has no pvalloc
   return REPLACE_NAME(memalign)(getpagesize(), size);
 #else
@@ -991,7 +991,7 @@ void assign_function_post_test() {
   REPLACE_NAME(free)(p);
 #endif
 
-#if !defined(__THIS_IS_MUSL__)
+#if !defined(MUSL_LIBC)
   p = REPLACE_NAME(valloc)(7);
   p = REPLACE_NAME(realloc)(p, 19);
   REPLACE_NAME(free)(p);
