@@ -220,6 +220,10 @@ public:
   // permissions.
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
+  // SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks
+  //  to tty on CrashOnOutOfMemoryError
+  static void print_stack(outputStream* st);
+
 };
 
 class VMErrorCallback {
