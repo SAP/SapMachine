@@ -1,6 +1,30 @@
 {
   "updates": {
     "22": {
+      "sapmachine-22+33": {
+        "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-22%2B33",
+        "ea": "true",
+        "assets": {
+          "jdk": {
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-22-ea.33_linux-x64-musl_bin.tar.gz",
+                "checksum": "3395feaf976f56d918e9ea7a154e30d84ba9438c7b885f8aea860f6e7de2b512",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B33/sapmachine-jdk-22-ea.33_linux-x64-musl_bin.tar.gz"
+              }
+            }
+          },
+          "jre": {
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-22-ea.33_linux-x64-musl_bin.tar.gz",
+                "checksum": "3e09b314a59f6c9c0c5496379c17f8070e1283c447055b6791bc023f2cd32fd5",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B33/sapmachine-jre-22-ea.33_linux-x64-musl_bin.tar.gz"
+              }
+            }
+          }
+        }
+      },
       "sapmachine-22+32": {
         "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-22%2B32",
         "ea": "true",
