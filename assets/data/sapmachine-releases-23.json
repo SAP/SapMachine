@@ -6,6 +6,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "aix-ppc64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-23-ea.7_aix-ppc64_bin.tar.gz",
+                "checksum": "794d96c24db7311d56547a3661bfda5ba6d3a064e90fdf281e5f8a02af6a4808",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B7/sapmachine-jdk-23-ea.7_aix-ppc64_bin.tar.gz"
+              }
+            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-23-ea.7_linux-aarch64_bin.tar.gz",
@@ -48,6 +55,13 @@
             }
           },
           "jre": {
+            "aix-ppc64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-23-ea.7_aix-ppc64_bin.tar.gz",
+                "checksum": "1cdb56a61c9dd3c084b9e577fb4f52d03fe9f39094a21c28c0164844a896376d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B7/sapmachine-jre-23-ea.7_aix-ppc64_bin.tar.gz"
+              }
+            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jre-23-ea.7_linux-aarch64_bin.tar.gz",
