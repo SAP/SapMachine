@@ -71,9 +71,14 @@
 #ifdef LINUX
 #include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTraceDCmd.hpp"
 #include "trimCHeapDCmd.hpp"
 #include <errno.h>
 #endif
+
+// SapMachine 2019-02-20: Vitals
+#include "vitals/vitalsDCmd.hpp"
 
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
@@ -109,6 +114,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
+  // SapMachine 2019-02-20: Vitals
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sapmachine_vitals::VitalsDCmd>(full_export, true, false));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
@@ -139,6 +146,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
+  // SapMachine 2021-09-01: malloc-trace
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
@@ -159,7 +168,8 @@ void DCmd::register_dcmds(){
 
   // Debug on cmd (only makes sense with JVMTI since the agentlib needs it).
 #if INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, true));
+  // SapMachine 2022-12-12 Revert JDK-8226608, we should show the VM.start_java_debugging command in jcmd help
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
 
 #if INCLUDE_CDS
