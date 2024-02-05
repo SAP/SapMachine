@@ -1217,7 +1217,7 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #keystore.pkcs12.macIterationCount = 10000
 
 #
-# Enhanced exception message information
+# Enhanced exception message information (see SapMachine comment below!!)
 #
 # By default, exception messages should not include potentially sensitive
 # information such as file names, host names, or port numbers. This property
@@ -1243,7 +1243,12 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
-#jdk.includeInExceptions=hostInfo,jar
+# The SapMachine team considers these enhanced information in exception messages
+# not an undue safety risk. The SapMachine team is of the opinion that the
+# potential benefit of enhanced information in exception messages for support
+# engineers outweighs the risk. Therefore this feature is switched on by default
+# in SapMachine.
+jdk.includeInExceptions=hostInfo,jar
 
 #
 # Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
