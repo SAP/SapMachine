@@ -23,13 +23,18 @@
 # questions.
 #
 
-name: 'OpenJDK GHA Sanity Checks'
+# SapMachine 2022-06-22: Change the name of the GitHub Action
+name: 'SapMachine GHA Sanity Checks'
 
 on:
   push:
     branches-ignore:
-      - master
-      - pr/*
+      # SapMachine 2020-11-04: Ignore sapmachine branch
+      - sapmachine11
+  # SapMachine 2020-11-04: Trigger on pull request
+  pull_request:
+    branches:
+      - sapmachine11
   workflow_dispatch:
     inputs:
       platforms:
@@ -55,6 +60,8 @@ jobs:
 
   select:
     name: 'Select platforms'
+    # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
     runs-on: ubuntu-22.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
@@ -79,7 +86,8 @@ jobs:
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
-            elif [[ $GITHUB_EVENT_NAME == push ]]; then
+            # SapMachine 2022-06-24: Also handle 'pull_request' event.
+            elif [[ $GITHUB_EVENT_NAME == push ]] || [[ $GITHUB_EVENT_NAME == pull_request ]]; then
               if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
                 # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
                 >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
@@ -316,7 +324,8 @@ jobs:
   remove-bundles:
     name: 'Remove bundle artifacts'
     runs-on: ubuntu-22.04
-    if: always()
+    # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
+    if: ${{ github.event_name != 'pull_request' || github.repository != 'SAP/SapMachine' }}
     needs:
       - build-linux-x64
       - build-linux-x86
