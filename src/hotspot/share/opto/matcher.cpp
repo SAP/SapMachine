@@ -276,6 +276,7 @@ void Matcher::match( ) {
     // Permit args to have no register
     _calling_convention_mask[i].Clear();
     if( !vm_parm_regs[i].first()->is_valid() && !vm_parm_regs[i].second()->is_valid() ) {
+      _parm_regs[i].set_bad();
       continue;
     }
     // calling_convention returns stack arguments as a count of
@@ -352,7 +353,9 @@ void Matcher::match( ) {
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
   _visited.clear();
-  C->set_cached_top_node(xform( C->top(), live_nodes ));
+  Node* const n = xform(C->top(), live_nodes);
+  if (C->failing()) return;
+  C->set_cached_top_node(n);
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );
     if (xroot == nullptr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.TimeUnit;
@@ -129,6 +128,11 @@ public final class Utils {
      * Defines property name for seed value.
      */
     public static final String SEED_PROPERTY_NAME = "jdk.test.lib.random.seed";
+
+    /**
+     * Returns the value of 'file.separator' system property
+     */
+    public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 
     /**
      * Random generator with predefined seed.

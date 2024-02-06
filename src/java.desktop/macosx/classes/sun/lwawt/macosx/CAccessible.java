@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,13 +117,13 @@ class CAccessible extends CFRetainedResource implements Accessible {
             if ( ptr != 0 ) {
                 Object newValue = e.getNewValue();
                 Object oldValue = e.getOldValue();
-                if (name.compareTo(ACCESSIBLE_CARET_PROPERTY) == 0) {
+                if (name.equals(ACCESSIBLE_CARET_PROPERTY)) {
                     selectedTextChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_TEXT_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_TEXT_PROPERTY)) {
                     valueChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_SELECTION_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_SELECTION_PROPERTY)) {
                     selectionChanged(ptr);
-                } else if (name.compareTo(ACCESSIBLE_TABLE_MODEL_CHANGED) == 0) {
+                } else if (name.equals(ACCESSIBLE_TABLE_MODEL_CHANGED)) {
                     valueChanged(ptr);
                     if (CAccessible.getSwingAccessible(CAccessible.this) != null) {
                         Accessible a = CAccessible.getSwingAccessible(CAccessible.this);
@@ -132,7 +132,7 @@ class CAccessible extends CFRetainedResource implements Accessible {
                             tableContentCacheClear(ptr);
                         }
                     }
-                } else if (name.compareTo(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY) == 0 ) {
+                } else if (name.equals(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY)) {
                     if (newValue instanceof AccessibleContext) {
                         activeDescendant = (AccessibleContext)newValue;
                         if (newValue instanceof Accessible) {
@@ -149,7 +149,7 @@ class CAccessible extends CFRetainedResource implements Accessible {
                             }
                         }
                     }
-                } else if (name.compareTo(ACCESSIBLE_STATE_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_STATE_PROPERTY)) {
                     AccessibleContext thisAC = accessible.getAccessibleContext();
                     AccessibleRole thisRole = thisAC.getAccessibleRole();
                     Accessible parentAccessible = thisAC.getAccessibleParent();
@@ -182,14 +182,42 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send check box state changes to native side
                     if (thisRole == AccessibleRole.CHECK_BOX) {
-                        valueChanged(ptr);
+                        if (newValue != null && !newValue.equals(oldValue)) {
+                            valueChanged(ptr);
+                        }
+
+                        // Notify native side to handle check box style menuitem
+                        if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
+                                && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
+                            menuItemSelected(ptr);
+                        }
                     }
-                } else if (name.compareTo(ACCESSIBLE_NAME_PROPERTY) == 0) {
+
+                    // Do send radio button state changes to native side
+                    if (thisRole == AccessibleRole.RADIO_BUTTON) {
+                        if (newValue != null && !newValue.equals(oldValue)) {
+                            valueChanged(ptr);
+                        }
+
+                        // Notify native side to handle radio button style menuitem
+                        if (parentRole == AccessibleRole.POPUP_MENU && newValue != null
+                            && ((AccessibleState)newValue) == AccessibleState.FOCUSED) {
+                            menuItemSelected(ptr);
+                        }
+                    }
+
+                    // Do send toggle button state changes to native side
+                    if (thisRole == AccessibleRole.TOGGLE_BUTTON) {
+                        if (newValue != null && !newValue.equals(oldValue)) {
+                            valueChanged(ptr);
+                        }
+                    }
+                } else if (name.equals(ACCESSIBLE_NAME_PROPERTY)) {
                     //for now trigger only for JTabbedPane.
                     if (e.getSource() instanceof JTabbedPane) {
                         titleChanged(ptr);
                     }
-                } else if (name.compareTo(ACCESSIBLE_VALUE_PROPERTY) == 0) {
+                } else if (name.equals(ACCESSIBLE_VALUE_PROPERTY)) {
                     AccessibleRole thisRole = accessible.getAccessibleContext()
                                                         .getAccessibleRole();
                     if (thisRole == AccessibleRole.SLIDER ||
