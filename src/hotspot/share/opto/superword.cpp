@@ -1403,6 +1403,7 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
   if (s1->Opcode() != s2->Opcode()) return false;
   if (s1->req() != s2->req()) return false;
   if (!same_velt_type(s1, s2)) return false;
+  if (s1->is_Bool() && s1->as_Bool()->_test._test != s2->as_Bool()->_test._test) return false;
   Node* s1_ctrl = s1->in(0);
   Node* s2_ctrl = s2->in(0);
   // If the control nodes are equivalent, no further checks are required to test for isomorphism.
@@ -2704,15 +2705,12 @@ bool SuperWord::output() {
         // Set the memory dependency of the LoadVector as early as possible.
         // Walk up the memory chain, and ignore any StoreVector that provably
         // does not have any memory dependency.
-        SWPointer p1(n->as_Mem(), this, nullptr, false);
         while (mem->is_StoreVector()) {
-          SWPointer p2(mem->as_Mem(), this, nullptr, false);
-          if (p1.not_equal(p2)) {
-            // Either Less or Greater -> provably no overlap between the two memory regions.
-            mem = mem->in(MemNode::Memory);
-          } else {
-            // No proof that there is no overlap. Stop here.
+          SWPointer p_store(mem->as_Mem(), this, nullptr, false);
+          if (p_store.overlap_possible_with_any_in(p)) {
             break;
+          } else {
+            mem = mem->in(MemNode::Memory);
           }
         }
         Node* adr = first->in(MemNode::Address);
@@ -2798,6 +2796,14 @@ bool SuperWord::output() {
                "CMove bool should be one of: eq,ne,ge,ge,lt,le");
         Node_List* p_bol = my_pack(bol);
         assert(p_bol != nullptr, "CMove must have matching Bool pack");
+
+#ifdef ASSERT
+        for (uint j = 0; j < p_bol->size(); j++) {
+          Node* m = p_bol->at(j);
+          assert(m->as_Bool()->_test._test == bol_test,
+                 "all bool nodes must have same test");
+        }
+#endif
 
         CmpNode* cmp = bol->in(1)->as_Cmp();
         assert(cmp != nullptr, "must have cmp above CMove");

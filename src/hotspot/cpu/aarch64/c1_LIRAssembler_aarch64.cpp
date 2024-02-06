@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -282,7 +282,8 @@ void LIR_Assembler::osr_entry() {
         __ bind(L);
       }
 #endif
-      __ ldp(r19, r20, Address(OSR_buf, slot_offset));
+      __ ldr(r19, Address(OSR_buf, slot_offset));
+      __ ldr(r20, Address(OSR_buf, slot_offset + BytesPerWord));
       __ str(r19, frame_map()->address_for_monitor_lock(i));
       __ str(r20, frame_map()->address_for_monitor_object(i));
     }
@@ -2723,7 +2724,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   __ verify_oop(obj);
 
   if (tmp != obj) {
+    assert_different_registers(obj, tmp, rscratch1, rscratch2, mdo_addr.base(), mdo_addr.index());
     __ mov(tmp, obj);
+  } else {
+    assert_different_registers(obj, rscratch1, rscratch2, mdo_addr.base(), mdo_addr.index());
   }
   if (do_null) {
     __ cbnz(tmp, update);
@@ -2780,10 +2784,11 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
           __ cbz(rscratch2, none);
           __ cmp(rscratch2, (u1)TypeEntries::null_seen);
           __ br(Assembler::EQ, none);
-          // There is a chance that the checks above (re-reading profiling
-          // data from memory) fail if another thread has just set the
+          // There is a chance that the checks above
+          // fail if another thread has just set the
           // profiling to this obj's klass
           __ dmb(Assembler::ISHLD);
+          __ eor(tmp, tmp, rscratch2); // get back original value before XOR
           __ ldr(rscratch2, mdo_addr);
           __ eor(tmp, tmp, rscratch2);
           __ andr(rscratch1, tmp, TypeEntries::type_klass_mask);
@@ -2808,6 +2813,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ bind(none);
         // first time here. Set profile type.
         __ str(tmp, mdo_addr);
+#ifdef ASSERT
+        __ andr(tmp, tmp, TypeEntries::type_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       }
     } else {
       // There's a single possible klass at this profile point
@@ -2839,6 +2848,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
         // first time here. Set profile type.
         __ str(tmp, mdo_addr);
+#ifdef ASSERT
+        __ andr(tmp, tmp, TypeEntries::type_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");

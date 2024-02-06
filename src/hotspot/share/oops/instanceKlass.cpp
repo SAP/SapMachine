@@ -768,20 +768,43 @@ void InstanceKlass::link_class(TRAPS) {
 void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
   MonitorLocker ml(current, _init_monitor);
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // Another thread is linking this class, wait.
   while (is_being_linked() && !is_init_thread(current)) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" waiting for linking of %s by thread \"%s\"",
+                             current->name(), external_name(), init_thread_name());
+    }
     ml.wait();
   }
 
   // This thread is recursively linking this class, continue
   if (is_being_linked() && is_init_thread(current)) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" recursively linking %s",
+                             current->name(), external_name());
+    }
     return;
   }
 
   // If this class wasn't linked already, set state to being_linked
   if (!is_linked()) {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" linking %s",
+                             current->name(), external_name());
+    }
     set_init_state(being_linked);
     set_init_thread(current);
+  } else {
+    if (debug_logging_enabled) {
+      ResourceMark rm(current);
+      log_debug(class, init)("Thread \"%s\" found %s already linked",
+                             current->name(), external_name());
+      }
   }
 }
 
@@ -1047,13 +1070,21 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   JavaThread* jt = THREAD;
 
+  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    MonitorLocker ml(THREAD, _init_monitor);
+    MonitorLocker ml(jt, _init_monitor);
 
     // Step 2
     while (is_being_initialized() && !is_init_thread(jt)) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" waiting for initialization of %s by thread \"%s\"",
+                               jt->name(), external_name(), init_thread_name());
+      }
+
       wait = true;
       jt->set_class_to_be_initialized(this);
       ml.wait();
@@ -1062,24 +1093,44 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 3
     if (is_being_initialized() && is_init_thread(jt)) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" recursively initializing %s",
+                               jt->name(), external_name());
+      }
       DTRACE_CLASSINIT_PROBE_WAIT(recursive, -1, wait);
       return;
     }
 
     // Step 4
     if (is_initialized()) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" found %s already initialized",
+                               jt->name(), external_name());
+      }
       DTRACE_CLASSINIT_PROBE_WAIT(concurrent, -1, wait);
       return;
     }
 
     // Step 5
     if (is_in_error_state()) {
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" found %s is in error state",
+                               jt->name(), external_name());
+      }
       throw_error = true;
     } else {
 
       // Step 6
       set_init_state(being_initialized);
       set_init_thread(jt);
+      if (debug_logging_enabled) {
+        ResourceMark rm(jt);
+        log_debug(class, init)("Thread \"%s\" is initializing %s",
+                               jt->name(), external_name());
+      }
     }
   }
 
@@ -1553,7 +1604,9 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);
     name()->print_value_on(&ls);
-    ls.print_cr("%s (" PTR_FORMAT ")", h_method() == nullptr ? "(no method)" : "", p2i(this));
+    ls.print_cr("%s (" PTR_FORMAT ") by thread \"%s\"",
+                h_method() == nullptr ? "(no method)" : "", p2i(this),
+                THREAD->name());
   }
   if (h_method() != nullptr) {
     JavaCallArguments args; // No arguments
@@ -4059,6 +4112,23 @@ bool InstanceKlass::should_clean_previous_versions_and_reset() {
   return ret;
 }
 
+// This nulls out jmethodIDs for all methods in 'klass'
+// It needs to be called explicitly for all previous versions of a class because these may not be cleaned up
+// during class unloading.
+// We can not use the jmethodID cache associated with klass directly because the 'previous' versions
+// do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
+// is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
+// The reason for expensive jmethodID lookup for each method is that there is no direct link between method and jmethodID.
+void InstanceKlass::clear_jmethod_ids(InstanceKlass* klass) {
+  Array<Method*>* method_refs = klass->methods();
+  for (int k = 0; k < method_refs->length(); k++) {
+    Method* method = method_refs->at(k);
+    if (method != nullptr && method->is_obsolete()) {
+      method->clear_jmethod_id();
+    }
+  }
+}
+
 // Purge previous versions before adding new previous versions of the class and
 // during class unloading.
 void InstanceKlass::purge_previous_version_list() {
@@ -4102,6 +4172,7 @@ void InstanceKlass::purge_previous_version_list() {
       // Unlink from previous version list.
       assert(pv_node->class_loader_data() == loader_data, "wrong loader_data");
       InstanceKlass* next = pv_node->previous_versions();
+      clear_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
       pv_node->link_previous_versions(nullptr);   // point next to null
       last->link_previous_versions(next);
       // Delete this node directly. Nothing is referring to it and we don't
@@ -4321,4 +4392,3 @@ void ClassHierarchyIterator::next() {
   _current = _current->next_sibling();
   return; // visit next sibling subclass
 }
-

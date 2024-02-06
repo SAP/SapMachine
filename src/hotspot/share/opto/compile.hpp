@@ -135,7 +135,7 @@ class NodeCloneInfo {
   NodeCloneInfo(uint64_t idx_clone_orig) : _idx_clone_orig(idx_clone_orig) {}
   NodeCloneInfo(node_idx_t x, int g) : _idx_clone_orig(0) { set(x, g); }
 
-  void dump() const;
+  void dump_on(outputStream* st) const;
 };
 
 class CloneMap {
@@ -158,7 +158,7 @@ class CloneMap {
   int max_gen()                   const;
   void clone(Node* old, Node* nnn, int gen);
   void verify_insert_and_clone(Node* old, Node* nnn, int gen);
-  void dump(node_idx_t key)       const;
+  void dump(node_idx_t key, outputStream* st) const;
 
   int  clone_idx() const                         { return _clone_idx; }
   void set_clone_idx(int x)                      { _clone_idx = x; }
@@ -1032,6 +1032,7 @@ class Compile : public Phase {
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
+  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);

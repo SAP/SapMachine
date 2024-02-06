@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @summary Test that HiMemReport overview appears in hs-err file (since this likes to break when merging from upstream)
  * @library /test/lib
  * @requires vm.debug & os.family == "linux"
- * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestHiMemReportInHSerr
@@ -40,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestHiMemReportInHSerr {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-Xmx100M",
                 "-XX:-CreateCoredumpOnCrash",
