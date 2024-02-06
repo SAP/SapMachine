@@ -161,9 +161,11 @@ public class MallocHooksTest {
         pb = checkEnvProc(LIB_FAKE_MALLOC_HOOKS);
         pb.environment().put(LD_PRELOAD, LIB_MALLOC_HOOKS + ":" + LIB_FAKE_MALLOC_HOOKS);
         new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
-        pb = checkEnvProc(LIB_FAKE_MALLOC_HOOKS);
-        pb.environment().put(LD_PRELOAD, LIB_FAKE_MALLOC_HOOKS + ":" + LIB_MALLOC_HOOKS);
-        new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+        if (!Platform.isMusl()) {
+            pb = checkEnvProc(LIB_FAKE_MALLOC_HOOKS);
+            pb.environment().put(LD_PRELOAD, LIB_FAKE_MALLOC_HOOKS + ":" + LIB_MALLOC_HOOKS);
+            new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+        }
         pb = checkEnvProcWithHooks("");
         new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
         pb = checkEnvProcWithHooks("");
@@ -172,9 +174,11 @@ public class MallocHooksTest {
         pb = checkEnvProcWithHooks(LIB_FAKE_MALLOC_HOOKS);
         pb.environment().put(LD_PRELOAD, LIB_MALLOC_HOOKS + ":" + LIB_FAKE_MALLOC_HOOKS);
         new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
-        pb = checkEnvProcWithHooks(LIB_FAKE_MALLOC_HOOKS);
-        pb.environment().put(LD_PRELOAD, LIB_FAKE_MALLOC_HOOKS + ":" + LIB_MALLOC_HOOKS);
-        new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+        if (!Platform.isMusl()) {
+            pb = checkEnvProcWithHooks(LIB_FAKE_MALLOC_HOOKS);
+            pb.environment().put(LD_PRELOAD, LIB_FAKE_MALLOC_HOOKS + ":" + LIB_MALLOC_HOOKS);
+            new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+        }
     }
 
     private static long getPid(Process p) {
