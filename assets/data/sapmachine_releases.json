@@ -187,6 +187,7 @@
         {
           "tag": "sapmachine-21.0.3+1",
           "jdk": {
+            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_aix-ppc64_bin.tar.gz",
             "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_linux-x64_bin.tar.gz",
@@ -198,6 +199,7 @@
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_windows-x64_bin.zip"
           },
           "jre": {
+            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_aix-ppc64_bin.tar.gz",
             "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_linux-x64_bin.tar.gz",
@@ -208,21 +210,13 @@
             "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_macos-x64_bin.tar.gz",
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_windows-x64_bin.zip"
           }
-        },
-        {
-          "tag": "sapmachine-21.0.2+2",
-          "jdk": {
-            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jdk-21.0.2-ea.2_aix-ppc64_bin.tar.gz"
-          },
-          "jre": {
-            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jre-21.0.2-ea.2_aix-ppc64_bin.tar.gz"
-          }
         }
       ],
       "checksums": [
         {
           "tag": "sapmachine-21.0.3+1",
           "jdk": {
+            "aix-ppc64": "sha256 e79df751d49742f8df24c88dc2b4546c0bbeb720ff1997aaec4eec3da445ba01",
             "linux-aarch64": "sha256 8838ccd7112ebba9e59dda59b4986a24a0a5e97ecc071b0cc220fd8f3bb3d6db",
             "linux-ppc64le": "sha256 b8c23521b0680538e230bdcd8bd4b4eee20a3c85726b8a9be0688e0cae69006b",
             "linux-x64": "sha256 ed67877c4e33b29fcdc3b6751a801a0668a195721e16813997b629a29f2731a1",
@@ -234,6 +228,7 @@
             "windows-x64": "sha256 f26cfa173e3b05d3c98a937deb6a0c61bf7be93000591404a4a790bf3fec39eb"
           },
           "jre": {
+            "aix-ppc64": "sha256 27b258c065f557c81f4664b2c9f16130dd38facdde94889b24a4f667c087a9c7",
             "linux-aarch64": "sha256 67bd820df3b15ac741d0dbda03c7f876a73945e58ffda5d8fe0f2935abbdf92a",
             "linux-ppc64le": "sha256 c3d21a3622277df9d80af572eb0bd7533cf649c693d7083e071bf8e988c1ea3a",
             "linux-x64": "sha256 711040f10984872ed599df4561605a861134dbc99f196045c63b072abc876934",
@@ -243,15 +238,6 @@
             "macos-x64-installer": "sha256 4b18abf78016797d7d21de9004cfd62a6797ff25a9ae4405b9ca78bc72b23f63",
             "macos-x64": "sha256 bb04010e23039e9dcc31a835c21ad6bef3d02dc37152e7346adb03bac5c04a2d",
             "windows-x64": "sha256 def17e20bd3957004c739e36eeeff42a423faac55e54104109a8b0e9a35a2f7a"
-          }
-        },
-        {
-          "tag": "sapmachine-21.0.2+2",
-          "jdk": {
-            "aix-ppc64": "sha256 03ad969f17ffbb3f38312679d05005d99666e85d21df040519dc1fd42e9c53de"
-          },
-          "jre": {
-            "aix-ppc64": "sha256 cb1b00399ceccfc36b96c703071ec9a9212b2adc512251d8b2538507a15fba79"
           }
         }
       ]
