@@ -6,6 +6,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.23-ea.1_linux-aarch64_bin.tar.gz",
+                "checksum": "dc0d114baa730a9a9722efeafe8d2f1ce6d3062556666c679f6106245f0ef546",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jdk-11.0.23-ea.1_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-x64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-11.0.23-ea.1_linux-x64_bin.tar.gz",
@@ -22,6 +29,13 @@
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.23-ea.1_linux-aarch64_bin.tar.gz",
+                "checksum": "6420db6a409afa8ffcab941f4881ef2f40b96a0007f55caf79efbf3d46dd31fb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jre-11.0.23-ea.1_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-x64": {
               "tar.gz": {
                 "name": "sapmachine-jre-11.0.23-ea.1_linux-x64_bin.tar.gz",
