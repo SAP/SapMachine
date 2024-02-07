@@ -50,6 +50,13 @@
                 "checksum": "682cf7326549b2c2eec69e421e45cf16a594083b8f486bb8540c94786178103d",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B34/sapmachine-jdk-22-ea.34_macos-x64_bin.tar.gz"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-22-ea.34_windows-x64_bin.zip",
+                "checksum": "aeed94306cfa3b15c18892fa4053dba28a8b4005f30312bcec0e1f73738ad6eb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B34/sapmachine-jdk-22-ea.34_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
@@ -96,6 +103,13 @@
                 "name": "sapmachine-jre-22-ea.34_macos-x64_bin.tar.gz",
                 "checksum": "e66b01819584d7bb0a983bc98e0e0cc0f31dee68c30f638ddf8aad6e0d8fc102",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B34/sapmachine-jre-22-ea.34_macos-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-22-ea.34_windows-x64_bin.zip",
+                "checksum": "c79e7d23ff95163a135b4ba46179bcbd5ca37820619a7a73be5862442ab004ec",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22%2B34/sapmachine-jre-22-ea.34_windows-x64_bin.zip"
               }
             }
           }
