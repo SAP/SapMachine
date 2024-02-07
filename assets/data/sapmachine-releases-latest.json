@@ -211,6 +211,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 dc40723f337fd05dfefba65612dec744c03f0ecd0c0c246405176caaf522cea2"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_macos-aarch64_bin.dmg",
+            "checksum": "sha256 1b69464c46f3575707242b440bdf5778d4a6e57b0e243e125c64202f23d46c37"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 7d390016379994b2cd4da64e24e0051d907ec2e044ba049067da7c6ed0f45fac"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jdk-21.0.3-ea.1_macos-x64_bin.dmg",
             "checksum": "sha256 4724d22a04d3f26dcc16f408313419bb81922ad68e8598dd65399bf142b8298d"
@@ -241,6 +249,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 ef20a8b15a5327d46eb6c871b73591153fc3a2cf3c9347d87963aad0ce844d56"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_macos-aarch64_bin.dmg",
+            "checksum": "sha256 9010546df66391f8d0504b14b0d7d24451e9554737c98a2d6564cdd12258d6d3"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 6ace329eadd683163a6cda2b35ea4696a5559b5beaeea07e5d4047e87da530ea"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B1/sapmachine-jre-21.0.3-ea.1_macos-x64_bin.dmg",
             "checksum": "sha256 4b18abf78016797d7d21de9004cfd62a6797ff25a9ae4405b9ca78bc72b23f63"
@@ -261,28 +277,12 @@
           "aix-ppc64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jdk-21.0.2-ea.2_aix-ppc64_bin.tar.gz",
             "checksum": "sha256 03ad969f17ffbb3f38312679d05005d99666e85d21df040519dc1fd42e9c53de"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jdk-21.0.2-ea.2_macos-aarch64_bin.dmg",
-            "checksum": "sha256 5e3a7f32fc4c90a5d5c5a26ab65b1d9dd0c534bd894b189e16884f20de3b1e9a"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jdk-21.0.2-ea.2_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 cd7125890ac87f126db0fb7415c13532ce9525d294e8e0d4d105545ca7f92b55"
           }
         },
         "jre": {
           "aix-ppc64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jre-21.0.2-ea.2_aix-ppc64_bin.tar.gz",
             "checksum": "sha256 cb1b00399ceccfc36b96c703071ec9a9212b2adc512251d8b2538507a15fba79"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jre-21.0.2-ea.2_macos-aarch64_bin.dmg",
-            "checksum": "sha256 6a9201eb69a1dc1df6963129ec8cbce93cf8c52c5ce612c417f58556fd60b3bc"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.2%2B2/sapmachine-jre-21.0.2-ea.2_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 eafdd1c6467e9f12ce666fc9f5e7131843ca2892e889d38b4474214fc7243f34"
           }
         }
       }
