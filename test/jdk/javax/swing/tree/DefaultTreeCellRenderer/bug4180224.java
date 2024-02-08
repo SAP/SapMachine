@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,26 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZVERIFY_HPP
-#define SHARE_GC_Z_ZVERIFY_HPP
+/*
+ * @test
+ * @bug 4180224
+ * @summary DefaultTreeCellRenderer.hasFocus protected (not private) now.
+ * @key headful
+ * @run main bug4180224
+*/
 
-#include "memory/allStatic.hpp"
+import javax.swing.tree.DefaultTreeCellRenderer;
 
-class frame;
-class ZForwarding;
-class ZPageAllocator;
+public class bug4180224 {
 
-NOT_DEBUG(inline) void z_verify_safepoints_are_blocked() NOT_DEBUG_RETURN;
+    static class MyDTCR extends DefaultTreeCellRenderer {
+        void test() {
+            hasFocus = false;
+        }
+    }
 
-class ZVerify : public AllStatic {
-private:
-  static void roots_strong(bool verify_after_old_mark);
-  static void roots_weak();
-
-  static void objects(bool verify_weaks);
-  static void threads_start_processing();
-
-  static void after_relocation_internal(ZForwarding* forwarding);
-
-public:
-  static void before_zoperation();
-  static void after_mark();
-  static void after_weak_processing();
-
-  static void before_relocation(ZForwarding* forwarding);
-  static void after_relocation(ZForwarding* forwarding);
-  static void after_scan(ZForwarding* forwarding);
-
-  static void on_color_flip();
-};
-
-#endif // SHARE_GC_Z_ZVERIFY_HPP
+    public static void main(String[] argv) {
+        MyDTCR m = new MyDTCR();
+        m.test();
+    }
+}
