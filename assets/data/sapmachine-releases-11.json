@@ -27,6 +27,18 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jdk-11.0.23-ea.2_linux-x64_bin.tar.gz"
               }
             },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-11.0.23-ea.2_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jdk-11.0.23-ea.2_macos-x64_bin.dmg",
+                "checksum": "2fd5ad8ed1b921766ad9128348189cadb98daf5ba0ae566a7b14aeecc7edd1d6"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.23-ea.2_macos-x64_bin.tar.gz",
+                "checksum": "0f1319612e00c9a12e99ec515e61d50a647b81725eebc346d70da4af30a11217",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jdk-11.0.23-ea.2_macos-x64_bin.tar.gz"
+              }
+            },
             "windows-x64": {
               "zip": {
                 "name": "sapmachine-jdk-11.0.23-ea.2_windows-x64_bin.zip",
@@ -55,6 +67,18 @@
                 "name": "sapmachine-jre-11.0.23-ea.2_linux-x64_bin.tar.gz",
                 "checksum": "39b8adfe464bebac965fd8e40e674a573a4a14c7acf97a03604757ec49a269cb",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jre-11.0.23-ea.2_linux-x64_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-11.0.23-ea.2_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jre-11.0.23-ea.2_macos-x64_bin.dmg",
+                "checksum": "cc7e415246575ddbe4e79fe8056167fe5fcb88b4aca983f6c63c04de03a45047"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.23-ea.2_macos-x64_bin.tar.gz",
+                "checksum": "f0721aace070dbe6f477b404642b24ee5f19f8c2f4b0f5083ee0a93eefcfa5b5",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jre-11.0.23-ea.2_macos-x64_bin.tar.gz"
               }
             },
             "windows-x64": {

@@ -627,6 +627,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jdk-11.0.23-ea.2_linux-x64_bin.tar.gz",
             "checksum": "sha256 672caa90dce1ff832fc2e5cd934b995e2805c179b5a4a9b3f52b761af71bcafc"
           },
+          "macos-x64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jdk-11.0.23-ea.2_macos-x64_bin.dmg",
+            "checksum": "sha256 2fd5ad8ed1b921766ad9128348189cadb98daf5ba0ae566a7b14aeecc7edd1d6"
+          },
+          "macos-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jdk-11.0.23-ea.2_macos-x64_bin.tar.gz",
+            "checksum": "sha256 0f1319612e00c9a12e99ec515e61d50a647b81725eebc346d70da4af30a11217"
+          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jdk-11.0.23-ea.2_windows-x64_bin.zip",
             "checksum": "sha256 9054ede112578dc17fab2a50bd855c8c5b5dbaaddcd6d4ca7764494d389e411d"
@@ -645,6 +653,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jre-11.0.23-ea.2_linux-x64_bin.tar.gz",
             "checksum": "sha256 39b8adfe464bebac965fd8e40e674a573a4a14c7acf97a03604757ec49a269cb"
           },
+          "macos-x64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jre-11.0.23-ea.2_macos-x64_bin.dmg",
+            "checksum": "sha256 cc7e415246575ddbe4e79fe8056167fe5fcb88b4aca983f6c63c04de03a45047"
+          },
+          "macos-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jre-11.0.23-ea.2_macos-x64_bin.tar.gz",
+            "checksum": "sha256 f0721aace070dbe6f477b404642b24ee5f19f8c2f4b0f5083ee0a93eefcfa5b5"
+          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B2/sapmachine-jre-11.0.23-ea.2_windows-x64_bin.zip",
             "checksum": "sha256 7111ea4c54df845c539ccee8729019ebc1df363bf56b7b49ed8ed439e34507be"
@@ -661,14 +677,6 @@
           "macos-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jdk-11.0.23-ea.1_macos-aarch64_bin.tar.gz",
             "checksum": "sha256 8f70bbaffa377836af49a9a127ab2dde49efd557d134001360c6127277af4eb7"
-          },
-          "macos-x64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jdk-11.0.23-ea.1_macos-x64_bin.dmg",
-            "checksum": "sha256 ef83b98bbfa0ec4c9a6ede5384582db0545367008c72eba01bc00c73372ee3bd"
-          },
-          "macos-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jdk-11.0.23-ea.1_macos-x64_bin.tar.gz",
-            "checksum": "sha256 7ae3eac3a26cafb3dbc0a0cdfdd7c731dceffe6361cfb27f0fecdd7c26574827"
           }
         },
         "jre": {
@@ -679,14 +687,6 @@
           "macos-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jre-11.0.23-ea.1_macos-aarch64_bin.tar.gz",
             "checksum": "sha256 beb7ec3ea4a51da103edd40a27d7545b3854e97b76ca1baec3abcc4d52040bca"
-          },
-          "macos-x64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jre-11.0.23-ea.1_macos-x64_bin.dmg",
-            "checksum": "sha256 34aa8e01c8f46f37baa57cdb8d2ad12e89fdafb143839bc60764583ec4c22831"
-          },
-          "macos-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B1/sapmachine-jre-11.0.23-ea.1_macos-x64_bin.tar.gz",
-            "checksum": "sha256 4dd569fb917b1a3765a95c02558325db5b87a1c8f47c9be60d26b497459bc345"
           }
         }
       },
