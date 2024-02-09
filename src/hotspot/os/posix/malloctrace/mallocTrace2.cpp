@@ -69,7 +69,7 @@
 
 // Must be a power of two.
 #define NR_OF_STACK_MAPS 16
-#define NR_OF_ALLOC_MAPS 16
+#define NR_OF_ALLOC_MAPS 32
 
 namespace sap {
 
@@ -400,23 +400,17 @@ double AddressHashSet::load() {
   return 1.0 * _count / (_mask + 1);
 }
 
-// A pthread mutex usable in arrays.
-struct Lock {
-  char            _pre_pad[DEFAULT_CACHE_LINE_SIZE];
-  pthread_mutex_t _lock;
-};
-
 class Locker : public StackObj {
 private:
   pthread_mutex_t* _mutex;
 
 public:
-  Locker(Lock& mutex, bool disabled = false);
+  Locker(pthread_mutex_t* mutex, bool disabled = false);
   ~Locker();
 };
 
-Locker::Locker(Lock& lock, bool disabled) :
-  _mutex(disabled ? NULL : &lock._lock) {
+Locker::Locker(pthread_mutex_t* lock, bool disabled) :
+  _mutex(disabled ? NULL : lock) {
   if ((_mutex != NULL) && (pthread_mutex_lock(_mutex) != 0)) {
     fatal("Could not lock mutex");
   }
@@ -643,12 +637,42 @@ static void remove_malloc_hooks_from_env() {
 
 typedef int backtrace_func_t(void** stacks, int max_depth);
 
-// A value usable in arrays.
-template<typename T> struct Padded {
-public:
-  char _pre_pad[DEFAULT_CACHE_LINE_SIZE];
-  T    _val;
+template<class Entry> struct HashMapData {
+  char               _front_padding[DEFAULT_CACHE_LINE_SIZE];
+  Entry**            _entries;
+  pthread_mutex_t    _lock;
+  int                _mask;
+  int                _size;
+  int                _limit;
+  Allocator*         _alloc;
+  char               _back_padding[DEFAULT_CACHE_LINE_SIZE];
+
+  HashMapData() :
+    _entries(NULL),
+    _mask(0),
+    _size(0),
+    _limit(0),
+    _alloc(NULL) {
+  }
+
+  void cleanup(real_funcs_t* funcs) {
+    Locker locker(&_lock);
+
+    if (_alloc != NULL) {
+      _alloc->~Allocator();
+      funcs->free(_alloc);
+      _alloc = NULL;
+    }
+
+    if (_entries != NULL) {
+      funcs->free(_entries);
+      _entries = NULL;
+    }
+  }
 };
+
+typedef HashMapData<StatEntry> StackMapData;
+typedef HashMapData<AllocEntry> AllocMapData;
 
 class MallocStatisticImpl : public AllStatic {
 private:
@@ -665,26 +689,14 @@ private:
   static bool               _tried_to_load_backtrace;
   static int                _max_frames;
   static registered_hooks_t _malloc_stat_hooks;
-  static Lock               _malloc_stat_lock;
+  static pthread_mutex_t    _malloc_stat_lock;
   static bool               _check_malloc_suspended;
   static pthread_key_t      _malloc_suspended;
 
-  // the +1 is for cache line reasons, so we ensure the last use entry
-  // doesn't share a cache line with another object.
-  static StatEntry**        _stack_maps[NR_OF_STACK_MAPS];
-  static Lock               _stack_maps_lock[NR_OF_STACK_MAPS + 1];
-  static int                _stack_maps_mask[NR_OF_STACK_MAPS];
-  static Padded<int>        _stack_maps_size[NR_OF_STACK_MAPS + 1];
-  static int                _stack_maps_limit[NR_OF_STACK_MAPS];
-  static Allocator*         _stack_maps_alloc[NR_OF_STACK_MAPS];
-  static int                _entry_size;
+  static StackMapData       _stack_maps_data[NR_OF_STACK_MAPS];
+  static AllocMapData       _alloc_maps_data[NR_OF_ALLOC_MAPS];
 
-  static AllocEntry**       _alloc_maps[NR_OF_ALLOC_MAPS];
-  static Lock               _alloc_maps_lock[NR_OF_ALLOC_MAPS + 1];
-  static int                _alloc_maps_mask[NR_OF_ALLOC_MAPS];
-  static Padded<int>        _alloc_maps_size[NR_OF_ALLOC_MAPS + 1];
-  static int                _alloc_maps_limit[NR_OF_ALLOC_MAPS];
-  static Allocator*         _alloc_maps_alloc[NR_OF_ALLOC_MAPS];
+  static int                _entry_size;
 
   static uint64_t           _to_track_mask;
   static uint64_t           _to_track_limit;
@@ -697,7 +709,7 @@ private:
 
   static void*              _rainy_day_fund;
   static registered_hooks_t _rainy_day_hooks;
-  static Lock               _rainy_day_fund_lock;
+  static pthread_mutex_t    _rainy_day_fund_lock;
   static volatile registered_hooks_t* _rainy_day_hooks_ptr;
 
   static void set_malloc_suspended(bool suspended);
@@ -736,10 +748,8 @@ private:
 
   static bool setup_hooks(registered_hooks_t* hooks, outputStream* st);
 
-  static void resize_stack_map(int map, int new_mask);
-  static void resize_alloc_map(int map, int new_mask);
-  static void cleanup_for_stack_map(int map);
-  static void cleanup_for_alloc_map(int map);
+  static void resize_stack_map(int idx, int new_mask);
+  static void resize_alloc_map(int idx, int new_mask);
   static void cleanup();
 
   static bool dump_entry(outputStream* st, StatEntryCopy* entry, int index,
@@ -790,22 +800,12 @@ bool              MallocStatisticImpl::_track_free;
 bool              MallocStatisticImpl::_detailed_stats;
 bool              MallocStatisticImpl::_tried_to_load_backtrace;
 int               MallocStatisticImpl::_max_frames;
-Lock              MallocStatisticImpl::_malloc_stat_lock;
+pthread_mutex_t   MallocStatisticImpl::_malloc_stat_lock;
 bool              MallocStatisticImpl::_check_malloc_suspended;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
-StatEntry**       MallocStatisticImpl::_stack_maps[NR_OF_STACK_MAPS];
-Lock              MallocStatisticImpl::_stack_maps_lock[NR_OF_STACK_MAPS + 1];
-int               MallocStatisticImpl::_stack_maps_mask[NR_OF_STACK_MAPS];
-Padded<int>       MallocStatisticImpl::_stack_maps_size[NR_OF_STACK_MAPS + 1];
-int               MallocStatisticImpl::_stack_maps_limit[NR_OF_STACK_MAPS];
-Allocator*        MallocStatisticImpl::_stack_maps_alloc[NR_OF_STACK_MAPS];
+StackMapData      MallocStatisticImpl::_stack_maps_data[NR_OF_STACK_MAPS];
+AllocMapData      MallocStatisticImpl::_alloc_maps_data[NR_OF_ALLOC_MAPS];
 int               MallocStatisticImpl::_entry_size;
-AllocEntry**      MallocStatisticImpl::_alloc_maps[NR_OF_ALLOC_MAPS];
-Lock              MallocStatisticImpl::_alloc_maps_lock[NR_OF_ALLOC_MAPS + 1];
-int               MallocStatisticImpl::_alloc_maps_mask[NR_OF_ALLOC_MAPS];
-Padded<int>       MallocStatisticImpl::_alloc_maps_size[NR_OF_ALLOC_MAPS + 1];
-int               MallocStatisticImpl::_alloc_maps_limit[NR_OF_ALLOC_MAPS];
-Allocator*        MallocStatisticImpl::_alloc_maps_alloc[NR_OF_ALLOC_MAPS];
 uint64_t          MallocStatisticImpl::_to_track_mask;
 uint64_t          MallocStatisticImpl::_to_track_limit;
 volatile uint64_t MallocStatisticImpl::_stack_walk_time;
@@ -814,7 +814,7 @@ volatile uint64_t MallocStatisticImpl::_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_not_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_failed_frees;
 void*             MallocStatisticImpl::_rainy_day_fund;
-Lock              MallocStatisticImpl::_rainy_day_fund_lock;
+pthread_mutex_t   MallocStatisticImpl::_rainy_day_fund_lock;
 
 volatile registered_hooks_t*
                   MallocStatisticImpl::_rainy_day_hooks_ptr = &MallocStatisticImpl::_rainy_day_hooks;
@@ -1211,7 +1211,7 @@ void* MallocStatisticImpl::pvalloc_hook_rd(size_t size, void* caller_address) {
 }
 
 void MallocStatisticImpl::wait_for_rainy_day_fund() {
-  Locker locker(_rainy_day_fund_lock);
+  Locker locker(&_rainy_day_fund_lock);
 }
 
 static bool is_same_stack(StatEntry* to_check, int nr_of_frames, address* frames) {
@@ -1247,15 +1247,16 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
   int idx = hash & (NR_OF_STACK_MAPS - 1);
   assert((idx >= 0) && (idx < NR_OF_STACK_MAPS), "invalid map index");
 
-  Locker locker(_stack_maps_lock[idx]);
+  StackMapData& map = _stack_maps_data[idx];
+  Locker locker(&map._lock);
 
   if (!_enabled) {
     return NULL;
   }
 
-  int slot = (hash / NR_OF_STACK_MAPS) & _stack_maps_mask[idx];
-  assert((slot >= 0) || (slot <= _stack_maps_mask[idx]), "Invalid slot");
-  StatEntry* to_check = _stack_maps[idx][slot];
+  int slot = (hash / NR_OF_STACK_MAPS) & map._mask;
+  assert((slot >= 0) || (slot <= map._mask), "Invalid slot");
+  StatEntry* to_check = map._entries[slot];
 
   // Check if we already know this stack.
   while (to_check != NULL) {
@@ -1271,16 +1272,16 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
   }
 
   // Need a new entry. Fail silently if we don't get the memory.
-  void* mem = _stack_maps_alloc[idx]->allocate();
+  void* mem = map._alloc->allocate();
 
   if (mem != NULL) {
     StatEntry* entry = new (mem) StatEntry(hash, to_add, nr_of_frames, frames);
-    entry->set_next(_stack_maps[idx][slot]);
-    _stack_maps[idx][slot] = entry;
-    _stack_maps_size[idx]._val += 1;
+    entry->set_next(map._entries[slot]);
+    map._entries[slot] = entry;
+    map._size += 1;
 
-    if (_stack_maps_size[idx]._val > _stack_maps_limit[idx]) {
-      resize_stack_map(idx, _stack_maps_mask[idx] * 2 + 1);
+    if (map._size > map._limit) {
+      resize_stack_map(idx, map._mask * 2 + 1);
     }
 
     return entry;
@@ -1300,17 +1301,18 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   }
 
   int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
-  Locker locker(_alloc_maps_lock[idx]);
+  AllocMapData& map = _alloc_maps_data[idx];
+  Locker locker(&map._lock);
 
   if (!_enabled) {
     return;
   }
 
-  int slot = (hash / NR_OF_ALLOC_MAPS) & _alloc_maps_mask[idx];
+  int slot = (hash / NR_OF_ALLOC_MAPS) & map._mask;
 
   // Should not already be in the table, so we remove the check in the optimized version
 #ifdef ASSERT
-  AllocEntry* entry = _alloc_maps[idx][slot];
+  AllocEntry* entry = map._entries[slot];
 
   while (entry != NULL) {
     if (entry->hash() == hash) {
@@ -1360,19 +1362,19 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   }
 #endif
 
-  void* mem = _alloc_maps_alloc[idx]->allocate();
+  void* mem = map._alloc->allocate();
 
   if (mem != NULL) {
 #if defined(ASSERT)
-    AllocEntry* entry = new (mem) AllocEntry(hash, stat_entry, _alloc_maps[idx][slot], ptr);
+    AllocEntry* entry = new (mem) AllocEntry(hash, stat_entry, map._entries[slot], ptr);
 #else
-    AllocEntry* entry = new (mem) AllocEntry(hash, stat_entry, _alloc_maps[idx][slot]);
+    AllocEntry* entry = new (mem) AllocEntry(hash, stat_entry, map._entries[slot]);
 #endif
-    _alloc_maps[idx][slot] = entry;
-    _alloc_maps_size[idx]._val += 1;
+    map._entries[slot] = entry;
+    map._size += 1;
 
-    if (_alloc_maps_size[idx]._val > _alloc_maps_limit[idx]) {
-      resize_alloc_map(idx, _alloc_maps_mask[idx] * 2 + 1);
+    if (map._size > map._limit) {
+      resize_alloc_map(idx, map._mask * 2 + 1);
     }
   }
 }
@@ -1381,27 +1383,28 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
   assert(_track_free, "Only used for detailed tracking");
 
   int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
-  Locker locker(_alloc_maps_lock[idx]);
+  AllocMapData& map = _alloc_maps_data[idx];
+  Locker locker(&map._lock);
 
   if (!_enabled) {
     return NULL;
   }
 
-  int slot = (hash / NR_OF_ALLOC_MAPS) & _alloc_maps_mask[idx];
-  AllocEntry** entry = &_alloc_maps[idx][slot];
+  int slot = (hash / NR_OF_ALLOC_MAPS) & map._mask;
+  AllocEntry** entry = &map._entries[slot];
 
   while (*entry != NULL) {
     if ((*entry)->hash() == hash) {
       StatEntry* stat_entry = (*entry)->entry();
       assert((*entry)->ptr() == ptr, "Same hash must be same pointer");
       AllocEntry* next = (*entry)->next();
-      _alloc_maps_alloc[idx]->free(*entry);
-      _alloc_maps_size[idx]._val -= 1;
+      map._alloc->free(*entry);
+      map._size -= 1;
       *entry = next;
 
       // Should not be in the table anymore.
 #ifdef ASSERT
-      AllocEntry* to_check = _alloc_maps[idx][slot];
+      AllocEntry* to_check = map._entries[slot];
 
       while (to_check != NULL) {
         assert(to_check->hash() != hash, "Must not be already present");
@@ -1412,7 +1415,7 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
       // We need to lock the stat table containing the entry to avoid
       // races when changing the size and count fields.
       int idx2 = (int) (stat_entry->hash() & (NR_OF_STACK_MAPS - 1));
-      Locker locker2(_stack_maps_lock[idx2]);
+      Locker locker2(&_stack_maps_data[idx2]._lock);
       stat_entry->remove_allocation(size);
 
       return stat_entry;
@@ -1431,43 +1434,13 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
   return NULL;
 }
 
-void MallocStatisticImpl::cleanup_for_stack_map(int idx) {
-  Locker locker(_stack_maps_lock[idx]);
-
-  if (_stack_maps_alloc[idx] != NULL) {
-    _stack_maps_alloc[idx]->~Allocator();
-    _funcs->free(_stack_maps_alloc[idx]);
-    _stack_maps_alloc[idx] = NULL;
-  }
-
-  if (_stack_maps[idx] != NULL) {
-    _funcs->free(_stack_maps[idx]);
-    _stack_maps[idx] = NULL;
-  }
-}
-
-void MallocStatisticImpl::cleanup_for_alloc_map(int idx) {
-  Locker locker(_alloc_maps_lock[idx]);
-
-  if (_alloc_maps_alloc[idx] != NULL) {
-    _alloc_maps_alloc[idx]->~Allocator();
-    _funcs->free(_alloc_maps_alloc[idx]);
-    _alloc_maps_alloc[idx] = NULL;
-  }
-
-  if (_alloc_maps[idx] != NULL) {
-    _funcs->free(_alloc_maps[idx]);
-    _alloc_maps[idx] = NULL;
-  }
-}
-
 void MallocStatisticImpl::cleanup() {
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
-    cleanup_for_stack_map(i);
+    _stack_maps_data[i].cleanup(_funcs);
   }
 
   for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
-    cleanup_for_alloc_map(i);
+    _alloc_maps_data[i].cleanup(_funcs);
   }
 
   if (_funcs != NULL) {
@@ -1476,55 +1449,57 @@ void MallocStatisticImpl::cleanup() {
   }
 }
 
-void MallocStatisticImpl::resize_stack_map(int map, int new_mask) {
-  StatEntry** new_map = (StatEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
-  StatEntry** old_map = _stack_maps[map];
+void MallocStatisticImpl::resize_stack_map(int idx, int new_mask) {
+  StatEntry** new_entries = (StatEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
+  StackMapData& map = _stack_maps_data[idx];
+  StatEntry** old_entries = map._entries;
 
   // Fail silently if we don't get the memory.
-  if (new_map != NULL) {
-    for (int i = 0; i <= _stack_maps_mask[map]; ++i) {
-      StatEntry* entry = old_map[i];
+  if (new_entries != NULL) {
+    for (int i = 0; i <= map._mask; ++i) {
+      StatEntry* entry = old_entries[i];
 
       while (entry != NULL) {
         StatEntry* next_entry = entry->next();
         int slot = entry->hash() & new_mask;
-        entry->set_next(new_map[slot]);
-        new_map[slot] = entry;
+        entry->set_next(new_entries[slot]);
+        new_entries[slot] = entry;
         entry = next_entry;
       }
     }
 
-    _stack_maps[map] = new_map;
-    _stack_maps_mask[map] = new_mask;
-    _stack_maps_limit[map] = (int) ((_stack_maps_mask[map] + 1) * MAX_STACK_MAP_LOAD);
-    _funcs->free(old_map);
+    map._entries = new_entries;
+    map._mask = new_mask;
+    map._limit = (int) ((map._mask + 1) * MAX_STACK_MAP_LOAD);
+    _funcs->free(old_entries);
   }
 }
 
-void MallocStatisticImpl::resize_alloc_map(int map, int new_mask) {
+void MallocStatisticImpl::resize_alloc_map(int idx, int new_mask) {
   assert(((new_mask + 1) & new_mask) == 0, "Must be a power of 2 minus 1");
 
-  AllocEntry** new_map = (AllocEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
-  AllocEntry** old_map = _alloc_maps[map];
+  AllocEntry** new_entries = (AllocEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
+  AllocMapData& map = _alloc_maps_data[idx];
+  AllocEntry** old_entries = map._entries;
 
   // Fail silently if we don't get the memory.
-  if (new_map != NULL) {
-    for (int i = 0; i <= _alloc_maps_mask[map]; ++i) {
-      AllocEntry* entry = old_map[i];
+  if (new_entries != NULL) {
+    for (int i = 0; i <= map._mask; ++i) {
+      AllocEntry* entry = old_entries[i];
 
       while (entry != NULL) {
         AllocEntry* next_entry = entry->next();
         int slot = (entry->hash() / NR_OF_ALLOC_MAPS) & new_mask;
-        entry->set_next(new_map[slot]);
-        new_map[slot] = entry;
+        entry->set_next(new_entries[slot]);
+        new_entries[slot] = entry;
         entry = next_entry;
       }
     }
 
-    _alloc_maps[map] = new_map;
-    _alloc_maps_mask[map] = new_mask;
-    _alloc_maps_limit[map] = (int) ((_alloc_maps_mask[map] + 1) * MAX_ALLOC_MAP_LOAD);
-    _funcs->free(old_map);
+    map._entries = new_entries;
+    map._mask = new_mask;
+    map._limit = (int) ((map._mask + 1) * MAX_ALLOC_MAP_LOAD);
+    _funcs->free(old_entries);
   }
 }
 
@@ -1539,7 +1514,7 @@ void MallocStatisticImpl::initialize() {
 
   _initialized = true;
 
-  if (pthread_mutex_init(&_malloc_stat_lock._lock, NULL) != 0) {
+  if (pthread_mutex_init(&_malloc_stat_lock, NULL) != 0) {
     fatal("Could not initialize malloc stat lock");
   }
 
@@ -1548,7 +1523,7 @@ void MallocStatisticImpl::initialize() {
   pthread_mutexattr_init(&attr);
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
-  if (pthread_mutex_init(&_rainy_day_fund_lock._lock, &attr) != 0) {
+  if (pthread_mutex_init(&_rainy_day_fund_lock, &attr) != 0) {
     fatal("Could not initialize rainy day fund lock");
   }
 
@@ -1557,13 +1532,13 @@ void MallocStatisticImpl::initialize() {
   }
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
-    if (pthread_mutex_init(&_stack_maps_lock[i]._lock, NULL) != 0) {
+    if (pthread_mutex_init(&_stack_maps_data[i]._lock, NULL) != 0) {
       fatal("Could not initialize stack maps lock");
     }
   }
 
   for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
-    if (pthread_mutex_init(&_alloc_maps_lock[i]._lock, NULL) != 0) {
+    if (pthread_mutex_init(&_alloc_maps_data[i]._lock, NULL) != 0) {
       fatal("Could not initialize alloc maps lock");
     }
   }
@@ -1571,7 +1546,7 @@ void MallocStatisticImpl::initialize() {
 
 bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   initialize();
-  Locker lock(_malloc_stat_lock);
+  Locker lock(&_malloc_stat_lock);
 
   if (_enabled) {
     if (spec._force) {
@@ -1713,13 +1688,14 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     }
 
     size_t entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
-    _stack_maps_alloc[i] = new (mem) Allocator(entry_size, 256, _funcs);
-    _stack_maps_mask[i] = STACK_MAP_INIT_SIZE - 1;
-    _stack_maps_size[i]._val = 0;
-    _stack_maps_limit[i] = (int) ((_stack_maps_mask[i] + 1) * MAX_STACK_MAP_LOAD);
-    _stack_maps[i] = (StatEntry**) _funcs->calloc(_stack_maps_mask[i] + 1, sizeof(StatEntry*));
+    StackMapData& map = _stack_maps_data[i];
+    map._alloc = new (mem) Allocator(entry_size, 256, _funcs);
+    map._mask = STACK_MAP_INIT_SIZE - 1;
+    map._size = 0;
+    map._limit = (int) ((map._mask + 1) * MAX_STACK_MAP_LOAD);
+    map._entries = (StatEntry**) _funcs->calloc(map._mask + 1, sizeof(StatEntry*));
 
-    if (_stack_maps[i] == NULL) {
+    if (map._entries == NULL) {
       st->print_raw_cr("Could not allocate the stack map!");
       cleanup();
 
@@ -1737,13 +1713,14 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
       return false;
     }
 
-    _alloc_maps_alloc[i] = new (mem) Allocator(sizeof(AllocEntry), 2048, _funcs);
-    _alloc_maps_mask[i] = ALLOC_MAP_INIT_SIZE - 1;
-    _alloc_maps_size[i]._val = 0;
-    _alloc_maps_limit[i] = (int) ((_alloc_maps_mask[i] + 1) * MAX_ALLOC_MAP_LOAD);
-    _alloc_maps[i] = (AllocEntry**) _funcs->calloc(_alloc_maps_mask[i] + 1, sizeof(AllocEntry*));
+    AllocMapData& map = _alloc_maps_data[i];
+    map._alloc = new (mem) Allocator(sizeof(AllocEntry), 2048, _funcs);
+    map._mask = ALLOC_MAP_INIT_SIZE - 1;
+    map._size = 0;
+    map._limit = (int) ((map._mask  + 1) * MAX_ALLOC_MAP_LOAD);
+    map._entries = (AllocEntry**) _funcs->calloc(map._mask  + 1, sizeof(AllocEntry*));
 
-    if (mem == NULL) {
+    if (map._entries == NULL) {
       st->print_raw_cr("Could not allocate the alloc map!");
       cleanup();
 
@@ -1757,7 +1734,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 
 bool MallocStatisticImpl::disable(outputStream* st) {
   initialize();
-  Locker lock(_malloc_stat_lock);
+  Locker lock(&_malloc_stat_lock);
 
   if (!_enabled) {
     if (st != NULL) {
@@ -1940,20 +1917,20 @@ bool MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int
   return true;
 }
 
-static void print_allocation_stats(outputStream* st, Allocator** allocs, int* masks, Padded<int>* sizes,
-                                   Lock* locks, int nr_of_maps, char const* type) {
+static void print_allocation_stats(outputStream* st, HashMapData<void*>* data,
+                                   int nr_of_maps, char const* type) {
   uint64_t allocated = 0;
   uint64_t unused = 0;
   uint64_t total_entries = 0;
   uint64_t total_slots = 0;
 
   for (int i = 0; i < nr_of_maps; ++i) {
-    Locker lock(locks[i]);
-    allocated     += (masks[i] + 1) * sizeof(void*);
-    total_entries += sizes[i]._val;
-    total_slots   += masks[i] + 1;
-    allocated     += allocs[i]->allocated();
-    unused        += allocs[i]->unused();
+    Locker lock(&data[i]._lock);
+    allocated     += (data[i]._mask + 1) * sizeof(void*);
+    total_entries += data[i]._size;
+    total_slots   += data[i]._mask + 1;
+    allocated     += data[i]._alloc->allocated();
+    unused        += data[i]._alloc->unused();
   }
 
   st->cr();
@@ -2024,7 +2001,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     return false;
   }
 
-  Locker locker(_rainy_day_fund_lock, !used_rainy_day_fund);
+  Locker locker(&_rainy_day_fund_lock, !used_rainy_day_fund);
 
   if (used_rainy_day_fund) {
     setup_hooks(&_rainy_day_hooks, NULL);
@@ -2036,7 +2013,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   // We need to avoid having the trace disabled concurrently.
-  Locker lock(_malloc_stat_lock, spec._on_error);
+  Locker lock(&_malloc_stat_lock, spec._on_error);
 
   if (!_enabled) {
     msg_stream->print_raw_cr("Malloc statistic not enabled!");
@@ -2092,20 +2069,21 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     lockedTime.start();
 
     {
-      Locker locker(_stack_maps_lock[idx]);
+      StackMapData& map = _stack_maps_data[idx];
+      Locker locker(&map._lock);
 
-      int expected_size = _stack_maps_size[idx]._val;
+      int expected_size = map._size;
       int pos = 0;
 
       entries[idx] = (StatEntryCopy*) _funcs->malloc(sizeof(StatEntryCopy) * expected_size);
 
       if (entries[idx] != NULL) {
-        StatEntry** map = _stack_maps[idx];
+        StatEntry** orig = map._entries;
         StatEntryCopy* copies = entries[idx];
-        int nr_of_slots = _stack_maps_mask[idx] + 1;
+        int nr_of_slots = map._mask + 1;
 
         for (int slot = 0; slot < nr_of_slots; ++slot) {
-          StatEntry* entry = map[slot];
+          StatEntry* entry = orig[slot];
 
           while (entry != NULL) {
             assert(pos < expected_size, "To many entries");
@@ -2300,12 +2278,12 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   if (spec._internal_stats) {
-    print_allocation_stats(msg_stream, _stack_maps_alloc, _stack_maps_mask, _stack_maps_size,
-                           _stack_maps_lock, NR_OF_STACK_MAPS, "stack maps");
+    print_allocation_stats(msg_stream, (HashMapData<void*>*) _stack_maps_data,
+                           NR_OF_STACK_MAPS, "stack maps");
 
     if (_track_free) {
-      print_allocation_stats(msg_stream, _alloc_maps_alloc, _alloc_maps_mask, _alloc_maps_size,
-                             _alloc_maps_lock, NR_OF_ALLOC_MAPS, "alloc maps");
+      print_allocation_stats(msg_stream, (HashMapData<void*>*) _alloc_maps_data,
+                             NR_OF_ALLOC_MAPS, "alloc maps");
     }
 
     if (uses_filter) {
