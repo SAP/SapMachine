@@ -34,6 +34,18 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jdk-21.0.3-ea.2_linux-x64-musl_bin.tar.gz"
               }
             },
+            "macos-aarch64": {
+              "dmg": {
+                "name": "sapmachine-jdk-21.0.3-ea.2_macos-aarch64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jdk-21.0.3-ea.2_macos-aarch64_bin.dmg",
+                "checksum": "85633fb36364a4a35b0ccb705b1aedcdcd0a1fec229c68e0fb167189b265086b"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-21.0.3-ea.2_macos-aarch64_bin.tar.gz",
+                "checksum": "41e1347805f2526edf555774967be604644861b3f2c100958331758dd7a8838b",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jdk-21.0.3-ea.2_macos-aarch64_bin.tar.gz"
+              }
+            },
             "macos-x64": {
               "dmg": {
                 "name": "sapmachine-jdk-21.0.3-ea.2_macos-x64_bin.dmg",
@@ -81,6 +93,18 @@
                 "name": "sapmachine-jre-21.0.3-ea.2_linux-x64-musl_bin.tar.gz",
                 "checksum": "e28fcff96fd09aa1cbc8c42a4fbfcca736c4d3cb5dd832c24c8f87db3c1d8862",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jre-21.0.3-ea.2_linux-x64-musl_bin.tar.gz"
+              }
+            },
+            "macos-aarch64": {
+              "dmg": {
+                "name": "sapmachine-jre-21.0.3-ea.2_macos-aarch64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jre-21.0.3-ea.2_macos-aarch64_bin.dmg",
+                "checksum": "9b457024ff8853cf67b248b7f321f63446505f4abb95069fc46dac648c7185de"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-21.0.3-ea.2_macos-aarch64_bin.tar.gz",
+                "checksum": "dbf7f116dcf69079f97376507efa553a99f6999378eb9e6f2eec2330d119a39b",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jre-21.0.3-ea.2_macos-aarch64_bin.tar.gz"
               }
             },
             "macos-x64": {
