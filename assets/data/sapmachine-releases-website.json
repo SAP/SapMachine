@@ -67,6 +67,7 @@
         {
           "tag": "sapmachine-23+8",
           "jdk": {
+            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jdk-23-ea.8_aix-ppc64_bin.tar.gz",
             "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jdk-23-ea.8_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jdk-23-ea.8_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jdk-23-ea.8_linux-x64_bin.tar.gz",
@@ -78,6 +79,7 @@
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jdk-23-ea.8_windows-x64_bin.zip"
           },
           "jre": {
+            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_aix-ppc64_bin.tar.gz",
             "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_linux-x64_bin.tar.gz",
@@ -87,15 +89,6 @@
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_macos-x64_bin.dmg",
             "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_macos-x64_bin.tar.gz",
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_windows-x64_bin.zip"
-          }
-        },
-        {
-          "tag": "sapmachine-23+7",
-          "jdk": {
-            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B7/sapmachine-jdk-23-ea.7_aix-ppc64_bin.tar.gz"
-          },
-          "jre": {
-            "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B7/sapmachine-jre-23-ea.7_aix-ppc64_bin.tar.gz"
           }
         }
       ]

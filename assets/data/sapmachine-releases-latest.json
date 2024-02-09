@@ -7,6 +7,10 @@
       {
         "tag": "sapmachine-23+8",
         "jdk": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jdk-23-ea.8_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 fc47e1290f800a1f0a31c0e50df612e31cd204894542126a23a499c883316a80"
+          },
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jdk-23-ea.8_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 ee947682fe93a8763b88ae366548581cb1b69a5584de675487746890dca81dd1"
@@ -45,6 +49,10 @@
           }
         },
         "jre": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 a71307c77c951a05663c808fb92383d8617f87bf7755c0eed1c300ede0ebf4fc"
+          },
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 0b8fbb8b190632cfabd673e7f5357cf0e67be3831edcd8e0f847dbbd157de51b"
@@ -80,21 +88,6 @@
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B8/sapmachine-jre-23-ea.8_windows-x64_bin.zip",
             "checksum": "sha256 77c50faabf278152e96c1da37d5191bc3a7ae08c0e5cfddf5cff95aeb7017d30"
-          }
-        }
-      },
-      {
-        "tag": "sapmachine-23+7",
-        "jdk": {
-          "aix-ppc64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B7/sapmachine-jdk-23-ea.7_aix-ppc64_bin.tar.gz",
-            "checksum": "sha256 794d96c24db7311d56547a3661bfda5ba6d3a064e90fdf281e5f8a02af6a4808"
-          }
-        },
-        "jre": {
-          "aix-ppc64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B7/sapmachine-jre-23-ea.7_aix-ppc64_bin.tar.gz",
-            "checksum": "sha256 1cdb56a61c9dd3c084b9e577fb4f52d03fe9f39094a21c28c0164844a896376d"
           }
         }
       }
