@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,27 @@ $(BUILD_LIBDT_SOCKET): $(call FindLib, java.base, java)
 
 # Include socket transport with JDWP agent to allow for remote debugging
 TARGETS += $(BUILD_LIBDT_SOCKET)
+
+################################################################################
+
+# SapMachine 2024-02-16: Add dt_filesocket implementation
+$(eval $(call SetupJdkLibrary, BUILD_LIBDT_FILESOCKET, \
+    NAME := dt_filesocket, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
+    DISABLED_WARNINGS_clang := format-nonliteral, \
+    EXTRA_HEADER_DIRS := \
+        include \
+        libjdwp/export, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LIBS_windows := $(JKDLIB_LIBS) ws2_32.lib Advapi32.lib, \
+))
+
+$(BUILD_LIBDT_FILESOCKET): $(call FindLib, java.base, java)
+
+# Include file socket transport with JDWP agent to allow for safe local debugging
+TARGETS += $(BUILD_LIBDT_FILESOCKET)
 
 ################################################################################
 
