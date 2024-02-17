@@ -34,6 +34,18 @@
                 "checksum": "3fd878e48f76e40fdcfdb6cfe11a07207d34f0c282875a120d67000de82674e6"
               }
             },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-17.0.11-ea.3_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B3/sapmachine-jdk-17.0.11-ea.3_macos-x64_bin.dmg",
+                "checksum": "08bdafb0073cea7664ea14fef95fe17a9b8fd3157be6baec25753f8f2adefa5c"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-17.0.11-ea.3_macos-x64_bin.tar.gz",
+                "checksum": "79ebf5a22d82106911e5995e8b02b933e499db9b56604e00082f47a049c5133a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B3/sapmachine-jdk-17.0.11-ea.3_macos-x64_bin.tar.gz"
+              }
+            },
             "windows-x64": {
               "zip": {
                 "name": "sapmachine-jdk-17.0.11-ea.3_windows-x64_bin.zip",
@@ -69,6 +81,18 @@
                 "name": "sapmachine-jre-17.0.11-ea.3_linux-x64-musl_bin.tar.gz",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B3/sapmachine-jre-17.0.11-ea.3_linux-x64-musl_bin.tar.gz",
                 "checksum": "8876850ce011201b538c286fdd3bf6fbd35554deb1009c03e78e8ec43662b9cb"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-17.0.11-ea.3_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B3/sapmachine-jre-17.0.11-ea.3_macos-x64_bin.dmg",
+                "checksum": "186bd04bf3187476acdf808a6b7f7c0563fa32e6223b3d604be66b402fc8813d"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-17.0.11-ea.3_macos-x64_bin.tar.gz",
+                "checksum": "ee544933e30fd8e9637582865faacde77be9654de7c6646ddcc9679ddc230d0f",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B3/sapmachine-jre-17.0.11-ea.3_macos-x64_bin.tar.gz"
               }
             },
             "windows-x64": {
