@@ -202,6 +202,10 @@
       {
         "tag": "sapmachine-21.0.3+3",
         "jdk": {
+          "linux-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B3/sapmachine-jdk-21.0.3-ea.3_linux-aarch64_bin.tar.gz",
+            "checksum": "sha256 160b47ae3391b9ef0e66973f6c31f87ee607ffebec43ea8aab3575c5abdbfbdd"
+          },
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B3/sapmachine-jdk-21.0.3-ea.3_linux-x64_bin.tar.gz",
             "checksum": "sha256 adee554eab91ccf94413c03b199c95b5ac93f3afd11eb4e50694968badbd1b09"
@@ -212,6 +216,10 @@
           }
         },
         "jre": {
+          "linux-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B3/sapmachine-jre-21.0.3-ea.3_linux-aarch64_bin.tar.gz",
+            "checksum": "sha256 7c7d3b40cf2d279755f5f676a001bc0f656b4a6252dcdfe3c482b8b11d845203"
+          },
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B3/sapmachine-jre-21.0.3-ea.3_linux-x64_bin.tar.gz",
             "checksum": "sha256 618cfb30b02738a344e296959ac0c5a294c49de37a3f72adedf1f330e7e95432"
@@ -228,10 +236,6 @@
           "aix-ppc64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jdk-21.0.3-ea.2_aix-ppc64_bin.tar.gz",
             "checksum": "sha256 c1d19a24d1a8c58a87b5a7868b93ad48d9879bc1aa227e484dd5441c5b0d2a3b"
-          },
-          "linux-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jdk-21.0.3-ea.2_linux-aarch64_bin.tar.gz",
-            "checksum": "sha256 e1d75b2d1ea10e9533796d7b2a8a8fdb197d930d6a65715a814bdd300ff3a647"
           },
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jdk-21.0.3-ea.2_linux-ppc64le_bin.tar.gz",
@@ -262,10 +266,6 @@
           "aix-ppc64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jre-21.0.3-ea.2_aix-ppc64_bin.tar.gz",
             "checksum": "sha256 fbcb296b5d8a078c0e831b2ebab69657acc153f5a07d1c15f20c08a79de69188"
-          },
-          "linux-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jre-21.0.3-ea.2_linux-aarch64_bin.tar.gz",
-            "checksum": "sha256 08aa830ef9f460268367f2d924d5df14ec7913660c9b90ad94cf19bcdc43e466"
           },
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B2/sapmachine-jre-21.0.3-ea.2_linux-ppc64le_bin.tar.gz",
