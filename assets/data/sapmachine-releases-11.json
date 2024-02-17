@@ -19,6 +19,13 @@
                 "checksum": "a7bfdc658f3283d39d35cca3ec86fe8ff577924e2973bb5bc267ffa184fea85a",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B3/sapmachine-jdk-11.0.23-ea.3_linux-x64_bin.tar.gz"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-11.0.23-ea.3_windows-x64_bin.zip",
+                "checksum": "818aada4d96cf970c0f77ff49d4498ce1301a81d9301479614759dfcd09c0e73",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B3/sapmachine-jdk-11.0.23-ea.3_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
@@ -34,6 +41,13 @@
                 "name": "sapmachine-jre-11.0.23-ea.3_linux-x64_bin.tar.gz",
                 "checksum": "8b88300276f290b059ce647dcaeb35f7a17d9ebe77c250dc66290ab3d1d22c0f",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B3/sapmachine-jre-11.0.23-ea.3_linux-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-11.0.23-ea.3_windows-x64_bin.zip",
+                "checksum": "bd2221e46ce2df14070a2fd0d4cfa2acc15c0c3549f7199d4912964f52198da1",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B3/sapmachine-jre-11.0.23-ea.3_windows-x64_bin.zip"
               }
             }
           }
