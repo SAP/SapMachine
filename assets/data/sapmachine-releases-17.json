@@ -6,6 +6,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-17.0.11-ea.3_linux-x64-musl_bin.tar.gz",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B3/sapmachine-jdk-17.0.11-ea.3_linux-x64-musl_bin.tar.gz",
+                "checksum": "3fd878e48f76e40fdcfdb6cfe11a07207d34f0c282875a120d67000de82674e6"
+              }
+            },
             "windows-x64": {
               "zip": {
                 "name": "sapmachine-jdk-17.0.11-ea.3_windows-x64_bin.zip",
@@ -15,6 +22,13 @@
             }
           },
           "jre": {
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-17.0.11-ea.3_linux-x64-musl_bin.tar.gz",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B3/sapmachine-jre-17.0.11-ea.3_linux-x64-musl_bin.tar.gz",
+                "checksum": "8876850ce011201b538c286fdd3bf6fbd35554deb1009c03e78e8ec43662b9cb"
+              }
+            },
             "windows-x64": {
               "zip": {
                 "name": "sapmachine-jre-17.0.11-ea.3_windows-x64_bin.zip",
