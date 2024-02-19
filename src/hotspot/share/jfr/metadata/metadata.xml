@@ -349,7 +349,7 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" description="Total memory occupied by objects within PLABs" />
     <Field type="ulong" contentType="bytes" name="undoWaste" label="Undo Wasted" description="Total memory wasted due to allocation undo within PLABs" />
     <Field type="ulong" contentType="bytes" name="regionEndWaste" label="Region End Wasted" description="Total memory wasted at the end of regions due to refill" />
-    <Field type="uint" contentType="bytes" name="regionsRefilled" label="Region Refills" description="Total memory wasted at the end of regions due to refill" />
+    <Field type="uint" name="regionsRefilled" label="Region Refills" description="Number of regions refilled" />
     <Field type="ulong" contentType="bytes" name="directAllocated" label="Allocated (direct)" description="Total memory allocated using direct allocation outside of PLABs" />
     <Field type="ulong" contentType="bytes" name="failureUsed" label="Used (failure)" description="Total memory occupied by objects in regions where evacuation failed" />
     <Field type="ulong" contentType="bytes" name="failureWaste" label="Wasted (failure)" description="Total memory left unused in regions where evacuation failed" />
@@ -429,6 +429,14 @@
 
   <Event name="ConcurrentModeFailure" category="Java Virtual Machine, GC, Detailed" label="Concurrent Mode Failure" startTime="false" description="Concurrent Mode failed">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+  </Event>
+
+  <Event name="GCCPUTime" category="Java Virtual Machine, GC, Detailed" label="GC CPU Time" description="GC CPU Time information. Supported: G1GC, ParallelGC and SerialGC"
+    stackTrace="false" startTime="false">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="ulong" contentType="nanos" name="userTime" label="User Time" />
+    <Field type="ulong" contentType="nanos" name="systemTime" label="System Time" />
+    <Field type="ulong" contentType="nanos" name="realTime" label="Real Time" />
   </Event>
 
   <Event name="GCPhasePause" category="Java Virtual Machine, GC, Phases" label="GC Phase Pause" thread="true">
@@ -865,10 +873,11 @@
     <Field type="string" name="result" label="Thread Dump" />
   </Event>
 
-  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk">
+  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk"
+    description="Information about a dynamic library or other native image loaded by the JVM process">
     <Field type="string" name="name" label="Name" />
     <Field type="ulong" contentType="address" name="baseAddress" label="Base Address" description="Starting address of the module" />
-    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module" />
+    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module, if available" />
   </Event>
 
   <Event name="ModuleRequire" category="Java Virtual Machine, Runtime, Modules" label="Module Require" thread="false" period="everyChunk"

@@ -25,9 +25,10 @@
 
 #include "precompiled.hpp"
 #include "malloctrace/locker.hpp"
+#include "malloctrace/mallocTrace.hpp"
 #include <pthread.h>
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 namespace sap {
 
@@ -36,4 +37,4 @@ pthread_mutex_t Locker::_pthread_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 } // namespace sap
 
-#endif // #ifdef __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS

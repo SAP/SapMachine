@@ -1767,13 +1767,13 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().update_active_workers(active_workers);
 
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(&_gc_tracer);
     GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
 
     heap->pre_full_gc_dump(&_gc_timer);
 
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(heap->old_gc_manager(), gc_cause);
+    TraceMemoryManagerStats tms(heap->old_gc_manager(), gc_cause, "end of major GC");
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->start();
@@ -2137,7 +2137,10 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
-  _gc_tracer.report_object_count_after_gc(is_alive_closure());
+  {
+    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+    _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
+  }
 }
 
 #ifdef ASSERT

@@ -49,6 +49,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
@@ -91,6 +92,8 @@ static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
 volatile bool _alt_hash = false;
+
+static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
 uintx hash_string(const jchar* s, int len, bool useAlt) {
@@ -148,11 +151,9 @@ class StringTableLookupJchar : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == NULL) {
-      // dead oop, mark this hash dead for cleaning
-      *is_dead = true;
       return false;
     }
     bool equals = java_lang_String::equals(val_oop, _str, _len);
@@ -162,6 +163,10 @@ class StringTableLookupJchar : StackObj {
     // Need to resolve weak handle and Handleize through possible safepoint.
      _found = Handle(_thread, value->resolve());
     return true;
+  }
+  bool is_dead(WeakHandle* value) {
+    oop val_oop = value->peek();
+    return val_oop == NULL;
   }
 };
 
@@ -180,11 +185,9 @@ class StringTableLookupOop : public StackObj {
     return _hash;
   }
 
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == NULL) {
-      // dead oop, mark this hash dead for cleaning
-      *is_dead = true;
       return false;
     }
     bool equals = java_lang_String::equals(_find(), val_oop);
@@ -194,6 +197,11 @@ class StringTableLookupOop : public StackObj {
     // Need to resolve weak handle and Handleize through possible safepoint.
     _found = Handle(_thread, value->resolve());
     return true;
+  }
+
+  bool is_dead(WeakHandle* value) {
+    oop val_oop = value->peek();
+    return val_oop == NULL;
   }
 };
 
@@ -429,6 +437,7 @@ void StringTable::clean_dead_entries(JavaThread* jt) {
 
   StringTableDeleteCheck stdc;
   StringTableDoDelete stdd;
+  NativeHeapTrimmer::SuspendMark sm("stringtable");
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, stringtable, perf));
     while(bdt.do_task(jt, stdc, stdd)) {
@@ -504,20 +513,46 @@ bool StringTable::do_rehash() {
   return true;
 }
 
+bool StringTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
+bool StringTable::rehash_table_expects_safepoint_rehashing() {
+  // No rehashing required
+  if (!needs_rehashing()) {
+    return false;
+  }
+
+  // Grow instead of rehash
+  if (should_grow()) {
+    return false;
+  }
+
+  // Already rehashed
+  if (_rehashed) {
+    return false;
+  }
+
+  // Resizing in progress
+  if (!_local_table->is_safepoint_safe()) {
+    return false;
+  }
+
+  return true;
+}
+
 void StringTable::rehash_table() {
-  static bool rehashed = false;
   log_debug(stringtable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
-  if (get_load_factor() > PREF_AVG_LIST_LEN &&
-      !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     log_debug(stringtable)("Choosing growing over rehashing.");
     trigger_concurrent_work();
     _needs_rehashing = false;
     return;
   }
   // Already rehashed.
-  if (rehashed) {
+  if (_rehashed) {
     log_warning(stringtable)("Rehashing already done, still long lists.");
     trigger_concurrent_work();
     _needs_rehashing = false;
@@ -527,7 +562,7 @@ void StringTable::rehash_table() {
   _alt_hash_seed = AltHashing::compute_seed();
   {
     if (do_rehash()) {
-      rehashed = true;
+      _rehashed = true;
     } else {
       log_info(stringtable)("Resizes in progress rehashing skipped.");
     }

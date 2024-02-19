@@ -771,7 +771,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  __ flush();
   return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
@@ -2359,10 +2358,9 @@ void SharedRuntime::generate_deopt_blob() {
 
   Label retaddr;
   __ set_last_Java_frame(sp, noreg, retaddr, rscratch1);
-#ifdef ASSERT0
+#ifdef ASSERT
   { Label L;
-    __ ldr(rscratch1, Address(rthread,
-                              JavaThread::last_Java_fp_offset()));
+    __ ldr(rscratch1, Address(rthread, JavaThread::last_Java_fp_offset()));
     __ cbz(rscratch1, L);
     __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
     __ bind(L);

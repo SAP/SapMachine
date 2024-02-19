@@ -11378,7 +11378,6 @@ instruct rShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
 // BEGIN This section of the file is automatically generated. Do not edit --------------
 // This section is generated from aarch64_ad.m4
 
-
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct regL_not_reg(iRegLNoSp dst,
@@ -13194,6 +13193,7 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
 
 
 // Rotations
+
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct extrOrL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift, rFlagsReg cr)
@@ -13264,7 +13264,6 @@ instruct extrAddI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI lshift, 
   %}
   ins_pipe(ialu_reg_reg_extr);
 %}
-
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
@@ -13977,6 +13976,298 @@ instruct SubExtI_uxth_and_shift(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2,
             as_Register($src2$$reg), ext::uxth, ($lshift$$constant));
    %}
   ins_pipe(ialu_reg_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_reg_lt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE src2, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "cselw $dst, $src1, $src2 lt\t"  %}
+
+  ins_encode %{
+    __ cselw($dst$$Register,
+             $src1$$Register,
+             $src2$$Register,
+             Assembler::LT);
+  %}
+  ins_pipe(icond_reg_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_reg_gt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE src2, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "cselw $dst, $src1, $src2 gt\t"  %}
+
+  ins_encode %{
+    __ cselw($dst$$Register,
+             $src1$$Register,
+             $src2$$Register,
+             Assembler::GT);
+  %}
+  ins_pipe(icond_reg_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_imm0_lt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "cselw $dst, $src1, zr lt\t"  %}
+
+  ins_encode %{
+    __ cselw($dst$$Register,
+             $src1$$Register,
+             zr,
+             Assembler::LT);
+  %}
+  ins_pipe(icond_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_imm0_gt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "cselw $dst, $src1, zr gt\t"  %}
+
+  ins_encode %{
+    __ cselw($dst$$Register,
+             $src1$$Register,
+             zr,
+             Assembler::GT);
+  %}
+  ins_pipe(icond_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_imm1_le(iRegINoSp dst, iRegI src1, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "csincw $dst, $src1, zr le\t"  %}
+
+  ins_encode %{
+    __ csincw($dst$$Register,
+             $src1$$Register,
+             zr,
+             Assembler::LE);
+  %}
+  ins_pipe(icond_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_imm1_gt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "csincw $dst, $src1, zr gt\t"  %}
+
+  ins_encode %{
+    __ csincw($dst$$Register,
+             $src1$$Register,
+             zr,
+             Assembler::GT);
+  %}
+  ins_pipe(icond_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_immM1_lt(iRegINoSp dst, iRegI src1, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "csinvw $dst, $src1, zr lt\t"  %}
+
+  ins_encode %{
+    __ csinvw($dst$$Register,
+             $src1$$Register,
+             zr,
+             Assembler::LT);
+  %}
+  ins_pipe(icond_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct cmovI_reg_immM1_ge(iRegINoSp dst, iRegI src1, rFlagsReg cr)
+%{
+  effect(DEF dst, USE src1, USE cr);
+  ins_cost(INSN_COST * 2);
+  format %{ "csinvw $dst, $src1, zr ge\t"  %}
+
+  ins_encode %{
+    __ csinvw($dst$$Register,
+             $src1$$Register,
+             zr,
+             Assembler::GE);
+  %}
+  ins_pipe(icond_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct minI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
+%{
+  match(Set dst (MinI src imm));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm0_lt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct minI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
+%{
+  match(Set dst (MinI imm src));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm0_lt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct minI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
+%{
+  match(Set dst (MinI src imm));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm1_le(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct minI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
+%{
+  match(Set dst (MinI imm src));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm1_le(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct minI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
+%{
+  match(Set dst (MinI src imm));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_immM1_lt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct minI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
+%{
+  match(Set dst (MinI imm src));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_immM1_lt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct maxI_reg_imm0(iRegINoSp dst, iRegIorL2I src, immI0 imm)
+%{
+  match(Set dst (MaxI src imm));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm0_gt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct maxI_imm0_reg(iRegINoSp dst, immI0 imm, iRegIorL2I src)
+%{
+  match(Set dst (MaxI imm src));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm0_gt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct maxI_reg_imm1(iRegINoSp dst, iRegIorL2I src, immI_1 imm)
+%{
+  match(Set dst (MaxI src imm));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm1_gt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct maxI_imm1_reg(iRegINoSp dst, immI_1 imm, iRegIorL2I src)
+%{
+  match(Set dst (MaxI imm src));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_imm1_gt(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct maxI_reg_immM1(iRegINoSp dst, iRegIorL2I src, immI_M1 imm)
+%{
+  match(Set dst (MaxI src imm));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_immM1_ge(dst, src, cr);
+  %}
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct maxI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
+%{
+  match(Set dst (MaxI imm src));
+  ins_cost(INSN_COST * 3);
+  expand %{
+    rFlagsReg cr;
+    compI_reg_imm0(cr, src);
+    cmovI_reg_immM1_ge(dst, src, cr);
+  %}
 %}
 
 
@@ -15939,24 +16230,21 @@ instruct cmpLTMask_reg_zero(iRegINoSp dst, iRegIorL2I src, immI0 zero, rFlagsReg
 // ============================================================================
 // Max and Min
 
-instruct cmovI_reg_reg_lt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
-%{
-  effect( DEF dst, USE src1, USE src2, USE cr );
+// Like compI_reg_reg or compI_reg_immI0 but without match rule and second zero parameter.
 
-  ins_cost(INSN_COST * 2);
-  format %{ "cselw $dst, $src1, $src2 lt\t"  %}
+instruct compI_reg_imm0(rFlagsReg cr, iRegI src)
+%{
+  effect(DEF cr, USE src);
+  ins_cost(INSN_COST);
+  format %{ "cmpw $src, 0" %}
 
   ins_encode %{
-    __ cselw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
-             as_Register($src2$$reg),
-             Assembler::LT);
+    __ cmpw($src$$Register, 0);
   %}
-
-  ins_pipe(icond_reg_reg);
+  ins_pipe(icmp_reg_imm);
 %}
 
-instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
+instruct minI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2)
 %{
   match(Set dst (MinI src1 src2));
   ins_cost(INSN_COST * 3);
@@ -15966,37 +16254,20 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
     compI_reg_reg(cr, src1, src2);
     cmovI_reg_reg_lt(dst, src1, src2, cr);
   %}
-
-%}
-// FROM HERE
-
-instruct cmovI_reg_reg_gt(iRegINoSp dst, iRegI src1, iRegI src2, rFlagsReg cr)
-%{
-  effect( DEF dst, USE src1, USE src2, USE cr );
-
-  ins_cost(INSN_COST * 2);
-  format %{ "cselw $dst, $src1, $src2 gt\t"  %}
-
-  ins_encode %{
-    __ cselw(as_Register($dst$$reg),
-             as_Register($src1$$reg),
-             as_Register($src2$$reg),
-             Assembler::GT);
-  %}
-
-  ins_pipe(icond_reg_reg);
 %}
 
-instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
+instruct maxI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2)
 %{
   match(Set dst (MaxI src1 src2));
   ins_cost(INSN_COST * 3);
+
   expand %{
     rFlagsReg cr;
     compI_reg_reg(cr, src1, src2);
     cmovI_reg_reg_gt(dst, src1, src2, cr);
   %}
 %}
+
 
 // ============================================================================
 // Branch Instructions
@@ -16770,14 +17041,17 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
 %}
 
 instruct string_indexofUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
-       iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
+                          iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                          iRegINoSp tmp3, iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UU)" %}
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
+         TEMP vtmp0, TEMP vtmp1, KILL cr);
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UU) "
+            "# KILL $str1 $cnt1 $str2 $cnt2 $tmp1 $tmp2 $tmp3 $tmp4 $tmp5 $tmp6 V0-V1 cr" %}
 
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
@@ -16791,14 +17065,17 @@ instruct string_indexofUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexofLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
-       iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
+                          iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
+                          iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (LL)" %}
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
+         TEMP vtmp0, TEMP vtmp1, KILL cr);
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (LL) "
+            "# KILL $str1 $cnt1 $str2 $cnt2 $tmp1 $tmp2 $tmp3 $tmp4 $tmp5 $tmp6 V0-V1 cr" %}
 
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
@@ -16812,14 +17089,17 @@ instruct string_indexofLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexofUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
-       iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
+                          iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,iRegINoSp tmp3,
+                          iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UL)" %}
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
+         TEMP tmp6, TEMP vtmp0, TEMP vtmp1, KILL cr);
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UL) "
+            "# KILL $str1 cnt1 $str2 $cnt2 $tmp1 $tmp2 $tmp3 $tmp4 $tmp5 $tmp6 V0-V1 cr" %}
 
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
@@ -16833,14 +17113,15 @@ instruct string_indexofUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexof_conUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
+                              immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1,
+                              iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UU)" %}
+  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UU) "
+            "# KILL $str1 $cnt1 $str2 $tmp1 $tmp2 $tmp3 $tmp4 cr" %}
 
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
@@ -16854,14 +17135,15 @@ instruct string_indexof_conUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_conLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
+                              immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1,
+                              iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (LL)" %}
+  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (LL) "
+            "# KILL $str1 $cnt1 $str2 $tmp1 $tmp2 $tmp3 $tmp4 cr" %}
 
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
@@ -16875,14 +17157,15 @@ instruct string_indexof_conLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_1 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
+                              immI_1 int_cnt2, iRegI_R0 result, iRegINoSp tmp1,
+                              iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UL)" %}
+  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UL) "
+            "# KILL $str1 $cnt1 $str2 $tmp1 $tmp2 $tmp3 $tmp4 cr" %}
 
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
@@ -16967,13 +17250,17 @@ instruct string_equalsU(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
 
 instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
                        iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
+                       vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                       vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
                        iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
+         TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
+         TEMP vtmp6, TEMP vtmp7, KILL cr);
 
-  format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
+  format %{ "Array Equals $ary1,ary2 -> $result # KILL $ary1 $ary2 $tmp $tmp1 $tmp2 $tmp3 V0-V7 cr" %}
   ins_encode %{
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
@@ -16988,13 +17275,17 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
 instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
                        iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
+                       vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                       vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
                        iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
+         TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
+         TEMP vtmp6, TEMP vtmp7, KILL cr);
 
-  format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
+  format %{ "Array Equals $ary1,ary2 -> $result # KILL $ary1 $ary2 $tmp $tmp1 $tmp2 $tmp3 V0-V7 cr" %}
   ins_encode %{
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
@@ -17024,35 +17315,39 @@ instruct has_negatives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg c
 
 // fast char[] to byte[] compression
 instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
-                         vRegD_V0 tmp1, vRegD_V1 tmp2,
-                         vRegD_V2 tmp3, vRegD_V3 tmp4,
+                         vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
+                         vRegD_V3 vtmp3, vRegD_V4 vtmp4, vRegD_V5 vtmp5,
                          iRegI_R0 result, rFlagsReg cr)
 %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
+         USE_KILL src, USE_KILL dst, USE len, KILL cr);
 
-  format %{ "String Compress $src,$dst -> $result    // KILL R1, R2, R3, R4" %}
+  format %{ "String Compress $src,$dst,$len -> $result # KILL $src $dst V0-V5 cr" %}
   ins_encode %{
     __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
-                           $tmp1$$FloatRegister, $tmp2$$FloatRegister,
-                           $tmp3$$FloatRegister, $tmp4$$FloatRegister,
-                           $result$$Register);
+                           $result$$Register, $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                           $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
+                           $vtmp4$$FloatRegister, $vtmp5$$FloatRegister);
   %}
-  ins_pipe( pipe_slow );
+  ins_pipe(pipe_slow);
 %}
 
 // fast byte[] to char[] inflation
-instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len,
-                        vRegD_V0 tmp1, vRegD_V1 tmp2, vRegD_V2 tmp3, iRegP_R3 tmp4, rFlagsReg cr)
+instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len, iRegP_R3 tmp,
+                        vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                        vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, rFlagsReg cr)
 %{
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3,
+         TEMP vtmp4, TEMP vtmp5, TEMP vtmp6, TEMP tmp,
+         USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
-  format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
+  format %{ "String Inflate $src,$dst # KILL $tmp $src $dst $len V0-V6 cr" %}
   ins_encode %{
     address tpc = __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
-                                        $tmp1$$FloatRegister, $tmp2$$FloatRegister,
-                                        $tmp3$$FloatRegister, $tmp4$$Register);
+                                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                                        $vtmp2$$FloatRegister, $tmp$$Register);
     if (tpc == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
@@ -17063,22 +17358,45 @@ instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
-                          vRegD_V0 Vtmp1, vRegD_V1 Vtmp2,
-                          vRegD_V2 Vtmp3, vRegD_V3 Vtmp4,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
+                          vRegD_V3 vtmp3, vRegD_V4 vtmp4, vRegD_V5 vtmp5,
                           iRegI_R0 result, rFlagsReg cr)
 %{
   predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
-  effect(USE_KILL src, USE_KILL dst, USE_KILL len,
-         KILL Vtmp1, KILL Vtmp2, KILL Vtmp3, KILL Vtmp4, KILL cr);
+  effect(USE_KILL src, USE_KILL dst, USE len, KILL vtmp0, KILL vtmp1,
+         KILL vtmp2, KILL vtmp3, KILL vtmp4, KILL vtmp5, KILL cr);
 
-  format %{ "Encode array $src,$dst,$len -> $result" %}
+  format %{ "Encode ISO array $src,$dst,$len -> $result # KILL $src $dst V0-V5 cr" %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
-         $result$$Register, $Vtmp1$$FloatRegister,  $Vtmp2$$FloatRegister,
-         $Vtmp3$$FloatRegister,  $Vtmp4$$FloatRegister);
+                        $result$$Register, false,
+                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
+                        $vtmp4$$FloatRegister, $vtmp5$$FloatRegister);
   %}
-  ins_pipe( pipe_class_memory );
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct encode_ascii_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
+                            vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
+                            vRegD_V3 vtmp3, vRegD_V4 vtmp4, vRegD_V5 vtmp5,
+                            iRegI_R0 result, rFlagsReg cr)
+%{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(USE_KILL src, USE_KILL dst, USE len, KILL vtmp0, KILL vtmp1,
+         KILL vtmp2, KILL vtmp3, KILL vtmp4, KILL vtmp5, KILL cr);
+
+  format %{ "Encode ASCII array $src,$dst,$len -> $result # KILL $src $dst V0-V5 cr" %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $result$$Register, true,
+                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
+                        $vtmp4$$FloatRegister, $vtmp5$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_memory);
 %}
 
 // ============================================================================

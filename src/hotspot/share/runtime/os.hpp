@@ -366,6 +366,15 @@ class os: AllStatic {
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
+  // Does the platform support trimming the native heap?
+  static bool can_trim_native_heap();
+
+  // Trim the C-heap. Optionally returns working set size change (RSS+Swap) in *rss_change.
+  // Note: If trimming succeeded but no size change information could be obtained,
+  // rss_change.after will contain SIZE_MAX upon return.
+  struct size_change_t { size_t before; size_t after; };
+  static bool trim_native_heap(size_change_t* rss_change = nullptr);
+
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
   // Prints all mappings
@@ -684,12 +693,14 @@ class os: AllStatic {
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
+  static void print_tos_pc(outputStream* st, const void* context);
+  static void print_tos(outputStream* st, address sp);
+  static void print_instructions(outputStream* st, address pc, int unitsize = 1);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
-  static void print_instructions(outputStream* st, address pc, int unitsize);
 
   // helper for output of seconds in days , hours and months
   static void print_dhm(outputStream* st, const char* startStr, long sec);
@@ -886,7 +897,7 @@ class os: AllStatic {
 #ifndef PLATFORM_PRINT_NATIVE_STACK
   // No platform-specific code for printing the native stack.
   static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size) {
+                                          char *buf, int buf_size, address& lastpc) {
     return false;
   }
 #endif

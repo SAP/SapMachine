@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /*
  * @test
  * @library /test/lib
- * @requires vm.flagless
  * @run driver Scimark
  */
 
@@ -39,8 +38,8 @@ import java.util.Map;
 @Artifact(organization = "gov.nist.math", name = "scimark", revision = "2.0", extension = "zip")
 public class Scimark {
     public static void main(String... args) throws Exception {
+        // SapMachine 2018-07-06: Prefer Scimark classpath from system property.
         String sciMark2Cp = System.getProperty("SCIMARK_2_CP");
-
         if (sciMark2Cp == null) {
             Map<String, Path> artifacts;
             try {
@@ -51,11 +50,11 @@ public class Scimark {
             }
             sciMark2Cp = artifacts.get("gov.nist.math.scimark-2.0").toString();
         }
-        OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
+
+        OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createTestJvm(
             "-cp", sciMark2Cp,
             "jnt.scimark2.commandline", "-large")
             .start());
-        System.out.println(output.getOutput());
         output.shouldHaveExitValue(0);
     }
 }

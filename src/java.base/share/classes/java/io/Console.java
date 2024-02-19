@@ -335,8 +335,17 @@ public final class Console implements Flushable
                         else
                             ioe.addSuppressed(x);
                     }
-                    if (ioe != null)
+                    if (ioe != null) {
+                        Arrays.fill(passwd, ' ');
+                        try {
+                            if (reader instanceof LineReader lr) {
+                                lr.zeroOut();
+                            }
+                        } catch (IOException x) {
+                            // ignore
+                        }
                         throw ioe;
+                    }
                 }
                 pw.println();
             }
@@ -445,6 +454,9 @@ public final class Console implements Flushable
             System.arraycopy(rcb, 0, b, 0, len);
             if (zeroOut) {
                 Arrays.fill(rcb, 0, len, ' ');
+                if (reader instanceof LineReader lr) {
+                    lr.zeroOut();
+                }
             }
         }
         return b;
@@ -468,6 +480,11 @@ public final class Console implements Flushable
             cb = new char[1024];
             nextChar = nChars = 0;
             leftoverLF = false;
+        }
+        public void zeroOut() throws IOException {
+            if (in instanceof StreamDecoder sd) {
+                sd.fillZeroToPosition();
+            }
         }
         public void close () {}
         public boolean ready() throws IOException {

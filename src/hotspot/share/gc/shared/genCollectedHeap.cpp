@@ -31,6 +31,7 @@
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/genMarkSweep.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -444,7 +445,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
-  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause());
+  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause(), heap()->is_young_gen(gen) ? "end of minor GC" : "end of major GC");
 
   gen->stat_record()->invocations++;
   gen->stat_record()->accumulated_time.start();
@@ -554,7 +555,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
   if (do_young_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(((DefNewGeneration*)_young_gen)->gc_tracer());
     GCTraceTime(Info, gc) t("Pause Young", NULL, gc_cause(), true);
 
     print_heap_before_gc();
@@ -605,7 +606,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
   if (do_full_collection) {
     GCIdMark gc_id_mark;
-    GCTraceCPUTime tcpu;
+    GCTraceCPUTime tcpu(GenMarkSweep::gc_tracer());
     GCTraceTime(Info, gc) t("Pause Full", NULL, gc_cause(), true);
 
     print_heap_before_gc();

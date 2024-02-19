@@ -27,8 +27,8 @@
  * @bug 8292158
  * @summary AES-CTR cipher state corruption with AVX-512
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbatch
  * -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
@@ -45,7 +45,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Utils;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jtreg.SkippedException;
 
 public class Test8292158 {

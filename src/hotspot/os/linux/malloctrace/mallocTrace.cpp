@@ -37,7 +37,7 @@
 
 #include <malloc.h>
 
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
 
 namespace sap {
 
@@ -375,4 +375,4 @@ void MallocTracer::print_on_error(outputStream* st) {
 
 } // namespace sap
 
-#endif // GLIBC
+#endif // HAVE_GLIBC_MALLOC_HOOKS

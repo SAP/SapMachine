@@ -71,6 +71,7 @@
 #include "runtime/task.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
@@ -93,7 +94,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-// SapMachine 2019-09-01: vitals.
+// SapMachine 2019-09-01: Vitals
 #include "runtime/globals.hpp"
 #include "vitals/vitals.hpp"
 
@@ -354,7 +355,7 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  // SapMachine 2019-09-01: vitals.
+  // SapMachine 2019-09-01: Vitals
   if (DumpVitalsAtExit) {
     sapmachine_vitals::dump_reports();
   }
@@ -409,7 +410,7 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  // SapMachine 2019-09-01: vitals.
+  // SapMachine 2019-09-01: Vitals
   if (DumpVitalsAtExit) {
     sapmachine_vitals::dump_reports();
   }
@@ -493,6 +494,8 @@ void before_exit(JavaThread* thread, bool halt) {
     StringDedup::stop();
   }
 
+  NativeHeapTrimmer::cleanup();
+
   // Stop concurrent GC threads
   Universe::heap()->stop();
 
@@ -517,12 +520,12 @@ void before_exit(JavaThread* thread, bool halt) {
   if (DumpPerfMapAtExit) {
     CodeCache::write_perf_map();
   }
-#ifdef __GLIBC__
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
   // SapMachine 2021-09-01: malloc-trace
   if (PrintMallocTraceAtExit) {
     sap::MallocTracer::print(tty, true);
   }
-#endif // __GLIBC__
+#endif // HAVE_GLIBC_MALLOC_HOOKS
 #endif
 
   if (JvmtiExport::should_post_thread_life()) {
@@ -568,7 +571,7 @@ void before_exit(JavaThread* thread, bool halt) {
     }
   }
 
-  // SapMachine 2021-09-01: shutdown vitals thread
+  // SapMachine 2021-09-01: Shutdown vitals thread
   if (EnableVitals) {
     sapmachine_vitals::cleanup();
   }

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +45,12 @@
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
@@ -63,8 +65,7 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
-
-// SapMachine 2019-02-20 : vitals
+// SapMachine 2019-02-20: Vitals
 #include "vitals/vitals.hpp"
 #ifdef LINUX
 #include "vitals_linux_himemreport.hpp"
@@ -94,6 +95,7 @@ Thread*           VMError::_thread;
 address           VMError::_pc;
 void*             VMError::_siginfo;
 void*             VMError::_context;
+bool              VMError::_print_native_stack_used = false;
 const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
@@ -103,6 +105,8 @@ static const char* env_list[] = {
   // All platforms
   "JAVA_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
   "PATH", "USERNAME",
+
+  "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "FC_LANG", "FONTCONFIG_USE_MMAP",
 
   // Env variables that are defined on Linux/BSD
   "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
@@ -249,6 +253,129 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 #endif // ZERO
 }
 
+/**
+ * Adds `value` to `list` iff it's not already present and there is sufficient
+ * capacity (i.e. length(list) < `list_capacity`). The length of the list
+ * is the index of the first nullptr entry or `list_capacity` if there are
+ * no nullptr entries.
+ *
+ * @ return true if the value was added, false otherwise
+ */
+static bool add_if_absent(address value, address* list, int list_capacity) {
+  for (int i = 0; i < list_capacity; i++) {
+    if (list[i] == value) {
+      return false;
+    }
+    if (list[i] == nullptr) {
+      list[i] = value;
+      if (i + 1 < list_capacity) {
+        list[i + 1] = nullptr;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Prints the VM generated code unit, if any, containing `pc` if it has not already
+ * been printed. If the code unit is an InterpreterCodelet or StubCodeDesc, it is
+ * only printed if `is_crash_pc` is true.
+ *
+ * @param printed array of code units that have already been printed (delimited by NULL entry)
+ * @param printed_capacity the capacity of `printed`
+ * @return true if the code unit was printed, false otherwise
+ */
+static bool print_code(outputStream* st, Thread* thread, address pc, bool is_crash_pc,
+                       address* printed, int printed_capacity) {
+  if (Interpreter::contains(pc)) {
+    if (is_crash_pc) {
+      // The interpreter CodeBlob is very large so try to print the codelet instead.
+      InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+      if (codelet != nullptr) {
+        if (add_if_absent((address) codelet, printed, printed_capacity)) {
+          codelet->print_on(st);
+          Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
+          return true;
+        }
+      }
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != nullptr) {
+      if (is_crash_pc) {
+        if (add_if_absent((address) desc, printed, printed_capacity)) {
+          desc->print_on(st);
+          Disassembler::decode(desc->begin(), desc->end(), st);
+          return true;
+        }
+      }
+    } else if (thread != nullptr) {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != nullptr && add_if_absent((address) cb, printed, printed_capacity)) {
+        // Disassembling nmethod will incur resource memory allocation,
+        // only do so when thread is valid.
+        ResourceMark rm(thread);
+        Disassembler::decode(cb, st);
+        st->cr();
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Like above, but only try to figure out a short name. Return nullptr if not found.
+static const char* find_code_name(address pc) {
+  if (Interpreter::contains(pc)) {
+    InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+    if (codelet != nullptr) {
+      return codelet->description();
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != nullptr) {
+      return desc->name();
+    } else {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != nullptr) {
+        return cb->name();
+      }
+    }
+  }
+  return nullptr;
+}
+
+/**
+ * Gets the caller frame of `fr`.
+ *
+ * @returns an invalid frame (i.e. fr.pc() === 0) if the caller cannot be obtained
+ */
+static frame next_frame(frame fr, Thread* t) {
+  // Compiled code may use EBP register on x86 so it looks like
+  // non-walkable C frame. Use frame.sender() for java frames.
+  frame invalid;
+  if (t != nullptr && t->is_Java_thread()) {
+    // Catch very first native frame by using stack address.
+    // For JavaThread stack_base and stack_size should be set.
+    if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
+      return invalid;
+    }
+    if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
+      RegisterMap map(t->as_Java_thread(), false); // No update
+      return fr.sender(&map);
+    } else {
+      // is_first_C_frame() does only simple checks for frame pointer,
+      // it will pass if java compiled code has a pointer in EBP.
+      if (os::is_first_C_frame(&fr)) return invalid;
+      return os::get_sender_for_C_frame(&fr);
+    }
+  } else {
+    if (os::is_first_C_frame(&fr)) return invalid;
+    return os::get_sender_for_C_frame(&fr);
+  }
+}
+
 void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
 
   // see if it's a valid frame
@@ -266,26 +393,9 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
         }
       }
       st->cr();
-      // Compiled code may use EBP register on x86 so it looks like
-      // non-walkable C frame. Use frame.sender() for java frames.
-      if (t && t->is_Java_thread()) {
-        // Catch very first native frame by using stack address.
-        // For JavaThread stack_base and stack_size should be set.
-        if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
-          break;
-        }
-        if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map(t->as_Java_thread(), false); // No update
-          fr = fr.sender(&map);
-        } else {
-          // is_first_C_frame() does only simple checks for frame pointer,
-          // it will pass if java compiled code has a pointer in EBP.
-          if (os::is_first_C_frame(&fr)) break;
-          fr = os::get_sender_for_C_frame(&fr);
-        }
-      } else {
-        if (os::is_first_C_frame(&fr)) break;
-        fr = os::get_sender_for_C_frame(&fr);
+      fr = next_frame(fr, t);
+      if (fr.pc() == nullptr) {
+        break;
       }
     }
 
@@ -301,7 +411,7 @@ static void print_oom_reasons(outputStream* st) {
   st->print_cr("# Possible reasons:");
   st->print_cr("#   The system is out of physical RAM or swap space");
   if (UseCompressedOops) {
-    st->print_cr("#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap");
+    st->print_cr("#   This process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap");
   }
   if (LogBytesPerWord == 2) {
     st->print_cr("#   In 32 bit mode, the process size limit was hit");
@@ -451,6 +561,10 @@ void VMError::report(outputStream* st, bool _verbose) {
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
 
+  // Native stack trace may get stuck. We try to handle the last pc if it
+  // belongs to VM generated code.
+  address lastpc = nullptr;
+
   BEGIN
 
   STEP("printing fatal error message")
@@ -508,18 +622,14 @@ void VMError::report(outputStream* st, bool _verbose) {
     // to test that resetting the signal handler works correctly.
     if (_verbose && TestSafeFetchInErrorHandler) {
       st->print_cr("Will test SafeFetch...");
-      if (CanUseSafeFetch32()) {
-        int* const invalid_pointer = (int*)segfault_address;
-        const int x = 0x76543210;
-        int i1 = SafeFetch32(invalid_pointer, x);
-        int i2 = SafeFetch32(invalid_pointer, x);
-        if (i1 == x && i2 == x) {
-          st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
-        } else {
-          st->print_cr("??");
-        }
+      int* const invalid_pointer = (int*)segfault_address;
+      const int x = 0x76543210;
+      int i1 = SafeFetch32(invalid_pointer, x);
+      int i2 = SafeFetch32(invalid_pointer, x);
+      if (i1 == x && i2 == x) {
+        st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
       } else {
-        st->print_cr("not possible; skipped.");
+        st->print_cr("??");
       }
     }
 #endif // ASSERT
@@ -537,9 +647,9 @@ void VMError::report(outputStream* st, bool _verbose) {
                                                       "(mprotect) failed to protect ");
            jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
            st->print("%s", buf);
-           st->print(" bytes");
+           st->print(" bytes.");
            if (strlen(_detail_msg) > 0) {
-             st->print(" for ");
+             st->print(" Error detail: ");
              st->print("%s", _detail_msg);
            }
            st->cr();
@@ -747,14 +857,22 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing native stack")
 
    if (_verbose) {
-     if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
+     if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
        // We have printed the native stack in platform-specific code
        // Windows/x64 needs special handling.
+       // Stack walking may get stuck. Try to find the calling code.
+       if (lastpc != nullptr) {
+         const char* name = find_code_name(lastpc);
+         if (name != nullptr) {
+           st->print_cr("The last pc belongs to %s (printed below).", name);
+         }
+       }
      } else {
        frame fr = _context ? os::fetch_frame_from_context(_context)
                            : os::current_frame();
 
        print_native_stack(st, fr, _thread, buf, sizeof(buf));
+       _print_native_stack_used = true;
      }
    }
 
@@ -793,6 +911,14 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP("printing registers")
+
+     // printing registers
+     if (_verbose && _context) {
+       os::print_context(st, _context);
+       st->cr();
+     }
+
   STEP("printing register info")
 
      // decode register contents if possible
@@ -802,11 +928,11 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing registers, top of stack, instructions near pc")
+  STEP("printing top of stack, instructions near pc")
 
-     // registers, top of stack, instructions near pc
+     // printing top of stack, instructions near pc
      if (_verbose && _context) {
-       os::print_context(st, _context);
+       os::print_tos_pc(st, _context);
        st->cr();
      }
 
@@ -829,29 +955,54 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing code blob if possible")
+  STEP("printing code blobs if possible")
 
-     if (_verbose && _context) {
-       CodeBlob* cb = CodeCache::find_blob(_pc);
-       if (cb != NULL) {
-         if (Interpreter::contains(_pc)) {
-           // The interpreter CodeBlob is very large so try to print the codelet instead.
-           InterpreterCodelet* codelet = Interpreter::codelet_containing(_pc);
-           if (codelet != NULL) {
-             codelet->print_on(st);
-             Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
+     if (_verbose) {
+       const int printed_capacity = max_error_log_print_code;
+       address printed[printed_capacity];
+       printed[0] = nullptr;
+       int printed_len = 0;
+       // Even though ErrorLogPrintCodeLimit is ranged checked
+       // during argument parsing, there's no way to prevent it
+       // subsequently (i.e., after parsing) being set to a
+       // value outside the range.
+       int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
+       if (limit > 0) {
+         // Check if a pc was found by native stack trace above.
+         if (lastpc != nullptr) {
+           if (print_code(st, _thread, lastpc, true, printed, printed_capacity)) {
+             printed_len++;
+           }
+         }
+
+         // Scan the native stack
+         if (!_print_native_stack_used) {
+           // Only try to print code of the crashing frame since
+           // the native stack cannot be walked with next_frame.
+           if (print_code(st, _thread, _pc, true, printed, printed_capacity)) {
+             printed_len++;
            }
          } else {
-           StubCodeDesc* desc = StubCodeDesc::desc_for(_pc);
-           if (desc != NULL) {
-             desc->print_on(st);
-             Disassembler::decode(desc->begin(), desc->end(), st);
-           } else if (_thread != NULL) {
-             // Disassembling nmethod will incur resource memory allocation,
-             // only do so when thread is valid.
-             ResourceMark rm(_thread);
-             Disassembler::decode(cb, st);
-             st->cr();
+           frame fr = _context ? os::fetch_frame_from_context(_context)
+                               : os::current_frame();
+           while (printed_len < limit && fr.pc() != nullptr) {
+             if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
+               printed_len++;
+             }
+             fr = next_frame(fr, _thread);
+           }
+         }
+
+         // Scan the Java stack
+         if (_thread != nullptr && _thread->is_Java_thread()) {
+           JavaThread* jt = _thread->as_Java_thread();
+           if (jt->has_last_Java_frame()) {
+             for (StackFrameStream sfs(jt, true /* update */, true /* process_frames */); printed_len < limit && !sfs.is_done(); sfs.next()) {
+               address pc = sfs.current()->pc();
+               if (print_code(st, _thread, pc, pc == _pc, printed, printed_capacity)) {
+                 printed_len++;
+               }
+             }
            }
          }
        }
@@ -1064,9 +1215,17 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("Native Memory Tracking")
      if (_verbose) {
        MemTracker::error_report(st);
+       st->cr();
      }
 
-  // SapMachine 2019-02-20 : vitals
+  STEP("printing periodic trim state")
+
+     if (_verbose) {
+       NativeHeapTrimmer::print_state(st);
+       st->cr();
+     }
+
+  // SapMachine 2019-02-20: Vitals
   STEP("Vitals")
      if (_verbose) {
        sapmachine_vitals::print_info_t info;
@@ -1119,7 +1278,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      }
 
   // SapMachine 2021-09-01: malloc-trace
-#if defined(LINUX) && defined(__GLIBC__)
+#if defined(LINUX) && defined(HAVE_GLIBC_MALLOC_HOOKS)
   STEP("printing Malloc Trace info")
 
     if (_verbose) {
@@ -1277,8 +1436,14 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Native Memory Tracking")
 
   MemTracker::error_report(st);
+  st->cr();
 
-  // SapMachine 2019-02-20 : vitals
+  // STEP("printing periodic trim state")
+  NativeHeapTrimmer::print_state(st);
+  st->cr();
+
+
+  // SapMachine 2019-02-20: Vitals
   // STEP("Vitals")
   sapmachine_vitals::print_info_t info;
   sapmachine_vitals::default_settings(&info);
@@ -1294,8 +1459,6 @@ void VMError::print_vm_info(outputStream* st) {
 #endif // LINUX
 
   // STEP("printing system")
-
-  st->cr();
   st->print_cr("---------------  S Y S T E M  ---------------");
   st->cr();
 
@@ -1319,7 +1482,7 @@ void VMError::print_vm_info(outputStream* st) {
   st->print_cr("vm_info: %s", VM_Version::internal_vm_info_string());
   st->cr();
 
-#if defined(LINUX) && defined(__GLIBC__)
+#if defined(LINUX) && defined(HAVE_GLIBC_MALLOC_HOOKS)
   // SapMachine 2021-09-01: malloc-trace
   st->print_cr("sapmachine malloc trace");
   sap::MallocTracer::print_on_error(st);
@@ -1657,6 +1820,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
           int e = errno;
           out.print_raw("#\n# Can't open file to dump replay data. Error: ");
           out.print_raw_cr(os::strerror(e));
+          close(fd);
         }
       }
     }
@@ -1775,43 +1939,68 @@ void VMError::show_message_box(char *buf, int buflen) {
   } while (yes);
 }
 
-// Timeout handling: check if a timeout happened (either a single step did
-// timeout or the whole of error reporting hit ErrorLogTimeout). Interrupt
-// the reporting thread if that is the case.
+// Fatal error handling is subject to several timeouts:
+// - a global timeout (controlled via ErrorLogTimeout)
+// - local error reporting step timeouts.
+//
+// The latter aims to "give the JVM a kick" if it gets stuck in one particular place during
+// error reporting. This prevents one error reporting step from hogging all the time allotted
+// to error reporting under ErrorLogTimeout.
+//
+// VMError::check_timeout() is called from the watcher thread and checks for either global
+// or step timeout. If a timeout happened, we interrupt the reporting thread and set either
+// _reporting_did_timeout or _step_did_timeout to signal which timeout fired. Function returns
+// true if the *global* timeout fired, which will cause WatcherThread to shut down the JVM
+// immediately.
 bool VMError::check_timeout() {
+
+  // This function is supposed to be called from watcher thread during fatal error handling only.
+  assert(VMError::is_error_reported(), "Only call during error handling");
+  assert(Thread::current()->is_Watcher_thread(), "Only call from watcher thread");
 
   if (ErrorLogTimeout == 0) {
     return false;
   }
 
-  // Do not check for timeouts if we still have a message box to show to the
-  // user or if there are OnError handlers to be run.
-  if (ShowMessageBoxOnError
-      || (OnError != NULL && OnError[0] != '\0')
-      || Arguments::abort_hook() != NULL) {
-    return false;
-  }
+  // There are three situations where we suppress the *global* error timeout:
+  // - if the JVM is embedded and the launcher has its abort hook installed.
+  //   That must be allowed to run.
+  // - if the user specified one or more OnError commands to run, and these
+  //   did not yet run. These must have finished.
+  // - if the user (typically developer) specified ShowMessageBoxOnError,
+  //   and the error box has not yet been shown
+  const bool ignore_global_timeout =
+      (ShowMessageBoxOnError
+            || (OnError != nullptr && OnError[0] != '\0')
+            || Arguments::abort_hook() != nullptr);
 
-  const jlong reporting_start_time_l = get_reporting_start_time();
   const jlong now = get_current_timestamp();
-  // Timestamp is stored in nanos.
-  if (reporting_start_time_l > 0) {
-    const jlong end = reporting_start_time_l + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
-    if (end <= now && !_reporting_did_timeout) {
-      // We hit ErrorLogTimeout and we haven't interrupted the reporting
-      // thread yet.
-      _reporting_did_timeout = true;
-      interrupt_reporting_thread();
-      return true; // global timeout
+
+  // Global timeout hit?
+  if (!ignore_global_timeout) {
+    const jlong reporting_start_time = get_reporting_start_time();
+    // Timestamp is stored in nanos.
+    if (reporting_start_time > 0) {
+      const jlong end = reporting_start_time + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
+      if (end <= now && !_reporting_did_timeout) {
+        // We hit ErrorLogTimeout and we haven't interrupted the reporting
+        // thread yet.
+        _reporting_did_timeout = true;
+        interrupt_reporting_thread();
+        return true; // global timeout
+      }
     }
   }
 
-  const jlong step_start_time_l = get_step_start_time();
-  if (step_start_time_l > 0) {
+  // Reporting step timeout?
+  const jlong step_start_time = get_step_start_time();
+  if (step_start_time > 0) {
     // A step times out after a quarter of the total timeout. Steps are mostly fast unless they
     // hang for some reason, so this simple rule allows for three hanging step and still
     // hopefully leaves time enough for the rest of the steps to finish.
-    const jlong end = step_start_time_l + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4;
+    const int max_step_timeout_secs = 5;
+    const jlong timeout_duration = MAX2((jlong)max_step_timeout_secs, (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4);
+    const jlong end = step_start_time + timeout_duration;
     if (end <= now && !_step_did_timeout) {
       // The step timed out and we haven't interrupted the reporting
       // thread yet.

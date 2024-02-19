@@ -64,7 +64,7 @@
 #include "malloctrace/mallocTraceDCmd.hpp"
 #endif
 
-// SapMachine 2019-02-20 : vitals
+// SapMachine 2019-02-20: Vitals
 #include "vitals/vitalsDCmd.hpp"
 
 static void loadAgentModule(TRAPS) {
@@ -101,7 +101,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sapmachine_vitals::VitalsDCmd>(full_export, true, false));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));

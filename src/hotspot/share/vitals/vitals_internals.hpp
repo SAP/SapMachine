@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -61,6 +61,12 @@ namespace sapmachine_vitals {
 
   class ColumnList;
 
+  enum Extremum {
+    NONE,
+    MAX,
+    MIN
+  };
+
   class Column: public CHeapObj<mtInternal> {
     friend class ColumnList;
 
@@ -68,6 +74,7 @@ namespace sapmachine_vitals {
     const char* const _header; // optional. May be NULL.
     const char* const _name;
     const char* const _description;
+    const Extremum    _extremum;
 
     // The following members are fixed by ColumnList when the Column is added to it.
     Column* _next;  // next column in table
@@ -80,7 +87,7 @@ namespace sapmachine_vitals {
 
   protected:
 
-    Column(const char* category, const char* header, const char* name, const char* description);
+    Column(const char* category, const char* header, const char* name, const char* description, Extremum extremum);
 
     // Child classes implement this.
     // output stream can be NULL; in that case, method shall return number of characters it would have printed.
@@ -93,9 +100,10 @@ namespace sapmachine_vitals {
     const char* header() const        { return _header; }
     const char* name() const          { return _name; }
     const char* description() const   { return _description; }
+    Extremum    extremum() const      { return _extremum; }
 
     void print_value(outputStream* os, value_t value, value_t last_value,
-        int last_value_age, int min_width, const print_info_t* pi) const;
+        int last_value_age, int min_width, const print_info_t* pi, char const* marker) const;
 
     // Returns the number of characters this value needs to be printed.
     int calc_print_size(value_t value, value_t last_value,
@@ -110,6 +118,7 @@ namespace sapmachine_vitals {
 
     virtual bool is_memory_size() const   { return false; }
 
+    static Extremum extremum_default()    { return NONE; }
   };
 
   // Some standard column types
@@ -118,8 +127,8 @@ namespace sapmachine_vitals {
     int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
-    PlainValueColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+    PlainValueColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+      : Column(category, header, name, description, extremum)
     {}
   };
 
@@ -128,8 +137,8 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     // only_positive: only positive deltas are shown, negative deltas are supressed
-    DeltaValueColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+    DeltaValueColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+      : Column(category, header, name, description, extremum)
     {}
   };
 
@@ -137,18 +146,19 @@ namespace sapmachine_vitals {
     int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
-    MemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+    MemorySizeColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+      : Column(category, header, name, description, extremum)
     {}
     bool is_memory_size() const { return true; }
+    static Extremum extremum_default() { return MAX; }
   };
 
   class DeltaMemorySizeColumn: public Column {
     int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
-    DeltaMemorySizeColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+    DeltaMemorySizeColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+      : Column(category, header, name, description, extremum)
     {}
   };
 
@@ -156,8 +166,8 @@ namespace sapmachine_vitals {
     int do_print0(outputStream* os, value_t value, value_t last_value,
         int last_value_age, const print_info_t* pi) const;
   public:
-    TimeStampColumn(const char* category, const char* header, const char* name, const char* description)
-      : Column(category, header, name, description)
+    TimeStampColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+      : Column(category, header, name, description, extremum)
     {}
   };
 
@@ -169,12 +179,14 @@ namespace sapmachine_vitals {
     static Legend* _the_legend;
     // needed during building the legend
     const char* _last_added_cat;
+    int _nr_of_columns;
   public:
     Legend();
     void add_column_info(const char* const category, const char* const header,
                          const char* const name, const char* const description);
     void add_footnote(const char* text);
     void print_on(outputStream* st) const;
+    int nr_of_columns() { return _nr_of_columns; }
     static Legend* the_legend () { return _the_legend; }
     static bool initialize();
   };
@@ -218,11 +230,11 @@ namespace sapmachine_vitals {
   Column* define_column (
       const char* const category, const char* const header,
       const char* const name, const char* const description,
-      bool is_active)
+      bool is_active, Extremum extremum = ColumnType::extremum_default())
   {
     Column* c = NULL;
     if (is_active) {
-      c = new ColumnType(category, header, name, description);
+      c = new ColumnType(category, header, name, description, extremum);
       ColumnList::the_list()->add_column(c);
     }
     Legend::the_legend()->add_column_info(category, header, name, description);

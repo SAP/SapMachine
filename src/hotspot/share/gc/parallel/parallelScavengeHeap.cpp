@@ -150,8 +150,8 @@ void ParallelScavengeHeap::initialize_serviceability() {
                                    "PS Old Gen",
                                    true /* support_usage_threshold */);
 
-  _young_manager = new GCMemoryManager("PS Scavenge", "end of minor GC");
-  _old_manager = new GCMemoryManager("PS MarkSweep", "end of major GC");
+  _young_manager = new GCMemoryManager("PS Scavenge");
+  _old_manager = new GCMemoryManager("PS MarkSweep");
 
   _old_manager->add_pool(_eden_pool);
   _old_manager->add_pool(_survivor_pool);
@@ -588,7 +588,7 @@ void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
   }
 }
 
-class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
+class PSScavengeParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   ParallelScavengeHeap*  _heap;
   HeapBlockClaimer      _claimer;
@@ -603,7 +603,7 @@ public:
   }
 };
 
-ParallelObjectIterator* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
+ParallelObjectIteratorImpl* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
   return new PSScavengeParallelObjectIterator();
 }
 

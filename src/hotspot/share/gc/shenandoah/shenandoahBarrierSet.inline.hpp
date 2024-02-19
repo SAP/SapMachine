@@ -70,7 +70,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
 
   if (load_addr != NULL && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
-    ShenandoahHeap::cas_oop(fwd, load_addr, obj);
+    ShenandoahHeap::atomic_update_oop(fwd, load_addr, obj);
   }
 
   return fwd;
@@ -125,7 +125,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   oop fwd = load_reference_barrier(obj);
   if (ShenandoahSelfFixing && load_addr != NULL && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
-    ShenandoahHeap::cas_oop(fwd, load_addr, obj);
+    ShenandoahHeap::atomic_update_oop(fwd, load_addr, obj);
   }
 
   return fwd;
@@ -241,7 +241,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
-inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
+inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_common(T* addr, oop value) {
   shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress());
   shenandoah_assert_not_in_cset_if(addr, value, value != NULL && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
@@ -252,12 +252,17 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
+inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
+  oop_store_common(addr, value);
+}
+
+template <DecoratorSet decorators, typename BarrierSetT>
+template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_in_heap(T* addr, oop value) {
   shenandoah_assert_not_in_cset_loc_except(addr, ShenandoahHeap::heap()->cancelled_gc());
   shenandoah_assert_not_forwarded_except  (addr, value, value == NULL || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
-  shenandoah_assert_not_in_cset_except    (addr, value, value == NULL || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
 
-  oop_store_not_in_heap(addr, value);
+  oop_store_common(addr, value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -353,7 +358,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
           fwd = _heap->evacuate_object(obj, thread);
         }
         assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
-        oop witness = ShenandoahHeap::cas_oop(fwd, elem_ptr, o);
+        ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
         obj = fwd;
       }
       if (ENQUEUE && !ctx->is_marked_strong(obj)) {

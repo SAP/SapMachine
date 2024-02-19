@@ -625,7 +625,7 @@ JNI_ENTRY(void, jni_FatalError(JNIEnv *env, const char *msg))
   HOTSPOT_JNI_FATALERROR_ENTRY(env, (char *) msg);
 
   tty->print_cr("FATAL ERROR in native method: %s", msg);
-  thread->print_stack();
+  thread->print_jni_stack();
   os::abort(); // Dump core and abort
 JNI_END
 
@@ -929,6 +929,11 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       Klass* k = h_recv->klass();
       selected_method = InstanceKlass::cast(k)->method_at_itable(holder, itbl_index, CHECK);
     }
+  }
+
+  if (selected_method->is_abstract()) {
+    ResourceMark rm(THREAD);
+    THROW_MSG(vmSymbols::java_lang_AbstractMethodError(), selected_method->name()->as_C_string());
   }
 
   methodHandle method(THREAD, selected_method);
@@ -2234,7 +2239,7 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
   if (s_value != NULL) {
     size_t length = java_lang_String::utf8_length(java_string, s_value);
     /* JNI Specification states return NULL on OOM */
-    result = AllocateHeap(length + 1, mtInternal, 0, AllocFailStrategy::RETURN_NULL);
+    result = AllocateHeap(length + 1, mtInternal, AllocFailStrategy::RETURN_NULL);
     if (result != NULL) {
       java_lang_String::as_utf8_string(java_string, s_value, result, (int) length + 1);
       if (isCopy != NULL) {
@@ -2918,7 +2923,7 @@ JNI_ENTRY(jweak, jni_NewWeakGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWWEAKGLOBALREF_ENTRY(env, ref);
   Handle ref_handle(thread, JNIHandles::resolve(ref));
   jweak ret = JNIHandles::make_weak_global(ref_handle, AllocFailStrategy::RETURN_NULL);
-  if (ret == NULL) {
+  if (ret == NULL && ref_handle.not_null()) {
     THROW_OOP_(Universe::out_of_memory_error_c_heap(), NULL);
   }
   HOTSPOT_JNI_NEWWEAKGLOBALREF_RETURN(ret);

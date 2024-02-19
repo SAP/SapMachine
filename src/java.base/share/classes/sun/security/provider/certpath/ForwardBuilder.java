@@ -48,7 +48,6 @@ import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import static sun.security.x509.PKIXExtensions.*;
-import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 
@@ -259,14 +258,6 @@ class ForwardBuilder extends Builder {
             caSelector.setSubject(currentState.issuerDN);
 
             /*
-             * Match on subjectNamesTraversed (both DNs and AltNames)
-             * (checks that current cert's name constraints permit it
-             * to certify all the DNs and AltNames that have been traversed)
-             */
-            CertPathHelper.setPathToNames
-                (caSelector, currentState.subjectNamesTraversed);
-
-            /*
              * check the validity period
              */
             caSelector.setValidityPeriod(currentState.cert.getNotBefore(),
@@ -345,8 +336,11 @@ class ForwardBuilder extends Builder {
         }
     }
 
+    // Thread-local gate to prevent recursive provider lookups
+    private static ThreadLocal<Object> gate = new ThreadLocal<>();
+
     /**
-     * Download Certificates from the given AIA and add them to the
+     * Download certificates from the given AIA and add them to the
      * specified Collection.
      */
     // cs.getCertificates(caSelector) returns a collection of X509Certificate's
@@ -358,32 +352,47 @@ class ForwardBuilder extends Builder {
         if (Builder.USE_AIA == false) {
             return false;
         }
+
         List<AccessDescription> adList = aiaExt.getAccessDescriptions();
         if (adList == null || adList.isEmpty()) {
             return false;
         }
 
-        boolean add = false;
-        for (AccessDescription ad : adList) {
-            CertStore cs = URICertStore.getInstance(ad);
-            if (cs != null) {
-                try {
-                    if (certs.addAll((Collection<X509Certificate>)
-                        cs.getCertificates(caSelector))) {
-                        add = true;
-                        if (!searchAllCertStores) {
-                            return true;
+        if (gate.get() != null) {
+            // Avoid recursive fetching of certificates
+            if (debug != null) {
+                debug.println("Recursive fetching of certs via the AIA " +
+                    "extension detected");
+            }
+            return false;
+        }
+
+        gate.set(gate);
+        try {
+            boolean add = false;
+            for (AccessDescription ad : adList) {
+                CertStore cs = URICertStore.getInstance(ad);
+                if (cs != null) {
+                    try {
+                        if (certs.addAll((Collection<X509Certificate>)
+                            cs.getCertificates(caSelector))) {
+                            add = true;
+                            if (!searchAllCertStores) {
+                                return true;
+                            }
                         }
-                    }
-                } catch (CertStoreException cse) {
-                    if (debug != null) {
-                        debug.println("exception getting certs from CertStore:");
-                        cse.printStackTrace();
+                    } catch (CertStoreException cse) {
+                        if (debug != null) {
+                            debug.println("exception getting certs from CertStore:");
+                            cse.printStackTrace();
+                        }
                     }
                 }
             }
+            return add;
+        } finally {
+            gate.set(null);
         }
-        return add;
     }
 
     /**
@@ -704,19 +713,6 @@ class ForwardBuilder extends Builder {
         // Don't bother to verify untrusted certificate more.
         currState.untrustedChecker.check(cert, Collections.<String>emptySet());
 
-        /*
-         * Abort if we encounter the same certificate or a certificate with
-         * the same public key, subject DN, and subjectAltNames as a cert
-         * that is already in path.
-         */
-        for (X509Certificate cpListCert : certPathList) {
-            if (repeated(cpListCert, cert)) {
-                throw new CertPathValidatorException(
-                    "cert with repeated subject, public key, and " +
-                    "subjectAltNames detected");
-            }
-        }
-
         /* check if trusted cert */
         boolean isTrustedCert = trustedCerts.contains(cert);
 
@@ -791,49 +787,6 @@ class ForwardBuilder extends Builder {
              * Check keyUsage extension
              */
             KeyChecker.verifyCAKeyUsage(cert);
-        }
-    }
-
-    /**
-     * Return true if two certificates are equal or have the same subject,
-     * public key, and subject alternative names.
-     */
-    private static boolean repeated(
-            X509Certificate currCert, X509Certificate nextCert) {
-        if (currCert.equals(nextCert)) {
-            return true;
-        }
-        return (currCert.getSubjectX500Principal().equals(
-            nextCert.getSubjectX500Principal()) &&
-            currCert.getPublicKey().equals(nextCert.getPublicKey()) &&
-            altNamesEqual(currCert, nextCert));
-    }
-
-    /**
-     * Return true if two certificates have the same subject alternative names.
-     */
-    private static boolean altNamesEqual(
-            X509Certificate currCert, X509Certificate nextCert) {
-        X509CertImpl curr, next;
-        try {
-            curr = X509CertImpl.toImpl(currCert);
-            next = X509CertImpl.toImpl(nextCert);
-        } catch (CertificateException ce) {
-            return false;
-        }
-
-        SubjectAlternativeNameExtension currAltNameExt =
-            curr.getSubjectAlternativeNameExtension();
-        SubjectAlternativeNameExtension nextAltNameExt =
-            next.getSubjectAlternativeNameExtension();
-        if (currAltNameExt != null) {
-            if (nextAltNameExt == null) {
-                return false;
-            }
-            return Arrays.equals(currAltNameExt.getExtensionValue(),
-                nextAltNameExt.getExtensionValue());
-        } else {
-            return (nextAltNameExt == null);
         }
     }
 

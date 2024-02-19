@@ -122,6 +122,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
+
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
@@ -280,6 +281,7 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
@@ -287,12 +289,12 @@ private:
   ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
 
 public:
   char gc_state() const;
-  static address gc_state_addr();
+  void set_gc_state_all_threads();
+  bool has_gc_state_changed() { return _gc_state_changed; }
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
@@ -479,7 +481,7 @@ public:
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
   // Parallel heap iteration support
-  virtual ParallelObjectIterator* parallel_object_iterator(uint workers);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint workers);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);
@@ -630,9 +632,17 @@ public:
   template <class T>
   inline void update_with_forwarded(T* p);
 
-  static inline oop cas_oop(oop n, narrowOop* addr, oop c);
-  static inline oop cas_oop(oop n, oop* addr, oop c);
-  static inline oop cas_oop(oop n, narrowOop* addr, narrowOop c);
+  static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline bool atomic_update_oop_check(oop update,       oop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline void atomic_clear_oop(      oop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
   void trash_humongous_region_at(ShenandoahHeapRegion *r);
 

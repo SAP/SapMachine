@@ -54,7 +54,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -485,26 +485,10 @@ void os::initialize_jdk_signal_support(TRAPS) {
                             thread_oop,
                             CHECK);
 
-    { MutexLocker mu(THREAD, Threads_lock);
-      JavaThread* signal_thread = new JavaThread(&signal_thread_entry);
+    JavaThread* thread = new JavaThread(&signal_thread_entry);
+    JavaThread::vm_exit_on_osthread_failure(thread);
 
-      // At this point it may be possible that no osthread was created for the
-      // JavaThread due to lack of memory. We would have to throw an exception
-      // in that case. However, since this must work and we do not allow
-      // exceptions anyway, check and abort if this fails.
-      if (signal_thread == NULL || signal_thread->osthread() == NULL) {
-        vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                      os::native_thread_creation_failed_msg());
-      }
-
-      java_lang_Thread::set_thread(thread_oop(), signal_thread);
-      java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-      java_lang_Thread::set_daemon(thread_oop());
-
-      signal_thread->set_threadObj(thread_oop());
-      Threads::add(signal_thread);
-      Thread::start(signal_thread);
-    }
+    JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
   }
 }
 
@@ -685,23 +669,19 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return NULL;
   }
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-  const size_t nmt_overhead =
-      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
-
-  const size_t outer_size = size + nmt_overhead;
+  const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
   // Check for overflow.
   if (outer_size < size) {
     return NULL;
   }
 
-  void* const outer_ptr = (u_char*)::malloc(outer_size);
+  void* const outer_ptr = ::malloc(outer_size);
   if (outer_ptr == NULL) {
     return NULL;
   }
 
-  void* inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack, level);
+  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
   DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
@@ -740,19 +720,17 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return NULL;
   }
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-  const size_t nmt_overhead =
-      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
-
-  const size_t new_outer_size = size + nmt_overhead;
+  const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
 
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock, level);
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
 
   void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);
+  if (new_outer_ptr == NULL) {
+    return NULL;
+  }
 
-  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack, level);
+  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
   DEBUG_ONLY(break_if_ptr_caught(new_inner_ptr);)
 
@@ -773,10 +751,9 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock, level);
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
+
   ::free(old_outer_ptr);
 }
 
@@ -979,6 +956,11 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
 }
 
+void os::print_tos(outputStream* st, address sp) {
+  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
+  print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
+}
+
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
   print_hex_dump(st, pc - 256, pc + 256, unitsize);
@@ -1089,11 +1071,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 // Check if pointer can be read from (4-byte read access).
 // Helps to prove validity of a not-NULL pointer.
 // Returns true in very early stages of VM life when stub is not yet generated.
-#define SAFEFETCH_DEFAULT true
 bool os::is_readable_pointer(const void* p) {
-  if (!CanUseSafeFetch32()) {
-    return SAFEFETCH_DEFAULT;
-  }
   int* const aligned = (int*) align_down((intptr_t)p, 4);
   int cafebabe = 0xcafebabe;  // tester value 1
   int deadbeef = 0xdeadbeef;  // tester value 2

@@ -506,19 +506,9 @@ bool SafepointSynchronize::is_cleanup_needed() {
   return false;
 }
 
-class ParallelSPCleanupThreadClosure : public ThreadClosure {
-public:
-  void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      StackWatermarkSet::start_processing(thread->as_Java_thread(), StackWatermarkKind::gc);
-    }
-  }
-};
-
-class ParallelSPCleanupTask : public AbstractGangTask {
+class ParallelCleanupTask : public AbstractGangTask {
 private:
   SubTasksDone _subtasks;
-  uint _num_workers;
   bool _do_lazy_roots;
 
   class Tracer {
@@ -538,32 +528,40 @@ private:
   };
 
 public:
-  ParallelSPCleanupTask(uint num_workers) :
+  ParallelCleanupTask() :
     AbstractGangTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _num_workers(num_workers),
     _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
+  uint expected_num_workers() const {
+    uint workers = 0;
+
+    if (SymbolTable::rehash_table_expects_safepoint_rehashing()) {
+      workers++;
+    }
+
+    if (StringTable::rehash_table_expects_safepoint_rehashing()) {
+      workers++;
+    }
+
+    if (Dictionary::does_any_dictionary_needs_resizing()) {
+      workers++;
+    }
+
+    if (InlineCacheBuffer::needs_update_inline_caches()) {
+      workers++;
+    }
+
+    if (_do_lazy_roots) {
+      workers++;
+    }
+
+    return MAX2<uint>(1, workers);
+  }
+
   void work(uint worker_id) {
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      if (_do_lazy_roots) {
-        Tracer t("lazy partial thread root processing");
-        ParallelSPCleanupThreadClosure cl;
-        Threads::threads_do(&cl);
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
-      Tracer t("updating inline caches");
-      InlineCacheBuffer::update_inline_caches();
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
-      Tracer t("compilation policy safepoint handler");
-      CompilationPolicy::do_safepoint_work();
-    }
-
+    // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
       if (SymbolTable::needs_rehashing()) {
         Tracer t("rehashing symbol table");
@@ -585,6 +583,25 @@ public:
       }
     }
 
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      if (_do_lazy_roots) {
+        Tracer t("lazy partial thread root processing");
+        class LazyRootClosure : public ThreadClosure {
+        public:
+          void do_thread(Thread* thread) {
+            StackWatermarkSet::start_processing(thread->as_Java_thread(), StackWatermarkKind::gc);
+          }
+        };
+        LazyRootClosure cl;
+        Threads::java_threads_do(&cl);
+      }
+    }
+
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
+      Tracer t("updating inline caches");
+      InlineCacheBuffer::update_inline_caches();
+    }
+
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
       // Don't bother reporting event or time for this very short operation.
       // To have any utility we'd also want to report whether needed.
@@ -602,15 +619,15 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "heap not initialized yet?");
+  ParallelCleanupTask cleanup;
   WorkGang* cleanup_workers = heap->safepoint_workers();
-  if (cleanup_workers != NULL) {
+  const uint expected_num_workers = cleanup.expected_num_workers();
+  if (cleanup_workers != nullptr && expected_num_workers > 1) {
     // Parallel cleanup using GC provided thread pool.
-    uint num_cleanup_workers = cleanup_workers->active_workers();
-    ParallelSPCleanupTask cleanup(num_cleanup_workers);
-    cleanup_workers->run_task(&cleanup);
+    const uint num_workers = MIN2(expected_num_workers, cleanup_workers->active_workers());
+    cleanup_workers->run_task(&cleanup, num_workers);
   } else {
     // Serial cleanup using VMThread.
-    ParallelSPCleanupTask cleanup(1);
     cleanup.work(0);
   }
 
@@ -1011,6 +1028,7 @@ int SafepointTracing::_nof_running = 0;
 int SafepointTracing::_page_trap = 0;
 VM_Operation::VMOp_Type SafepointTracing::_current_type;
 jlong     SafepointTracing::_max_sync_time = 0;
+jlong     SafepointTracing::_max_cleanup_time = 0;
 jlong     SafepointTracing::_max_vmop_time = 0;
 uint64_t  SafepointTracing::_op_count[VM_Operation::VMOp_Terminating] = {0};
 
@@ -1080,6 +1098,8 @@ void SafepointTracing::statistics_exit_log() {
 
   log_info(safepoint, stats)("Maximum sync time  " INT64_FORMAT" ns",
                               (int64_t)(_max_sync_time));
+  log_info(safepoint, stats)("Maximum cleanup time  " INT64_FORMAT" ns",
+                              (int64_t)(_max_cleanup_time));
   log_info(safepoint, stats)("Maximum vm operation time (except for Exit VM operation)  "
                               INT64_FORMAT " ns",
                               (int64_t)(_max_vmop_time));
@@ -1118,6 +1138,9 @@ void SafepointTracing::end() {
   if (_max_sync_time < (_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns)) {
     _max_sync_time = _last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns;
   }
+  if (_max_cleanup_time < (_last_safepoint_cleanup_time_ns - _last_safepoint_sync_time_ns)) {
+    _max_cleanup_time = _last_safepoint_cleanup_time_ns - _last_safepoint_sync_time_ns;
+  }
   if (_max_vmop_time < (_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns)) {
     _max_vmop_time = _last_safepoint_end_time_ns - _last_safepoint_sync_time_ns;
   }
@@ -1129,14 +1152,16 @@ void SafepointTracing::end() {
      "Safepoint \"%s\", "
      "Time since last: " JLONG_FORMAT " ns, "
      "Reaching safepoint: " JLONG_FORMAT " ns, "
+     "Cleanup: " JLONG_FORMAT " ns, "
      "At safepoint: " JLONG_FORMAT " ns, "
      "Total: " JLONG_FORMAT " ns",
       VM_Operation::name(_current_type),
       _last_app_time_ns,
-      _last_safepoint_cleanup_time_ns - _last_safepoint_begin_time_ns,
+      _last_safepoint_sync_time_ns    - _last_safepoint_begin_time_ns,
+      _last_safepoint_cleanup_time_ns - _last_safepoint_sync_time_ns,
       _last_safepoint_end_time_ns     - _last_safepoint_cleanup_time_ns,
       _last_safepoint_end_time_ns     - _last_safepoint_begin_time_ns
      );
 
-  RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_cleanup_time_ns);
+  RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);
 }

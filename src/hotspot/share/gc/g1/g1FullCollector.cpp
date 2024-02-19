@@ -112,9 +112,10 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool explicit_gc,
                                  bool clear_soft_refs,
-                                 bool do_maximum_compaction) :
+                                 bool do_maximum_compaction,
+                                 G1FullGCTracer* tracer) :
     _heap(heap),
-    _scope(heap->g1mm(), explicit_gc, clear_soft_refs, do_maximum_compaction),
+    _scope(heap->g1mm(), explicit_gc, clear_soft_refs, do_maximum_compaction, tracer),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
@@ -171,9 +172,6 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->print_heap_before_gc();
-  _heap->print_heap_regions();
-
   _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
 
@@ -229,7 +227,7 @@ void G1FullCollector::complete_collection() {
 
   _heap->verify_after_full_collection();
 
-  _heap->print_heap_after_full_collection(scope()->heap_transition());
+  _heap->print_heap_after_full_collection();
 }
 
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
@@ -304,7 +302,10 @@ void G1FullCollector::phase1_mark_live_objects() {
     _heap->complete_cleaning(&_is_alive, purged_class);
   }
 
-  scope()->tracer()->report_object_count_after_gc(&_is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) debug("Report Object Count", scope()->timer());
+    scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
+  }
 }
 
 void G1FullCollector::phase2_prepare_compaction() {

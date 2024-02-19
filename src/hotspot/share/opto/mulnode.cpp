@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,30 @@ Node* MulNode::Identity(PhaseGVN* phase) {
 Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
-  Node* progress = NULL;        // Progress flag
+  Node* progress = nullptr;        // Progress flag
+
+  // This code is used by And nodes too, but some conversions are
+  // only valid for the actual Mul nodes.
+  uint op = Opcode();
+  bool real_mul = (op == Op_MulI) || (op == Op_MulL) ||
+                  (op == Op_MulF) || (op == Op_MulD);
+
+  // Convert "(-a)*(-b)" into "a*b".
+  if (real_mul && in1->is_Sub() && in2->is_Sub()) {
+    if (phase->type(in1->in(1))->is_zero_type() &&
+        phase->type(in2->in(1))->is_zero_type()) {
+      set_req(1, in1->in(2));
+      set_req(2, in2->in(2));
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn) {
+        igvn->_worklist.push(in1);
+        igvn->_worklist.push(in2);
+      }
+      in1 = in(1);
+      in2 = in(2);
+      progress = this;
+    }
+  }
 
   // convert "max(a,b) * min(a,b)" into "a*b".
   if ((in(1)->Opcode() == max_opcode() && in(2)->Opcode() == min_opcode())
@@ -107,11 +130,10 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // If the right input is a constant, and the left input is a product of a
   // constant, flatten the expression tree.
-  uint op = Opcode();
   if( t2->singleton() &&        // Right input is a constant?
       op != Op_MulF &&          // Float & double cannot reassociate
       op != Op_MulD ) {
-    if( t2 == Type::TOP ) return NULL;
+    if( t2 == Type::TOP ) return nullptr;
     Node *mul1 = in(1);
 #ifdef ASSERT
     // Check for dead loop
@@ -214,8 +236,8 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now we have a constant Node on the right and the constant in con
-  if (con == 0) return NULL;   // By zero is handled by Value call
-  if (con == 1) return NULL;   // By one  is handled by Identity call
+  if (con == 0) return nullptr;   // By zero is handled by Value call
+  if (con == 1) return nullptr;   // By one  is handled by Identity call
 
   // Check for negative constant; if so negate the final result
   bool sign_flip = false;
@@ -226,7 +248,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Get low bit; check for being the only bit
-  Node *res = NULL;
+  Node *res = nullptr;
   unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
@@ -320,7 +342,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Get low bit; check for being the only bit
-  Node *res = NULL;
+  Node *res = nullptr;
   julong bit1 = abs_con & (0-abs_con);      // Extract low bit
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
@@ -474,7 +496,7 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     int con = t2->get_con();
     // Masking off high bits which are always zero is useless.
     const TypeInt* t1 = phase->type(in(1))->isa_int();
-    if (t1 != NULL && t1->_lo >= 0) {
+    if (t1 != nullptr && t1->_lo >= 0) {
       jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
       if ((t1_support & con) == t1_support)
         return in1;
@@ -597,7 +619,7 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     jlong con = t2->get_con();
     // Masking off high bits which are always zero is useless.
     const TypeLong* t1 = phase->type( in(1) )->isa_long();
-    if (t1 != NULL && t1->_lo >= 0) {
+    if (t1 != nullptr && t1->_lo >= 0) {
       int bit_count = log2i_graceful(t1->_hi) + 1;
       jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
       if ((t1_support & con) == t1_support)
@@ -665,7 +687,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
   const TypeInt* tcount = phase->type(shiftNode->in(2))->isa_int();
-  if (tcount != NULL && tcount->is_con()) {
+  if (tcount != nullptr && tcount->is_con()) {
     *count = tcount->get_con();
     return true;
   }
@@ -709,7 +731,7 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
 Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // Left input is an add of a constant?
@@ -755,7 +777,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeInt::make( bits_mask ) )
     return new LShiftINode( add1->in(1), in(2) );
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -822,7 +844,7 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
 Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaLong);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // Left input is an add of a constant?
@@ -865,7 +887,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeLong::make( bits_mask ) )
     return new LShiftLNode( add1->in(1), in(2) );
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -933,7 +955,7 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
       int lo = (-1 << (BitsPerJavaInteger - ((uint)count)-1)); // FFFF8000
       int hi = ~lo;               // 00007FFF
       const TypeInt* t11 = phase->type(in(1)->in(1))->isa_int();
-      if (t11 == NULL) {
+      if (t11 == nullptr) {
         return this;
       }
       // Does actual value fit inside of mask?
@@ -949,11 +971,11 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
 Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Inputs may be TOP if they are dead.
   const TypeInt *t1 = phase->type(in(1))->isa_int();
-  if (!t1) return NULL;        // Left input is an integer
+  if (!t1) return nullptr;        // Left input is an integer
   const TypeInt *t3;  // type of in(1).in(2)
   int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (shift == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // Check for (x & 0xFF000000) >> 24, whose mask can be made smaller.
@@ -971,7 +993,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
   const Node *shl = in(1);
-  if( shl->Opcode() != Op_LShiftI ) return NULL;
+  if( shl->Opcode() != Op_LShiftI ) return nullptr;
 
   if( shift == 16 &&
       (t3 = phase->type(shl->in(2))->isa_int()) &&
@@ -1007,7 +1029,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -1147,7 +1169,7 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
           t_lshift_count == phase->type(in(2))) {
         Node          *x   = add->in(1)->in(1);
         const TypeInt *t_x = phase->type(x)->isa_int();
-        if (t_x != NULL && 0 <= t_x->_lo && t_x->_hi <= (max_jint>>LogBytesPerWord)) {
+        if (t_x != nullptr && 0 <= t_x->_lo && t_x->_hi <= (max_jint>>LogBytesPerWord)) {
           return x;
         }
       }
@@ -1161,7 +1183,7 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
 Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // We'll be wanting the right-shift amount as a mask of that many bits
@@ -1233,7 +1255,7 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -1325,7 +1347,7 @@ Node* URShiftLNode::Identity(PhaseGVN* phase) {
 Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaLong);
   if (con == 0) {
-    return NULL;
+    return nullptr;
   }
 
   // We'll be wanting the right-shift amount as a mask of that many bits
@@ -1378,7 +1400,7 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new URShiftLNode(in11, phase->intcon(63));
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -1572,7 +1594,7 @@ Node* RotateLeftNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new RotateRightNode(in(1), phase->intcon(64 - (lshift & 63)), TypeLong::LONG);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* RotateRightNode::Identity(PhaseGVN* phase) {

@@ -218,6 +218,17 @@ void Assembler::init_attributes(void) {
   _attributes = NULL;
 }
 
+void Assembler::set_attributes(InstructionAttr* attributes) {
+  // Record the assembler in the attributes, so the attributes destructor can
+  // clear the assembler's attributes, cleaning up the otherwise dangling
+  // pointer.  gcc13 has a false positive warning, because it doesn't tie that
+  // cleanup to the assignment of _attributes here.
+  attributes->set_current_assembler(this);
+  PRAGMA_DIAG_PUSH
+  PRAGMA_DANGLING_POINTER_IGNORED
+  _attributes = attributes;
+  PRAGMA_DIAG_POP
+}
 
 void Assembler::membar(Membar_mask_bits order_constraint) {
   // We only have to handle StoreLoad
@@ -2633,6 +2644,16 @@ void Assembler::ktestd(KRegister src1, KRegister src2) {
   emit_int16((unsigned char)0x99, (0xC0 | encode));
 }
 
+
+void Assembler::kshiftlbl(KRegister dst, KRegister src, int imm8) {
+  assert(VM_Version::supports_avx512dq(), "");
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), 0 , src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int16(0x32, (0xC0 | encode));
+  emit_int8(imm8);
+}
+
+
 void Assembler::movb(Address dst, int imm8) {
   InstructionMark im(this);
    prefix(dst);
@@ -3946,6 +3967,14 @@ void Assembler::evpcmpuw(KRegister kdst, XMMRegister nds, XMMRegister src, Compa
   attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(kdst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x3E, (0xC0 | encode), vcc);
+}
+
+void Assembler::evpcmpuq(KRegister kdst, XMMRegister nds, XMMRegister src, ComparisonPredicate vcc, int vector_len) {
+  assert(VM_Version::supports_avx512vlbw(), "");
+  InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(kdst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int24(0x1E, (0xC0 | encode), vcc);
 }
 
 void Assembler::evpcmpuw(KRegister kdst, XMMRegister nds, Address src, ComparisonPredicate vcc, int vector_len) {
@@ -5574,6 +5603,14 @@ void Assembler::testb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::testl(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xF7);
+  emit_operand(as_Register(0), dst, 4);
+  emit_int32(imm32);
+}
+
 void Assembler::testl(Register dst, int32_t imm32) {
   // not using emit_arith because test
   // doesn't support sign-extension of
@@ -6572,6 +6609,19 @@ void Assembler::vpaddq(XMMRegister dst, XMMRegister nds, Address src, int vector
   vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8((unsigned char)0xD4);
   emit_operand(dst, src);
+}
+
+void Assembler::evpaddq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false,/* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int16((unsigned char)0xD4, (0xC0 | encode));
 }
 
 void Assembler::psubb(XMMRegister dst, XMMRegister src) {
@@ -8958,7 +9008,6 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
     vex_x = adr.index_needs_rex();
   }
   set_attributes(attributes);
-  attributes->set_current_assembler(this);
 
   // For EVEX instruction (which is not marked as pure EVEX instruction) check and see if this instruction
   // is allowed in legacy mode and has resources which will fit in it.
@@ -9005,7 +9054,6 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   bool vex_b = (src_enc & 8) == 8;
   bool vex_x = false;
   set_attributes(attributes);
-  attributes->set_current_assembler(this);
 
   // For EVEX instruction (which is not marked as pure EVEX instruction) check and see if this instruction
   // is allowed in legacy mode and has resources which will fit in it.
@@ -9683,7 +9731,7 @@ void Assembler::prefix(Register dst, Address adr, Prefix p) {
     if (adr.index_needs_rex()) {
       assert(false, "prefix(Register dst, Address adr, Prefix p) does not support handling of an X");
     } else {
-      prefix(REX_B);
+      p = (Prefix)(p | REX_B);
     }
   } else {
     if (adr.index_needs_rex()) {

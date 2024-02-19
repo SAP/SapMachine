@@ -42,8 +42,8 @@ public class TestVitalsInvalidSampleInterval {
                 "-Xmx128m",
                 "-version"); // Note: explicitly omit Xlog:vitals, since the warning should always appear
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        output.shouldContain("Invalid VitalsSampleInterval (0) specified. Vitals disabled.");
+        output.shouldHaveExitValue(1);
+        output.shouldContain("Improperly specified VM option 'VitalsSampleInterval=0'");
 
     }
 

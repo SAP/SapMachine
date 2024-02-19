@@ -51,6 +51,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -213,6 +214,9 @@ void ObjectSynchronizer::initialize() {
   }
   // Start the ceiling with the estimate for one thread.
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);
+
+  // Start the timer for deflations, so it does not trigger immediately.
+  _last_async_deflation_time_ns = os::javaTimeNanos();
 }
 
 MonitorList ObjectSynchronizer::_in_use_list;
@@ -241,6 +245,7 @@ bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
 static uintx _no_progress_cnt = 0;
+static bool _no_progress_skip_increment = false;
 
 // =====================> Quick functions
 
@@ -729,14 +734,14 @@ struct SharedGlobals {
 static SharedGlobals GVars;
 
 static markWord read_stable_mark(oop obj) {
-  markWord mark = obj->mark();
+  markWord mark = obj->mark_acquire();
   if (!mark.is_being_inflated()) {
     return mark;       // normal fast-path return
   }
 
   int its = 0;
   for (;;) {
-    markWord mark = obj->mark();
+    markWord mark = obj->mark_acquire();
     if (!mark.is_being_inflated()) {
       return mark;    // normal fast-path return
     }
@@ -770,7 +775,7 @@ static markWord read_stable_mark(oop obj) {
         int YieldThenBlock = 0;
         assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
         gInflationLocks[ix]->lock();
-        while (obj->mark() == markWord::INFLATING()) {
+        while (obj->mark_acquire() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call current->_ParkEvent->park(1).
           // We use a mixed spin/yield/block mechanism.
@@ -1106,7 +1111,14 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 
   // Check if our monitor usage is above the threshold:
   size_t monitor_usage = (monitors_used * 100LL) / ceiling;
-  return int(monitor_usage) > MonitorUsedDeflationThreshold;
+  if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
+    log_info(monitorinflation)("monitors_used=" SIZE_FORMAT ", ceiling=" SIZE_FORMAT
+                               ", monitor_usage=" SIZE_FORMAT ", threshold=" INTX_FORMAT,
+                               monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
+    return true;
+  }
+
+  return false;
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
@@ -1128,17 +1140,49 @@ void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
 bool ObjectSynchronizer::is_async_deflation_needed() {
   if (is_async_deflation_requested()) {
     // Async deflation request.
+    log_info(monitorinflation)("Async deflation needed: explicit request");
     return true;
   }
+
+  jlong time_since_last = time_since_last_async_deflation_ms();
+
   if (AsyncDeflationInterval > 0 &&
-      time_since_last_async_deflation_ms() > AsyncDeflationInterval &&
+      time_since_last > AsyncDeflationInterval &&
       monitors_used_above_threshold(&_in_use_list)) {
     // It's been longer than our specified deflate interval and there
     // are too many monitors in use. We don't deflate more frequently
     // than AsyncDeflationInterval (unless is_async_deflation_requested)
     // in order to not swamp the MonitorDeflationThread.
+    log_info(monitorinflation)("Async deflation needed: monitors used are above the threshold");
     return true;
   }
+
+  if (GuaranteedAsyncDeflationInterval > 0 &&
+      time_since_last > GuaranteedAsyncDeflationInterval) {
+    // It's been longer than our specified guaranteed deflate interval.
+    // We need to clean up the used monitors even if the threshold is
+    // not reached, to keep the memory utilization at bay when many threads
+    // touched many monitors.
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval (" INTX_FORMAT " ms) "
+                               "is greater than time since last deflation (" JLONG_FORMAT " ms)",
+                               GuaranteedAsyncDeflationInterval, time_since_last);
+
+    // If this deflation has no progress, then it should not affect the no-progress
+    // tracking, otherwise threshold heuristics would think it was triggered, experienced
+    // no progress, and needs to backoff more aggressively. In this "no progress" case,
+    // the generic code would bump the no-progress counter, and we compensate for that
+    // by telling it to skip the update.
+    //
+    // If this deflation has progress, then it should let non-progress tracking
+    // know about this, otherwise the threshold heuristics would kick in, potentially
+    // experience no-progress due to aggressive cleanup by this deflation, and think
+    // it is still in no-progress stride. In this "progress" case, the generic code would
+    // zero the counter, and we allow it to happen.
+    _no_progress_skip_increment = true;
+
+    return true;
+  }
+
   return false;
 }
 
@@ -1180,7 +1224,6 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
   event->set_monitorClass(obj->klass());
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);
@@ -1189,7 +1232,7 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
 
 // Fast path code shared by multiple functions
 void ObjectSynchronizer::inflate_helper(oop obj) {
-  markWord mark = obj->mark();
+  markWord mark = obj->mark_acquire();
   if (mark.has_monitor()) {
     ObjectMonitor* monitor = mark.monitor();
     markWord dmw = monitor->header();
@@ -1204,7 +1247,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
   EventJavaMonitorInflate event;
 
   for (;;) {
-    const markWord mark = object->mark();
+    const markWord mark = object->mark_acquire();
     assert(!mark.has_bias_pattern(), "invariant");
 
     // The mark can be in one of the following states:
@@ -1501,6 +1544,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
       }
     }
 
+    NativeHeapTrimmer::SuspendMark sm("monitor deletion");
+
     // After the handshake, safely free the ObjectMonitors that were
     // deflated in this cycle.
     size_t deleted_count = 0;
@@ -1533,6 +1578,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
   if (deflated_count != 0) {
     _no_progress_cnt = 0;
+  } else if (_no_progress_skip_increment) {
+    _no_progress_skip_increment = false;
   } else {
     _no_progress_cnt++;
   }
@@ -1621,6 +1668,7 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
     return;
   }
   set_is_final_audit();
+  log_info(monitorinflation)("Starting the final audit.");
 
   if (log_is_enabled(Info, monitorinflation)) {
     // Do a deflation in order to reduce the in-use monitor population
@@ -1630,7 +1678,7 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
       ; // empty
     }
     // The other audit_and_print_stats() call is done at the Debug
-    // level at a safepoint in ObjectSynchronizer::do_safepoint_work().
+    // level at a safepoint in SafepointSynchronize::do_cleanup_tasks.
     ObjectSynchronizer::audit_and_print_stats(true /* on_exit */);
   }
 }

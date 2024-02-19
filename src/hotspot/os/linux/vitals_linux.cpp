@@ -84,8 +84,8 @@ class CPUTimeColumn: public Column {
   }
 
 public:
-  CPUTimeColumn(const char* category, const char* header, const char* name, const char* description)
-    : Column(category, header, name, description)
+  CPUTimeColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+    : Column(category, header, name, description, extremum)
   {
     _clk_tck = ::sysconf(_SC_CLK_TCK);
     _num_cores = os::active_processor_count();
@@ -159,7 +159,7 @@ bool platform_columns_initialize() {
   // syst-avail depends on kernel version.
   g_show_system_memavail = OSWrapper::syst_avail() != INVALID_VALUE;
   g_col_system_memavail =
-      define_column<MemorySizeColumn>(system_cat, NULL, "avail", "Memory available without swapping [host] [krn]", g_show_system_memavail);
+      define_column<MemorySizeColumn>(system_cat, NULL, "avail", "Memory available without swapping [host] [krn]", g_show_system_memavail, MIN);
   g_col_system_memcommitted =
       define_column<MemorySizeColumn>(system_cat, NULL, "comm", "Committed memory [host]", true);
   g_col_system_memcommitted_ratio =
@@ -197,9 +197,9 @@ bool platform_columns_initialize() {
   // (which should come out as the same, but you never know
   g_show_cgroup_info = OSContainer::is_containerized() || (OSWrapper::syst_cgro_lim() != INVALID_VALUE || OSWrapper::syst_cgro_limsw() != INVALID_VALUE);
   g_col_system_cgrp_limit_in_bytes =
-        define_column<MemorySizeColumn>(system_cat, "cgroup", "lim", "cgroup memory limit [cgrp]", g_show_cgroup_info);
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "lim", "cgroup memory limit [cgrp]", g_show_cgroup_info, MIN);
   g_col_system_cgrp_soft_limit_in_bytes =
-        define_column<MemorySizeColumn>(system_cat, "cgroup", "slim", "cgroup memory soft limit [cgrp]", g_show_cgroup_info);
+        define_column<MemorySizeColumn>(system_cat, "cgroup", "slim", "cgroup memory soft limit [cgrp]", g_show_cgroup_info, MIN);
   g_col_system_cgrp_usage_in_bytes =
         define_column<MemorySizeColumn>(system_cat, "cgroup", "usg", "cgroup memory usage [cgrp]", g_show_cgroup_info);
   g_col_system_cgrp_kmem_usage_in_bytes =

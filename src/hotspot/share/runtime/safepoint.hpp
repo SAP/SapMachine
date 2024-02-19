@@ -72,7 +72,6 @@ class SafepointSynchronize : AllStatic {
   enum SafepointCleanupTasks {
     SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING,
     SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES,
-    SAFEPOINT_CLEANUP_COMPILATION_POLICY,
     SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH,
     SAFEPOINT_CLEANUP_STRING_TABLE_REHASH,
     SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE,
@@ -261,6 +260,7 @@ private:
 
   static VM_Operation::VMOp_Type _current_type;
   static jlong     _max_sync_time;
+  static jlong     _max_cleanup_time;
   static jlong     _max_vmop_time;
   static uint64_t  _op_count[VM_Operation::VMOp_Terminating];
 

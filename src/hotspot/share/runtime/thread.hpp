@@ -54,7 +54,6 @@
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
-
 class SafeThreadsListPtr;
 class ThreadSafepointState;
 class ThreadsList;
@@ -654,6 +653,31 @@ protected:
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
+
+ private:
+  bool _in_asgct = false;
+ public:
+  bool in_asgct() const { return _in_asgct; }
+  void set_in_asgct(bool value) { _in_asgct = value; }
+  static bool current_in_asgct() {
+    Thread *cur = Thread::current_or_null_safe();
+    return cur != nullptr && cur->in_asgct();
+  }
+};
+
+class ThreadInAsgct {
+ private:
+  Thread* _thread;
+ public:
+  ThreadInAsgct(Thread* thread) : _thread(thread) {
+    assert(thread != nullptr, "invariant");
+    assert(!thread->in_asgct(), "invariant");
+    thread->set_in_asgct(true);
+  }
+  ~ThreadInAsgct() {
+    assert(_thread->in_asgct(), "invariant");
+    _thread->set_in_asgct(false);
+  }
 };
 
 // Inline implementation of Thread::current()
@@ -1428,6 +1452,10 @@ class JavaThread: public Thread {
   // Print stack trace in external format
   void print_stack_on(outputStream* st);
   void print_stack() { print_stack_on(tty); }
+  // Print current stack trace for checked JNI warnings and JNI fatal errors.
+  // This is the external format from above, but selecting the platform
+  // as applicable.
+  void print_jni_stack();
 
   // Print stack traces in various internal formats
   void trace_stack()                             PRODUCT_RETURN;
@@ -1614,6 +1642,15 @@ public:
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
+
+  // Helper function to start a VM-internal daemon thread.
+  // E.g. ServiceThread, NotificationThread, CompilerThread etc.
+  static void start_internal_daemon(JavaThread* current, JavaThread* target,
+                                    Handle thread_oop, ThreadPriority prio);
+
+  // Helper function to do vm_exit_on_initialization for osthread
+  // resource allocation failure.
+  static void vm_exit_on_osthread_failure(JavaThread* thread);
 
   // AsyncGetCallTrace support
   inline bool in_asgct(void) {return _in_asgct;}

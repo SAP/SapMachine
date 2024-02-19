@@ -51,6 +51,10 @@ class VMError : public AllStatic {
   static void*       _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
+  // records if VMError::print_native_stack was used to
+  // print the native stack instead of os::platform_print_native_stack
+  static bool        _print_native_stack_used;
+
   // additional info for VM internal errors
   static const char* _filename;
   static int         _lineno;
@@ -99,12 +103,6 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  // public for use by the internal non-product debugger.
-  NOT_PRODUCT(public:)
-  static void print_native_stack(outputStream* st, frame fr, Thread* t,
-                                 char* buf, int buf_size);
-  NOT_PRODUCT(private:)
-
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
   }
@@ -133,6 +131,12 @@ class VMError : public AllStatic {
   static void clear_step_start_time();
 
 public:
+
+  // print_source_info: if true, we try to resolve the source information on platforms that support it
+  //  (useful but may slow down, timeout or misfunction in error situations)
+  // max_frames: if not -1, overrides StackPrintLimit
+  static void print_native_stack(outputStream* st, frame fr, Thread* t,
+                                 char* buf, int buf_size);
 
   // return a string to describe the error
   static char* error_string(char* buf, int buflen);
@@ -180,6 +184,9 @@ public:
   // Address which is guaranteed to generate a fault on read, for test purposes,
   // which is not NULL and contains bits in every word.
   static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+
+  // Max value for the ErrorLogPrintCodeLimit flag.
+  static const int max_error_log_print_code = 10;
 
   // Needed when printing signal handlers.
   NOT_WINDOWS(static const void* crash_handler_address;)

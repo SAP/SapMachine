@@ -34,8 +34,8 @@ import jdk.internal.platform.Metrics;
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
- * @build sun.hotspot.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main TestMemoryWithCgroupV1
  */
 public class TestMemoryWithCgroupV1 {
@@ -77,6 +77,7 @@ public class TestMemoryWithCgroupV1 {
         Common.logNewTestCase("Test print_container_info()");
 
         DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo").addJavaOpts("-XshowSettings:system");
+        opts.addDockerOpts("--cpus", "4"); // Avoid OOM kill on many-core systems
         opts.addDockerOpts("--memory", dockerMemLimit, "--memory-swappiness", "0", "--memory-swap", dockerSwapMemLimit);
         Common.addWhiteBoxOpts(opts);
 
@@ -104,6 +105,7 @@ public class TestMemoryWithCgroupV1 {
             String swappiness, String expectedSwap) throws Exception {
         Common.logNewTestCase("Check OperatingSystemMXBean");
         DockerRunOptions opts = Common.newOpts(imageName, "CheckOperatingSystemMXBean")
+                .addDockerOpts("--cpus", "4") // Avoid OOM kill on many-core systems
                 .addDockerOpts(
                         "--memory", memoryAllocation,
                         "--memory-swappiness", swappiness,

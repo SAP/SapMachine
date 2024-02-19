@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1032,7 +1032,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  __ flush();
   return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
 }
 
@@ -3714,8 +3713,9 @@ void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints
   // Make very sure we don't use so much space that the stack might
   // overflow.  512 jints corresponds to an 16384-bit integer and
   // will use here a total of 8k bytes of stack space.
+  int divisor = sizeof(julong) * 4;
+  guarantee(longwords <= 8192 / divisor, "must be");
   int total_allocation = longwords * sizeof (julong) * 4;
-  guarantee(total_allocation <= 8192, "must be");
   julong *scratch = (julong *)alloca(total_allocation);
 
   // Local scratch arrays
@@ -3743,8 +3743,9 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   // Make very sure we don't use so much space that the stack might
   // overflow.  512 jints corresponds to an 16384-bit integer and
   // will use here a total of 6k bytes of stack space.
+  int divisor = sizeof(julong) * 3;
+  guarantee(longwords <= (8192 / divisor), "must be");
   int total_allocation = longwords * sizeof (julong) * 3;
-  guarantee(total_allocation <= 8192, "must be");
   julong *scratch = (julong *)alloca(total_allocation);
 
   // Local scratch arrays

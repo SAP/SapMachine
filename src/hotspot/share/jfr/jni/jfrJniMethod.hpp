@@ -83,7 +83,7 @@ void JNICALL jfr_set_global_buffer_count(JNIEnv* env, jobject jvm, jlong count);
 
 void JNICALL jfr_set_global_buffer_size(JNIEnv* env, jobject jvm, jlong size);
 
-void JNICALL jfr_set_method_sampling_interval(JNIEnv* env, jobject jvm, jlong type, jlong intervalMillis);
+void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, jlong type, jlong periodMillis);
 
 void JNICALL jfr_set_output(JNIEnv* env, jobject jvm, jstring path);
 
@@ -151,6 +151,8 @@ jobject JNICALL jfr_get_handler(JNIEnv* env, jobject jvm, jobject clazz);
 jboolean JNICALL jfr_set_handler(JNIEnv* env, jobject jvm, jobject clazz, jobject handler);
 
 jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
+
+void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 
 #ifdef __cplusplus
 }

@@ -140,7 +140,7 @@ void ICStub::print() {
 
 void InlineCacheBuffer::initialize() {
   if (_buffer != NULL) return; // already initialized
-  _buffer = new StubQueue(new ICStubInterface, 10*K, InlineCacheBuffer_lock, "InlineCacheBuffer");
+  _buffer = new StubQueue(new ICStubInterface, checked_cast<int>(InlineCacheBufferSize), InlineCacheBuffer_lock, "InlineCacheBuffer");
   assert (_buffer != NULL, "cannot allocate InlineCacheBuffer");
 }
 
@@ -159,6 +159,20 @@ void InlineCacheBuffer::refill_ic_stubs() {
   // We do this by forcing a safepoint
   VM_ICBufferFull ibf;
   VMThread::execute(&ibf);
+}
+
+bool InlineCacheBuffer::needs_update_inline_caches() {
+  // Stub removal
+  if (buffer()->number_of_stubs() > 0) {
+    return true;
+  }
+
+  // Release pending CompiledICHolder
+  if (pending_icholder_count() > 0) {
+    return true;
+  }
+
+  return false;
 }
 
 void InlineCacheBuffer::update_inline_caches() {

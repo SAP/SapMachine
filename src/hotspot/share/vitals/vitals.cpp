@@ -66,9 +66,25 @@ static Lock g_vitals_lock("VitalsLock");
 
 namespace counters {
 
+static volatile size_t g_number_of_clds = 0;
+static volatile size_t g_number_of_anon_clds = 0;
 static volatile size_t g_classes_loaded = 0;
 static volatile size_t g_classes_unloaded = 0;
 static volatile size_t g_threads_created = 0;
+
+void inc_cld_count(bool is_anon_cld) {
+  Atomic::inc(&g_number_of_clds);
+  if (is_anon_cld) {
+    Atomic::inc(&g_number_of_anon_clds);
+  }
+}
+
+void dec_cld_count(bool is_anon_cld) {
+  Atomic::dec(&g_number_of_clds);
+  if (is_anon_cld) {
+    Atomic::dec(&g_number_of_anon_clds);
+  }
+}
 
 void inc_classes_loaded(size_t count) {
   Atomic::add(&g_classes_loaded, count);
@@ -194,13 +210,16 @@ static void print_timestamp(outputStream* st, time_t t) {
 // Keeps an array of ints, dynamically sized (since each platform has a different number of columns),
 // and offers methods of auto-sizeing them to fit given samples (via dry-printing).
 class ColumnWidths {
-  int* _widths;
+  int _widths[64]; // Don't allocate dynamically, since we might not have enough memory when we use it.
+
 public:
 
   ColumnWidths() {
+    // Assert including the non-active columns, so we spot possible problems earlier.
+    assert(sizeof(_widths) / sizeof(_widths[0]) >= (size_t) Legend::the_legend()->nr_of_columns(), "array too small");
+
     // Allocate array; initialize with the minimum required column widths (which is the
     // size required to print the column header fully)
-    _widths = NEW_C_HEAP_ARRAY(int, ColumnList::the_list()->num_columns(), mtInternal);
     const Column* c = ColumnList::the_list()->first();
     while (c != NULL) {
       _widths[c->index()] = (int)::strlen(c->name());
@@ -210,7 +229,7 @@ public:
 
   // given a sample (and an optional preceding sample for delta values),
   //   update widths to accommodate sample values (uses dry-printing)
-  void update_from_sample(const Sample* sample, const Sample* last_sample, const print_info_t* pi) {
+  void update_from_sample(const Sample* sample, const Sample* last_sample, const print_info_t* pi, int add_width = 0) {
     const Column* c = ColumnList::the_list()->first();
     while (c != NULL) {
       const int idx = c->index();
@@ -221,7 +240,7 @@ public:
         v2 = last_sample->value(idx);
         age = sample->timestamp() - last_sample->timestamp();
       }
-      int needed = c->calc_print_size(v, v2, age, pi);
+      int needed = c->calc_print_size(v, v2, age, pi) + add_width;
       if (_widths[idx] < needed) {
         _widths[idx] = needed;
       }
@@ -248,16 +267,17 @@ stringStream _legend;
 stringStream _footnote;
 static Legend* _the_legend;
 
-Legend::Legend() : _last_added_cat(NULL) {}
+Legend::Legend() : _last_added_cat(NULL), _nr_of_columns(0) {}
 
 void Legend::add_column_info(const char* const category, const char* const header,
                        const char* const name, const char* const description) {
   // Print category label if this column opens a new category
-  if (_last_added_cat != category) {
+  if ((_last_added_cat == NULL) || (::strcmp(_last_added_cat, category) != 0)) {
     print_text_with_dashes(&_legend, category, 30);
     _legend.cr();
   }
   _last_added_cat = category;
+  _nr_of_columns++;
   // print column name and description
   const int min_width_column_label = 16;
   char buf[32];
@@ -485,17 +505,18 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
 
 ///////// class Column and childs ///////////
 
-Column::Column(const char* category, const char* header, const char* name, const char* description)
+Column::Column(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
   : _category(category),
     _header(header), // may be NULL
     _name(name),
     _description(description),
+    _extremum(extremum),
     _next(NULL), _idx(-1),
     _idx_cat(-1), _idx_hdr(-1)
 {}
 
 void Column::print_value(outputStream* st, value_t value, value_t last_value,
-    int last_value_age, int min_width, const print_info_t* pi) const {
+    int last_value_age, int min_width, const print_info_t* pi, char const* marker) const {
 
   // We print all values right aligned.
   int needed = calc_print_size(value, last_value, last_value_age, pi);
@@ -508,6 +529,7 @@ void Column::print_value(outputStream* st, value_t value, value_t last_value,
     st->put('"');
   }
   do_print(st, value, last_value, last_value_age, pi);
+  st->print_raw(marker);
   if (pi->csv) {
     st->put('"');
   }
@@ -576,7 +598,7 @@ int DeltaMemorySizeColumn::do_print0(outputStream* st, value_t value,
 
 // Print one sample.
 static void print_one_sample(outputStream* st, const Sample* sample,
-    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi) {
+    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi, int marked_index = -1, char const* mark = NULL) {
 
   // Print timestamp and divider
   if (pi->csv) {
@@ -603,8 +625,9 @@ static void print_one_sample(outputStream* st, const Sample* sample,
       v2 = last_sample->value(idx);
       age = sample->timestamp() - last_sample->timestamp();
     }
-    const int min_width = widths->at(idx);
-    c->print_value(st, v, v2, age, min_width, pi);
+    const int min_width = widths->at(idx) - (marked_index >= 0 ? 1 : 0);
+    c->print_value(st, v, v2, age, min_width, pi,
+                  marked_index == idx ? mark : (marked_index >= 0 && !pi->csv ? " " : ""));
     st->put(pi->csv ? ',' : ' ');
     c = c->next();
   }
@@ -632,8 +655,6 @@ class SampleTable : public CHeapObj<mtInternal> {
     assert(idx >= 0 && idx <= _num_entries, "invalid index: %d", idx);
     return Sample::size_in_bytes() * idx;
   }
-  const Sample* sample_at(int index) const  { return (Sample*)((uint8_t*)_samples + sample_offset_in_bytes(index)); }
-  Sample* sample_at(int index)              { return (Sample*)((uint8_t*)_samples + sample_offset_in_bytes(index)); }
 
 public:
 
@@ -652,6 +673,9 @@ public:
   }
 
   bool is_empty() const { return _head == -1; }
+
+  const Sample* sample_at(int index) const { return (Sample*)((uint8_t*)_samples + sample_offset_in_bytes(index)); }
+  Sample* sample_at(int index) { return (Sample*)((uint8_t*)_samples + sample_offset_in_bytes(index)); }
 
   void add_sample(const Sample* sample) {
     // Advance head
@@ -754,24 +778,16 @@ public:
 // It takes care to feed new samples into these tables at the appropriate intervals.
 class SampleTables: public CHeapObj<mtInternal> {
 
-  // Short term table: cover one hour, one sample per VitalsSampleInterval (default 10 seconds)
-  static const int short_term_span_seconds = 3600;
-
-  // Long term table: cover 14 days, one sample per hour
-  static const int long_term_span_seconds = short_term_span_seconds * 24 * 14;
-  static const int long_term_sample_interval = short_term_span_seconds;
-
-  static int short_term_tablesize()      { return (short_term_span_seconds / VitalsSampleInterval) + 1; }
-  static const int long_term_tablesize = (long_term_span_seconds / long_term_sample_interval) + 1;
+  static int short_term_tablesize() { return (VitalsShortTermTableHours * 3600 / VitalsSampleInterval) + 1; }
+  static int long_term_tablesize()  { return (VitalsLongTermTableDays * 24 * 60 / VitalsLongTermSampleIntervalMinutes) + 1; }
 
   SampleTable _short_term_table;
   SampleTable _long_term_table;
+  SampleTable _extremum_samples;
+  SampleTable _last_extremum_samples;
 
   int _count;
-
-  // A pre-allocated buffer for printing reports. We preallocate this since
-  // when we want to print the report we may be in no condition to allocate memory.
-  char _temp_buffer[196 * K];
+  int _large_table_count;
 
   static void print_table(const SampleTable* table, outputStream* st,
                           const ColumnWidths* widths, const print_info_t* pi) {
@@ -811,8 +827,11 @@ public:
 
   SampleTables()
     : _short_term_table(short_term_tablesize()),
-      _long_term_table(long_term_tablesize),
-      _count(0)
+      _long_term_table(long_term_tablesize()),
+      _extremum_samples(Sample::num_values()),
+      _last_extremum_samples(Sample::num_values()),
+      _count(0),
+      _large_table_count(MAX2(1, (int) (VitalsLongTermSampleIntervalMinutes * 60 / VitalsSampleInterval)))
   {}
 
   void add_sample(const Sample* sample) {
@@ -824,67 +843,121 @@ public:
     // only after an initial long term table interval has passed
     _count++;
     // Feed long term table
-    if ((_count % (long_term_sample_interval / VitalsSampleInterval)) == 0) {
+    if ((_count % _large_table_count) == 0) {
       _long_term_table.add_sample(sample);
+    }
+
+    // Update exetremum samples if needed.
+    if (StoreVitalsExtremas) {
+      static Sample* last_sample = NULL;
+
+      if (last_sample == NULL) {
+        // Nothing to do yet. We need at least two samples, since some types need the
+        // previous sample to print. Just allocate the space for the last sample as a marker
+        // for seeing the first sample.
+        last_sample = (Sample*) NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes(), mtInternal);
+      } else if (_extremum_samples.is_empty()) {
+        // We already have a last sample and this is the second sample we see.
+        // We can initialize the two tables now to store the last sample and this sample
+        // for all extremas.
+        for (int i = 0; i < Sample::num_values(); ++i) {
+          _last_extremum_samples.add_sample(last_sample);
+          _extremum_samples.add_sample(sample);
+        }
+      } else {
+        // Iterate columns and update if needed.
+        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+          if (column->extremum() != NONE) {
+            int idx = column->index();
+            Sample* extremum_sample = _extremum_samples.sample_at(idx);
+
+            bool should_log = (column->extremum() == MAX) && (sample->value(idx) > extremum_sample->value(idx));
+            should_log |= (column->extremum() == MIN) && (sample->value(idx) < extremum_sample->value(idx));
+            should_log &= sample->value(idx) != INVALID_VALUE;
+            should_log |= extremum_sample->value(idx) == INVALID_VALUE;
+
+            if (should_log) {
+              Sample* last_extremum_sample = _last_extremum_samples.sample_at(idx);
+              ::memcpy(last_extremum_sample, last_sample, Sample::size_in_bytes());
+              ::memcpy(extremum_sample, sample, Sample::size_in_bytes());
+            }
+          }
+        }
+      }
+
+      // Remember the last sample.
+      ::memcpy(last_sample, sample, Sample::size_in_bytes());
     }
   }
 
-  void print_all(outputStream* external_stream, const print_info_t* pi, const Sample* sample_now) {
-
-    // We are paranoid about blocking inside a lock. So we print to a preallocated buffer under
-    // lock protection, and copy ot the outside stream when out of the lock.
-    stringStream sstrm(_temp_buffer, sizeof(_temp_buffer));
+  void print_all(outputStream* st, const print_info_t* pi, const Sample* sample_now) {
 
     { // lock start
       AutoLock autolock(&g_vitals_lock);
 
-      outputStream* st = &sstrm;
-
-      // Pre-calc column widths needed to display all tables and values nicely aligned
-      ColumnWidths widths;
-
-      MeasureColumnWidthsClosure mcwclos(pi, &widths);
-      _short_term_table.walk_table_locked(&mcwclos);
-      _long_term_table.walk_table_locked(&mcwclos);
       if (sample_now != NULL) {
+        ColumnWidths widths;
+        MeasureColumnWidthsClosure mcwclos(pi, &widths);
         widths.update_from_sample(sample_now, NULL, pi);
-      }
-
-      // Now print
-      if (sample_now != NULL) {
         st->print_cr("Now:");
         print_headers(st, &widths, pi);
         print_one_sample(st, sample_now, NULL, &widths, pi);
         st->cr();
       }
 
-      if (pi->csv == false) {
-        print_time_span(st, short_term_span_seconds);
+      if (!_short_term_table.is_empty()) {
+        ColumnWidths widths;
+        MeasureColumnWidthsClosure mcwclos(pi, &widths);
+        _short_term_table.walk_table_locked(&mcwclos);
+
+        if (pi->csv == false) {
+          print_time_span(st, VitalsShortTermTableHours * 3600);
+        }
+        print_headers(st, &widths, pi);
+        print_table(&_short_term_table, st, &widths, pi);
+        st->cr();
       }
-      print_headers(st, &widths, pi);
-      print_table(&_short_term_table, st, &widths, pi);
-      st->cr();
 
       if (!_long_term_table.is_empty()) {
-        print_time_span(st, long_term_span_seconds);
+        ColumnWidths widths;
+        MeasureColumnWidthsClosure mcwclos(pi, &widths);
+        _long_term_table.walk_table_locked(&mcwclos);
+        print_time_span(st, VitalsLongTermTableDays * 24 * 3600);
         print_headers(st, &widths, pi);
         print_table(&_long_term_table, st, &widths, pi);
         st->cr();
       }
 
+      if (StoreVitalsExtremas && !_extremum_samples.is_empty() && !_last_extremum_samples.is_empty()) {
+        st->print_cr("Samples at extremes (+ marks a maximum, - marks a minimum)");
+
+        ColumnWidths widths;
+        MeasureColumnWidthsClosure mcwclos(pi, &widths);
+
+        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+          if (column->extremum() != NONE) {
+            Sample* extremum_sample = _extremum_samples.sample_at(column->index());
+            Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
+            widths.update_from_sample(extremum_sample, last_extremum_sample, pi, 1);
+          }
+        }
+
+        print_headers(st, &widths, pi); // Need more space for the mark to display.
+
+        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+          if (column->extremum() != NONE) {
+            Sample* extremum_sample = _extremum_samples.sample_at(column->index());
+            Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
+            print_one_sample(st, extremum_sample, last_extremum_sample, &widths, pi, column->index(),
+                             column->extremum() == MIN ? "-" : "+");
+          }
+        }
+      }
+
       st->cr();
 
     } // lock end
-
-    // If this fires, enlarge the buffer size. Since the table sizes are static, output here cannot be endless,
-    // so there must be a number large enough to fit every possible report.
-    external_stream->print_raw(_temp_buffer);
-    if (sstrm.size() >= sizeof(_temp_buffer) - 1) {
-      external_stream->cr();
-      external_stream->print_cr("-- Buffer overflow, truncated (total: " SIZE_FORMAT ").", (size_t)sstrm.count());
-    }
   }
-
 };
 
 static SampleTables* g_all_tables = NULL;
@@ -1104,21 +1177,6 @@ static void set_value_in_sample(const Column* col, Sample* sample, T t) {
   }
 }
 
-// Count CLDs
-class CLDCounterClosure: public CLDClosure {
-public:
-  int _cnt;
-  int _anon_cnt;
-  CLDCounterClosure() : _cnt(0), _anon_cnt(0) {}
-  void do_cld(ClassLoaderData* cld) {
-    _cnt ++;
-    if (cld->has_class_mirror_holder()) {
-      _anon_cnt ++;
-    }
-  }
-};
-
-
 struct nmt_values_t {
   // How much memory, in total, was committed via mmap
   value_t mapped_total;
@@ -1161,10 +1219,9 @@ static bool get_nmt_values(nmt_values_t* out) {
     out->overhead =
         vm_snapshot.by_type(MEMFLAGS::mtNMT)->committed() +
         mlc_snapshot->by_type(MEMFLAGS::mtNMT)->malloc_size() +
-        mlc_snapshot->malloc_overhead()->size();
+        mlc_snapshot->malloc_overhead();
     out->malloced_num =
-        // I misuse the tracking overhead counter, since all malloc allocations should have been counted here
-        mlc_snapshot->malloc_overhead()->count();
+        mlc_snapshot->total_count();
     return true;
   }
 #endif // INCLUDE_NMT
@@ -1234,15 +1291,8 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   }
 
   // CLDG
-  if (!avoid_locking) {
-    CLDCounterClosure cl;
-    {
-      MutexLocker lck(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::cld_do(&cl);
-    }
-    set_value_in_sample(g_col_number_of_clds, sample, cl._cnt);
-    set_value_in_sample(g_col_number_of_anon_clds, sample, cl._anon_cnt);
-  }
+  set_value_in_sample(g_col_number_of_clds, sample, counters::g_number_of_clds);
+  set_value_in_sample(g_col_number_of_anon_clds, sample, counters::g_number_of_anon_clds);
 
   // Classes
   set_value_in_sample(g_col_number_of_classes, sample,
@@ -1258,13 +1308,6 @@ bool initialize() {
   initialized = true;
 
   log_info(vitals)("Vitals v%x", vitals_version);
-
-  // Adjust VitalsSampleInterval
-  if (VitalsSampleInterval == 0) {
-    log_warning(vitals)("Invalid VitalsSampleInterval (" UINTX_FORMAT ") specified. Vitals disabled.",
-                    VitalsSampleInterval);
-    return false;
-  }
 
   bool success = ColumnList::initialize();
   success = success && Legend::initialize();
@@ -1352,7 +1395,6 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
   g_all_tables->print_all(st, &info, sample_now);
 
   os::free(sample_now);
-
 }
 
 // Dump both textual and csv style reports to two files, "sapmachine_vitals_<pid>.txt" and "sapmachine_vitals_<pid>.csv".
@@ -1402,7 +1444,6 @@ void dump_reports() {
     };
     print_report(&fs, &settings);
   }
-
 }
 
 // For printing in thread lists only.

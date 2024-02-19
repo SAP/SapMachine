@@ -112,6 +112,7 @@
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -149,7 +150,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-// SapMachine 2019-02-20 : vitals
+// SapMachine 2019-02-20: Vitals
 #include "vitals/vitals.hpp"
 #ifdef LINUX
 #include "vitals_linux_himemreport.hpp"
@@ -659,7 +660,9 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   else if (is_GC_task_thread())       { st->print("GCTaskThread"); }
   else if (is_Watcher_thread())       { st->print("WatcherThread"); }
   else if (is_ConcurrentGC_thread())  { st->print("ConcurrentGCThread"); }
-  else                                { st->print("Thread"); }
+  else if (this == AsyncLogWriter::instance()) {
+    st->print("%s", this->name());
+  } else                                { st->print("Thread"); }
 
   if (is_Named_thread()) {
     st->print(" \"%s\"", name());
@@ -1343,8 +1346,9 @@ static void ensure_join(JavaThread* thread) {
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
   java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
-  // to complete once we've done the notify_all below
-  java_lang_Thread::set_thread(threadObj(), NULL);
+  // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
+  // requirements.
+  java_lang_Thread::release_set_thread(threadObj(), NULL);
   lock.notify_all(thread);
   // Ignore pending exception (ThreadDeath), since we are exiting anyway
   thread->clear_pending_exception();
@@ -2263,7 +2267,6 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   assert(InstanceKlass::cast(thread_oop->klass())->is_linked(),
          "must be initialized");
   set_threadObj(thread_oop());
-  java_lang_Thread::set_thread(thread_oop(), this);
 
   if (prio == NoPriority) {
     prio = java_lang_Thread::priority(thread_oop());
@@ -2279,6 +2282,11 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   // added to the Threads list for if a GC happens, then the java_thread oop
   // will not be visited by GC.
   Threads::add(this);
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped somewhere in the caller since the JavaThread*
+  // is already visible to JVM/TI via the ThreadsList.
+  java_lang_Thread::release_set_thread(thread_oop(), this);
 }
 
 oop JavaThread::current_park_blocker() {
@@ -2290,6 +2298,25 @@ oop JavaThread::current_park_blocker() {
   return NULL;
 }
 
+// Print current stack trace for checked JNI warnings and JNI fatal errors.
+// This is the external format, selecting the platform
+// as applicable, and allowing for a native-only stack.
+void JavaThread::print_jni_stack() {
+  assert(this == JavaThread::current(), "Can't print stack of other threads");
+  if (!has_last_Java_frame()) {
+    ResourceMark rm(this);
+    char* buf = NEW_RESOURCE_ARRAY_RETURN_NULL(char, O_BUFLEN);
+    if (buf == nullptr) {
+      tty->print_cr("Unable to print native stack - out of memory");
+      return;
+    }
+    frame f = os::current_frame();
+    VMError::print_native_stack(tty, f, this,
+                                buf, O_BUFLEN);
+  } else {
+    print_stack_on(tty);
+  }
+}
 
 void JavaThread::print_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
@@ -3062,6 +3089,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif
 
+  if (NativeHeapTrimmer::enabled()) {
+    NativeHeapTrimmer::initialize();
+  }
+
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::enter_live_phase();
@@ -3088,7 +3119,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   if (EnableVitals) {
     sapmachine_vitals::initialize();
   }
@@ -3568,7 +3599,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   // Make new thread known to active EscapeBarrier
   EscapeBarrier::thread_added(p);
 
-  // SapMachine 2019-02-20 : vitals
+  // SapMachine 2019-02-20: Vitals
   sapmachine_vitals::counters::inc_threads_created(1);
 
 }
@@ -3826,7 +3857,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   cl.do_thread(WatcherThread::watcher_thread());
   cl.do_thread(AsyncLogWriter::instance());
 
-  // SapMachine 2019-11-07 : vitals
+  // SapMachine 2019-11-07: Vitals
   const Thread* vitals_sampler_thread = sapmachine_vitals::samplerthread();
   if (vitals_sampler_thread != NULL) {
     vitals_sampler_thread->print_on(st);
@@ -3834,7 +3865,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   }
 
 #ifdef LINUX
-  // SapMachine 2022-05-07 : HiMemReport
+  // SapMachine 2022-05-07: HiMemReport
   const Thread* himem_reporter_thread = sapmachine_vitals::himem_reporter_thread();
   if (himem_reporter_thread != NULL) {
     himem_reporter_thread->print_on(st);
@@ -3896,11 +3927,11 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
   print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
 
-  // SapMachine 2019-11-07 : vitals
+  // SapMachine 2019-11-07: Vitals
   print_on_error(const_cast<Thread*>(sapmachine_vitals::samplerthread()),
                  st, current, buf, buflen, &found_current);
 #ifdef LINUX
-  // SapMachine 2022-05-07 : HiMemReport
+  // SapMachine 2022-05-07: HiMemReport
   print_on_error(const_cast<Thread*>(sapmachine_vitals::himem_reporter_thread()),
                  st, current, buf, buflen, &found_current);
 #endif
@@ -4018,3 +4049,46 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
    report_vm_error(__FILE__, __LINE__, "Cross modify fence failure", "%p", thread);
 }
 #endif
+
+// Starts the target JavaThread as a daemon of the given priority, and
+// bound to the given java.lang.Thread instance.
+// The Threads_lock is held for the duration.
+void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
+                                       Handle thread_oop, ThreadPriority prio) {
+
+  assert(target->osthread()!= NULL, "target thread is not properly initialized");
+
+  MutexLocker mu(current, Threads_lock);
+
+  // Initialize the fields of the thread_oop first.
+  if (prio != NoPriority) {
+    java_lang_Thread::set_priority(thread_oop(), prio);
+    // Note: we don't call os::set_priority here. Possibly we should,
+    // else all threads should call it themselves when they first run.
+  }
+
+  java_lang_Thread::set_daemon(thread_oop());
+
+  // Now bind the thread_oop to the target JavaThread.
+  target->set_threadObj(thread_oop());
+
+  Threads::add(target); // target is now visible for safepoint/handshake
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped when the 'mu' destructor is run since the
+  // JavaThread* is already visible to JVM/TI via the ThreadsList.
+  java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
+  Thread::start(target);
+}
+
+void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of resources. However, since this must work
+  // for critical system threads just check and abort if this fails.
+  if (thread->osthread() == nullptr) {
+    // This isn't really an OOM condition, but historically this is what
+    // we report.
+    vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                  os::native_thread_creation_failed_msg());
+  }
+}

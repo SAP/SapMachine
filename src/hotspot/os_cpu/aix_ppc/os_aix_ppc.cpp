@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -447,17 +447,22 @@ void os::print_context(outputStream *st, const void *context) {
   }
   st->cr();
   st->cr();
+}
 
-  intptr_t *sp = (intptr_t *)os::Aix::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 128), sizeof(intptr_t));
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
+
+  address sp = (address)os::Aix::ucontext_get_sp(uc);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*instrsize=*/4);
+  print_instructions(st, pc);
   st->cr();
 
   // Try to decode the instructions.
@@ -503,7 +508,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-bool os::platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size) {
+bool os::platform_print_native_stack(outputStream* st, void* context, char *buf, int buf_size, address& lastpc) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }

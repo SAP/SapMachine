@@ -65,6 +65,8 @@ public:
   // Override as JavaThread::post_run() calls JavaThread::exit which
   // expects a valid thread object oop.
   virtual void post_run() {
+    // SapMachine 2023-06-05 Fix an issue with gtests on Alpine. Should be upstreamed.
+    unregister_thread_stack_with_NMT();
     Threads::remove(this, false);
     this->smr_delete();
   }
@@ -114,6 +116,8 @@ public:
   // Override as JavaThread::post_run() calls JavaThread::exit which
   // expects a valid thread object oop. And we need to call signal.
   void post_run() {
+    // SapMachine 2023-06-05 Fix an issue with gtests on Alpine. Should be upstreamed.
+    unregister_thread_stack_with_NMT();
     Threads::remove(this, false);
     _post->signal();
     this->smr_delete();

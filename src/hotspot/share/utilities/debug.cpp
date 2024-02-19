@@ -496,6 +496,10 @@ extern "C" JNIEXPORT void verify() {
 extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
+  if (p == NULL) {
+    tty->print_cr("NULL");
+    return;
+  }
   if (Universe::heap()->is_in(p)) {
     oop obj = cast_to_oop(p);
     obj->print();
@@ -696,7 +700,8 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
 extern "C" JNIEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
-  if (os::platform_print_native_stack(tty, NULL, buf, sizeof(buf))) {
+  address lastpc = nullptr;
+  if (os::platform_print_native_stack(tty, NULL, buf, sizeof(buf), lastpc)) {
     // We have printed the native stack in platform-specific code,
     // so nothing else to do in this case.
   } else {
