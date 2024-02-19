@@ -41,11 +41,6 @@
 #include <time.h>
 #include <assert.h>
 
-#ifdef __sun
-#include <ucred.h>
-#include "mbarrier.h"
-#endif
-
 #include "jni.h"
 #include "fileSocketTransport.h"
 
@@ -108,8 +103,6 @@ static void memoryBarrier() {
     __sync_synchronize();
 #elif _AIX
     __sync();
-#elif __sun
-    __machine_rw_barrier();
 #else
 #error "Unknown platform"
 #endif
@@ -319,17 +312,6 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
         other_user = cred_info.euid;
         other_group = cred_info.egid;
-#elif defined(__sun)
-        ucred_t* cred_info = NULL;
-
-        if (getpeerucred(handle, &cred_info) == -1) {
-            logAndCleanupFailedAccept("Failed to retrieve peer credentials of file socket", name);
-            return;
-        }
-
-        other_user = ucred_geteuid(cred_info);
-        other_group = ucred_getegid(cred_info);
-        ucred_free(cred_info);
 #else
 #error "Unknown platform"
 #endif

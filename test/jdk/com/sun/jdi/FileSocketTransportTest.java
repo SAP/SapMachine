@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires os.arch != "aarch64"
+ * @requires os.arch != "aarch64" | os.family != "windows"
  * @summary Test basic functionality of the file socket debug transport.
  *
  * @author Ralf Schmelter
@@ -40,6 +40,10 @@ import static jdk.test.lib.Asserts.assertFalse;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,16 +57,43 @@ import jdk.test.lib.process.ProcessTools;
 
 public class FileSocketTransportTest {
 
+    private static int handshakeUnix(String path, byte[] handshake, byte[] reply) throws IOException {
+        UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(path);
+        SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX);
+        channel.connect(addr);
+        ByteBuffer out = ByteBuffer.wrap(handshake);
+        while (out.hasRemaining()) {
+            channel.write(out);
+        }
+        ByteBuffer in = ByteBuffer.wrap(reply);
+        int result = channel.read(in);
+        channel.close();
+
+        return result;
+    }
+
+    private static int handshakeWindows(String path, byte[] handshake, byte[] reply) throws IOException {
+        String testSrc = System.getProperty("test.src");
+        System.setProperty("com.sap.jdk.ext.natives.platformRoot",
+                testSrc + "/libs/jdkext_natives");
+        System.setProperty("com.sap.jdk.ext.natives.traceLoading", "true");
+
+        FileSocketAddress addr = new FileSocketAddress(path);
+        // Just do the handshake and disconnect.
+        FileSocket fs = new FileSocket(addr, 2000);
+        fs.getOutputStream().write(handshake);
+        int result = fs.getInputStream().read(reply);
+        fs.close();
+
+        return result;
+    }
+
     public static void main(String[] args) throws Throwable {
         if (args.length == 1 && "--sleep".equals(args[0])) {
             Thread.sleep(30000);
             System.exit(1);
         }
 
-        String testSrc = System.getProperty("test.src");
-        System.setProperty("com.sap.jdk.ext.natives.platformRoot",
-                testSrc + "/libs/jdkext_natives");
-        System.setProperty("com.sap.jdk.ext.natives.traceLoading", "true");
         String socketName;
         long pid = ProcessTools.getProcessId();
 
@@ -94,23 +125,25 @@ public class FileSocketTransportTest {
 
         // Debug 3 times.
         try {
+            byte[] handshake = "JDWP-Handshake".getBytes("UTF-8");
+            byte[] received = new byte[handshake.length];
+            int read;
+
             for (int i = 0; i < 3; ++i) {
                 // Wait a bit to let the debugging be set up properly.
                 Thread.sleep(3000);
-                FileSocketAddress addr = new FileSocketAddress(socketName);
-                System.out.println(i + " " + addr.getSocketIdentifier());
                 checkSocketPresent(socketName);
-                // Just do the handshake and disconnect.
-                FileSocket fs = new FileSocket(addr, 2000);
-                byte[] handshake = "JDWP-Handshake".getBytes("UTF-8");
-                byte[] received = new byte[handshake.length];
-                fs.getOutputStream().write(handshake);
-                int read = fs.getInputStream().read(received);
+
+                if (Platform.isWindows()) {
+                    read = handshakeWindows(socketName, handshake, received);
+                } else {
+                    read = handshakeUnix(socketName, handshake, received);
+                } 
+
                 checkSocketDeleted(socketName);
                 assertEquals(new String(handshake, "UTF-8"),
                              new String(received, "UTF-8"));
                 assertEquals(read, received.length);
-                fs.close();
             }
         } finally {
             Thread.sleep(2000);
