@@ -62,6 +62,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 ## Releases
 
+SapMachine follows the generic release strategy of OpenJDK with Long Term Support (LTS) releases and updates every three months.  Details can be found on the [Maintenance and Support](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support) page.
 All [releases](https://github.com/SAP/SapMachine/releases), including nightly snapshots, are available on GitHub.
 The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 21](latest/21)).
 
