@@ -18,7 +18,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 * Leading the [PowerPC/AIX porting project](http://openjdk.java.net/projects/ppc-aix-port/).
 
-* Contributing many new features inspired by Java stakeholders within SAP to the OpenJDK project. Rarely we add such features to SapMachine directly to keep the diff of this project as small as possible. This ensures such features are available in long reach and for everybody.
+* Contributing many new features inspired by Java stakeholders within SAP to the OpenJDK project. This ensures such features are available in long reach and for everybody. Rarely we add such features to SapMachine directly to keep the diff of this project as small as possible. 
 
 * Creating tools for developers
     * [JFR Event Collection](https://sapmachine.io/jfrevents/): Information on all JFR events for a specific JDK
