@@ -98,7 +98,7 @@ public class FileSocketTransportTest {
         long pid = ProcessTools.getProcessId();
 
         if (Platform.isWindows()) {
-            socketName = "\\\\.\\Pipe\\FileSocketTransportTest" + pid;
+            socketName = "test.socket"; //"\\\\.\\Pipe\\FileSocketTransportTest" + pid;
         } else {
             socketName = "/tmp/testSocket" + pid;
         }
@@ -134,7 +134,7 @@ public class FileSocketTransportTest {
                 Thread.sleep(3000);
                 checkSocketPresent(socketName);
 
-                if (Platform.isWindows()) {
+                if (Platform.isWindows() && false) {
                     read = handshakeWindows(socketName, handshake, received);
                 } else {
                     read = handshakeUnix(socketName, handshake, received);

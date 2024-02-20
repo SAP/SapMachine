@@ -24,6 +24,7 @@
  * questions.
  */
 
+#if 0
 #include <stdlib.h>
 
 #include "jni.h"
@@ -294,3 +295,323 @@ char* fileSocketTransport_GetDefaultAddress() {
 
     return default_name;
 }
+#else
+#include <stdlib.h>
+
+#include "jni.h"
+#include "jvm.h"
+#include "fileSocketTransport.h"
+
+#include <windows.h>
+#include <winsock2.h>
+#include <afunix.h>
+#include <assert.h>
+
+
+#ifdef _WIN32
+#define SOCKET_HANDLE SOCKET
+#define INVALID_SOCKET_HANDLE INVALID_SOCKET
+#define CLOSE_SOCKET_FUNC closesocket
+#define CALL_INTERRUPTED (WSAGetLastError() == WSAEINTR)
+#else
+#define UNIX_PATH_MAX sizeof(((struct sockaddr_un *) 0)->sun_path)
+#define SOCKET_HANDLE int
+#define INVALID_SOCKET_HANDLE -1
+#define CLOSE_SOCKET_FUNC close
+#define CALL_INTERRUPTED (errno == EINTR)
+#define DELETE_FILE unlink
+#endif
+
+
+#if defined(_WIN32)
+/* Make sure winsock is initialized on Windows */
+BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+{
+    WSADATA wsadata;
+
+    if ((reason == DLL_PROCESS_ATTACH) && (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)) {
+        return JNI_FALSE;
+    }
+    else if (reason == DLL_PROCESS_DETACH) {
+        WSACleanup();
+    }
+
+    return TRUE;
+}
+#endif
+
+static SOCKET_HANDLE server_socket = INVALID_SOCKET_HANDLE;
+static SOCKET_HANDLE connection_socket = INVALID_SOCKET_HANDLE;
+
+static int readSocket(SOCKET_HANDLE socket, char* buf, int len) {
+    int result;
+
+    do {
+#if defined(_WIN32)
+        result = recv(socket, buf, len, 0);
+#else
+        result = read(socket, buf, len);
+#endif
+    } while ((result < 0) && CALL_INTERRUPTED);
+
+    return result;
+}
+
+static int writeSocket(SOCKET_HANDLE socket, char* buf, int len) {
+    int result;
+
+    do {
+#if defined(_WIN32)
+        result = send(socket, buf, len, 0);
+#else
+        result = write(socket, buf, len);
+#endif
+    } while ((result < 0) && CALL_INTERRUPTED);
+
+    return result;
+}
+
+static void closeSocket(SOCKET_HANDLE* socket) {
+    if (*socket != INVALID_SOCKET_HANDLE) {
+        int rv = -1;
+
+        do {
+            rv = CLOSE_SOCKET_FUNC(*socket);
+        } while ((rv != 0) && CALL_INTERRUPTED);
+
+
+        *socket = INVALID_SOCKET_HANDLE;
+    }
+}
+
+static char file_to_delete[UNIX_PATH_MAX];
+static volatile int file_to_delete_index; /* Updated when we change the filename (must be even for the filename to be valid). */
+static volatile int atexit_runs;
+
+static void memoryBarrier() {
+#if defined(_WIN32)
+    MemoryBarrier();
+#elif defined(__linux__) || defined(__APPLE__)
+    __sync_synchronize();
+#elif define(_AIX)
+    __sync();
+#else
+#error "Unknown platform"
+#endif
+}
+
+static jboolean deleteFile(char const* name) {
+#if defined(_WIN32)
+    if (!DeleteFile(name)) {
+        return GetLastError() == ERROR_FILE_NOT_FOUND ? JNI_TRUE : JNI_FALSE;
+    }
+
+    return JNI_TRUE;
+#else
+    return (access(name, F_OK) == -1) || (unlink(name) == 0) ? JNI_TRUE : JNI_FALSE;
+#endif
+}
+
+static int registerFileToDelete(char const* name) {
+    /* Change index and make odd to indicate we are in the update. */
+    assert((file_to_delete_index & 1) == 0);
+    file_to_delete_index += 1;
+    memoryBarrier();
+    file_to_delete[0] = '\0';
+
+    if ((name != NULL) && (strlen(name) + 1 <= sizeof(file_to_delete))) {
+        strcpy(file_to_delete, name);
+    }
+
+    memoryBarrier();
+    /* Make even again, since we are out of the update. */
+    file_to_delete_index += 1;
+    assert((file_to_delete_index & 1) == 0);
+    memoryBarrier();
+
+    return atexit_runs;
+}
+
+static void cleanupSocketOnExit(void) {
+    char filename[UNIX_PATH_MAX];
+    int first_index;
+    int last_index;
+
+    atexit_runs = 1;
+    // Only try copying once. If we cross an update, just don't delete the file.
+    memoryBarrier();
+    first_index = file_to_delete_index;
+    memoryBarrier();
+    memcpy(filename, file_to_delete, UNIX_PATH_MAX);
+    memoryBarrier();
+    last_index = file_to_delete_index;
+
+    if ((first_index == last_index) && ((first_index & 1) == 0) && (strlen(filename) > 0)) {
+        deleteFile(filename);
+    }
+}
+
+jboolean fileSocketTransport_HasValidHandle() {
+    return connection_socket == INVALID_SOCKET_HANDLE ? JNI_FALSE : JNI_TRUE;
+}
+
+void fileSocketTransport_CloseImpl() {
+    closeSocket(&server_socket);
+    closeSocket(&connection_socket);
+}
+
+void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
+    fileSocketTransport_logError("%s: socket %s: %s", error_msg, name, strerror(errno));
+    fileSocketTransport_CloseImpl();
+    registerFileToDelete(NULL);
+}
+
+void fileSocketTransport_AcceptImpl(char const* name) {
+    static int already_called = 0;
+
+    if (!already_called) {
+        atexit(cleanupSocketOnExit);
+        already_called = 1;
+    }
+
+    if (server_socket == INVALID_SOCKET_HANDLE) {
+        socklen_t len = sizeof(struct sockaddr_un);
+        struct sockaddr_un addr;
+        int addr_size = sizeof(addr);
+
+        memset((void*)&addr, 0, len);
+        addr.sun_family = AF_UNIX;
+        strncpy(addr.sun_path, name, sizeof(addr.sun_path) - 1);
+
+#ifdef _AIX
+        addr.sun_len = strlen(addr.sun_path);
+        addr_size = SUN_LEN(&addr);
+#endif
+
+        server_socket = socket(PF_UNIX, SOCK_STREAM, 0);
+
+        if (server_socket == INVALID_SOCKET_HANDLE) {
+            logAndCleanupFailedAccept("Could not create doamin socket", name);
+            return;
+        }
+
+        if (!deleteFile(name)) {
+            logAndCleanupFailedAccept("Could not remove file to create new file socket", name);
+            return;
+        }
+
+        if (registerFileToDelete(name) != 0) {
+            logAndCleanupFailedAccept("VM is shutting down", name);
+            return;
+        }
+
+        if (bind(server_socket, (struct sockaddr*) &addr, addr_size) == -1) {
+            logAndCleanupFailedAccept("Could not bind file socket", name);
+            return;
+        }
+#if !defined(_WIN32)
+        if (chmod(name, (S_IREAD | S_IWRITE) & ~(S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1) {
+            logAndCleanupFailedAccept("Chmod on file socket failed", name);
+            return;
+        }
+
+        if (chown(name, geteuid(), getegid()) == -1) {
+            logAndCleanupFailedAccept("Chown on file socket failed", name);
+            return;
+        }
+#endif
+
+        if (listen(server_socket, 1) == -1) {
+            logAndCleanupFailedAccept("Could not listen on file socket", name);
+            return;
+        }
+    }
+
+    do {
+        connection_socket = accept(server_socket, NULL, NULL);
+    } while ((connection_socket == INVALID_SOCKET_HANDLE) && CALL_INTERRUPTED);
+
+    /* We can remove the file since we are connected (or it failed). */
+    deleteFile(name);
+    registerFileToDelete(NULL);
+
+    if (connection_socket == INVALID_SOCKET_HANDLE) {
+        logAndCleanupFailedAccept("Could not accept on file socket", name);
+    }
+    else {
+#if !defined(_WIN32)
+        uid_t other_user = (uid_t)-1;
+        gid_t other_group = (gid_t)-1;
+
+        /* Check if the connected user is the same as the user running the VM. */
+#if defined(__linux__)
+        struct ucred cred_info;
+        socklen_t optlen = sizeof(cred_info);
+
+        if (getsockopt(handle, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
+            logAndCleanupFailedAccept("Failed to get socket option SO_PEERCRED of file socket", name);
+            return;
+        }
+
+        other_user = cred_info.uid;
+        other_group = cred_info.gid;
+#elif defined(__APPLE__)
+        if (getpeereid(handle, &other_user, &other_group) != 0) {
+            logAndCleanupFailedAccept("Failed to get peer id of file socket", name);
+            return;
+        }
+#elif defined(_AIX)
+        struct peercred_struct cred_info;
+        socklen_t optlen = sizeof(cred_info);
+
+        if (getsockopt(handle, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
+            logAndCleanupFailedAccept("Failed to get socket option SO_PEERID of file socket", name);
+            return;
+        }
+
+        other_user = cred_info.euid;
+        other_group = cred_info.egid;
+#else
+#error "Unknown platform"
+#endif
+
+        if (other_user != geteuid()) {
+            fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
+                (int)other_user, name, (int)geteuid());
+            fileSocketTransport_CloseImpl();
+        }
+        else if (other_group != getegid()) {
+            fileSocketTransport_logError("Cannot allow user %d (group %d) to connect to file socket "
+                "%s of user %d (group %d)", (int)other_user, (int)other_group,
+                name, (int)geteuid(), (int)getegid());
+            fileSocketTransport_CloseImpl();
+        }
+#endif
+    }
+}
+
+int fileSocketTransport_ReadImpl(char* buffer, int size) {
+    int result = readSocket(connection_socket, buffer, size);
+
+    if (result < 0) {
+        fileSocketTransport_logError("Read failed with result %d: %s", result, strerror(errno));
+    }
+
+    return result;
+}
+
+int fileSocketTransport_WriteImpl(char* buffer, int size) {
+    int result = writeSocket(connection_socket, buffer, size);
+
+    if (result < 0) {
+        fileSocketTransport_logError("Write failed with result %d: %s", result, strerror(errno));
+    }
+
+    return result;
+}
+
+char* fileSocketTransport_GetDefaultAddress() {
+    return NULL;
+}
+
+#endif
