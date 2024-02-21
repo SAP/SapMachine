@@ -371,6 +371,16 @@ static int writeSocket(SOCKET_HANDLE socket, char* buf, int len) {
     return result;
 }
 
+static char* getErrorMsg(char* buf, size_t len) {
+#if defined(_WIN32)
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        buf, (DWORD) len, NULL);
+    return buf;
+#else
+    return strerror(errno);
+#endif
+}
 static void closeSocket(SOCKET_HANDLE* socket) {
     if (*socket != INVALID_SOCKET_HANDLE) {
         int rv = -1;
@@ -385,8 +395,7 @@ static void closeSocket(SOCKET_HANDLE* socket) {
 }
 
 static char file_to_delete[UNIX_PATH_MAX];
-static volatile int file_to_delete_index; /* Updated when we change the filename (must be even for the filename to be valid). */
-static volatile int atexit_runs;
+static volatile int file_to_delete_valid;
 
 static void memoryBarrier() {
 #if defined(_WIN32)
@@ -412,42 +421,27 @@ static jboolean deleteFile(char const* name) {
 #endif
 }
 
-static int registerFileToDelete(char const* name) {
-    /* Change index and make odd to indicate we are in the update. */
-    assert((file_to_delete_index & 1) == 0);
-    file_to_delete_index += 1;
-    memoryBarrier();
-    file_to_delete[0] = '\0';
 
-    if ((name != NULL) && (strlen(name) + 1 <= sizeof(file_to_delete))) {
-        strcpy(file_to_delete, name);
+static void registerFileToDelete(char const* name) {
+    if (file_to_delete_valid == 0) {
+        if ((name != NULL) && (strlen(name) + 1 <= sizeof(file_to_delete))) {
+            strcpy(file_to_delete, name);
+            memoryBarrier();
+            file_to_delete_valid = 1;
+            memoryBarrier();
+        }
+    } else {
+        // Should never change.
+        assert(strcmp(name, file_to_delete) == 0);
     }
-
-    memoryBarrier();
-    /* Make even again, since we are out of the update. */
-    file_to_delete_index += 1;
-    assert((file_to_delete_index & 1) == 0);
-    memoryBarrier();
-
-    return atexit_runs;
 }
 
 static void cleanupSocketOnExit(void) {
-    char filename[UNIX_PATH_MAX];
-    int first_index;
-    int last_index;
+    memoryBarrier();
 
-    atexit_runs = 1;
-    // Only try copying once. If we cross an update, just don't delete the file.
-    memoryBarrier();
-    first_index = file_to_delete_index;
-    memoryBarrier();
-    memcpy(filename, file_to_delete, UNIX_PATH_MAX);
-    memoryBarrier();
-    last_index = file_to_delete_index;
-
-    if ((first_index == last_index) && ((first_index & 1) == 0) && (strlen(filename) > 0)) {
-        deleteFile(filename);
+    if (file_to_delete_valid) {
+        memoryBarrier();
+        deleteFile(file_to_delete);
     }
 }
 
@@ -461,7 +455,8 @@ void fileSocketTransport_CloseImpl() {
 }
 
 void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
-    fileSocketTransport_logError("%s: socket %s: %s", error_msg, name, strerror(errno));
+    char buf[256];
+    fileSocketTransport_logError("%s: socket %s: %s", error_msg, name, getErrorMsg(buf, sizeof(buf)));
     fileSocketTransport_CloseImpl();
     registerFileToDelete(NULL);
 }
@@ -500,10 +495,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             return;
         }
 
-        if (registerFileToDelete(name) != 0) {
-            logAndCleanupFailedAccept("VM is shutting down", name);
-            return;
-        }
+        registerFileToDelete(name);
 
         if (bind(server_socket, (struct sockaddr*) &addr, addr_size) == -1) {
             logAndCleanupFailedAccept("Could not bind file socket", name);
@@ -533,7 +525,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
     /* We can remove the file since we are connected (or it failed). */
     deleteFile(name);
-    registerFileToDelete(NULL);
+    closeSocket(&server_socket);
 
     if (connection_socket == INVALID_SOCKET_HANDLE) {
         logAndCleanupFailedAccept("Could not accept on file socket", name);
@@ -548,7 +540,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         struct ucred cred_info;
         socklen_t optlen = sizeof(cred_info);
 
-        if (getsockopt(handle, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
+        if (getsockopt(connection_socket, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
             logAndCleanupFailedAccept("Failed to get socket option SO_PEERCRED of file socket", name);
             return;
         }
@@ -556,7 +548,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         other_user = cred_info.uid;
         other_group = cred_info.gid;
 #elif defined(__APPLE__)
-        if (getpeereid(handle, &other_user, &other_group) != 0) {
+        if (getpeereid(connection_socket, &other_user, &other_group) != 0) {
             logAndCleanupFailedAccept("Failed to get peer id of file socket", name);
             return;
         }
@@ -564,7 +556,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         struct peercred_struct cred_info;
         socklen_t optlen = sizeof(cred_info);
 
-        if (getsockopt(handle, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
+        if (getsockopt(connection_socket, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
             logAndCleanupFailedAccept("Failed to get socket option SO_PEERID of file socket", name);
             return;
         }
@@ -594,7 +586,8 @@ int fileSocketTransport_ReadImpl(char* buffer, int size) {
     int result = readSocket(connection_socket, buffer, size);
 
     if (result < 0) {
-        fileSocketTransport_logError("Read failed with result %d: %s", result, strerror(errno));
+        char buf[256];
+        fileSocketTransport_logError("Read failed with result %d: %s", result, getErrorMsg(buf, sizeof(buf)));
     }
 
     return result;
@@ -604,7 +597,8 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
     int result = writeSocket(connection_socket, buffer, size);
 
     if (result < 0) {
-        fileSocketTransport_logError("Write failed with result %d: %s", result, strerror(errno));
+        char buf[256];
+        fileSocketTransport_logError("Write failed with result %d: %s", result, getErrorMsg(buf, sizeof(buf)));
     }
 
     return result;
