@@ -411,8 +411,8 @@ static void memoryBarrier() {
 
 static jboolean deleteFile(char const* name) {
 #if defined(_WIN32)
-    if (!DeleteFile(name)) {
-        return GetLastError() == ERROR_FILE_NOT_FOUND ? JNI_TRUE : JNI_FALSE;
+    if ((!DeleteFile(name)) && (GetLastError() != ERROR_FILE_NOT_FOUND)) {
+        return JNI_FALSE;
     }
 
     return JNI_TRUE;
