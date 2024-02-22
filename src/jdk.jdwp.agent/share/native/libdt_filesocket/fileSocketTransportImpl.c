@@ -203,13 +203,18 @@ void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
     char buf[256];
     fileSocketTransport_logError("%s: socket %s: %s", error_msg, name, getErrorMsg(buf, sizeof(buf)));
     fileSocketTransport_CloseImpl();
-    registerFileToDelete(NULL);
 }
 
 void fileSocketTransport_AcceptImpl(char const* name) {
     static int already_called = 0;
 
+    if (strlen(name) >= UNIX_PATH_MAX) {
+        logAndCleanupFailedAccept("Path name is too large", name);
+        return;
+    }
+
     if (!already_called) {
+        registerFileToDelete(name);
         atexit(cleanupSocketOnExit);
         already_called = 1;
     }
@@ -239,8 +244,6 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             logAndCleanupFailedAccept("Could not remove file to create new file socket", name);
             return;
         }
-
-        registerFileToDelete(name);
 
         if (bind(server_socket, (struct sockaddr*) &addr, addr_size) == -1) {
             logAndCleanupFailedAccept("Could not bind file socket", name);
@@ -274,57 +277,121 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 
     if (connection_socket == INVALID_SOCKET_HANDLE) {
         logAndCleanupFailedAccept("Could not accept on file socket", name);
+        return;
     }
-    else {
-#if !defined(_WIN32)
-        uid_t other_user = (uid_t)-1;
-        gid_t other_group = (gid_t)-1;
 
-        /* Check if the connected user is the same as the user running the VM. */
+#if defined(_WIN32)
+    ULONG peer_pid;
+    DWORD size;
+
+    if (WSAIoctl(connection_socket, SIO_AF_UNIX_GETPEERPID, NULL, 0, &peer_pid, sizeof(peer_pid), &size, NULL, NULL) != 0) {
+        logAndCleanupFailedAccept("Could not determine connected processed", name);
+        return;
+    }
+
+    fileSocketTransport_logError("Connected to pid %lu\n", (unsigned long) peer_pid);
+
+    HANDLE peer_proc = NULL;
+    HANDLE self_token = NULL;
+    HANDLE peer_token = NULL;
+    PTOKEN_USER self_user = NULL;
+    PTOKEN_USER peer_user = NULL;
+    TOKEN_ELEVATION peer_elevation;
+    jboolean success = JNI_FALSE;
+
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &self_token)) {
+        logAndCleanupFailedAccept("Could not get own token", name);
+    } else if (GetTokenInformation(self_token, TokenUser, NULL, 0, &size)) {
+        logAndCleanupFailedAccept("Could not get own token user size", name);
+    } else if ((self_user = (PTOKEN_USER) malloc((size_t) size)) == NULL) {
+        logAndCleanupFailedAccept("Could not alloc own token user size", name);
+    } else if (!GetTokenInformation(self_token, TokenUser, self_user, size, &size)) {
+        logAndCleanupFailedAccept("Could not get own token user", name);
+    } else if ((peer_proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, peer_pid)) == NULL) {
+        logAndCleanupFailedAccept("Could not open peer process", name);
+    } else if (!OpenProcessToken(peer_proc, TOKEN_QUERY | TOKEN_QUERY_SOURCE, &peer_token)) {
+        logAndCleanupFailedAccept("Could not get peer token", name);
+    } else if (GetTokenInformation(peer_token, TokenUser, NULL, 0, &size)) {
+        logAndCleanupFailedAccept("Could not get peer token user size", name);
+    } else if ((peer_user = (PTOKEN_USER) malloc((size_t) size)) == NULL) {
+        logAndCleanupFailedAccept("Could not alloc peer token user size", name);
+    } else if (!GetTokenInformation(peer_token, TokenUser, peer_user, size, &size)) {
+        logAndCleanupFailedAccept("Could not get peer token information", name);
+    } else if (!GetTokenInformation(peer_token, TokenElevation, &peer_elevation, sizeof(peer_elevation), &size)) {
+        logAndCleanupFailedAccept("Could not get peer token information", name);
+    } else {
+        if (peer_elevation.TokenIsElevated || EqualSid(self_user->User.Sid, peer_user->User.Sid)) {
+            success = JNI_TRUE;
+        } else {
+            fileSocketTransport_logError("Connecting process is not the same user nor admin");
+            fileSocketTransport_CloseImpl();
+        }
+    }
+
+    if (peer_token != NULL) {
+        CloseHandle(peer_token);
+    }
+
+    if (self_token != NULL) {
+        CloseHandle(self_token);
+    }
+
+    if (peer_proc != NULL) {
+        CloseHandle(peer_proc);
+    }
+
+    free(self_user);
+    free(peer_user);
+#else
+    uid_t other_user = (uid_t)-1;
+    gid_t other_group = (gid_t)-1;
+
+    /* Check if the connected user is the same as the user running the VM. */
 #if defined(__linux__)
-        struct ucred cred_info;
-        socklen_t optlen = sizeof(cred_info);
+    struct ucred cred_info;
+    socklen_t optlen = sizeof(cred_info);
 
-        if (getsockopt(connection_socket, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
-            logAndCleanupFailedAccept("Failed to get socket option SO_PEERCRED of file socket", name);
-            return;
-        }
+    if (getsockopt(connection_socket, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
+        logAndCleanupFailedAccept("Failed to get socket option SO_PEERCRED of file socket", name);
+        return;
+    }
 
-        other_user = cred_info.uid;
-        other_group = cred_info.gid;
-#elif defined(__APPLE__)
-        if (getpeereid(connection_socket, &other_user, &other_group) != 0) {
-            logAndCleanupFailedAccept("Failed to get peer id of file socket", name);
-            return;
-        }
+#else
+
+    other_user = cred_info.uid;
+    other_group = cred_info.gid;
+if defined(__APPLE__)
+    if (getpeereid(connection_socket, &other_user, &other_group) != 0) {
+        logAndCleanupFailedAccept("Failed to get peer id of file socket", name);
+        return;
+    }
 #elif defined(_AIX)
-        struct peercred_struct cred_info;
-        socklen_t optlen = sizeof(cred_info);
+    struct peercred_struct cred_info;
+    socklen_t optlen = sizeof(cred_info);
 
-        if (getsockopt(connection_socket, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
-            logAndCleanupFailedAccept("Failed to get socket option SO_PEERID of file socket", name);
-            return;
-        }
+    if (getsockopt(connection_socket, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
+        logAndCleanupFailedAccept("Failed to get socket option SO_PEERID of file socket", name);
+        return;
+    }
 
-        other_user = cred_info.euid;
-        other_group = cred_info.egid;
+    other_user = cred_info.euid;
+    other_group = cred_info.egid;
 #else
 #error "Unknown platform"
 #endif
 
-        if (other_user != geteuid()) {
-            fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
-                (int)other_user, name, (int)geteuid());
-            fileSocketTransport_CloseImpl();
-        }
-        else if (other_group != getegid()) {
-            fileSocketTransport_logError("Cannot allow user %d (group %d) to connect to file socket "
-                "%s of user %d (group %d)", (int)other_user, (int)other_group,
-                name, (int)geteuid(), (int)getegid());
-            fileSocketTransport_CloseImpl();
-        }
-#endif
+    if (other_user != geteuid()) {
+        fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
+            (int)other_user, name, (int)geteuid());
+        fileSocketTransport_CloseImpl();
     }
+    else if (other_group != getegid()) {
+        fileSocketTransport_logError("Cannot allow user %d (group %d) to connect to file socket "
+            "%s of user %d (group %d)", (int)other_user, (int)other_group,
+            name, (int)geteuid(), (int)getegid());
+        fileSocketTransport_CloseImpl();
+    }
+#endif
 }
 
 int fileSocketTransport_ReadImpl(char* buffer, int size) {
