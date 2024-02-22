@@ -36,14 +36,23 @@ final class LibFallback {
 
     static final boolean SUPPORTED = tryLoadLibrary();
 
+    @SuppressWarnings("removal")
     private static boolean tryLoadLibrary() {
-        try {
-            System.loadLibrary("fallbackLinker");
-        } catch (UnsatisfiedLinkError ule) {
-            return false;
-        }
-        init();
-        return true;
+        return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<>() {
+                    public Boolean run() {
+                        try {
+                            System.loadLibrary("fallbackLinker");
+                        } catch (UnsatisfiedLinkError ule) {
+                            return false;
+                        }
+                        if (!init()) {
+                            // library failed to initialize. Do not silently mark as unsupported
+                            throw new ExceptionInInitializerError("Fallback library failed to initialize");
+                        }
+                        return true;
+                    }
+                });
     }
 
     static int defaultABI() { return NativeConstants.DEFAULT_ABI; }
@@ -189,7 +198,7 @@ final class LibFallback {
         }
     }
 
-    private static native void init();
+    private static native boolean init();
 
     private static native long sizeofCif();
 
