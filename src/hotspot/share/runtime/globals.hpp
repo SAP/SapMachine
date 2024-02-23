@@ -450,7 +450,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, LogEvents, true, DIAGNOSTIC,                                \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  product(int, LogEventsBufferEntries, 20, DIAGNOSTIC,                      \
+  /* SapMachine 2019-05-28: More events */                                  \
+  product(int, LogEventsBufferEntries, 75, DIAGNOSTIC,                      \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
@@ -509,6 +510,47 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
+                                                                            \
+  /* SapMachine 2019-02-20: Vitals */                                       \
+  product(bool, EnableVitals, true,                                         \
+          "Enable sampling of vitals: memory, cpu utilization and various " \
+          "VM core statistics; display via jcmd \"VM.vitals\".")            \
+                                                                            \
+  product(uintx, VitalsSampleInterval, 10,                                  \
+          "Vitals sample rate interval in seconds (default 10)")            \
+          range(1, 24 * 3600)                                               \
+                                                                            \
+  product(uintx, VitalsShortTermTableHours, 1,                              \
+          "The size of the short term vitals table in hours")               \
+          range(1, 365 * 24)                                                \
+                                                                            \
+  product(uintx, VitalsLongTermSampleIntervalMinutes, 60,                   \
+          "Vitals sample rate interval in minutes for the long term table " \
+          "(default 60)")                                                   \
+          range(1, 365 * 24 * 60)                                           \
+                                                                            \
+  product(uintx, VitalsLongTermTableDays, 14,                               \
+          "The size of the long term vitals table in days")                 \
+          range(1, 10 * 365)                                                \
+                                                                            \
+  product(bool, VitalsLockFreeSampling, false, DIAGNOSTIC,                  \
+          "When sampling vitals, omit any actions which require locking.")  \
+                                                                            \
+  product(bool, DumpVitalsAtExit, false,                                    \
+          "Dump vitals at VM exit into two files, by default called "       \
+          "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
+          "Use -XX:VitalsFile option to change the file names.")            \
+                                                                            \
+  product(bool, PrintVitalsAtExit, false,                                   \
+          "Prints vitals at VM exit to tty.")                               \
+                                                                            \
+  product(bool, StoreVitalsExtremas, true,                                  \
+          "If enabled we store the samples for extremum values of "         \
+          "selected types.")                                                \
+                                                                            \
+  product(ccstr, VitalsFile, NULL,                                          \
+          "When DumpVitalsAtExit is set, the file name prefix for the "     \
+          "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
@@ -589,7 +631,8 @@ const int ObjectAlignmentInBytes = 8;
           "Repeat compilation without installing code (number of times)")   \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, PrintExtendedThreadInfo, false,                             \
+  /* SapMachine 2018-08-29: Enable this per default */                      \
+  product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \
   product(intx, ScavengeRootsInCode, 2, DIAGNOSTIC,                         \
@@ -845,9 +888,18 @@ const int ObjectAlignmentInBytes = 8;
           "JVM exits on the first occurrence of an out-of-memory error "    \
           "thrown from JVM")                                                \
                                                                             \
+  /* SapMachine 2021-05-21: Changed comment (we do not core on OOM) */      \
   product(bool, CrashOnOutOfMemoryError, false,                             \
-          "JVM aborts, producing an error log and core/mini dump, on the "  \
-          "first occurrence of an out-of-memory error thrown from JVM")     \
+          "JVM aborts on the first occurrence of an out-of-memory error "   \
+          "thrown from JVM. A thread stack is dumped to stdout and an "     \
+          "error log produced. No core file will be produced unless "       \
+          "-XX:+CreateCoredumpOnCrash is explicitly specified on the "      \
+          "command line.")                                                  \
+                                                                            \
+  /* SapMachine 2021-05-21: Support ExitVMOnOutOfMemory to keep */          \
+  /*  command line parity with SAPJVM */                                    \
+  product(bool, ExitVMOnOutOfMemoryError, false,                            \
+          "Alias for CrashOnOutOfMemoryError")                              \
                                                                             \
   product(intx, UserThreadWaitAttemptsAtExit, 30,                           \
           "The number of times to wait for user threads to stop executing " \
@@ -1052,8 +1104,9 @@ const int ObjectAlignmentInBytes = 8;
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
+  /* SapMachine 2018-12-18: Enable this per default. */                     \
   product(bool, ExtensiveErrorReports,                                      \
-          PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
+          PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
           "Error reports are more extensive.")                              \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \

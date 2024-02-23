@@ -68,11 +68,19 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+// SapMachine 2019-02-20: Vitals
+#include "vitals/vitals.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
+#endif
+#ifdef LINUX
+// SapMachine 2019-02-20: Vitals
+#include "vitals_linux_himemreport.hpp"
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTrace.hpp"
 #endif
 
 #ifndef PRODUCT
@@ -1279,12 +1287,15 @@ void VMError::report(outputStream* st, bool _verbose) {
     Arguments::print_on(st);
     st->cr();
 
+  // SapMachine 2021-09-07:
+  // - print all values, not only non-default
+  // - comments are unnecessary bloat
   STEP_IF("printing flags", _verbose)
     JVMFlag::printFlags(
       st,
-      true, // with comments
+      false, // with comments
       false, // no ranges
-      true); // skip defaults
+      false); // skip defaults
     st->cr();
 
   STEP_IF("printing warning if internal testing API used", WhiteBox::used())
@@ -1316,6 +1327,23 @@ void VMError::report(outputStream* st, bool _verbose) {
     NativeHeapTrimmer::print_state(st);
     st->cr();
 
+  // SapMachine 2019-02-20: Vitals
+  STEP("Vitals")
+     if (_verbose) {
+       sapmachine_vitals::print_info_t info;
+       sapmachine_vitals::default_settings(&info);
+       info.sample_now = true;
+       st->print_cr("Vitals:");
+       sapmachine_vitals::print_report(st, &info);
+     }
+
+#ifdef LINUX
+  STEP("Vitals HiMemReport")
+    st->cr();
+    sapmachine_vitals::print_himemreport_state(st);
+    st->cr();
+#endif // LINUX
+
   STEP_IF("printing system", _verbose)
     st->print_cr("---------------  S Y S T E M  ---------------");
     st->cr();
@@ -1335,6 +1363,17 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing internal vm info", _verbose)
     st->print_cr("vm_info: %s", VM_Version::internal_vm_info_string());
     st->cr();
+
+  // SapMachine 2021-09-01: malloc-trace
+#if defined(LINUX) && defined(HAVE_GLIBC_MALLOC_HOOKS)
+  STEP("printing Malloc Trace info")
+
+    if (_verbose) {
+      st->print_cr("sapmachine malloc trace");
+      sap::MallocTracer::print_on_error(st);
+      st->cr();
+    }
+#endif
 
   // print a defined marker to show that error handling finished correctly.
   STEP_IF("printing end marker", _verbose)
@@ -1492,6 +1531,21 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
 
+  // SapMachine 2019-02-20: Vitals
+  // STEP("Vitals")
+  sapmachine_vitals::print_info_t info;
+  sapmachine_vitals::default_settings(&info);
+  info.sample_now = true;
+  st->print_cr("Vitals:");
+  sapmachine_vitals::print_report(st, &info);
+
+#ifdef LINUX
+  // STEP("Vitals HiMemReport")
+  st->cr();
+  sapmachine_vitals::print_himemreport_state(st);
+  st->cr();
+#endif // LINUX
+
   // STEP("printing system")
   st->print_cr("---------------  S Y S T E M  ---------------");
   st->cr();
@@ -1515,6 +1569,12 @@ void VMError::print_vm_info(outputStream* st) {
 
   st->print_cr("vm_info: %s", VM_Version::internal_vm_info_string());
   st->cr();
+
+#if defined(LINUX) && defined(HAVE_GLIBC_MALLOC_HOOKS)
+  // SapMachine 2021-09-01: malloc-trace
+  st->print_cr("sapmachine malloc trace");
+  sap::MallocTracer::print_on_error(st);
+#endif
 
   // print a defined marker to show that error handling finished correctly.
   // STEP("printing end marker")
@@ -2160,4 +2220,14 @@ VMErrorCallbackMark::VMErrorCallbackMark(VMErrorCallback* callback)
 VMErrorCallbackMark::~VMErrorCallbackMark() {
   assert(_thread->_vm_error_callbacks != nullptr, "Popped too far");
   _thread->_vm_error_callbacks = _thread->_vm_error_callbacks->_next;
+}
+
+// SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks
+//  to tty on CrashOnOutOfMemoryError
+void VMError::print_stack(outputStream* st) {
+  Thread* t = Thread::current_or_null_safe();
+  char buf[1024];
+  if (t != NULL && t->is_Java_thread()) {
+    VMError::print_stack_trace(st, (JavaThread*) t, buf, sizeof(buf), false);
+  }
 }
