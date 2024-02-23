@@ -6,6 +6,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "aix-ppc64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-21.0.3-ea.4_aix-ppc64_bin.tar.gz",
+                "checksum": "d3e9ef851ff215fa4537650ad49c1e5ad8694f140ffe3c34f757ccebff4dfc13",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B4/sapmachine-jdk-21.0.3-ea.4_aix-ppc64_bin.tar.gz"
+              }
+            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-21.0.3-ea.4_linux-aarch64_bin.tar.gz",
@@ -38,9 +45,23 @@
                 "checksum": "de65d4af0dd327f276b1737e1128c485c908bfc5bc69b599ea1675831dc22628",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B4/sapmachine-jdk-21.0.3-ea.4_macos-x64_bin.tar.gz"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-21.0.3-ea.4_windows-x64_bin.zip",
+                "checksum": "d0f57a6775371b788530ccae54cad337d15af9311aea9b96fda2b3faafd501a3",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B4/sapmachine-jdk-21.0.3-ea.4_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
+            "aix-ppc64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-21.0.3-ea.4_aix-ppc64_bin.tar.gz",
+                "checksum": "540d72ba053ca478119d6cf97f9e2f55ee1eef803ccae61be2b47be111bc59ec",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B4/sapmachine-jre-21.0.3-ea.4_aix-ppc64_bin.tar.gz"
+              }
+            },
             "linux-aarch64": {
               "tar.gz": {
                 "name": "sapmachine-jre-21.0.3-ea.4_linux-aarch64_bin.tar.gz",
@@ -72,6 +93,13 @@
                 "name": "sapmachine-jre-21.0.3-ea.4_macos-x64_bin.tar.gz",
                 "checksum": "9c83402218ccf3defa5976a84063c0b15393384f01791ee7baac2188a185d4ed",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B4/sapmachine-jre-21.0.3-ea.4_macos-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-21.0.3-ea.4_windows-x64_bin.zip",
+                "checksum": "b255483b6e106ab7ce9541c2504733d59172f64d6375d0fc756f189f3a6c8699",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3%2B4/sapmachine-jre-21.0.3-ea.4_windows-x64_bin.zip"
               }
             }
           }
