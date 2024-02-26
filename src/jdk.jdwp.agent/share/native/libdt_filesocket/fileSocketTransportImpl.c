@@ -24,6 +24,7 @@
  * questions.
  */
 
+#if 0
 #include <stdlib.h>
 #include <assert.h>
 
@@ -420,3 +421,4 @@ char* fileSocketTransport_GetDefaultAddress() {
     return NULL;
 }
 
+#endif

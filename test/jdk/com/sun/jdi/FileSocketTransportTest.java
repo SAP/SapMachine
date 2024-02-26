@@ -57,7 +57,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class FileSocketTransportTest {
 
-    private static int handshakeUnix(String path, byte[] handshake, byte[] reply) throws IOException {
+    private static int handshake(String path, byte[] handshake, byte[] reply) throws IOException {
         UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(path);
         SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX);
         channel.connect(addr);
@@ -72,36 +72,13 @@ public class FileSocketTransportTest {
         return result;
     }
 
-    private static int handshakeWindows(String path, byte[] handshake, byte[] reply) throws IOException {
-        String testSrc = System.getProperty("test.src");
-        System.setProperty("com.sap.jdk.ext.natives.platformRoot",
-                testSrc + "/libs/jdkext_natives");
-        System.setProperty("com.sap.jdk.ext.natives.traceLoading", "true");
-
-        FileSocketAddress addr = new FileSocketAddress(path);
-        // Just do the handshake and disconnect.
-        FileSocket fs = new FileSocket(addr, 2000);
-        fs.getOutputStream().write(handshake);
-        int result = fs.getInputStream().read(reply);
-        fs.close();
-
-        return result;
-    }
-
     public static void main(String[] args) throws Throwable {
         if (args.length == 1 && "--sleep".equals(args[0])) {
             Thread.sleep(30000);
             System.exit(1);
         }
 
-        String socketName;
-        long pid = ProcessTools.getProcessId();
-
-        if (Platform.isWindows()) {
-            socketName = "test.socket"; //"\\\\.\\Pipe\\FileSocketTransportTest" + pid;
-        } else {
-            socketName = "/tmp/testSocket" + pid;
-        }
+        String socketName = "test.socket";
 
         List<String> opts = new ArrayList<>();
         // opts.addAll(Utils.getVmOptions());
@@ -133,13 +110,7 @@ public class FileSocketTransportTest {
                 // Wait a bit to let the debugging be set up properly.
                 Thread.sleep(3000);
                 checkSocketPresent(socketName);
-
-                if (Platform.isWindows() && false) {
-                    read = handshakeWindows(socketName, handshake, received);
-                } else {
-                    read = handshakeUnix(socketName, handshake, received);
-                } 
-
+                read = handshake(socketName, handshake, received);
                 checkSocketDeleted(socketName);
                 assertEquals(new String(handshake, "UTF-8"),
                              new String(received, "UTF-8"));

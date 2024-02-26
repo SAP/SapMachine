@@ -35,5 +35,4 @@ void fileSocketTransport_CloseImpl();
 void fileSocketTransport_AcceptImpl(char const* name);
 int fileSocketTransport_ReadImpl(char* buffer, int size);
 int fileSocketTransport_WriteImpl(char* buffer, int size);
-char* fileSocketTransport_GetDefaultAddress();
 #endif

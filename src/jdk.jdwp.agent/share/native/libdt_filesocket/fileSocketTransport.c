@@ -33,11 +33,13 @@
 
 #ifdef _WIN32
 #include <winsock2.h>
+#include <afunix.h>
+#define MAX_FILE_SOCKET_PATH_LEN UNIX_PATH_MAX
 #else
 #include <arpa/inet.h>
+#define MAX_FILE_SOCKET_PATH_LEN sizeof(((struct sockaddr_un *) 0)->sun_path)
 #endif
 
-#define MAX_FILE_SOCKET_PATH_LEN 4096
 #define MAX_DATA_SIZE 1000
 #define HANDSHAKE "JDWP-Handshake"
 
@@ -111,11 +113,7 @@ static jdwpTransportError JNICALL fileSocketTransport_StartListening(jdwpTranspo
     fileSocketTransport_Close(env);
 
     if (address == NULL) {
-        address = fileSocketTransport_GetDefaultAddress();
-    }
-
-    if (address == NULL) {
-        fileSocketTransport_logError("Could not determine a default address");
+        fileSocketTransport_logError("Default address not supported");
         return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
     }
 
