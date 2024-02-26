@@ -37,6 +37,8 @@
 #define MAX_FILE_SOCKET_PATH_LEN UNIX_PATH_MAX
 #else
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #define MAX_FILE_SOCKET_PATH_LEN sizeof(((struct sockaddr_un *) 0)->sun_path)
 #endif
 
