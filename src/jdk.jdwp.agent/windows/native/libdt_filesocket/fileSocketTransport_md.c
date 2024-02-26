@@ -198,46 +198,30 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     PTOKEN_USER self_user = NULL;
     PTOKEN_USER peer_user = NULL;
     TOKEN_ELEVATION peer_elevation;
-    jboolean success = JNI_FALSE;
 
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &self_token)) {
         logAndCleanupFailedAccept("Could not get own token", name);
-    }
-    else if (GetTokenInformation(self_token, TokenUser, NULL, 0, &size)) {
+    } else if (GetTokenInformation(self_token, TokenUser, NULL, 0, &size)) {
         logAndCleanupFailedAccept("Could not get own token user size", name);
-    }
-    else if ((self_user = (PTOKEN_USER)malloc((size_t)size)) == NULL) {
+    } else if ((self_user = (PTOKEN_USER)malloc((size_t)size)) == NULL) {
         logAndCleanupFailedAccept("Could not alloc own token user size", name);
-    }
-    else if (!GetTokenInformation(self_token, TokenUser, self_user, size, &size)) {
+    } else if (!GetTokenInformation(self_token, TokenUser, self_user, size, &size)) {
         logAndCleanupFailedAccept("Could not get own token user", name);
-    }
-    else if ((peer_proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, peer_pid)) == NULL) {
+    } else if ((peer_proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, peer_pid)) == NULL) {
         logAndCleanupFailedAccept("Could not open peer process", name);
-    }
-    else if (!OpenProcessToken(peer_proc, TOKEN_QUERY | TOKEN_QUERY_SOURCE, &peer_token)) {
+    } else if (!OpenProcessToken(peer_proc, TOKEN_QUERY | TOKEN_QUERY_SOURCE, &peer_token)) {
         logAndCleanupFailedAccept("Could not get peer token", name);
-    }
-    else if (GetTokenInformation(peer_token, TokenUser, NULL, 0, &size)) {
+    } else if (GetTokenInformation(peer_token, TokenUser, NULL, 0, &size)) {
         logAndCleanupFailedAccept("Could not get peer token user size", name);
-    }
-    else if ((peer_user = (PTOKEN_USER)malloc((size_t)size)) == NULL) {
+    } else if ((peer_user = (PTOKEN_USER)malloc((size_t)size)) == NULL) {
         logAndCleanupFailedAccept("Could not alloc peer token user size", name);
-    }
-    else if (!GetTokenInformation(peer_token, TokenUser, peer_user, size, &size)) {
+    } else if (!GetTokenInformation(peer_token, TokenUser, peer_user, size, &size)) {
         logAndCleanupFailedAccept("Could not get peer token information", name);
-    }
-    else if (!GetTokenInformation(peer_token, TokenElevation, &peer_elevation, sizeof(peer_elevation), &size)) {
+    } else if (!GetTokenInformation(peer_token, TokenElevation, &peer_elevation, sizeof(peer_elevation), &size)) {
         logAndCleanupFailedAccept("Could not get peer token information", name);
-    }
-    else {
-        if (peer_elevation.TokenIsElevated || EqualSid(self_user->User.Sid, peer_user->User.Sid)) {
-            success = JNI_TRUE;
-        }
-        else {
-            fileSocketTransport_logError("Connecting process is not the same user nor admin");
-            fileSocketTransport_CloseImpl();
-        }
+    } else if (!peer_elevation.TokenIsElevated && !EqualSid(self_user->User.Sid, peer_user->User.Sid)) {
+        fileSocketTransport_logError("Connecting process is not the same user nor admin");
+        fileSocketTransport_CloseImpl();
     }
 
     if (peer_token != NULL) {
