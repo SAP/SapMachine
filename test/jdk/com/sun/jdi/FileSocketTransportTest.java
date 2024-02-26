@@ -24,12 +24,11 @@
 
 /**
  * @test
- * @requires os.arch != "aarch64" | os.family != "windows"
  * @summary Test basic functionality of the file socket debug transport.
  *
  * @author Ralf Schmelter
  *
- * @library /test/lib libs/com.sap.jvm.jdkext-8-patch-20181214.065356-2.jar
+ * @library /test/lib
  * @run compile FileSocketTransportTest.java
  * @run main/othervm FileSocketTransportTest
  */
@@ -46,9 +45,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.sap.jdk.ext.filesocket.FileSocket;
-import com.sap.jdk.ext.filesocket.FileSocketAddress;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
@@ -81,7 +77,6 @@ public class FileSocketTransportTest {
         String socketName = "test.socket";
 
         List<String> opts = new ArrayList<>();
-        // opts.addAll(Utils.getVmOptions());
         opts.add("-agentlib:jdwp=transport=dt_filesocket,address=" +
                  socketName + ",server=y,suspend=n");
         opts.add(FileSocketTransportTest.class.getName());
