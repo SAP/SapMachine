@@ -120,11 +120,6 @@ void logAndCleanupFailedAccept(char const* error_msg, char const* name) {
 void fileSocketTransport_AcceptImpl(char const* name) {
     static int already_called = 0;
 
-    if (strlen(name) >= UNIX_PATH_MAX) {
-        logAndCleanupFailedAccept("Path name is too large", name);
-        return;
-    }
-
     if (!already_called) {
         registerFileToDelete(name);
         atexit(cleanupSocketOnExit);

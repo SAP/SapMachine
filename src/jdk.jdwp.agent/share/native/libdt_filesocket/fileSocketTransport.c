@@ -53,7 +53,7 @@
 static jboolean fake_open = JNI_FALSE;
 static jboolean initialized = JNI_FALSE;
 static JavaVM *jvm;
-static char path[MAX_FILE_SOCKET_PATH_LEN + 1];
+static char path[MAX_FILE_SOCKET_PATH_LEN];
 static jdwpTransportCallback *callback;
 static char last_error[2048];
 static struct jdwpTransportNativeInterface_ nif;
@@ -121,11 +121,11 @@ static jdwpTransportError JNICALL fileSocketTransport_StartListening(jdwpTranspo
 
     *actual_address = (char*) address;
 
-    if (strlen(address) <= MAX_FILE_SOCKET_PATH_LEN) {
+    if (strlen(address) < MAX_FILE_SOCKET_PATH_LEN) {
         strcpy(path, address);
     } else {
         fileSocketTransport_logError("Address too long: %s", address);
-        fake_open = JNI_TRUE;
+        return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
     }
 
     return JDWPTRANSPORT_ERROR_NONE;
