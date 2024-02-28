@@ -359,6 +359,11 @@ static jdwpTransportError JNICALL fileSocketTransport_WritePacket(jdwpTransportE
 
 static jdwpTransportError JNICALL fileSocketTransport_GetLastError(jdwpTransportEnv* env, char** error) {
     *error = (*callback->alloc)(sizeof(last_error));
+
+    if (*error == NULL) {
+      return JDWPTRANSPORT_ERROR_OUT_OF_MEMORY;
+    }
+
     memcpy(*error, last_error, sizeof(last_error));
     (*error)[sizeof(last_error) - 1] = '\0';
     return JDWPTRANSPORT_ERROR_NONE;
