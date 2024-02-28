@@ -23,10 +23,10 @@
  * questions.
  */
 
-#include "jni.h"
-
 #ifndef FILE_SOCKET_TRANSPORT_H
 #define FILE_SOCKET_TRANSPORT_H
+
+#include "jni.h"
 
 void fileSocketTransport_logError(char const* format, ...);
 jboolean fileSocketTransport_HasValidHandle();
@@ -34,4 +34,5 @@ void fileSocketTransport_CloseImpl();
 void fileSocketTransport_AcceptImpl(char const* name);
 int fileSocketTransport_ReadImpl(char* buffer, int size);
 int fileSocketTransport_WriteImpl(char* buffer, int size);
+
 #endif
