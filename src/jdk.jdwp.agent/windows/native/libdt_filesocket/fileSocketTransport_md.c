@@ -55,13 +55,7 @@ static SOCKET connection_socket = INVALID_SOCKET;
 
 static void closeSocket(SOCKET* socket) {
     if (*socket != INVALID_SOCKET) {
-        int rv = -1;
-
-        do {
-            rv = closesocket(*socket);
-        } while ((rv != 0) && (WSAGetLastError() == WSAEINTR));
-
-
+        closesocket(*socket);
         *socket = INVALID_SOCKET;
     }
 }
