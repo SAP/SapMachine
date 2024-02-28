@@ -54,10 +54,13 @@ static void closeSocket(int* socket) {
     if (*socket != -1) {
         int rv = -1;
 
-        do {
+#if defined(_AIX)
+	do {
             rv = close(*socket);
         } while ((rv != 0) && (errno == EINTR));
-
+#else
+	rc = close(*socket);
+#endif
 
         *socket = -1;
     }
