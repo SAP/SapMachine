@@ -52,14 +52,14 @@ static int connection_socket = -1;
 
 static void closeSocket(int* socket) {
     if (*socket != -1) {
-        int rv = -1;
-
 #if defined(_AIX)
-	do {
+	 int rv;
+
+	 do {
             rv = close(*socket);
         } while ((rv != 0) && (errno == EINTR));
 #else
-	rc = close(*socket);
+	close(*socket);
 #endif
 
         *socket = -1;
@@ -224,16 +224,19 @@ void fileSocketTransport_AcceptImpl(char const* name) {
 #error "Unknown platform"
 #endif
 
-    if (other_user != geteuid()) {
-        fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
-            (int)other_user, name, (int)geteuid());
-        fileSocketTransport_CloseImpl();
-    }
-    else if (other_group != getegid()) {
-        fileSocketTransport_logError("Cannot allow user %d (group %d) to connect to file socket "
-            "%s of user %d (group %d)", (int)other_user, (int)other_group,
-            name, (int)geteuid(), (int)getegid());
-        fileSocketTransport_CloseImpl();
+    /* Allow root too */
+    if (other_user != 0) {
+        if (other_user != geteuid()) {
+            fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
+                (int)other_user, name, (int)geteuid());
+            fileSocketTransport_CloseImpl();
+        }
+        else if (other_group != getegid()) {
+            fileSocketTransport_logError("Cannot allow user %d (group %d) to connect to file socket "
+                "%s of user %d (group %d)", (int)other_user, (int)other_group,
+                name, (int)geteuid(), (int)getegid());
+            fileSocketTransport_CloseImpl();
+        }
     }
 }
 
