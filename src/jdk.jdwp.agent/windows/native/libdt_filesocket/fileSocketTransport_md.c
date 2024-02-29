@@ -179,8 +179,6 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         return;
     }
 
-    fileSocketTransport_logError("Connected to pid %lu\n", (unsigned long)peer_pid);
-
     HANDLE peer_proc = NULL;
     HANDLE self_token = NULL;
     HANDLE peer_token = NULL;
