@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,30 +68,16 @@ static void print_error(char const* msg) {
 
 
 static void unepected_call() {
-  print_error("Uninitialzed function called. libmallochooks.so must the the first preloaded library.\n");
+  print_error("Uninitialized function called. libmallochooks.so must be the first preloaded library.\n");
   exit(1);
 }
 
 // The tag for malloc functions which should be loaded by dl_sym.
 #define LOAD_DYNAMIC  ((void*) unepected_call)
 
-static size_t get_allocated_size(void* ptr) {
-  if (ptr == NULL) {
-    return 0;
-  }
-
-#if defined(__GLIBC__)
-  return ((size_t*) ptr)[-1] & ~((size_t) 15);
-#elif defined(__APPLE__)
-  return malloc_size(ptr);
-#elif defined (MUSL_LIBC)
-  return malloc_usable_size(ptr);
-#endif
-}
-
 #if defined(__APPLE__)
 
-static real_funcs_t impl = {
+static real_malloc_funcs_t impl = {
   malloc,
   calloc,
   realloc,
@@ -101,7 +87,7 @@ static real_funcs_t impl = {
   NULL,
   valloc,
   NULL,
-  get_allocated_size
+  (malloc_size_func_t*) malloc_size
 };
 
 #define REPLACE_NAME(x) x##_interpose
@@ -116,7 +102,7 @@ void* __libc_memalign(size_t align, size_t size);
 void* __libc_valloc(size_t size);
 void* __libc_pvalloc(size_t size);
 
-static real_funcs_t impl = {
+static real_malloc_funcs_t impl = {
   __libc_malloc,
   __libc_calloc,
   __libc_realloc,
@@ -126,7 +112,7 @@ static real_funcs_t impl = {
   (aligned_alloc_func_t*) LOAD_DYNAMIC,
   __libc_valloc,
   __libc_pvalloc,
-  get_allocated_size
+  malloc_usable_size
 };
 
 #elif defined(MUSL_LIBC)
@@ -135,7 +121,7 @@ static void* calloc_by_malloc(size_t elems, size_t size);
 static int posix_memalign_by_aligned_alloc(void** ptr, size_t align, size_t size);
 static void* memalign_by_aligned_alloc(size_t align, size_t size);
 
-static real_funcs_t impl = {
+static real_malloc_funcs_t impl = {
   (malloc_func_t*) LOAD_DYNAMIC,
   calloc_by_malloc,
   (realloc_func_t*) LOAD_DYNAMIC,
@@ -145,7 +131,7 @@ static real_funcs_t impl = {
   (aligned_alloc_func_t*) LOAD_DYNAMIC,
   NULL,
   NULL,
-  get_allocated_size
+  malloc_usable_size
 };
 
 /* musl calloc would call the redirected malloc, so we call the right malloc here. */
@@ -167,6 +153,10 @@ static void* calloc_by_malloc(size_t elems, size_t size) {
 
 /* musl posix_memalign would call the redirected aligned_alloc, so we call the right aligned_alloc here. */
 static int posix_memalign_by_aligned_alloc(void** ptr, size_t align, size_t size) {
+  if (align < sizeof(void *)) {
+    return EINVAL;
+  }
+
   void* result = impl.aligned_alloc(align, size);
 
   if (ptr != NULL) {
@@ -282,7 +272,7 @@ EXPORT registered_hooks_t* malloc_hooks_active_hooks() {
   return (registered_hooks_t*) registered_hooks;
 }
 
-EXPORT real_funcs_t* malloc_hooks_get_real_funcs() {
+EXPORT real_malloc_funcs_t* malloc_hooks_get_real_malloc_funcs() {
   return &impl;
 }
 
@@ -302,7 +292,7 @@ EXPORT real_funcs_t* malloc_hooks_get_real_funcs() {
 #define LOG_PTR_WITH_SIZE(ptr) \
   LOG_PTR(ptr); \
   if (ptr != NULL) { \
-    size_t size = get_allocated_size(ptr); \
+    size_t size = impl.malloc_size(ptr); \
     if (size > 0) { \
       print(" (size "); \
       print_size(size); \

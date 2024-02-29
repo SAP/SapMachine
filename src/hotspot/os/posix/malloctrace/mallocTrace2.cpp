@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/ticks.hpp"
 
 #include <pthread.h>
@@ -55,23 +56,30 @@
 
 // Some compile time constants for the maps.
 
-#define MAX_STACK_MAP_LOAD 0.5
-#define STACK_MAP_INIT_SIZE 1024
+constexpr double MAX_STACK_MAP_LOAD = 0.5;
+constexpr int STACK_MAP_INIT_SIZE = 1024;
+static_assert(is_power_of_2(STACK_MAP_INIT_SIZE), "stack map size must be power of 2");
 
-#define MAX_ALLOC_MAP_LOAD 2.5
-#define ALLOC_MAP_INIT_SIZE 1024
+constexpr double MAX_ALLOC_MAP_LOAD = 0.5;
+constexpr int ALLOC_MAP_INIT_SIZE = 1024;
+static_assert(is_power_of_2(ALLOC_MAP_INIT_SIZE), "alloc map size must be power of 2");
 
-// Must be a power of two minus 1.
-#define MAX_FRAMES 31
+constexpr int MAX_FRAMES = 31;
+static_assert(is_power_of_2(MAX_FRAMES + 1), "max frames must be power of 2 minus 1");
 
 // The number of top frames to skip.
-#define FRAMES_TO_SKIP 0
+constexpr int FRAMES_TO_SKIP = 0;
 
-// Must be a power of two.
-#define NR_OF_STACK_MAPS 16
-#define NR_OF_ALLOC_MAPS 32
+constexpr int NR_OF_STACK_MAPS = 16;
+static_assert(is_power_of_2(NR_OF_STACK_MAPS), "nr of stack maps must be power of 2");
+
+constexpr int NR_OF_ALLOC_MAPS = 32;
+static_assert(is_power_of_2(NR_OF_ALLOC_MAPS), "nr of alloc maps must be power of 2");
 
 namespace sap {
+
+// The real allocation funcstions to use. This is be initialized later.
+static real_malloc_funcs_t* real_malloc_funcs = NULL;
 
 static bool is_non_empty_string(char const* str) {
   return (str != NULL) && (str[0] != '\0');
@@ -162,7 +170,7 @@ static uint64_t parse_timespan(char const* spec, char const** error = NULL) {
   }
 
   if (pos != start) {
-    *error = "time wihtout unit";
+    *error = "time without unit";
   }
 
   if (result / (24 * 60 * 60) > limit_in_days) {
@@ -181,7 +189,6 @@ class Allocator {
 private:
   // We need padding, since we have arrays of this class used in parallel.
   char          _pre_pad[DEFAULT_CACHE_LINE_SIZE];
-  real_funcs_t* _funcs;
   size_t        _allocation_size;
   int           _entries_per_chunk;
   void**        _chunks;
@@ -191,7 +198,7 @@ private:
   char          _post_pad[DEFAULT_CACHE_LINE_SIZE];
 
 public:
-  Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs);
+  Allocator(size_t allocation_size, int entries_per_chunk);
   ~Allocator();
 
   void* allocate();
@@ -200,8 +207,7 @@ public:
   size_t unused();
 };
 
-Allocator::Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t* funcs) :
-  _funcs(funcs),
+Allocator::Allocator(size_t allocation_size, int entries_per_chunk) :
   _allocation_size(align_up(allocation_size, 8)), // We need no stricter alignment
   _entries_per_chunk(entries_per_chunk),
   _chunks(NULL),
@@ -212,7 +218,7 @@ Allocator::Allocator(size_t allocation_size, int entries_per_chunk, real_funcs_t
 
 Allocator::~Allocator() {
   for (int i = 0; i < _nr_of_chunks; ++i) {
-    _funcs->free(_chunks[i]);
+    real_malloc_funcs->free(_chunks[i]);
   }
 }
 
@@ -227,13 +233,13 @@ void* Allocator::allocate() {
   }
 
   // We need a new chunk.
-  char* new_chunk = (char*) _funcs->malloc(_entries_per_chunk * _allocation_size);
+  char* new_chunk = (char*) real_malloc_funcs->malloc(_entries_per_chunk * _allocation_size);
 
   if (new_chunk == NULL) {
     return NULL;
   }
 
-  void** new_chunks = (void**) _funcs->realloc(_chunks, sizeof(void**) * (_nr_of_chunks + 1));
+  void** new_chunks = (void**) real_malloc_funcs->realloc(_chunks, sizeof(void**) * (_nr_of_chunks + 1));
 
   if (new_chunks == NULL) {
     return NULL;
@@ -284,12 +290,11 @@ private:
   int           _mask;
   int           _count;
   address*      _set;
-  real_funcs_t* _funcs;
 
   int get_slot(address to_check);
 
 public:
-  AddressHashSet(real_funcs_t* funcs, bool enabled);
+  AddressHashSet(bool enabled);
   ~AddressHashSet();
 
   bool contains(address to_check);
@@ -298,15 +303,14 @@ public:
   double load();
 };
 
-AddressHashSet::AddressHashSet(real_funcs_t* funcs, bool enabled) :
+AddressHashSet::AddressHashSet(bool enabled) :
   _mask(enabled ? 0 : 1),
   _count(0),
-  _set(NULL),
-  _funcs(funcs) {
+  _set(NULL) {
 }
 
 AddressHashSet::~AddressHashSet() {
-  _funcs->free(_set);
+  real_malloc_funcs->free(_set);
 }
 
 int AddressHashSet::get_slot(address to_check) {
@@ -316,7 +320,7 @@ int AddressHashSet::get_slot(address to_check) {
     // Initialize lazily.
     if (_mask == 0) {
       _mask = 8191;
-      _set = (address*) _funcs->calloc(_mask + 1, sizeof(address));
+      _set = (address*) real_malloc_funcs->calloc(_mask + 1, sizeof(address));
     }
 
     // When we overflow, return treat each address as not be contained. This is
@@ -359,11 +363,11 @@ bool AddressHashSet::add(address to_add) {
     _mask = _mask * 2 + 1;
     _count = 0;
 
-    _set = (address*) _funcs->calloc(_mask + 1, sizeof(address));
+    _set = (address*) real_malloc_funcs->calloc(_mask + 1, sizeof(address));
 
     // If full, we fall back to always return false.
     if (_set == NULL) {
-      _funcs->free(old_set);
+      real_malloc_funcs->free(old_set);
 
       return false;
     }
@@ -374,7 +378,7 @@ bool AddressHashSet::add(address to_add) {
       }
     }
 
-    _funcs->free(old_set);
+    real_malloc_funcs->free(old_set);
     add(to_add);
   } else {
     _set[slot] = to_add;
@@ -439,7 +443,7 @@ private:
   uint64_t   _hash_and_nr_of_frames;
   uint64_t   _size;
   uint64_t   _count;
-  address    _frames[1];
+  address    _frames[];
 
 public:
   StatEntry(size_t hash, size_t size, int nr_of_frames, address* frames) :
@@ -453,12 +457,17 @@ public:
     assert(nr_of_frames == this->nr_of_frames(), "Must be equal");
 
   }
+
   uint64_t hash() {
     return _hash_and_nr_of_frames / (MAX_FRAMES + 1);
   }
 
-  int map_index() {
-    return hash() & (NR_OF_STACK_MAPS - 1);
+  static int scaled_hash(uint64_t hash) {
+    return hash / NR_OF_STACK_MAPS;
+  }
+
+  static size_t size(int frames) {
+    return sizeof(StatEntry) + sizeof(address) * frames;
   }
 
   StatEntry* next() {
@@ -506,40 +515,29 @@ struct StatEntryCopy {
 };
 
 // The entry for a single allocation. Note that we don't store the pointer itself
-// but use the hash code instead. Our hash function is invertible, so this is OK.
+// but use the hash code instead. Our hash function is resersible, so this is OK.
 class AllocEntry {
 private:
   uint64_t    _hash;
   StatEntry*  _entry;
   AllocEntry* _next;
-
-#if defined(ASSERT)
-  void*       _ptr; // Is not really needed, but helps debugging.
-#endif
+  DEBUG_ONLY(void* _ptr); // Is not really needed, but helps debugging.
 
 public:
 
-#if defined(ASSERT)
-
-  AllocEntry(uint64_t hash, StatEntry* entry, AllocEntry* next, void* ptr) :
+  AllocEntry(uint64_t hash, StatEntry* entry, AllocEntry* next DEBUG_ONLY(COMMA void* ptr)) :
     _hash(hash),
     _entry(entry),
-    _next(next),
-    _ptr(ptr) {
+    _next(next)
+    DEBUG_ONLY(COMMA _ptr(ptr)) {
   }
-
-#else
-
-  AllocEntry(uint64_t hash, StatEntry* entry, AllocEntry* next) :
-    _hash(hash),
-    _entry(entry),
-    _next(next) {
-  }
-
-#endif
 
   uint64_t hash() {
     return _hash;
+  }
+
+  static int scaled_hash(uint64_t hash) {
+    return hash / NR_OF_ALLOC_MAPS;
   }
 
   StatEntry* entry() {
@@ -568,7 +566,7 @@ public:
 
 
 static register_hooks_t* register_hooks;
-static get_real_funcs_t* get_real_funcs;
+static get_real_malloc_funcs_t* get_real_malloc_funcs;
 
 #if defined(__APPLE__)
 #define LD_PRELOAD "DYLD_INSERT_LIBRARIES"
@@ -655,17 +653,44 @@ template<class Entry> struct HashMapData {
     _alloc(NULL) {
   }
 
-  void cleanup(real_funcs_t* funcs) {
+  void resize(int new_mask, double max_load) {
+    assert(is_power_of_2(new_mask + 1), "Must be a power of 2 minus 1");
+
+    Entry** new_entries = (Entry**) real_malloc_funcs->calloc(new_mask + 1, sizeof(Entry*));
+    Entry** old_entries = _entries;
+
+    // Fail silently if we don't get the memory.
+    if (new_entries != NULL) {
+      for (int i = 0; i <= _mask; ++i) {
+        Entry* entry = old_entries[i];
+
+        while (entry != NULL) {
+          Entry* next_entry = entry->next();
+          int slot = Entry::scaled_hash(entry->hash()) & new_mask;
+          entry->set_next(new_entries[slot]);
+          new_entries[slot] = entry;
+          entry = next_entry;
+        }
+      }
+
+      _entries = new_entries;
+      _mask = new_mask;
+      _limit = (int) ((_mask + 1) * max_load);
+      real_malloc_funcs->free(old_entries);
+    }
+  }
+
+  void cleanup() {
     Locker locker(&_lock);
 
     if (_alloc != NULL) {
       _alloc->~Allocator();
-      funcs->free(_alloc);
+      real_malloc_funcs->free(_alloc);
       _alloc = NULL;
     }
 
     if (_entries != NULL) {
-      funcs->free(_entries);
+      real_malloc_funcs->free(_entries);
       _entries = NULL;
     }
   }
@@ -677,7 +702,6 @@ typedef HashMapData<AllocEntry> AllocMapData;
 class MallocStatisticImpl : public AllStatic {
 private:
 
-  static real_funcs_t*      _funcs;
   static backtrace_func_t*  _backtrace;
   static char const*        _backtrace_name;
   static bool               _use_backtrace;
@@ -696,8 +720,6 @@ private:
   static StackMapData       _stack_maps_data[NR_OF_STACK_MAPS];
   static AllocMapData       _alloc_maps_data[NR_OF_ALLOC_MAPS];
 
-  static int                _entry_size;
-
   static uint64_t           _to_track_mask;
   static uint64_t           _to_track_limit;
 
@@ -710,7 +732,7 @@ private:
   static void*              _rainy_day_fund;
   static registered_hooks_t _rainy_day_hooks;
   static pthread_mutex_t    _rainy_day_fund_lock;
-  static volatile registered_hooks_t* _rainy_day_hooks_ptr;
+  static volatile bool      _rainy_day_fund_used;
 
   static void set_malloc_suspended(bool suspended);
   static bool malloc_suspended();
@@ -747,9 +769,6 @@ private:
   static int capture_stack(address* frames, address real_func, address caller);
 
   static bool setup_hooks(registered_hooks_t* hooks, outputStream* st);
-
-  static void resize_stack_map(int idx, int new_mask);
-  static void resize_alloc_map(int idx, int new_mask);
   static void cleanup();
 
   static bool dump_entry(outputStream* st, StatEntryCopy* entry, int index,
@@ -789,7 +808,6 @@ registered_hooks_t  MallocStatisticImpl::_rainy_day_hooks = {
   MallocStatisticImpl::pvalloc_hook_rd
 };
 
-real_funcs_t*     MallocStatisticImpl::_funcs;
 backtrace_func_t* MallocStatisticImpl::_backtrace;
 char const*       MallocStatisticImpl::_backtrace_name;
 bool              MallocStatisticImpl::_use_backtrace;
@@ -805,7 +823,6 @@ bool              MallocStatisticImpl::_check_malloc_suspended;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
 StackMapData      MallocStatisticImpl::_stack_maps_data[NR_OF_STACK_MAPS];
 AllocMapData      MallocStatisticImpl::_alloc_maps_data[NR_OF_ALLOC_MAPS];
-int               MallocStatisticImpl::_entry_size;
 uint64_t          MallocStatisticImpl::_to_track_mask;
 uint64_t          MallocStatisticImpl::_to_track_limit;
 volatile uint64_t MallocStatisticImpl::_stack_walk_time;
@@ -815,9 +832,7 @@ volatile uint64_t MallocStatisticImpl::_not_tracked_ptrs;
 volatile uint64_t MallocStatisticImpl::_failed_frees;
 void*             MallocStatisticImpl::_rainy_day_fund;
 pthread_mutex_t   MallocStatisticImpl::_rainy_day_fund_lock;
-
-volatile registered_hooks_t*
-                  MallocStatisticImpl::_rainy_day_hooks_ptr = &MallocStatisticImpl::_rainy_day_hooks;
+volatile bool     MallocStatisticImpl::_rainy_day_fund_used;
 
 ALWAYSINLINE int MallocStatisticImpl::capture_stack(address* frames, address real_func, address caller) {
   uint64_t ticks = _detailed_stats ? Ticks::now().nanoseconds() : 0;
@@ -879,9 +894,10 @@ static void after_child_fork() {
 bool MallocStatisticImpl::setup_hooks(registered_hooks_t* hooks, outputStream* st) {
   if (register_hooks == NULL) {
     register_hooks = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
-    get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
+    get_real_malloc_funcs = (get_real_malloc_funcs_t*) dlsym((void*) RTLD_DEFAULT,
+                                                             GET_REAL_MALLOC_FUNCS_NAME);
 
-    if ((register_hooks == NULL) || (get_real_funcs == NULL)) {
+    if ((register_hooks == NULL) || (get_real_malloc_funcs == NULL)) {
       if (UseMallocHooks) {
         st->print_raw_cr("Could not find preloaded libmallochooks while -XX:+UseMallocHooks is set. " \
                          "This usually happens if the VM is not loaded via the JDK launcher (e.g. " \
@@ -902,12 +918,16 @@ bool MallocStatisticImpl::setup_hooks(registered_hooks_t* hooks, outputStream* s
     }
   }
 
-  _funcs = get_real_funcs();
+  real_malloc_funcs = get_real_malloc_funcs();
   register_hooks(hooks);
 
   return true;
 }
 
+// Note that this function must be resersible. We
+// rely on it having unique values for a pointer.
+// See https://github.com/skeeto/hash-prospector?tab=readme-ov-file#reversible-operation-selection
+// for a list of operations which are resersible.
 uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   if (!_track_free && (_to_track_mask == 0)) {
     return 0;
@@ -947,7 +967,7 @@ bool MallocStatisticImpl::malloc_suspended() {
 }
 
 void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address) {
-  void* result = _funcs->malloc(size);
+  void* result = real_malloc_funcs->malloc(size);
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
@@ -965,7 +985,7 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address) {
 }
 
 void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_address) {
-  void* result = _funcs->calloc(elems, size);
+  void* result = real_malloc_funcs->calloc(elems, size);
   uint64_t hash = ptr_hash(result);
 
   if ((result != NULL) && should_track(hash) && !malloc_suspended()) {
@@ -983,7 +1003,7 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
 }
 
 void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_address) {
-  size_t old_size = ptr != NULL ? _funcs->malloc_size(ptr) : 0;
+  size_t old_size = ptr != NULL ? real_malloc_funcs->malloc_size(ptr) : 0;
   uint64_t old_hash = ptr_hash(ptr);
 
   // We have to speculate the realloc does not fail, since realloc itself frees
@@ -995,7 +1015,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
     freed_entry = record_free(ptr, old_hash, old_size);
   }
 
-  void* result = _funcs->realloc(ptr, size);
+  void* result = real_malloc_funcs->realloc(ptr, size);
 
   if ((result == NULL) && (freed_entry != NULL) && (size > 0)) {
     // We failed, but we already removed the freed memory, so we have to re-add it.
@@ -1028,15 +1048,15 @@ void MallocStatisticImpl::free_hook(void* ptr, void* caller_address) {
     uint64_t hash = ptr_hash(ptr);
 
     if (should_track(hash)) {
-      record_free(ptr, hash, _funcs->malloc_size(ptr));
+      record_free(ptr, hash, real_malloc_funcs->malloc_size(ptr));
     }
   }
 
-  _funcs->free(ptr);
+  real_malloc_funcs->free(ptr);
 }
 
 int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t size, void* caller_address) {
-  int result = _funcs->posix_memalign(ptr, align, size);
+  int result = real_malloc_funcs->posix_memalign(ptr, align, size);
   uint64_t hash = ptr_hash(*ptr);
 
   if ((result == 0) && should_track(hash) && !malloc_suspended()) {
@@ -1048,7 +1068,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(_funcs->malloc_size(*ptr), nr_of_frames, frames);
+      record_allocation_size(real_malloc_funcs->malloc_size(*ptr), nr_of_frames, frames);
     }
   }
 
@@ -1056,7 +1076,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
 }
 
 void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address) {
-  void* result = _funcs->memalign(align, size);
+  void* result = real_malloc_funcs->memalign(align, size);
   uint64_t hash = ptr_hash(result);
 #if !defined(__APPLE__)
   address real_func = (address) memalign;
@@ -1073,7 +1093,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(real_malloc_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
@@ -1081,7 +1101,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
 }
 
 void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address) {
-  void* result = _funcs->aligned_alloc(align, size);
+  void* result = real_malloc_funcs->aligned_alloc(align, size);
   uint64_t hash = ptr_hash(result);
 #if !defined(__APPLE__)
   address real_func = (address) aligned_alloc;
@@ -1098,7 +1118,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(real_malloc_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
@@ -1106,7 +1126,7 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
 }
 
 void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
-  void* result = _funcs->valloc(size);
+  void* result = real_malloc_funcs->valloc(size);
   uint64_t hash = ptr_hash(result);
 #if defined(__GLIBC__) || defined(__APPLE__)
   address real_func = (address) valloc;
@@ -1123,7 +1143,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(real_malloc_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
@@ -1131,7 +1151,7 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
 }
 
 void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address) {
-  void* result = _funcs->pvalloc(size);
+  void* result = real_malloc_funcs->pvalloc(size);
   uint64_t hash = ptr_hash(result);
 #if defined(__GLIBC__)
   address real_func = (address) pvalloc;
@@ -1148,7 +1168,7 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address) {
     } else {
       // Here we track the really allocated size, since it might be very different
       // from the requested one.
-      record_allocation_size(_funcs->malloc_size(result), nr_of_frames, frames);
+      record_allocation_size(real_malloc_funcs->malloc_size(result), nr_of_frames, frames);
     }
   }
 
@@ -1159,55 +1179,55 @@ void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address) {
 void* MallocStatisticImpl::malloc_hook_rd(size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->malloc(size);
+  return real_malloc_funcs->malloc(size);
 }
 
 void* MallocStatisticImpl::calloc_hook_rd(size_t elems, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->calloc(elems, size);
+  return real_malloc_funcs->calloc(elems, size);
 }
 
 void* MallocStatisticImpl::realloc_hook_rd(void* ptr, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->realloc(ptr, size);
+  return real_malloc_funcs->realloc(ptr, size);
 }
 
 void MallocStatisticImpl::free_hook_rd(void* ptr, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  _funcs->free(ptr);
+  real_malloc_funcs->free(ptr);
 }
 
 int MallocStatisticImpl::posix_memalign_hook_rd(void** ptr, size_t align, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->posix_memalign(ptr, align, size);
+  return real_malloc_funcs->posix_memalign(ptr, align, size);
 }
 
 void* MallocStatisticImpl::memalign_hook_rd(size_t align, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->memalign(align, size);
+  return real_malloc_funcs->memalign(align, size);
 }
 
 void* MallocStatisticImpl::aligned_alloc_hook_rd(size_t align, size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->aligned_alloc(align, size);
+  return real_malloc_funcs->aligned_alloc(align, size);
 }
 
 void* MallocStatisticImpl::valloc_hook_rd(size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->valloc(size);
+  return real_malloc_funcs->valloc(size);
 }
 
 void* MallocStatisticImpl::pvalloc_hook_rd(size_t size, void* caller_address) {
   wait_for_rainy_day_fund();
 
-  return _funcs->pvalloc(size);
+  return real_malloc_funcs->pvalloc(size);
 }
 
 void MallocStatisticImpl::wait_for_rainy_day_fund() {
@@ -1233,7 +1253,7 @@ static uint64_t hash_for_frames(int nr_of_frames, address* frames) {
   }
 
   // Avoid more bits than we can store in the entry.
-  return (MAX_FRAMES + 1) * result/ (MAX_FRAMES + 1);
+  return ((MAX_FRAMES + 1) * result) / (MAX_FRAMES + 1);
 }
 
 StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
@@ -1254,7 +1274,7 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
     return NULL;
   }
 
-  int slot = (hash / NR_OF_STACK_MAPS) & map._mask;
+  int slot = StatEntry::scaled_hash(hash) & map._mask;
   assert((slot >= 0) || (slot <= map._mask), "Invalid slot");
   StatEntry* to_check = map._entries[slot];
 
@@ -1281,7 +1301,7 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
     map._size += 1;
 
     if (map._size > map._limit) {
-      resize_stack_map(idx, map._mask * 2 + 1);
+      _stack_maps_data[idx].resize(map._mask * 2 + 1, MAX_STACK_MAP_LOAD);
     }
 
     return entry;
@@ -1292,7 +1312,9 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
 
 void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames) {
   assert(_track_free, "Only used for detailed tracking");
-  size_t size = _funcs->malloc_size(ptr);
+  // Use the size that the malloc implementation used, since we don't store
+  // the size and have to account for it later in realloc/free.
+  size_t size = real_malloc_funcs->malloc_size(ptr);
 
   StatEntry* stat_entry = record_allocation_size(size, nr_of_frames, frames);
 
@@ -1308,9 +1330,10 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
     return;
   }
 
-  int slot = (hash / NR_OF_ALLOC_MAPS) & map._mask;
+  int slot = AllocEntry::scaled_hash(hash) & map._mask;
 
-  // Should not already be in the table, so we remove the check in the optimized version
+  // Should not already be in the table, since this is the pointer to a newly allocated
+  // piece of memory, so we remove the check in the optimized version.
 #ifdef ASSERT
   AllocEntry* entry = map._entries[slot];
 
@@ -1374,7 +1397,7 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
     map._size += 1;
 
     if (map._size > map._limit) {
-      resize_alloc_map(idx, map._mask * 2 + 1);
+      _alloc_maps_data[idx].resize(map._mask * 2 + 1, MAX_ALLOC_MAP_LOAD);
     }
   }
 }
@@ -1436,75 +1459,17 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
 
 void MallocStatisticImpl::cleanup() {
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
-    _stack_maps_data[i].cleanup(_funcs);
+    _stack_maps_data[i].cleanup();
   }
 
   for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
-    _alloc_maps_data[i].cleanup(_funcs);
+    _alloc_maps_data[i].cleanup();
   }
 
-  if (_funcs != NULL) {
-    _funcs->free(_rainy_day_fund);
+  if (real_malloc_funcs != NULL) {
+    real_malloc_funcs->free(_rainy_day_fund);
     _rainy_day_fund = NULL;
   }
-}
-
-void MallocStatisticImpl::resize_stack_map(int idx, int new_mask) {
-  StatEntry** new_entries = (StatEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
-  StackMapData& map = _stack_maps_data[idx];
-  StatEntry** old_entries = map._entries;
-
-  // Fail silently if we don't get the memory.
-  if (new_entries != NULL) {
-    for (int i = 0; i <= map._mask; ++i) {
-      StatEntry* entry = old_entries[i];
-
-      while (entry != NULL) {
-        StatEntry* next_entry = entry->next();
-        int slot = entry->hash() & new_mask;
-        entry->set_next(new_entries[slot]);
-        new_entries[slot] = entry;
-        entry = next_entry;
-      }
-    }
-
-    map._entries = new_entries;
-    map._mask = new_mask;
-    map._limit = (int) ((map._mask + 1) * MAX_STACK_MAP_LOAD);
-    _funcs->free(old_entries);
-  }
-}
-
-void MallocStatisticImpl::resize_alloc_map(int idx, int new_mask) {
-  assert(((new_mask + 1) & new_mask) == 0, "Must be a power of 2 minus 1");
-
-  AllocEntry** new_entries = (AllocEntry**) _funcs->calloc(new_mask + 1, sizeof(StatEntry*));
-  AllocMapData& map = _alloc_maps_data[idx];
-  AllocEntry** old_entries = map._entries;
-
-  // Fail silently if we don't get the memory.
-  if (new_entries != NULL) {
-    for (int i = 0; i <= map._mask; ++i) {
-      AllocEntry* entry = old_entries[i];
-
-      while (entry != NULL) {
-        AllocEntry* next_entry = entry->next();
-        int slot = (entry->hash() / NR_OF_ALLOC_MAPS) & new_mask;
-        entry->set_next(new_entries[slot]);
-        new_entries[slot] = entry;
-        entry = next_entry;
-      }
-    }
-
-    map._entries = new_entries;
-    map._mask = new_mask;
-    map._limit = (int) ((map._mask + 1) * MAX_ALLOC_MAP_LOAD);
-    _funcs->free(old_entries);
-  }
-}
-
-bool MallocStatisticImpl::rainy_day_fund_used() {
-  return _rainy_day_hooks_ptr == NULL;
 }
 
 void MallocStatisticImpl::initialize() {
@@ -1542,6 +1507,10 @@ void MallocStatisticImpl::initialize() {
       fatal("Could not initialize alloc maps lock");
     }
   }
+}
+
+bool MallocStatisticImpl::rainy_day_fund_used() {
+  return _rainy_day_fund_used;
 }
 
 bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
@@ -1664,10 +1633,10 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   }
 
   // Never set _funcs to NULL, even if we fail. It's just safer that way.
-  _entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
+  size_t entry_size = StatEntry::size(_max_frames);
 
   if (spec._rainy_day_fund > 0) {
-    _rainy_day_fund = _funcs->malloc(spec._rainy_day_fund);
+    _rainy_day_fund = real_malloc_funcs->malloc(spec._rainy_day_fund);
 
     if (_rainy_day_fund == NULL) {
       st->print_cr("Could not allocate rainy day fund of %d bytes", spec._rainy_day_fund);
@@ -1678,7 +1647,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   }
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
-    void* mem = _funcs->malloc(sizeof(Allocator));
+    void* mem = real_malloc_funcs->malloc(sizeof(Allocator));
 
     if (mem == NULL) {
       st->print_raw_cr("Could not allocate the allocator!");
@@ -1687,13 +1656,12 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
       return false;
     }
 
-    size_t entry_size = sizeof(StatEntry) + sizeof(address) * (_max_frames - 1);
     StackMapData& map = _stack_maps_data[i];
-    map._alloc = new (mem) Allocator(entry_size, 256, _funcs);
+    map._alloc = new (mem) Allocator(entry_size, 256);
     map._mask = STACK_MAP_INIT_SIZE - 1;
     map._size = 0;
     map._limit = (int) ((map._mask + 1) * MAX_STACK_MAP_LOAD);
-    map._entries = (StatEntry**) _funcs->calloc(map._mask + 1, sizeof(StatEntry*));
+    map._entries = (StatEntry**) real_malloc_funcs->calloc(map._mask + 1, sizeof(StatEntry*));
 
     if (map._entries == NULL) {
       st->print_raw_cr("Could not allocate the stack map!");
@@ -1704,7 +1672,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
   }
 
   for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
-    void* mem = _funcs->malloc(sizeof(Allocator));
+    void* mem = real_malloc_funcs->malloc(sizeof(Allocator));
 
     if (mem == NULL) {
       st->print_raw_cr("Could not allocate the allocator!");
@@ -1714,11 +1682,11 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     }
 
     AllocMapData& map = _alloc_maps_data[i];
-    map._alloc = new (mem) Allocator(sizeof(AllocEntry), 2048, _funcs);
+    map._alloc = new (mem) Allocator(sizeof(AllocEntry), 2048);
     map._mask = ALLOC_MAP_INIT_SIZE - 1;
     map._size = 0;
     map._limit = (int) ((map._mask  + 1) * MAX_ALLOC_MAP_LOAD);
-    map._entries = (AllocEntry**) _funcs->calloc(map._mask  + 1, sizeof(AllocEntry*));
+    map._entries = (AllocEntry**) real_malloc_funcs->calloc(map._mask  + 1, sizeof(AllocEntry*));
 
     if (map._entries == NULL) {
       st->print_raw_cr("Could not allocate the alloc map!");
@@ -1992,11 +1960,12 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     initialize();
   } else if (_initialized) {
     // Make sure all other threads don't allocate memory anymore
-    if (Atomic::cmpxchg(&_rainy_day_hooks_ptr, &_rainy_day_hooks, (registered_hooks_t*) NULL) != NULL) {
-      used_rainy_day_fund = true;
-    } else {
+    if (Atomic::cmpxchg(&_rainy_day_fund_used, false, true) == true) {
+      // Only can be done once.
       return false;
     }
+
+    used_rainy_day_fund = true;
   } else {
     return false;
   }
@@ -2007,7 +1976,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     setup_hooks(&_rainy_day_hooks, NULL);
 
     // Free rainy day fund so we have some memory to use.
-    _funcs->free(_rainy_day_fund);
+    real_malloc_funcs->free(_rainy_day_fund);
     _rainy_day_fund = NULL;
     msg_stream->print_raw_cr("Emergency dump of malloc trace statistic ...");
   }
@@ -2066,16 +2035,16 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   totalTime.start();
 
   for (int idx = 0; idx < NR_OF_STACK_MAPS; ++idx) {
-    lockedTime.start();
+    int pos = 0;
+    int expected_size;
 
     {
       StackMapData& map = _stack_maps_data[idx];
       Locker locker(&map._lock);
+      lockedTime.start();
+      expected_size = map._size;
 
-      int expected_size = map._size;
-      int pos = 0;
-
-      entries[idx] = (StatEntryCopy*) _funcs->malloc(sizeof(StatEntryCopy) * expected_size);
+      entries[idx] = (StatEntryCopy*) real_malloc_funcs->malloc(sizeof(StatEntryCopy) * expected_size);
 
       if (entries[idx] != NULL) {
         StatEntry** orig = map._entries;
@@ -2103,53 +2072,50 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
           }
         }
 
+        lockedTime.stop();
         assert(pos <= expected_size, "Size must be correct");
       } else {
+        nr_of_entries[idx] = 0;
         failed_alloc = true;
+        lockedTime.stop();
+        continue;
       }
-
-      lockedTime.stop();
-
-      // See if it makes sense to trim. We have to shave of enough and don't
-      // trim anyway after sorting.
-      if ((entries[idx] != NULL) && (pos < expected_size - 16) && (pos < max_entries)) {
-        void* result = _funcs->realloc(entries[idx], pos * sizeof(StatEntryCopy));
-
-        if (result != NULL) {
-          entries[idx] = (StatEntryCopy*) result;
-        }
-      }
-
-      nr_of_entries[idx] = pos;
-      total_entries += expected_size;
-      total_non_empty_entries += pos;
     }
 
-    if (entries[idx] != NULL) {
-      // Now sort so we might be able to trim the array to only contain the
-      // maximum possible entries.
-      if (spec._sort_by_count) {
-          qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_by_count);
-      } else {
-          qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_by_size);
+    // See if it makes sense to trim. We have to shave of enough and don't
+    // trim anyway after sorting.
+    if ((pos < expected_size - 16) && (pos < max_entries)) {
+      void* result = real_malloc_funcs->realloc(entries[idx], pos * sizeof(StatEntryCopy));
+
+      if (result != NULL) {
+        entries[idx] = (StatEntryCopy*) result;
       }
+    }
 
-      // Free up some memory if possible.
-      if (nr_of_entries[idx] > max_entries) {
-        void* result = _funcs->realloc(entries[idx], max_entries * sizeof(StatEntryCopy));
+    nr_of_entries[idx] = pos;
+    total_entries += expected_size;
+    total_non_empty_entries += pos;
 
-        if (result == NULL)  {
-          // No problem, since the original memory is still there. Should not happen
-          // in reality.
-        } else {
-          entries[idx] = (StatEntryCopy*) result;
-        }
-
-        nr_of_entries[idx] = max_entries;
-      }
+    // Now sort so we might be able to trim the array to only contain the
+    // maximum possible entries.
+    if (spec._sort_by_count) {
+        qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_by_count);
     } else {
-      nr_of_entries[idx] = 0;
-      failed_alloc = true;
+        qsort(entries[idx], nr_of_entries[idx], sizeof(StatEntryCopy), sort_by_size);
+    }
+
+    // Free up some memory if possible.
+    if (nr_of_entries[idx] > max_entries) {
+      void* result = real_malloc_funcs->realloc(entries[idx], max_entries * sizeof(StatEntryCopy));
+
+      if (result == NULL)  {
+        // No problem, since the original memory is still there. Should not happen
+        // in reality.
+      } else {
+        entries[idx] = (StatEntryCopy*) result;
+      }
+
+      nr_of_entries[idx] = max_entries;
     }
   }
 
@@ -2164,7 +2130,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
     }
   }
 
-  AddressHashSet filter_cache(_funcs, !spec._on_error);
+  AddressHashSet filter_cache(!spec._on_error);
 
   int curr_pos[NR_OF_STACK_MAPS];
   memset(curr_pos, 0, NR_OF_STACK_MAPS * sizeof(int));
@@ -2226,7 +2192,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   }
 
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
-    _funcs->free(entries[i]);
+    real_malloc_funcs->free(entries[i]);
   }
 
   dump_stream->cr();
@@ -2349,10 +2315,10 @@ static void dump_from_flags(bool on_error) {
         char buf[32768];
         jio_snprintf(buf, sizeof(buf), "%.*s" UINTX_FORMAT "%s",
                     first, file, os::current_process_id(), pid_tag + 4);
-        fileStream fs(buf, "at");
+        fileStream fs(buf, "a");
         mallocStatImpl::MallocStatisticImpl::dump(&fs, &fs, spec);
       } else {
-        fileStream fs(file, "at");
+        fileStream fs(file, "a");
         mallocStatImpl::MallocStatisticImpl::dump(&fs, &fs, spec);
       }
     }

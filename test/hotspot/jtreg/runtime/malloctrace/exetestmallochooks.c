@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ static void check(bool condition, char const* msg) {
   }
 }
 
-static real_funcs_t* funcs;
+static real_malloc_funcs_t* funcs;
 
 static bool no_hooks_should_be_called;
 
@@ -153,8 +153,9 @@ static void* test_pvalloc_hook(size_t size, void* caller) {
 static void test_no_recursive_calls() {
     register_hooks_t* register_hooks = (register_hooks_t*) dlsym((void*) RTLD_DEFAULT, REGISTER_HOOKS_NAME);
     check(register_hooks != NULL, "Could not get register function");
-    get_real_funcs_t* get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
-    check(get_real_funcs != NULL, "Could not get get_real_funcs function");
+    get_real_malloc_funcs_t* get_real_malloc_funcs = (get_real_malloc_funcs_t*) 
+                                                     dlsym((void*) RTLD_DEFAULT, GET_REAL_MALLOC_FUNCS_NAME);
+    check(get_real_malloc_funcs != NULL, "Could not get get_real_funcs function");
 
     registered_hooks_t test_hooks = {
         test_malloc_hook,
@@ -168,7 +169,7 @@ static void test_no_recursive_calls() {
         test_pvalloc_hook
     };
 
-    funcs = get_real_funcs();
+    funcs = get_real_malloc_funcs();
     register_hooks(&test_hooks);
 
     // Check that all the real functions do not trigger the hooks.

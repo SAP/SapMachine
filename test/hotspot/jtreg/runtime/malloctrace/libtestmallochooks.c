@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #define NO_OPT_ATTR __attribute__((optnone))
 #elif defined(LINUX)
 #include <malloc.h>
-#define NO_OPT_ATTR __attribute__((optimize(0)))
+#define NO_OPT_ATTR __attribute__((optimize(0),noinline))
 #else
 #error "Should not be compiled"
 #endif
@@ -171,8 +171,9 @@ Java_MallocHooksTest_doRandomAllocsWithFrees(JNIEnv *env, jclass cls, jint nrOfO
 JNIEXPORT void JNICALL
 Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint maxLiveAllocations, jint seed,
                                     jboolean trackLive, jlongArray resultSizes, jlongArray resultCounts) {
-    get_real_funcs_t* get_real_funcs = (get_real_funcs_t*) dlsym((void*) RTLD_DEFAULT, GET_REAL_FUNCS_NAME);
-    real_funcs_t* funcs = get_real_funcs();
+    get_real_malloc_funcs_t* get_real_malloc_funcs = (get_real_malloc_funcs_t*)
+                                                     dlsym((void*) RTLD_DEFAULT, GET_REAL_MALLOC_FUNCS_NAME);
+    real_malloc_funcs_t* funcs = get_real_malloc_funcs();
 
     void** roots = funcs->calloc(maxLiveAllocations, sizeof(void*));
     signed char* source = (signed char*) funcs->calloc(maxLiveAllocations, sizeof(char));

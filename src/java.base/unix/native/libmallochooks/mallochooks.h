@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,15 +69,15 @@ typedef struct {
   valloc_func_t* valloc;
   pvalloc_func_t* pvalloc;
   malloc_size_func_t* malloc_size;
-} real_funcs_t;
+} real_malloc_funcs_t;
 
 typedef registered_hooks_t* register_hooks_t(registered_hooks_t* registered_hooks);
 typedef registered_hooks_t* active_hooks_t();
-typedef real_funcs_t* get_real_funcs_t();
+typedef real_malloc_funcs_t* get_real_malloc_funcs_t();
 
 #define REGISTER_HOOKS_NAME "malloc_hooks_register_hooks"
 #define ACTIVE_HOOKS_NAME "malloc_hooks_active_hooks"
-#define GET_REAL_FUNCS_NAME "malloc_hooks_get_real_funcs"
+#define GET_REAL_MALLOC_FUNCS_NAME "malloc_hooks_get_real_malloc_funcs"
 
 #endif
 

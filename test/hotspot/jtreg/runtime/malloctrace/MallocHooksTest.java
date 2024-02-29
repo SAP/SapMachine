@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test functionality of the malloc hooks library.
  * @library /test/lib
  *
- * @run main/othervm/native MallocHooksTest
+ * @run main/othervm/native/timeout=600 MallocHooksTest
  */
 
 import java.io.BufferedReader;
@@ -36,6 +36,8 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -69,6 +71,7 @@ public class MallocHooksTest {
             testTracking(true);
             testDumpPercentage(true);
             testDumpPercentage(false);
+            testUniqueStacks();
             testPartialTrackint(false, 2, 0.2);
             testPartialTrackint(true, 2, 0.2);
             testPartialTrackint(false, 10, 0.3);
@@ -473,6 +476,26 @@ public class MallocHooksTest {
         oa.stdoutShouldMatch("Total printed " + (bySize ? "bytes" : "count") + ": .*[(].*90[.][0-9]+ %[)]");
     }
 
+    private static void testUniqueStacks() throws Exception {
+        ProcessBuilder pb = runManyStacks(1024 * 1024 * 10, 1024 * 16, 12, 172369975,
+                                          "-Djava.library.path=" + System.getProperty("java.library.path"),
+                                          "-XX:MallocTraceStackDepth=14");
+        Process p = ProcessTools.startProcess("runManyStack", pb, x -> System.out.println("> " + x), null, -1, null);
+        p.getInputStream().read();
+        OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-percentage=100");
+        oa.shouldHaveExitValue(0);
+        p.destroy();
+
+        MallocTraceResult result = MallocTraceResult.fromString(oa.getOutput());
+        HashSet<Stack> seenStacks = new HashSet<>();
+
+        for (int i = 0; i < result.nrOfStacks(); ++i) {
+            if (!seenStacks.add(result.getStack(i))) {
+                throw new Exception("Duplicate stack");
+            }
+        }
+    }
+
     private static ProcessBuilder runStress(int nrOfOps, int maxLiveAllocations, int seed, 
                                             boolean trackLive, String... opts) {
         String[] args = new String[opts.length + 9];
@@ -585,6 +608,18 @@ class Stack {
         }
 
         return result.toString();
+    }
+
+    public int hashCode() {
+        return Arrays.hashCode(funcs);
+    }
+
+    public boolean equals(Object other) {
+        if (other instanceof Stack) {
+            return Arrays.equals(funcs, ((Stack) other).funcs);
+        }
+
+        return false;
     }
 }
 
