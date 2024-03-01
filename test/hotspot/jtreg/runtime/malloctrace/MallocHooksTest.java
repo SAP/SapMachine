@@ -60,26 +60,40 @@ public class MallocHooksTest {
     private static final String LIB_MALLOC_HOOKS = LIB_DIR + "libmallochooks" + LIB_SUFFIX;
     private static final String LIB_FAKE_MALLOC_HOOKS = NATIVE_DIR + "libfakemallochooks" + LIB_SUFFIX;
 
+    private static void dumpHsErrorFiles() throws Exception {
+        for (File f: new File(".").listFiles()) {
+          if (!f.isDirectory() && f.getName().startsWith("hs_err")) {
+              System.out.println("Found " + f.getName() + ":");
+              System.out.println(new String(Files.readAllBytes(f.toPath())));
+              System.out.println("------- End of " + f.getName());
+          }
+        }
+    }
+
     public static void main(String args[]) throws Exception {
         if (!Platform.isLinux() && !Platform.isOSX()) {
             return;
         }
 
         if (args.length == 0) {
-            testNoRecursiveCallsForFallbacks();
-            testEnvSanitizing();
-            testTracking(false);
-            testTracking(true);
-            testDumpPercentage(true);
-            testDumpPercentage(false);
-            testUniqueStacks();
-            testPartialTrackint(false, 2, 0.2);
-            testPartialTrackint(true, 2, 0.2);
-            testPartialTrackint(false, 10, 0.3);
-            testPartialTrackint(true, 10, 0.3);
-            testFlags();
-            testJcmdOptions();
-            return;
+            try {
+                testNoRecursiveCallsForFallbacks();
+                testEnvSanitizing();
+                testTracking(false);
+                testTracking(true);
+                testDumpPercentage(true);
+                testDumpPercentage(false);
+                testUniqueStacks();
+                testPartialTrackint(false, 2, 0.2);
+                testPartialTrackint(true, 2, 0.2);
+                testPartialTrackint(false, 10, 0.3);
+                testPartialTrackint(true, 10, 0.3);
+                testFlags();
+                testJcmdOptions();
+                return;
+            } finally {
+                dumpHsErrorFiles();
+            }
         }
 
         switch (args[0]) {
@@ -686,15 +700,6 @@ class MallocTraceExpectedStatistic {
     private long[] bytes = new long[funcs.length];
     private long[] counts = new long[funcs.length];
 
-    private static void dumpHsErrorFiles() throws Exception {
-        for (File f: new File(".").listFiles()) {
-          if (!f.isDirectory() && f.getName().startsWith("hs_err")) {
-              System.out.println("Found " + f.getName() + ":");
-              System.out.println(new String(Files.readAllBytes(f.toPath())));
-              System.out.println("------- End of " + f.getName());
-          }
-        }
-    }
     public MallocTraceExpectedStatistic(Process p) throws Exception {
         BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
@@ -702,9 +707,6 @@ class MallocTraceExpectedStatistic {
            String line = br.readLine();
            System.out.println(i + ": " + line);
            String[] parts = line.split(" ");
-           if (parts[0].equals("#")) {
-               dumpHsErrorFiles();
-           }
            bytes[i] = Long.parseLong(parts[0]);
            counts[i] = Long.parseLong(parts[1]);
         }
