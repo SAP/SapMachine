@@ -446,12 +446,13 @@ private:
   address    _frames[];
 
 public:
-  StatEntry(size_t hash, size_t size, int nr_of_frames, address* frames) :
+  StatEntry(uint64_t hash, size_t size, int nr_of_frames, address* frames) :
     _next(NULL),
     _hash_and_nr_of_frames((hash * (MAX_FRAMES + 1)) + nr_of_frames),
     _size(size),
     _count(1) {
     memcpy(_frames, frames, sizeof(address) * nr_of_frames);
+    assert(nr_of_frames >= 0, "Must not be negative");
     assert(nr_of_frames <= MAX_FRAMES, "too many frames");
     assert(hash == this->hash(), "Must be the same");
     assert(nr_of_frames == this->nr_of_frames(), "Must be equal");
@@ -1248,12 +1249,12 @@ static uint64_t hash_for_frames(int nr_of_frames, address* frames) {
   uint64_t result = 0;
 
   for (int i = 0; i < nr_of_frames; ++i) {
-    intptr_t frame_addr = (intptr_t) frames[i];
+    uint64_t frame_addr = (uint64_t) (intptr_t) frames[i];
     result = result * 31 + ((frame_addr & 0xfffffff0) >> 4) LP64_ONLY(+ 127 * (frame_addr >> 36));
   }
 
   // Avoid more bits than we can store in the entry.
-  return ((MAX_FRAMES + 1) * result) / (MAX_FRAMES + 1);
+  return result & (((uint64_t) UINT64_MAX) / (MAX_FRAMES + 1));
 }
 
 StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
