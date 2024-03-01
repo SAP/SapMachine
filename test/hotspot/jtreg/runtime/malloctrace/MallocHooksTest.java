@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -196,7 +197,9 @@ public class MallocHooksTest {
         realArgs[1] = Long.toString(getPid(p));
         pb.command(realArgs);
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        System.out.println("Output of jcmd " + String.join(" ", args));
         System.out.println(oa.getOutput());
+        System.out.println("---------------------");
         oa.shouldHaveExitValue(0);
         return oa;
     }
@@ -683,6 +686,15 @@ class MallocTraceExpectedStatistic {
     private long[] bytes = new long[funcs.length];
     private long[] counts = new long[funcs.length];
 
+    private static void dumpHsErrorFiles() throws Exception {
+        for (File f: new File(".").listFiles()) {
+          if (!f.isDirectory() && f.getName().startsWith("hs_err")) {
+              System.out.println("Found " + f.getName() + ":");
+              System.out.println(new String(Files.readAllBytes(f.toPath())));
+              System.out.println("------- End of " + f.getName());
+          }
+        }
+    }
     public MallocTraceExpectedStatistic(Process p) throws Exception {
         BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
@@ -690,6 +702,9 @@ class MallocTraceExpectedStatistic {
            String line = br.readLine();
            System.out.println(i + ": " + line);
            String[] parts = line.split(" ");
+           if (parts[0].equals("#")) {
+               dumpHsErrorFiles();
+           }
            bytes[i] = Long.parseLong(parts[0]);
            counts[i] = Long.parseLong(parts[1]);
         }
