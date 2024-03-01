@@ -454,7 +454,7 @@ public:
     memcpy(_frames, frames, sizeof(address) * nr_of_frames);
     assert(nr_of_frames >= 0, "Must not be negative");
     assert(nr_of_frames <= MAX_FRAMES, "too many frames");
-    assert(hash == this->hash(), "Must be the same");
+    assert(hash == this->hash(), "Must be the same: " UINT64_FORMAT " " UINT64_FORMAT, hash, this->hash());
     assert(nr_of_frames == this->nr_of_frames(), "Must be equal");
 
   }
