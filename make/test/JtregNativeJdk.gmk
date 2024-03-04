@@ -58,6 +58,10 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c exelauncher.c
 
+  #SapMachine 2018-12-11: Eclude libCreateNewProcessGroupOnSpawnTest.c from
+  #                       native compilation because test is non-Windows only
+  BUILD_JDK_JTREG_EXCLUDE += libCreateNewProcessGroupOnSpawnTest.c
+
   WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
   WIN_LIB_JLI := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
