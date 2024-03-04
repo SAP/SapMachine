@@ -62,11 +62,21 @@ public class MallocHooksTest {
 
     private static void dumpHsErrorFiles() throws Exception {
         for (File f: new File(".").listFiles()) {
-          if (!f.isDirectory() && f.getName().startsWith("hs_err")) {
-              System.out.println("Found " + f.getName() + ":");
-              System.out.println(new String(Files.readAllBytes(f.toPath())));
-              System.out.println("------- End of " + f.getName());
-          }
+            if (!f.isDirectory() && f.getName().startsWith("hs_err")) {
+                System.out.println("Found " + f.getName() + ":");
+                String output = new String(Files.readAllBytes(f.toPath()));
+                System.out.println(output);
+                System.out.println("------- End of " + f.getName());
+                // Print the start again, since we might overflow the buffer with
+                // the whole file.
+                int startLength = 32768;
+
+                if (output.length() > startLength) {
+                    System.out.println("------- Repeating start of " + f.getName());
+                    System.out.println(output.substring(0, startLength));
+                    System.out.println("------- End of start of " + f.getName());
+                }
+            }
         }
     }
 
