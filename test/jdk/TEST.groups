@@ -37,7 +37,9 @@ jdk_all = \
 #
 
 # When adding tests to tier1, make sure they end up in one of the tier1_partX groups
+# SapMachine 2019-01-24: Add tests where SAPMachine has different behavior to tier1
 tier1 = \
+    :tier1_sapmachine \
     :tier1_part1 \
     :tier1_part2 \
     :tier1_part3
@@ -55,6 +57,13 @@ tier1_part3 = \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     sun/nio/cs/ISO8859x.java
+
+# SapMachine 2019-01-24: Add tests where SAPMachine has different behavior to tier1
+tier1_sapmachine = \
+    java/net/Socket/ExceptionText.java \
+    java/util/jar/Manifest/IncludeInExceptionsTest.java \
+    jdk/security/JavaDotSecurity/TestJDKIncludeInExceptions.java \
+    sun/security/lib/cacerts/VerifyCACerts.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \
