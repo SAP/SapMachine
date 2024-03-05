@@ -315,6 +315,8 @@
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jdk-17.0.11-ea.5_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jdk-17.0.11-ea.5_linux-x64_bin.tar.gz",
             "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jdk-17.0.11-ea.5_linux-x64-musl_bin.tar.gz",
+            "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jdk-17.0.11-ea.5_macos-x64_bin.dmg",
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jdk-17.0.11-ea.5_macos-x64_bin.tar.gz",
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jdk-17.0.11-ea.5_windows-x64_bin.zip"
           },
           "jre": {
@@ -322,6 +324,8 @@
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jre-17.0.11-ea.5_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jre-17.0.11-ea.5_linux-x64_bin.tar.gz",
             "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jre-17.0.11-ea.5_linux-x64-musl_bin.tar.gz",
+            "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jre-17.0.11-ea.5_macos-x64_bin.dmg",
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jre-17.0.11-ea.5_macos-x64_bin.tar.gz",
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B5/sapmachine-jre-17.0.11-ea.5_windows-x64_bin.zip"
           }
         },
@@ -329,15 +333,11 @@
           "tag": "sapmachine-17.0.11+4",
           "jdk": {
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jdk-17.0.11-ea.4_macos-aarch64_bin.dmg",
-            "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jdk-17.0.11-ea.4_macos-aarch64_bin.tar.gz",
-            "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jdk-17.0.11-ea.4_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jdk-17.0.11-ea.4_macos-x64_bin.tar.gz"
+            "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jdk-17.0.11-ea.4_macos-aarch64_bin.tar.gz"
           },
           "jre": {
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jre-17.0.11-ea.4_macos-aarch64_bin.dmg",
-            "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jre-17.0.11-ea.4_macos-aarch64_bin.tar.gz",
-            "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jre-17.0.11-ea.4_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jre-17.0.11-ea.4_macos-x64_bin.tar.gz"
+            "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B4/sapmachine-jre-17.0.11-ea.4_macos-aarch64_bin.tar.gz"
           }
         },
         {
@@ -367,6 +367,8 @@
             "linux-ppc64le": "sha256 aa4ca07e3237db0072071902c580384bfaa405f988f56a28da9335664ae7d29b",
             "linux-x64": "sha256 9cc67ac8b8c9b4fcf86d8d3dbe97c24ed12a8cffd18c2eff824d268fd44c2ee0",
             "linux-x64-musl": "sha256 bef3746f56333465d9fbc84c4cc8157c78f36f5535a79e844803db3dd32c0f98",
+            "macos-x64-installer": "sha256 7f4fe272dac20c074698e8bc6ed9382344350c2bd22b4fffbc17661394ef5f80",
+            "macos-x64": "sha256 a2555dc19f83edf692e1bb6d709b731871ae9c5ddf8a05e136393c68f097f107",
             "windows-x64": "sha256 b789377efea2d709b9ea2d4c63d199dc054f562fd73ed92faa411e85b06c9459"
           },
           "jre": {
@@ -374,6 +376,8 @@
             "linux-ppc64le": "sha256 0cc5cd80feacef61fe81a2d07eed4158b0d2377885253fc1a93d6e7e7443bb84",
             "linux-x64": "sha256 f8084ea88253c409282e4403cedcd8c9239a377e5570a6e540cb27fabaae3d75",
             "linux-x64-musl": "sha256 cd8807e17440e77f06e26b0ed63d5fc414a724e97e1a6b9e70c39e3a9e0e6df4",
+            "macos-x64-installer": "sha256 51d8754a64fb473184d0e8bad6a84cb2bfed78e03e155c5e8d9b3b054fd55002",
+            "macos-x64": "sha256 fee179f87f46aed9f838975b31d30b7a90661341e45128d565b1745c71a05658",
             "windows-x64": "sha256 2020ed290110dc2652b29c582344a9b9a2e160459f01d2a8b66d99a1e91d0e2d"
           }
         },
@@ -381,15 +385,11 @@
           "tag": "sapmachine-17.0.11+4",
           "jdk": {
             "macos-aarch64-installer": "sha256 6723477357b3884ace0c0abcdd19f83f3a8a25646f5c7672fee3bd36c9df2d67",
-            "macos-aarch64": "sha256 fa306f2a284292b72e3d48ae41620303d6b9dc80ad2feec11f0f094644b9f27b",
-            "macos-x64-installer": "sha256 9acb004322a18512d24448def59d01ed8a3cf7b728a59a75ed7c7276ba39ace3",
-            "macos-x64": "sha256 ca055033d096f59211cc8bda15b410d9225063df282d85b6e66a9e15e7bdf65e"
+            "macos-aarch64": "sha256 fa306f2a284292b72e3d48ae41620303d6b9dc80ad2feec11f0f094644b9f27b"
           },
           "jre": {
             "macos-aarch64-installer": "sha256 b8e2df53ab6b4a354af18e5f2851adbf246769cded03c1f90f95905433bc1dcd",
-            "macos-aarch64": "sha256 b9a2b00f1ed49e8e41b7994fd71a8f88f145d4661562a0dfe39c998f438bbc5f",
-            "macos-x64-installer": "sha256 440dd259cc2136de4c27879fba384cbced05e24c23d7fefb3925c6b53881b54a",
-            "macos-x64": "sha256 b1c232fca76a90cff5c046f2740aa63c9edb445b1e2dc6acee2cd77254f1d50e"
+            "macos-aarch64": "sha256 b9a2b00f1ed49e8e41b7994fd71a8f88f145d4661562a0dfe39c998f438bbc5f"
           }
         },
         {
