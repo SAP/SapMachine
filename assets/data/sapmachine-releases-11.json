@@ -1,6 +1,30 @@
 {
   "updates": {
     "11.0.23": {
+      "sapmachine-11.0.23+5": {
+        "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.23%2B5",
+        "ea": "true",
+        "assets": {
+          "jdk": {
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-11.0.23-ea.5_windows-x64_bin.zip",
+                "checksum": "89b1712007d3cdd439fbd2a8c775ca6416d69a866a890a1bc53b28e6e1c653cc",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jdk-11.0.23-ea.5_windows-x64_bin.zip"
+              }
+            }
+          },
+          "jre": {
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-11.0.23-ea.5_windows-x64_bin.zip",
+                "checksum": "2e265c46ada81d809376ac9d16b1bf0985f197e0e43cd373d7419daedcf109e4",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jre-11.0.23-ea.5_windows-x64_bin.zip"
+              }
+            }
+          }
+        }
+      },
       "sapmachine-11.0.23+4": {
         "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.23%2B4",
         "ea": "true",
