@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+package compiler.c2;
+
+/*
+ * @test
+ * @bug 8323154
+ * @summary Long counted loop exit check should not be transformed into an unsigned check
  *
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.c2.TestMinValueStrideLongCountedLoop::test
+ *                   compiler.c2.TestMinValueStrideLongCountedLoop
  */
 
-/* @test
- * @summary Run a subset of gtests with the native trimmer activated.
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=os.trim* -Xlog:trimnative -XX:TrimNativeHeapInterval=100
- */
+public class TestMinValueStrideLongCountedLoop {
+    static long limit = 0;
+    static long res = 0;
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10000; i++) {
+            test();
+        }
+    }
+
+    static void test() {
+        for (long i = 0; i >= limit + (Long.MIN_VALUE + 1); i += Long.MIN_VALUE) {
+            res += 42;
+        }
+    }
+}
