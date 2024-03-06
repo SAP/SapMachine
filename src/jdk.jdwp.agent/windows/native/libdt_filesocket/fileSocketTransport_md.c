@@ -43,7 +43,8 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
     if ((reason == DLL_PROCESS_ATTACH) && (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)) {
         return JNI_FALSE;
     }
-    else if (reason == DLL_PROCESS_DETACH) {
+
+    if (reason == DLL_PROCESS_DETACH) {
         WSACleanup();
     }
 
@@ -79,8 +80,7 @@ static void registerFileToDelete(char const* name) {
             file_to_delete_valid = 1;
             MemoryBarrier();
         }
-    }
-    else {
+    } else {
         // Should never change.
         assert(strcmp(name, file_to_delete) == 0);
     }

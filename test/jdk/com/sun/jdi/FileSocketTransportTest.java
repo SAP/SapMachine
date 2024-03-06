@@ -28,7 +28,6 @@
  * @author Ralf Schmelter
  *
  * @library /test/lib
- * @run compile FileSocketTransportTest.java
  * @run main/othervm FileSocketTransportTest
  */
 

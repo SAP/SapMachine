@@ -230,8 +230,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             fileSocketTransport_logError("Cannot allow user %d to connect to file socket %s of user %d",
                 (int)other_user, name, (int)geteuid());
             fileSocketTransport_CloseImpl();
-        }
-        else if (other_group != getegid()) {
+        } else if (other_group != getegid()) {
             fileSocketTransport_logError("Cannot allow user %d (group %d) to connect to file socket "
                 "%s of user %d (group %d)", (int)other_user, (int)other_group,
                 name, (int)geteuid(), (int)getegid());
