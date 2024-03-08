@@ -613,6 +613,21 @@
     "ea": true,
     "releases": [
       {
+        "tag": "sapmachine-11.0.23+6",
+        "jdk": {
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_windows-x64_bin.zip",
+            "checksum": "sha256 1aeb0ae2f67957ca809a300710054e6b9f0f9754e2ba10abac837949b5c53dee"
+          }
+        },
+        "jre": {
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_windows-x64_bin.zip",
+            "checksum": "sha256 9f4f1692d4e8523f8486cf86c03f4b9ba02530b20ff91f7838e160cf865e3287"
+          }
+        }
+      },
+      {
         "tag": "sapmachine-11.0.23+5",
         "jdk": {
           "linux-aarch64": {
@@ -642,10 +657,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jdk-11.0.23-ea.5_macos-x64_bin.tar.gz",
             "checksum": "sha256 24cf3a3b890b169342bb9c7f7bf61e942d446eb0d39680531eee299ad2560fd2"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jdk-11.0.23-ea.5_windows-x64_bin.zip",
-            "checksum": "sha256 89b1712007d3cdd439fbd2a8c775ca6416d69a866a890a1bc53b28e6e1c653cc"
           }
         },
         "jre": {
@@ -676,10 +687,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jre-11.0.23-ea.5_macos-x64_bin.tar.gz",
             "checksum": "sha256 96ddd741dc2d0ec239273a22cb6a4f604c25f71bc45c6e41d6fcfd3424f2b751"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jre-11.0.23-ea.5_windows-x64_bin.zip",
-            "checksum": "sha256 2e265c46ada81d809376ac9d16b1bf0985f197e0e43cd373d7419daedcf109e4"
           }
         }
       },
