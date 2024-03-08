@@ -615,12 +615,28 @@
       {
         "tag": "sapmachine-11.0.23+6",
         "jdk": {
+          "linux-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_linux-aarch64_bin.tar.gz",
+            "checksum": "sha256 58cdd5fcc83a9b7bd749472f34a56231d4e2e6545bd6c16abe9f76c54d3fdff5"
+          },
+          "linux-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_linux-x64_bin.tar.gz",
+            "checksum": "sha256 92ffbac31a7e3c80cf1bbcba8f2d9a79183b6a2f1086df91129e7974558a1523"
+          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_windows-x64_bin.zip",
             "checksum": "sha256 1aeb0ae2f67957ca809a300710054e6b9f0f9754e2ba10abac837949b5c53dee"
           }
         },
         "jre": {
+          "linux-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_linux-aarch64_bin.tar.gz",
+            "checksum": "sha256 570069bed29766dfbe2fb15e383bf0441f049d837b38b3c5e76a54f7f04fc2bc"
+          },
+          "linux-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_linux-x64_bin.tar.gz",
+            "checksum": "sha256 51ebc5d62a70f7479efba7a4dfb9a19ee5c1aee7acc23253c1b8725f59776f72"
+          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_windows-x64_bin.zip",
             "checksum": "sha256 9f4f1692d4e8523f8486cf86c03f4b9ba02530b20ff91f7838e160cf865e3287"
@@ -630,17 +646,9 @@
       {
         "tag": "sapmachine-11.0.23+5",
         "jdk": {
-          "linux-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jdk-11.0.23-ea.5_linux-aarch64_bin.tar.gz",
-            "checksum": "sha256 ad0ec5effb0d7d8cf900ef8514afd0b300e6e891d0d08be2510addd097b23380"
-          },
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jdk-11.0.23-ea.5_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 3aec91e6195b2ce68dd2780f8b92367a48f1f35ad51b18e10e09a7feaaecf1ed"
-          },
-          "linux-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jdk-11.0.23-ea.5_linux-x64_bin.tar.gz",
-            "checksum": "sha256 e0f3638736924491786a3503f6b6cd067c0c46cb39ec591f1db35cc5406bb2e4"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jdk-11.0.23-ea.5_macos-aarch64_bin.dmg",
@@ -660,17 +668,9 @@
           }
         },
         "jre": {
-          "linux-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jre-11.0.23-ea.5_linux-aarch64_bin.tar.gz",
-            "checksum": "sha256 4836b73e3938377d6199f512060890457374f9354a933ecc9c09cbfbbc26e822"
-          },
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jre-11.0.23-ea.5_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 4122e9434eca0dadda118e00c9e101ea22e057c3759c8b06284af44db81b6e28"
-          },
-          "linux-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jre-11.0.23-ea.5_linux-x64_bin.tar.gz",
-            "checksum": "sha256 d32b593fd949e02313951cc9999a73c9e58b6be2d997fe7fc2c0d9b6933c0992"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B5/sapmachine-jre-11.0.23-ea.5_macos-aarch64_bin.dmg",
