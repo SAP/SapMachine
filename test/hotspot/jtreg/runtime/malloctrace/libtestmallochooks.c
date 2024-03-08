@@ -259,6 +259,16 @@ Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint 
         }
     }
 
+    /* Free at least some the memory. We cannot do this when tracking live, obviously. */
+    if (!trackLive) {
+        for (i = 0; i < maxLiveAllocations; ++i) {
+            free(roots[i]);
+        }
+    }
+
+    funcs->free(roots);
+    funcs->free(source);
+
     (*env)->SetLongArrayRegion(env, resultSizes, 0, 8, sizes);
     (*env)->SetLongArrayRegion(env, resultCounts, 0, 8, counts);
 }

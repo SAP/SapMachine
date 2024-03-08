@@ -765,6 +765,7 @@ private:
   static void record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames);
   static StatEntry* record_free(void* ptr, uint64_t hash, size_t size);
 
+  static uint64_t ptr_hash_impl(void* ptr);
   static uint64_t ptr_hash(void* ptr);
   static bool should_track(uint64_t hash);
   static int capture_stack(address* frames, address real_func, address caller);
@@ -929,11 +930,7 @@ bool MallocStatisticImpl::setup_hooks(registered_hooks_t* hooks, outputStream* s
 // rely on it having unique values for a pointer.
 // See https://github.com/skeeto/hash-prospector?tab=readme-ov-file#reversible-operation-selection
 // for a list of operations which are resersible.
-uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
-  if (!_track_free && (_to_track_mask == 0)) {
-    return 0;
-  }
-
+uint64_t MallocStatisticImpl::ptr_hash_impl(void* ptr) {
   uint64_t hash = (uint64_t) ptr;
   hash = (~hash) + (hash << 21);
   hash = hash ^ (hash >> 24);
@@ -944,6 +941,14 @@ uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
   hash = hash + (hash << 31);
 
   return hash;
+}
+
+uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
+  if (!_track_free && (_to_track_mask == 0)) {
+    return 0;
+  }
+
+  return ptr_hash_impl(ptr);
 }
 
 bool MallocStatisticImpl::should_track(uint64_t hash) {
@@ -1312,7 +1317,6 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
 }
 
 void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames) {
-  assert(_track_free, "Only used for detailed tracking");
   // Use the size that the malloc implementation used, since we don't store
   // the size and have to account for it later in realloc/free.
   size_t size = real_malloc_funcs->malloc_size(ptr);
@@ -1323,11 +1327,18 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
     return;
   }
 
+  // hash could be 0 since ptr_hash checked for _track_free without
+  // lock protection. Recalculate it again.
+  if (hash == 0) {
+    hash = ptr_hash_impl(ptr);
+  }
+
   int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
   AllocMapData& map = _alloc_maps_data[idx];
   Locker locker(&map._lock);
 
-  if (!_enabled) {
+  // _track_free could have changed concurrently.
+  if (!(_track_free && _enabled)) {
     return;
   }
 
@@ -1404,13 +1415,18 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
 }
 
 StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t size) {
-  assert(_track_free, "Only used for detailed tracking");
+  // hash could be 0 since ptr_hash checked for _track_free without
+  // lock protection. Recalculate it again.
+  if (hash == 0) {
+    hash = ptr_hash_impl(ptr);
+  }
 
   int idx = (int) (hash & (NR_OF_ALLOC_MAPS - 1));
   AllocMapData& map = _alloc_maps_data[idx];
   Locker locker(&map._lock);
 
-  if (!_enabled) {
+  // _track_free could have changed concurrently.
+  if (!(_track_free && _enabled)) {
     return NULL;
   }
 

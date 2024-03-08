@@ -30,6 +30,7 @@
  * @run main/othervm/native/timeout=600 MallocHooksTest
  */
 
+import java.lang.management.ManagementFactory;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +40,9 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -100,6 +104,7 @@ public class MallocHooksTest {
                 testPartialTrackint(true, 10, 0.3);
                 testFlags();
                 testJcmdOptions();
+                testEnablingStress();
                 return;
             } finally {
                 dumpHsErrorFiles();
@@ -138,14 +143,34 @@ public class MallocHooksTest {
                 Thread.sleep(1000 * Long.parseLong(args[1]));
                 return;
 
+            case "enablingStress":
+                int nrOfEnables = Integer.parseInt(args[2]);
+                new Thread(() -> {
+                    try {
+                        doEnablingStress(nrOfEnables);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
+                }).start();
+                // fall through intentional to start the work.
+
             case "wait":
                 System.loadLibrary("testmallochooks");
                 System.out.print("*");
                 System.out.flush();
+                int nrOfThreads = Integer.parseInt(args[1]);
 
-                while (true) {
-                     doRandomMemOps(1000000, 32768, 1348763421, false, new long[8], new long[8]);
+                for (int i = 0; i < nrOfThreads; ++i) {
+                    new Thread(() -> {
+                        while (true) {
+                            doRandomMemOps(1000000, 32768 / nrOfThreads, 1348763421,
+                                           false, new long[8], new long[8]);
+                        }
+                    }).start();
                 }
+
+                return;
 
             default:
                 throw new Exception("Unknown command " + args[0]);
@@ -228,16 +253,58 @@ public class MallocHooksTest {
         return oa;
     }
 
-    private static Process runWait(String... opts) throws Exception {
-        String[] args = new String[opts.length + 3];
+    private static Process runEnablingStress(int nrOfThreads, int nrOfEnables, String... opts) throws Exception {
+        String[] args = new String[opts.length + 5];
         System.arraycopy(opts, 0, args, 0, opts.length);
         args[opts.length + 0] = "-Djava.library.path=" + System.getProperty("java.library.path");
         args[opts.length + 1] = MallocHooksTest.class.getName();
-        args[opts.length + 2] = "wait";
+        args[opts.length + 2] = "enablingStress";
+        args[opts.length + 3] = "" + nrOfThreads;
+        args[opts.length + 4] = "" + nrOfEnables;
         Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
         // Make sure java is running when we return
         p.getInputStream().read();
         return p;
+    }
+
+    private static Process runWait(String... opts) throws Exception {
+        String[] args = new String[opts.length + 4];
+        System.arraycopy(opts, 0, args, 0, opts.length);
+        args[opts.length + 0] = "-Djava.library.path=" + System.getProperty("java.library.path");
+        args[opts.length + 1] = MallocHooksTest.class.getName();
+        args[opts.length + 2] = "wait";
+        args[opts.length + 3] = "1";
+        Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
+        // Make sure java is running when we return
+        p.getInputStream().read();
+        return p;
+    }
+
+    private static void doEnablingStress(int nrOfEnables) throws Exception {
+      MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+      ObjectName name = new ObjectName("com.sun.management:type=DiagnosticCommand");
+      String[] signature = new String[] {String[].class.getName()};
+
+      for (int i = 0; i < nrOfEnables; ++i) {
+          String[] args;
+
+          if ((i & 1) == 0) {
+              args = new String[] {"-force"};
+          } else {
+              args = new String[] {"-force", "-track-free"};
+          }
+
+          server.invoke(name, "malloctraceEnable", new Object[] {args}, signature);
+      }
+
+      System.exit(0);
+    }
+
+    private static void testEnablingStress() throws Exception {
+        Process p = runEnablingStress(4, 20000, "-XX:+UseMallocHooks", "-XX:+MallocTraceAtStartup");
+        OutputAnalyzer oa = new OutputAnalyzer(p);
+        System.out.println(oa.getOutput());
+        oa.shouldHaveExitValue(0);
     }
 
     private static void testJcmdOptions() throws Exception {
