@@ -152,7 +152,7 @@ public class MallocHooksTest {
                         e.printStackTrace();
                         System.exit(1);
                     }
-                }).start();
+                }, "doEnablingStress").start();
                 // fall through intentional to start the work.
 
             case "wait":
@@ -167,7 +167,7 @@ public class MallocHooksTest {
                             doRandomMemOps(1000000, 32768 / nrOfThreads, 1348763421,
                                            false, new long[8], new long[8]);
                         }
-                    }).start();
+                    }, "doRandomMemOps" + i).start();
                 }
 
                 return;

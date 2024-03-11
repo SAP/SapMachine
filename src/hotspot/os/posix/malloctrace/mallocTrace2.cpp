@@ -485,7 +485,8 @@ public:
   }
 
   void remove_allocation(size_t size) {
-    assert(_size >= size, "Size cannot get negative");
+    assert(_size >= size, "Size cannot get negative (" UINT64_FORMAT " removed from " \
+           UINT64_FORMAT ", count " UINT64_FORMAT ")", (uint64_t) size, _size, _count);
     assert(_count >= 1, "Count cannot get negative");
     _size -= size;
     _count -= 1;
