@@ -718,6 +718,7 @@ private:
   static pthread_mutex_t    _malloc_stat_lock;
   static bool               _check_malloc_suspended;
   static pthread_key_t      _malloc_suspended;
+  static volatile int       _enable_count;
 
   static StackMapData       _stack_maps_data[NR_OF_STACK_MAPS];
   static AllocMapData       _alloc_maps_data[NR_OF_ALLOC_MAPS];
@@ -762,7 +763,8 @@ private:
   static void* pvalloc_hook_rd(size_t size, void* caller_address);
   static void wait_for_rainy_day_fund();
 
-  static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames);
+  static StatEntry* record_allocation_size(size_t to_add, int nr_of_frames, address* frames,
+                                           int* enable_count = NULL);
   static void record_allocation(void* ptr, uint64_t hash, int nr_of_frames, address* frames);
   static StatEntry* record_free(void* ptr, uint64_t hash, size_t size);
 
@@ -822,6 +824,7 @@ bool              MallocStatisticImpl::_detailed_stats;
 bool              MallocStatisticImpl::_tried_to_load_backtrace;
 int               MallocStatisticImpl::_max_frames;
 pthread_mutex_t   MallocStatisticImpl::_malloc_stat_lock;
+volatile int      MallocStatisticImpl::_enable_count;
 bool              MallocStatisticImpl::_check_malloc_suspended;
 pthread_key_t     MallocStatisticImpl::_malloc_suspended;
 StackMapData      MallocStatisticImpl::_stack_maps_data[NR_OF_STACK_MAPS];
@@ -1263,7 +1266,8 @@ static uint64_t hash_for_frames(int nr_of_frames, address* frames) {
   return result & (((uint64_t) UINT64_MAX) / (MAX_FRAMES + 1));
 }
 
-StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames) {
+StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of_frames, address* frames,
+                                                        int* enable_count) {
   // Skip the top frame since it is always from the hooks.
   nr_of_frames = MAX2(nr_of_frames - FRAMES_TO_SKIP, 0);
   frames += FRAMES_TO_SKIP;
@@ -1276,6 +1280,10 @@ StatEntry*  MallocStatisticImpl::record_allocation_size(size_t to_add, int nr_of
 
   StackMapData& map = _stack_maps_data[idx];
   Locker locker(&map._lock);
+
+  if (enable_count != NULL) {
+    *enable_count = _enable_count;
+  }
 
   if (!_enabled) {
     return NULL;
@@ -1321,8 +1329,9 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
   // Use the size that the malloc implementation used, since we don't store
   // the size and have to account for it later in realloc/free.
   size_t size = real_malloc_funcs->malloc_size(ptr);
+  int enable_count;
 
-  StatEntry* stat_entry = record_allocation_size(size, nr_of_frames, frames);
+  StatEntry* stat_entry = record_allocation_size(size, nr_of_frames, frames, &enable_count);
 
   if (stat_entry == NULL) {
     return;
@@ -1340,6 +1349,12 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
 
   // _track_free could have changed concurrently.
   if (!(_track_free && _enabled)) {
+    return;
+  }
+
+  // We might have enable the trace again after we created the stat
+  // entry, so if that happened, we bail out.
+  if (enable_count != _enable_count) {
     return;
   }
 
@@ -1432,6 +1447,7 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
   }
 
   int slot = (hash / NR_OF_ALLOC_MAPS) & map._mask;
+  int enable_count = _enable_count;
   AllocEntry** entry = &map._entries[slot];
 
   while (*entry != NULL) {
@@ -1476,13 +1492,19 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
 }
 
 void MallocStatisticImpl::cleanup() {
+  _enable_count += 1;
+
+  // Cleanup alloc map first, to avoid having dangling pointers
+  // to stat entries.
+  for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
+    _alloc_maps_data[i].cleanup();
+  }
+
   for (int i = 0; i < NR_OF_STACK_MAPS; ++i) {
     _stack_maps_data[i].cleanup();
   }
 
-  for (int i = 0; i < NR_OF_ALLOC_MAPS; ++i) {
-    _alloc_maps_data[i].cleanup();
-  }
+  _enable_count += 1;
 
   if (real_malloc_funcs != NULL) {
     real_malloc_funcs->free(_rainy_day_fund);
