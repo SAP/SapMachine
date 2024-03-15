@@ -1554,7 +1554,6 @@ bool MallocStatisticImpl::rainy_day_fund_used() {
 }
 
 bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
-  initialize();
   Locker lock(&_malloc_stat_lock);
 
   if (_enabled) {
@@ -1741,7 +1740,6 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
 }
 
 bool MallocStatisticImpl::disable(outputStream* st) {
-  initialize();
   Locker lock(&_malloc_stat_lock);
 
   if (!_enabled) {
@@ -1996,18 +1994,18 @@ static int sort_by_count(const void* p1, const void* p2) {
 bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stream, DumpSpec const& spec) {
   bool used_rainy_day_fund = false;
 
-  if (!spec._on_error) {
-    initialize();
-  } else if (_initialized) {
-    // Make sure all other threads don't allocate memory anymore
-    if (Atomic::cmpxchg(&_rainy_day_fund_used, false, true) == true) {
-      // Only can be done once.
+  if (spec._on_error) {
+    if (_initialized) {
+      // Make sure all other threads don't allocate memory anymore
+      if (Atomic::cmpxchg(&_rainy_day_fund_used, false, true) == true) {
+        // Only can be done once.
+        return false;
+      }
+
+      used_rainy_day_fund = true;
+    } else {
       return false;
     }
-
-    used_rainy_day_fund = true;
-  } else {
-    return false;
   }
 
   Locker locker(&_rainy_day_fund_lock, !used_rainy_day_fund);
