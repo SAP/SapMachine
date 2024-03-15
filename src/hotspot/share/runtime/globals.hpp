@@ -592,7 +592,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, MallocTraceDetailedStats, false,                            \
           "If enabled we collect more detailed statistics for the malloc "  \
-          "trace enabled at startup. This costs some performance.")         \
+          "trace if enabled at startup. This costs some performance.")      \
                                                                             \
   product(bool, MallocTraceDumpOnError, false,                              \
           "If enabled and the malloc trace is enabled too we do an "        \
