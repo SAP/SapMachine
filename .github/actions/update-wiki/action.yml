@@ -11,14 +11,6 @@ runs:
           git clone https://github.com/SAP/SapMachine.wiki.git
           cd SapMachine.wiki
           pip3 install feedparser
-          python3 scripts/update_blogs.py update > ../out
-          cat ../out
-          if grep -q changed ../out; then
-              git commit -a -m "Update blog posts"
-              git push
-              echo "Blog post list updated"
-          else
-              echo "No updates"
-          fi
+          python3 scripts/update_blogs.py clone
       working-directory: .
       shell: bash
