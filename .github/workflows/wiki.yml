@@ -11,8 +11,6 @@ jobs:
   wiki:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout the JDK source'
-        uses: actions/checkout@v4
       - name: 'Update Wiki'
         uses: ./.github/actions/update-wiki
 
