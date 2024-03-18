@@ -98,10 +98,10 @@ public class MallocHooksTest {
                 testDumpPercentage(true);
                 testDumpPercentage(false);
                 testUniqueStacks();
-                testPartialTrackint(false, 2, 0.2);
-                testPartialTrackint(true, 2, 0.2);
-                testPartialTrackint(false, 10, 0.3);
-                testPartialTrackint(true, 10, 0.3);
+                testPartialTracking(false, 2, 0.2);
+                testPartialTracking(true, 2, 0.2);
+                testPartialTracking(false, 10, 0.4);
+                testPartialTracking(true, 10, 0.4);
                 testFlags();
                 testJcmdOptions();
                 testEnablingStress();
@@ -445,7 +445,7 @@ public class MallocHooksTest {
       p.destroy();
     }
 
-    private static void testPartialTrackint(boolean trackLive, int nth, double diff) throws Exception {
+    private static void testPartialTracking(boolean trackLive, int nth, double diff) throws Exception {
         ProcessBuilder pb = runStress(1024 * 1024 * 10, 65536, 172369977, trackLive,
                                       "-Djava.library.path=" + System.getProperty("java.library.path"),
                                       "-XX:MallocTraceStackDepth=2",

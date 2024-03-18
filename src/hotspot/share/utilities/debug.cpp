@@ -68,9 +68,9 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 
-// SapMachine 2023-08-15: malloc trace2
+// SapMachine 2023-08-15: malloc trace
 #if defined(LINUX) || defined(__APPLE__)
-#include "malloctrace/mallocTrace2.hpp"
+#include "malloctrace/mallocTracePosix.hpp"
 #endif
 
 #include <stdio.h>

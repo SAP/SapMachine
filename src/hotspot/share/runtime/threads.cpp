@@ -121,9 +121,9 @@
 #include "vitals_linux_himemreport.hpp"
 #endif
 
-// SapMachine 2023-08-15: malloc trace2
+// SapMachine 2023-08-15: malloc trace
 #if defined(LINUX) || defined(__APPLE__)
-#include "malloctrace/mallocTrace2.hpp"
+#include "malloctrace/mallocTracePosix.hpp"
 #endif
 
 // Initialization after module runtime initialization

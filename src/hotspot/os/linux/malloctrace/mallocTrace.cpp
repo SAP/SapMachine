@@ -29,7 +29,7 @@
 #include "malloctrace/assertHandling.hpp"
 #include "malloctrace/locker.hpp"
 #include "malloctrace/mallocTrace.hpp"
-#include "malloctrace/mallocTrace2.hpp"
+#include "malloctrace/mallocTracePosix.hpp"
 #include "malloctrace/siteTable.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"

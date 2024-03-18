@@ -28,7 +28,7 @@
 
 #include "jvm_io.h"
 #include "mallochooks.h"
-#include "malloctrace/mallocTrace2.hpp"
+#include "malloctrace/mallocTracePosix.hpp"
 
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
