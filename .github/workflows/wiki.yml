@@ -1,4 +1,4 @@
-# Runs update-wiki update actions every day at 20:00 UTC
+# Runs update-wiki action every day at 20:00 UTC
 
 name: 'Wiki Update'
 
@@ -13,4 +13,3 @@ jobs:
     steps:
       - name: 'Update Wiki'
         uses: ./.github/actions/update-wiki
-
