@@ -5,7 +5,7 @@ description: 'This action updates the wiki with the latest blog posts.'
 runs:
   using: composite
   steps:
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v4
       with:
         repository: 'git@github.com:SAP/SapMachine.wiki.git'
         ref: 'master'
