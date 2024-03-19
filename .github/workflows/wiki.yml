@@ -25,6 +25,7 @@ jobs:
         run: |
           pip3 install feedparser
           python3 scripts/update_blogs.py update
+          git commit -a -m "Update blogs"
       - run: git push origin master
         working-directory: .
         shell: bash
