@@ -9,6 +9,7 @@ on:
 
 jobs:
   wiki:
+    if: ${{ github.event_name != 'schedule' || github.repository == 'SAP/SapMachine' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout SapMachine Wiki source
@@ -17,7 +18,7 @@ jobs:
           repository: 'SAP/SapMachine.wiki.git'
           ref: 'master'
           token:  ${{ secrets.ACTIONS_GITHUB_TOKEN }}
-      - name: setup git config
+      - name: Configure git
         run: |
           git config user.name "SapMachine Github Actions Bot"
           git config user.email "sapmachine@sap.com"
@@ -27,6 +28,7 @@ jobs:
           pip3 install feedparser
           python3 scripts/update_blogs.py update
           git commit -a -m "Update blogs" || echo "No updates"
-      - run: git push origin master
+      - name: Push changes
+        run: git push origin master
         working-directory: .
         shell: bash
