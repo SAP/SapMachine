@@ -117,6 +117,10 @@
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
 
+#ifndef _LARGE_FILES
+#error Hotspot on AIX must be compiled with -D_LARGE_FILES
+#endif
+
 // Missing prototypes for various system APIs.
 extern "C"
 int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
@@ -1108,10 +1112,9 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
-
   if (ebuf && ebuflen > 0) {
     ebuf[0] = '\0';
     ebuf[ebuflen - 1] = '\0';
@@ -1158,6 +1161,26 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     JFR_ONLY(load_event.set_error_msg(error_report);)
   }
   return nullptr;
+}
+// Load library named <filename>
+// If filename matches <name>.so, and loading fails, repeat with <name>.a.
+void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+  void* result = nullptr;
+  char* const file_path = strdup(filename);
+  char* const pointer_to_dot = strrchr(file_path, '.');
+  const char old_extension[] = ".so";
+  const char new_extension[] = ".a";
+  STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
+  // First try to load the existing file.
+  result = dll_load_library(filename, ebuf, ebuflen);
+  // If the load fails,we try to reload by changing the extension to .a for .so files only.
+  // Shared object in .so format dont have braces, hence they get removed for archives with members.
+  if (result == nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
+    snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
+    result = dll_load_library(file_path, ebuf, ebuflen);
+  }
+  FREE_C_HEAP_ARRAY(char, file_path);
+  return result;
 }
 
 void os::print_dll_info(outputStream *st) {
@@ -2511,10 +2534,10 @@ int os::open(const char *path, int oflag, int mode) {
   // IV90804: OPENING A FILE IN AFS WITH O_CLOEXEC FAILS WITH AN EINVAL ERROR APPLIES TO AIX 7100-04 17/04/14 PTF PECHANGE
   int oflag_with_o_cloexec = oflag | O_CLOEXEC;
 
-  int fd = ::open64(path, oflag_with_o_cloexec, mode);
+  int fd = ::open(path, oflag_with_o_cloexec, mode);
   if (fd == -1) {
     // we might fail in the open call when O_CLOEXEC is set, so try again without (see IV90804)
-    fd = ::open64(path, oflag, mode);
+    fd = ::open(path, oflag, mode);
     if (fd == -1) {
       return -1;
     }
@@ -2522,8 +2545,8 @@ int os::open(const char *path, int oflag, int mode) {
 
   // If the open succeeded, the file might still be a directory.
   {
-    struct stat64 buf64;
-    int ret = ::fstat64(fd, &buf64);
+    struct stat buf64;
+    int ret = ::fstat(fd, &buf64);
     int st_mode = buf64.st_mode;
 
     if (ret != -1) {
@@ -2577,17 +2600,17 @@ int os::open(const char *path, int oflag, int mode) {
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
   oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open64(path, oflags, S_IREAD | S_IWRITE);
+  return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek64(fd, (off64_t)0, SEEK_CUR);
+  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
 }
 
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
+  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // Map a block of memory.
