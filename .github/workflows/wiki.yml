@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: 'git@github.com:SAP/SapMachine.wiki.git'
+          repository: 'SAP/SapMachine.wiki'
           ref: 'master'
           token:  ${{ secrets.ACTIONS_GITHUB_TOKEN }}
       - name: setup git config
