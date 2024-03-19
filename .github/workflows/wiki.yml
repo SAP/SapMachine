@@ -11,7 +11,8 @@ jobs:
   wiki:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout SapMachine Wiki source
+        uses: actions/checkout@v4
         with:
           repository: 'SAP/SapMachine.wiki.git'
           ref: 'master'
