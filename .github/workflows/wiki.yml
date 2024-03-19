@@ -20,6 +20,7 @@ jobs:
         run: |
           git config user.name "SapMachine Github Actions Bot"
           git config user.email "sapmachine@sap.com"
+          git remote set-url origin git@github.com:SAP/SapMachine.wiki.git
       - name: Update Wiki
         run: |
           pip3 install feedparser
