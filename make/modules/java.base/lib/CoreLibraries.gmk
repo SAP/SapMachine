@@ -214,9 +214,8 @@ endif
 ifeq ($(call isTargetOs, linux macosx), true)
   LIBJLI_SRC_DIRS := $(call FindSrcDirsForComponent, java.base, libmallochooks)
 
-  $(eval $(call SetupJdkLibrary, BUILD_MALLOCHOOKS, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBMALLOCHOOKS, \
       NAME := mallochooks, \
-      SRC := $(TOPDIR)/src/java.base/unix/native/libmallochooks, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB), \
@@ -224,5 +223,5 @@ ifeq ($(call isTargetOs, linux macosx), true)
       LIBS := -ldl, \
   ))
 
-  TARGETS += $(BUILD_MALLOCHOOKS)
+  TARGETS += $(BUILD_LIBMALLOCHOOKS)
 endif
