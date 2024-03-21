@@ -552,7 +552,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseMallocHooks, false,                                      \
           "Preloads the malloc hooks library needed for the malloc trace. " \
           "This flag only works when using a JDK launcher. Otherwise the "  \
-          "library has to preloaded by hand.")                              \
+          "library has to be preloaded by hand.")                           \
                                                                             \
   product(bool, MallocTraceAtStartup, false,                                \
           "If set the malloc trace is enabled at startup.")                 \
@@ -635,7 +635,7 @@ const int ObjectAlignmentInBytes = 8;
           "(or allocated objects if sorted by count). In that case the "    \
           "-XX:MallocTraceDumpMaxEntries option is ignored.")               \
                                                                             \
-  product(bool, MallocTraceDumpHideDumpAlllocs, true,                       \
+  product(bool, MallocTraceDumpHideDumpAllocs, true,                        \
           "If enabled we don't track the allocation done for the dump.")    \
                                                                             \
   product(ccstr, MallocTraceDumpOutput, "stderr",                           \

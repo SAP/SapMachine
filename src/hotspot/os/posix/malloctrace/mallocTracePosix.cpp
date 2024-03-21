@@ -2334,7 +2334,7 @@ static void dump_from_flags(bool on_error) {
   spec._sort_by_count = MallocTraceDumpSortByCount;
   spec._max_entries = MallocTraceDumpMaxEntries;
   spec._dump_percentage = MallocTraceDumpPercentage;
-  spec._hide_dump_allocs = MallocTraceDumpHideDumpAlllocs;
+  spec._hide_dump_allocs = MallocTraceDumpHideDumpAllocs;
   spec._internal_stats = MallocTraceDumpInternalStats;
 
   if (is_non_empty_string(file)) {
