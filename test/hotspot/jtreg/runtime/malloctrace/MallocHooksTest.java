@@ -89,7 +89,7 @@ public class MallocHooksTest {
             return;
         }
 
-        if (args.length == 0) {
+        while (args.length == 0) {
             try {
                 testNoRecursiveCallsForFallbacks();
                 testEnvSanitizing();
@@ -106,6 +106,9 @@ public class MallocHooksTest {
                 testJcmdOptions();
                 testEnablingStress();
                 return;
+            } catch (InterruptedException e) {
+                System.out.println("Retrying because of stale socket");
+                // Retry
             } finally {
                 dumpHsErrorFiles();
             }
@@ -253,6 +256,16 @@ public class MallocHooksTest {
         return oa;
     }
 
+    private static void checkIsAttachable(Process p) throws Exception {
+        // There should not already be a socket for this VM. If it exists it doesn't
+        // comes from the VM itself, but was there
+        if (new File("/tmp/.java_pid" + getPid(p)).exists()) {
+            p.destroy();
+            Thread.sleep(1000); // Don't retry too fast.
+            throw new InterruptedException();
+        }
+    }
+
     private static Process runEnablingStress(int nrOfThreads, int nrOfEnables, String... opts) throws Exception {
         String[] args = new String[opts.length + 5];
         System.arraycopy(opts, 0, args, 0, opts.length);
@@ -262,6 +275,7 @@ public class MallocHooksTest {
         args[opts.length + 3] = "" + nrOfThreads;
         args[opts.length + 4] = "" + nrOfEnables;
         Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
+        checkIsAttachable(p);
         // Make sure java is running when we return
         p.getInputStream().read();
         return p;
@@ -275,6 +289,7 @@ public class MallocHooksTest {
         args[opts.length + 2] = "wait";
         args[opts.length + 3] = "1";
         Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
+        checkIsAttachable(p);
         // Make sure java is running when we return
         p.getInputStream().read();
         return p;
@@ -452,6 +467,7 @@ public class MallocHooksTest {
                                       "-XX:+MallocTraceDetailedStats",
                                       "-XX:MallocTraceOnlyNth=" + nth);
         Process p = pb.start();
+        checkIsAttachable(p);
         MallocTraceExpectedStatistic expected = new MallocTraceExpectedStatistic(p);
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
                                         "-filter=Java_MallocHooksTest_doRandomMemOps",
@@ -482,6 +498,7 @@ public class MallocHooksTest {
                                       "-Djava.library.path=" + System.getProperty("java.library.path"),
                                       "-XX:MallocTraceStackDepth=2");
         Process p = pb.start();
+        checkIsAttachable(p);
         MallocTraceExpectedStatistic expected = new MallocTraceExpectedStatistic(p);
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-max-entries=10", "-sort-by-count",
                                         "-filter=Java_MallocHooksTest_doRandomMemOps");
@@ -509,7 +526,10 @@ public class MallocHooksTest {
         args[opts.length + 1] = MallocHooksTest.class.getName();
         args[opts.length + 2] = "sleep";
         args[opts.length + 3] = Integer.toString(sleep);
-        return new OutputAnalyzer(ProcessTools.createLimitedTestJavaProcessBuilder(args).start());
+        Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
+        checkIsAttachable(p);
+
+        return new OutputAnalyzer(p);
     }
 
     private static void testBasicOutput(OutputAnalyzer oa) throws Exception {
@@ -562,6 +582,7 @@ public class MallocHooksTest {
                                           "-Djava.library.path=" + System.getProperty("java.library.path"),
                                           "-XX:MallocTraceStackDepth=12");
         Process p = ProcessTools.startProcess("runManyStack", pb, x -> System.out.println("> " + x), null, -1, null);
+        checkIsAttachable(p);
         p.getInputStream().read();
         OutputAnalyzer oa = bySize ? callJcmd(p, "MallocTrace.dump", "-percentage=90") :
                                      callJcmd(p, "MallocTrace.dump", "-sort-by-count", "-percentage=90");
@@ -575,6 +596,7 @@ public class MallocHooksTest {
                                           "-Djava.library.path=" + System.getProperty("java.library.path"),
                                           "-XX:MallocTraceStackDepth=14");
         Process p = ProcessTools.startProcess("runManyStack", pb, x -> System.out.println("> " + x), null, -1, null);
+        checkIsAttachable(p);
         p.getInputStream().read();
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-percentage=100");
         oa.shouldHaveExitValue(0);
