@@ -109,13 +109,15 @@ static uint64_t parse_timespan_part(char const* start, char const* end, char con
   buf[size] = '\0';
 
   char* found_end;
-  uint64_t result = (uint64_t) strtoull(buf, &found_end, 10);
+  int64_t result = (int64_t) strtoll(buf, &found_end, 10);
 
   if ((found_end != end) && (*found_end != '\0')) {
     *error = "Could not parse integer";
+  } else if (result < 0) {
+    *error = "negative time";
   }
 
-  return (uint64_t) atoll(buf);
+  return (uint64_t) result;
 }
 
 static uint64_t parse_timespan(char const* spec, char const** error = NULL) {
@@ -300,6 +302,7 @@ public:
   bool contains(address to_check);
   bool add(address to_add);
   size_t allocated();
+  // The average chain length.
   double load();
 };
 
@@ -451,9 +454,9 @@ public:
     _hash_and_nr_of_frames((hash * (MAX_FRAMES + 1)) + nr_of_frames),
     _size(size),
     _count(1) {
-    memcpy(_frames, frames, sizeof(address) * nr_of_frames);
     assert(nr_of_frames >= 0, "Must not be negative");
     assert(nr_of_frames <= MAX_FRAMES, "too many frames");
+    memcpy(_frames, frames, sizeof(address) * nr_of_frames);
     assert(hash == this->hash(), "Must be the same: " UINT64_FORMAT " " UINT64_FORMAT, hash, this->hash());
     assert(nr_of_frames == this->nr_of_frames(), "Must be equal");
 
@@ -845,7 +848,7 @@ ALWAYSINLINE int MallocStatisticImpl::capture_stack(address* frames, address rea
   int nr_of_frames = 0;
 
   if (_max_frames <= 2) {
-    // Skip, since we will fill it it later anyway.
+    // Skip, since we will fill it in later anyway.
   } else if (_use_backtrace) {
     nr_of_frames = _backtrace((void**) frames, _max_frames + FRAMES_TO_SKIP);
   } else {
@@ -912,7 +915,7 @@ bool MallocStatisticImpl::setup_hooks(registered_hooks_t* hooks, outputStream* s
         print_needed_preload_env(st);
       } else {
         st->print_cr("Could not find preloaded libmallochooks. Try using -XX:+UseMallocHooks " \
-                     "Vm option to automatically preload it using the JDK launcher. Or you can set " \
+                     "VM option to automatically preload it using the JDK launcher. Or you can set " \
                      "the following environment variable: ");
         print_needed_preload_env(st);
       }
@@ -1384,7 +1387,7 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
         ss.cr();
       }
 
-      ss.print_raw_cr("Orig stack:");
+      ss.print_raw_cr("Original stack:");
       StatEntry* stat_entry = entry->entry();
 
       for (int i = 0; i < stat_entry->nr_of_frames(); ++i) {
@@ -2611,8 +2614,8 @@ MallocTraceDumpDCmd::MallocTraceDumpDCmd(outputStream* output, bool heap) :
              "Note that the filename is interpreted by the target VM. You can use " \
              "'stdout' or 'stderr' as filenames to dump via stdout or stderr of " \
              "the target VM", "STRING", false),
-  _filter("-filter", "If given we only print a stack if it contains a function matching " \
-          "the given string.", "STRING", false),
+  _filter("-filter", "If given we only print a stack if it includes a function which contains the " \
+          "given string as a substring.", "STRING", false),
   _max_entries("-max-entries", "The maximum number of entries to dump.", "INT", false, "10"),
   _dump_percentage("-percentage", "If > 0 we dump the given percentage of allocated bytes " \
                  "(or allocated objects if sorted by count). In that case the -max-entries " \

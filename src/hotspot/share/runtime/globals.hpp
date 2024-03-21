@@ -568,8 +568,8 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(ccstr, MallocTraceEnableDelay, "0s",                              \
           "If > 0 seconds and MallocTraceAtStartup is enabled, we delay "   \
-          "the startup by the given amount of time. Can use s, m, h or d "  \
-          "to specify the delay.")                                          \
+          "the startup of tracking by the given amount of time. Can use "   \
+          "s, m, h or d to specify the delay.")                             \
                                                                             \
   product(uintx, MallocTraceStackDepth, 12,                                 \
           "The maximum depth of stack traces for the malloc trace if "      \
@@ -588,7 +588,10 @@ const int ObjectAlignmentInBytes = 8;
           "silently ignored.")                                              \
                                                                             \
   product(ccstr, MallocTraceUnwindLibName, "libunwind.so.8",                \
-          "The name of the libunwind to load.")                             \
+          "The path of the libunwind to load if it should be used to "      \
+          "create the stack traces and the backtrace() function cannot "    \
+          "be found. If libunwind is not on the library path, an "          \
+          "absolute path should be used.")                                  \
                                                                             \
   product(bool, MallocTraceDetailedStats, false,                            \
           "If enabled we collect more detailed statistics for the malloc "  \
