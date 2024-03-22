@@ -67,13 +67,13 @@ static void print_error(char const* msg) {
 }
 
 
-static void unepected_call() {
+static void unexpected_call() {
   print_error("Uninitialized function called. libmallochooks.so must be the first preloaded library.\n");
   exit(1);
 }
 
 // The tag for malloc functions which should be loaded by dl_sym.
-#define LOAD_DYNAMIC  ((void*) unepected_call)
+#define LOAD_DYNAMIC  ((void*) unexpected_call)
 
 #if defined(__APPLE__)
 
