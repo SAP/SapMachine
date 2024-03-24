@@ -1,6 +1,44 @@
 {
   "updates": {
     "11.0.23": {
+      "sapmachine-11.0.23+7": {
+        "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.23%2B7",
+        "ea": "true",
+        "assets": {
+          "jdk": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.23-ea.7_linux-x64_bin.tar.gz",
+                "checksum": "2ee90f30305aa16f4ccdc75b667bc8a9bb23d545673e14e417fdba75a01512e8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jdk-11.0.23-ea.7_linux-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-11.0.23-ea.7_windows-x64_bin.zip",
+                "checksum": "cffcc11f1d67cdda3e0c1650b26ef479ab63de0a3883a46e01148aabc7985132",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jdk-11.0.23-ea.7_windows-x64_bin.zip"
+              }
+            }
+          },
+          "jre": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.23-ea.7_linux-x64_bin.tar.gz",
+                "checksum": "345a43263dc22a360ab0b6fd338d44c3552008b2a3ad3f80a5a9deec20df8ddd",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jre-11.0.23-ea.7_linux-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-11.0.23-ea.7_windows-x64_bin.zip",
+                "checksum": "65253b994636f8d39a748065faac797b95b0ed1a8f5889442fe9652239a06a34",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jre-11.0.23-ea.7_windows-x64_bin.zip"
+              }
+            }
+          }
+        }
+      },
       "sapmachine-11.0.23+6": {
         "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.23%2B6",
         "ea": "true",

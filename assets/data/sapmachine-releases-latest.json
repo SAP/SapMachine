@@ -714,6 +714,29 @@
     "ea": true,
     "releases": [
       {
+        "tag": "sapmachine-11.0.23+7",
+        "jdk": {
+          "linux-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jdk-11.0.23-ea.7_linux-x64_bin.tar.gz",
+            "checksum": "sha256 2ee90f30305aa16f4ccdc75b667bc8a9bb23d545673e14e417fdba75a01512e8"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jdk-11.0.23-ea.7_windows-x64_bin.zip",
+            "checksum": "sha256 cffcc11f1d67cdda3e0c1650b26ef479ab63de0a3883a46e01148aabc7985132"
+          }
+        },
+        "jre": {
+          "linux-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jre-11.0.23-ea.7_linux-x64_bin.tar.gz",
+            "checksum": "sha256 345a43263dc22a360ab0b6fd338d44c3552008b2a3ad3f80a5a9deec20df8ddd"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B7/sapmachine-jre-11.0.23-ea.7_windows-x64_bin.zip",
+            "checksum": "sha256 65253b994636f8d39a748065faac797b95b0ed1a8f5889442fe9652239a06a34"
+          }
+        }
+      },
+      {
         "tag": "sapmachine-11.0.23+6",
         "jdk": {
           "linux-aarch64": {
@@ -723,10 +746,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 039dc98ffab5eaf8f80b5f4f3adbb612907acdc1524b0b20b24fdd4ebe8c9035"
-          },
-          "linux-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_linux-x64_bin.tar.gz",
-            "checksum": "sha256 92ffbac31a7e3c80cf1bbcba8f2d9a79183b6a2f1086df91129e7974558a1523"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_macos-aarch64_bin.dmg",
@@ -743,10 +762,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_macos-x64_bin.tar.gz",
             "checksum": "sha256 bfc37a8a7c60072a871373ba31ebc180d51c6ce8473e3fc3996535527e79c052"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jdk-11.0.23-ea.6_windows-x64_bin.zip",
-            "checksum": "sha256 1aeb0ae2f67957ca809a300710054e6b9f0f9754e2ba10abac837949b5c53dee"
           }
         },
         "jre": {
@@ -757,10 +772,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 8a68919c446e0f53343cfd7e5db11c7dd82a42ee8a60040c32918af9d1f8f67e"
-          },
-          "linux-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_linux-x64_bin.tar.gz",
-            "checksum": "sha256 51ebc5d62a70f7479efba7a4dfb9a19ee5c1aee7acc23253c1b8725f59776f72"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_macos-aarch64_bin.dmg",
@@ -777,10 +788,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_macos-x64_bin.tar.gz",
             "checksum": "sha256 1f882fc0176e17b72810a5aaa5215fa1f0d34e0c6c4c1f21c5e5e523bcf4a975"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23%2B6/sapmachine-jre-11.0.23-ea.6_windows-x64_bin.zip",
-            "checksum": "sha256 9f4f1692d4e8523f8486cf86c03f4b9ba02530b20ff91f7838e160cf865e3287"
           }
         }
       },
