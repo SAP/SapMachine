@@ -67,8 +67,8 @@ struct DumpSpec {
   bool        _internal_stats;
 
   DumpSpec() :
-    _dump_file(NULL),
-    _filter(NULL),
+    _dump_file(nullptr),
+    _filter(nullptr),
     _max_entries(0),
     _hide_dump_allocs(true),
     _on_error(false),
@@ -132,7 +132,7 @@ public:
   }
 
   static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
     return p;
   }
 
@@ -161,7 +161,7 @@ public:
   }
 
   static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
     return p;
   }
 
@@ -198,7 +198,7 @@ public:
   }
 
   static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
     return p;
   }
 
