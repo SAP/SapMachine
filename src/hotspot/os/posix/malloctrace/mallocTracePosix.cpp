@@ -429,17 +429,7 @@ Locker::~Locker() {
   }
 }
 
-
-//
-//
-//
-//
-// Class StatEntry
-//
-//
-//
-//
-
+// Entry for the hash map containing statistics about allocation stack traces.
 class StatEntry {
 private:
   StatEntry* _next;
