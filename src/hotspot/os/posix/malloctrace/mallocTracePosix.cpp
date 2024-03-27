@@ -1439,6 +1439,8 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
     return nullptr;
   }
 
+  assert(map._entries != nullptr, "Must be initialized");
+
   int slot = (hash / NR_OF_ALLOC_MAPS) & map._mask;
   int enable_count = _enable_count;
   AllocEntry** entry = &map._entries[slot];
@@ -1689,6 +1691,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     }
 
     StackMapData& map = _stack_maps_data[i];
+    Locker locker(&map._lock);
     map._alloc = new (mem) Allocator(entry_size, 256);
     map._mask = STACK_MAP_INIT_SIZE - 1;
     map._size = 0;
@@ -1714,6 +1717,7 @@ bool MallocStatisticImpl::enable(outputStream* st, TraceSpec const& spec) {
     }
 
     AllocMapData& map = _alloc_maps_data[i];
+    Locker locker(&map._lock);
     map._alloc = new (mem) Allocator(sizeof(AllocEntry), 2048);
     map._mask = ALLOC_MAP_INIT_SIZE - 1;
     map._size = 0;
