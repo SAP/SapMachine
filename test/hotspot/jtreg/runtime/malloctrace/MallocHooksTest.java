@@ -755,10 +755,10 @@ class MallocTraceResult {
 
         while (true) {
             String[] parts = line.split(":|(bytes,)");
-            long bytes = Long.parseLong(parts[1].trim().split(" ")[0]);
-            long count = Long.parseLong(parts[2].trim().split(" ")[0]);
-            int index = Integer.parseInt(parts[0].trim().split(" ")[1]);
-            int maxIndex = Integer.parseInt(parts[0].trim().split(" ")[3]);
+            long bytes = Long.parseLong(parts[1].trim().split(" ")[0].replaceAll(",", ""));
+            long count = Long.parseLong(parts[2].trim().split(" ")[0].replaceAll(",", ""));
+            int index = Integer.parseInt(parts[0].trim().split(" ")[1].replaceAll(",", ""));
+            int maxIndex = Integer.parseInt(parts[0].trim().split(" ")[3].replaceAll(",", ""));
             stacks.add(new Stack(reader, index, maxIndex, bytes, count));
             line = reader.readLine();
 
@@ -806,8 +806,8 @@ class MallocTraceExpectedStatistic {
            String line = br.readLine();
            System.out.println(i + ": " + line);
            String[] parts = line.split(" ");
-           bytes[i] = Long.parseLong(parts[0]);
-           counts[i] = Long.parseLong(parts[1]);
+           bytes[i] = Long.parseLong(parts[0].replaceAll(",", ""));
+           counts[i] = Long.parseLong(parts[1].replaceAll(",", ""));
         }
     }
 
