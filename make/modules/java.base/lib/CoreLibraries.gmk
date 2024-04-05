@@ -188,3 +188,14 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
 ))
 
 TARGETS += $(BUILD_LIBJLI)
+
+# SapMachine 2023-11-28: build libmallochooks
+ifeq ($(call isTargetOs, linux macosx), true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBMALLOCHOOKS, \
+      NAME := mallochooks, \
+      OPTIMIZATION := LOW, \
+      LIBS := -ldl, \
+  ))
+
+  TARGETS += $(BUILD_LIBMALLOCHOOKS)
+endif
