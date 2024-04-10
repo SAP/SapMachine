@@ -38,6 +38,13 @@
                 "checksum": "58cff26b9799382a99b2c7a2ffb6be4d10425c82bc4141d07ff03e6204962160",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1%2B1/sapmachine-jdk-22.0.1-ea.1_macos-x64_bin.tar.gz"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-22.0.1-ea.1_windows-x64_bin.zip",
+                "checksum": "021b094e50c6f57b8b35bc38e8c3d6acd2f680c9cca236646d855147880b8a6d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1%2B1/sapmachine-jdk-22.0.1-ea.1_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
@@ -72,6 +79,13 @@
                 "name": "sapmachine-jre-22.0.1-ea.1_macos-x64_bin.tar.gz",
                 "checksum": "578877208f6fb07345ebdfbd97f8bc60eb0b208f0a8ceacaa01c3cc8216859eb",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1%2B1/sapmachine-jre-22.0.1-ea.1_macos-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-22.0.1-ea.1_windows-x64_bin.zip",
+                "checksum": "85cd186bb3dda2aaebb643b26f2b55332a4ada749e34e7059a173848abf47e5a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1%2B1/sapmachine-jre-22.0.1-ea.1_windows-x64_bin.zip"
               }
             }
           }
