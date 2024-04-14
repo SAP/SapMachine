@@ -552,6 +552,106 @@ const int ObjectAlignmentInBytes = 8;
           "When DumpVitalsAtExit is set, the file name prefix for the "     \
           "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \
+  /* SapMachine 2023-09-18: malloc trace */                                 \
+  product(bool, UseMallocHooks, false,                                      \
+          "Preloads the malloc hooks library needed for the malloc trace. " \
+          "This flag only works when using a JDK launcher. Otherwise the "  \
+          "library has to be preloaded by hand.")                           \
+                                                                            \
+  product(bool, MallocTraceAtStartup, false,                                \
+          "If set the malloc trace is enabled at startup.")                 \
+                                                                            \
+  product(bool, MallocTraceExitIfFail, true,                                \
+          "If set and enabling the malloc trace at startup fails, we "      \
+          "print an error message and exit. Otherwise the error is "        \
+          "silently ignored.")                                              \
+                                                                            \
+  product(bool, MallocTraceTrackFree, true,                                 \
+          "If set the malloc trace also tracks deallocation of memory "     \
+          "if enabled at startup.")                                         \
+                                                                            \
+  product(ccstr, MallocTraceEnableDelay, "0s",                              \
+          "If > 0 seconds and MallocTraceAtStartup is enabled, we delay "   \
+          "the startup of tracking by the given amount of time. Can use "   \
+          "s, m, h or d to specify the delay.")                             \
+                                                                            \
+  product(uintx, MallocTraceStackDepth, 12,                                 \
+          "The maximum depth of stack traces for the malloc trace if "      \
+          "enabled at startup.")                                            \
+                                                                            \
+  product(uintx, MallocTraceOnlyNth, 1,                                     \
+          "if > 1 we only track about every n'th allocation for the "       \
+          "malloc trace if enabled at startup.")                            \
+          range(1, 1000)                                                    \
+                                                                            \
+  product(bool, MallocTraceUseBacktrace, true,                              \
+          "If set we use the backtrace() call to sample the stacks of "     \
+          "the malloc trace if enabled at startup. Note that while this "   \
+          "creates better stack traces, it is also slower and not "         \
+          "supported on every system. If not supported, this option is "    \
+          "silently ignored.")                                              \
+                                                                            \
+  product(ccstr, MallocTraceUnwindLibName, "libunwind.so.8",                \
+          "The path of the libunwind to load if it should be used to "      \
+          "create the stack traces and the backtrace() function cannot "    \
+          "be found. If libunwind is not on the library path, an "          \
+          "absolute path should be used.")                                  \
+                                                                            \
+  product(bool, MallocTraceDetailedStats, false,                            \
+          "If enabled we collect more detailed statistics for the malloc "  \
+          "trace if enabled at startup. This costs some performance.")      \
+                                                                            \
+  product(bool, MallocTraceDumpOnError, false,                              \
+          "If enabled and the malloc trace is enabled too we do an "        \
+          "emergency dump on native out-of-memory errors.")                 \
+                                                                            \
+  product(uintx, MallocTraceRainyDayFund, 1* M,                             \
+          "The size of the rainy day fund to use when doing an emergency "  \
+          "dump.")                                                          \
+                                                                            \
+  product(ccstr, MallocTraceDumpFilter, "",                                 \
+          "If set, we only print stacks which contains functions which "    \
+          "match the given string.")                                        \
+                                                                            \
+  product(bool, MallocTraceDumpInternalStats, false,                        \
+          "If enabled we include internal statistics in the dump. ")        \
+                                                                            \
+  product(uintx, MallocTraceDumpCount, 0,                                   \
+          "The number of dumps to perform.")                                \
+                                                                            \
+  product(ccstr, MallocTraceDumpDelay, "1h",                                \
+          "The delay after the trace was enabled at which to start the "    \
+          "regular dumps. The format supports seconds, minutes, hours "     \
+          "and days, e.g. '1s 2m 3h 4d' or '20s'.")                         \
+                                                                            \
+  product(ccstr, MallocTraceDumpInterval, "1h",                             \
+          "The interval for the dump for the dumps. The format supports "   \
+          "seconds, minutes, hours and days, e.g. '1s 2m 3h 4d' or '20s'.") \
+                                                                            \
+  product(bool, MallocTraceDumpSortByCount, false,                          \
+          "If given we sort the output by allocation count instead of "     \
+          "allocation size.")                                               \
+                                                                            \
+  product(uintx, MallocTraceDumpMaxEntries, 10,                             \
+          "If > 0 it limits the number of entries printed. If no sort "     \
+          "is specified via -XX:MallocTraceDumpSort, we sort by "           \
+          "size.")                                                          \
+                                                                            \
+  product(uintx, MallocTraceDumpPercentage, 0,                              \
+          "If > 0 we dump the given percentage of allocated bytes "         \
+          "(or allocated objects if sorted by count). In that case the "    \
+          "-XX:MallocTraceDumpMaxEntries option is ignored.")               \
+                                                                            \
+  product(bool, MallocTraceDumpHideDumpAllocs, true,                        \
+          "If enabled we don't track the allocation done for the dump.")    \
+                                                                            \
+  product(ccstr, MallocTraceDumpOutput, "stderr",                           \
+          "If set the dump is appended to the given file. 'stderr' and "    \
+          "'stdout' can be used for dumping to stderr or stdout. "          \
+          "Otherwise the dump is written to the given file name ( "         \
+          "the first occurrance of '@pid' is replaced by the pid of the "   \
+          "process).")                                                      \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \
