@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 22 Release for macos-x64
-checksum: sha256 a79e279a043a11d2dba1f2a4d8c1d9f090bb10f3c34673a525130d4327ecac71
+checksum: sha256 65ea23bbd427be511d6ea373e6cc3ad88f55b13f7c94f2b43c2bd56fad74507a
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22/sapmachine-jre-22_macos-x64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jre-22.0.1_macos-x64_bin.tar.gz
 ---

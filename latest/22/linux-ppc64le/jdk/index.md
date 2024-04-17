@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 22 Release for linux-ppc64le
-checksum: sha256 4c392061f8ab0c0cd29cab5838d246960f110810f2fd2b1a5b8fb8488e9ebf3b
+checksum: sha256 3613257ab2084cc11c4b16610c2308fe40605f2312c67e269c05e66a5cc3c581
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22/sapmachine-jdk-22_linux-ppc64le_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jdk-22.0.1_linux-ppc64le_bin.tar.gz
 ---

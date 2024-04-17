@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 22 Release for macos-aarch64
-checksum: sha256 ee55231c8d2da95c1be4f85361b4cca2d0f3d5b25e63c4b649b6c4b1c7a5d866
+checksum: sha256 cce91a02f4a2c6cc7f6be169794df9b18d462f1daaa200b3475df7936929562c
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22/sapmachine-jdk-22_macos-aarch64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jdk-22.0.1_macos-aarch64_bin.tar.gz
 ---

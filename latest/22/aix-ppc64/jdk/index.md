@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 22 Release for aix-ppc64
-checksum: sha256 df8561ee220d9e9a143c05ecb60712ba55f1cffe9bda49f89c7e321aef7801b2
+checksum: sha256 4f92ec264cbff1a483435b3f10f5b14319751e83274e455d0ac5ade082473f2c
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22/sapmachine-jdk-22_aix-ppc64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jdk-22.0.1_aix-ppc64_bin.tar.gz
 ---
