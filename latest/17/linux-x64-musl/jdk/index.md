@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 17 Release for linux-x64-musl
-checksum: sha256 8f3b59e05779629db4fc513736220ec57c2e19ec6376f77d28ef87567794823f
+checksum: sha256 02f41db0d0176da033b0050399d6a69a5f5b11661959965b4c854e78b3ea2220
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jdk-17.0.10_linux-x64-musl_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11/sapmachine-jdk-17.0.11_linux-x64-musl_bin.tar.gz
 ---

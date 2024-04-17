@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 17 Release for macos-aarch64
-checksum: sha256 5f52866432a5b4df193b332cce51195e5f3b1bdd5507338c10c125d8a3e2bbdc
+checksum: sha256 8e06ed19f293e6f545723e7744b80545ee9400ce8ce5b8c3dbdcf6f49f211ae0
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.10/sapmachine-jdk-17.0.10_macos-aarch64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11/sapmachine-jdk-17.0.11_macos-aarch64_bin.tar.gz
 ---
