@@ -56,7 +56,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 /*
- * At first, the client opens 5 connections which get be cached.
+ * At first, the client opens 5 connections which get cached.
  * Then in a second round of requests each thread should use the connection which
  * is requested through the value of the KeepAliveCache.connectionID field.
  */
