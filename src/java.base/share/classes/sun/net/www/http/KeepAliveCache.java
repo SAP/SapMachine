@@ -81,7 +81,7 @@ public class KeepAliveCache
         userKeepAliveProxy = getUserKeepAliveSeconds("proxy");
     }
 
-    // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries
+    // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries (for FRUN)
     public static final ThreadLocal<String> connectionID = new ThreadLocal<>();
 
     /* maximum # keep-alive connections to maintain at once
@@ -370,7 +370,7 @@ public class KeepAliveCache
 }
 
 class KeepAliveKey {
-    // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries
+    // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries (for FRUN)
     @SuppressWarnings("removal")
     private static boolean useKeyExtension = AccessController.doPrivileged(
         (PrivilegedAction<Boolean>)()->Boolean.getBoolean("com.sap.jvm.UseHttpKeepAliveCacheKeyExtension"));
@@ -386,7 +386,7 @@ class KeepAliveKey {
      * @param url the URL containing the protocol, host and port information
      */
     public KeepAliveKey(URL url, Object obj) {
-        // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries
+        // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries (for FRUN)
         final record KeyObject(String ci, Object obj) {
             @Override
             public boolean equals(Object other) {
@@ -404,7 +404,7 @@ class KeepAliveKey {
         this.protocol = url.getProtocol();
         this.host = url.getHost();
         this.port = url.getPort();
-        // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries
+        // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries (for FRUN)
         this.obj = useKeyExtension ? new KeyObject(KeepAliveCache.connectionID.get(), obj) : obj;
     }
 
@@ -416,10 +416,10 @@ class KeepAliveKey {
         if ((obj instanceof KeepAliveKey) == false)
             return false;
         KeepAliveKey kae = (KeepAliveKey)obj;
-        // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries
         return host.equals(kae.host)
             && (port == kae.port)
             && protocol.equals(kae.protocol)
+            // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries (for FRUN)
             && useKeyExtension ? this.obj.equals(kae.obj) : this.obj == kae.obj;
     }
 
