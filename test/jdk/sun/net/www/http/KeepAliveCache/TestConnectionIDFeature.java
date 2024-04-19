@@ -23,21 +23,19 @@
 
 /*
  * @test
- * @run main/othervm TestConnectionIDFeature
+ * @summary Test the SapMachine specific KeepAliveCache connectionID feature
+ * @library /test/lib
  * @modules java.base/sun.net.www.http
- * @summary Test the SapMachine specific connectionID feature
+ * @run main/othervm -Dcom.sap.jvm.UseHttpKeepAliveCacheKeyExtension=true TestConnectionIDFeature
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.URI;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,23 +47,25 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
+import jdk.test.lib.net.URIBuilder;
+
 import sun.net.www.http.KeepAliveCache;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-/* Client should open connections on 5 threads which should be cached.
- * Then on a second invocation, each thread should get back its connection.
+/*
+ * At first, the client opens 5 connections which get be cached.
+ * Then in a second round of requests each thread should use the connection which
+ * is requested through the value of the KeepAliveCache.connectionID field.
  */
-
 public class TestConnectionIDFeature {
     static final byte[] PAYLOAD = "hello".getBytes();
     static final int CLIENT_THREADS = 6;
 
     static final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
     static final ExecutorService executor = Executors.newFixedThreadPool(CLIENT_THREADS);
-    static String baseURL;
     static HttpServer server;
 
     static ArrayDeque<String> connectionIds = new ArrayDeque<>();
@@ -103,11 +103,17 @@ public class TestConnectionIDFeature {
         }
     }
 
-    public static class InitialRequest implements Supplier<String> {
+    static abstract class Request implements Supplier<String> {
         String connectionId;
 
-        InitialRequest(String connectionId) {
+        Request(String connectionId) {
             this.connectionId = connectionId;
+        }
+    }
+
+    static class InitialRequest extends Request {
+        InitialRequest(String connectionId) {
+            super(connectionId);
         }
 
         @Override
@@ -115,9 +121,14 @@ public class TestConnectionIDFeature {
             System.out.println("Running initial request for key: " + connectionId);
             KeepAliveCache.connectionID.set(connectionId);
             try {
-                URL serverURL = new URI(baseURL + connectionId).toURL();
-                HttpURLConnection uc = (HttpURLConnection)serverURL.openConnection(Proxy.NO_PROXY);
-                try (InputStream is = uc.getInputStream()) {
+                URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .host(InetAddress.getLocalHost())
+                    .port(server.getAddress().getPort())
+                    .path("/" + connectionId)
+                    .toURL();
+
+                try (InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream()) {
                     clientSync.countDown();
                     clientSync.await();
                     byte[] ba = new byte[PAYLOAD.length];
@@ -131,11 +142,9 @@ public class TestConnectionIDFeature {
         }
     }
 
-    public static class SecondRequest implements Supplier<String> {
-        String connectionId;
-
+    static class SecondRequest extends Request {
         SecondRequest(String connectionId) {
-            this.connectionId = connectionId;
+            super(connectionId);
         }
 
         @Override
@@ -143,9 +152,13 @@ public class TestConnectionIDFeature {
             System.out.println("Running second request for key: " + connectionId);
             KeepAliveCache.connectionID.set(connectionId);
             try {
-                URL serverURL = new URI(baseURL + connectionId).toURL();
-                HttpURLConnection uc = (HttpURLConnection)serverURL.openConnection(Proxy.NO_PROXY);
-                try (InputStream is = uc.getInputStream()) {
+                URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .host(InetAddress.getLocalHost())
+                    .port(server.getAddress().getPort())
+                    .path("/" + connectionId)
+                    .toURL();
+                try (InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream()) {
                     byte[] ba = new byte[PAYLOAD.length];
                     is.read(ba);
                 }
@@ -158,9 +171,6 @@ public class TestConnectionIDFeature {
     }
 
     public static void initialize() {
-        // enable KeepAliveCache key extension
-        System.setProperty("com.sap.jvm.UseHttpKeepAliveCacheKeyExtension", "true");
-
         // start server
         try {
             server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 10, "/", new TestConnectionIDFeature.TestHttpHandler());
@@ -169,17 +179,6 @@ public class TestConnectionIDFeature {
         }
         server.setExecutor(serverExecutor);
         server.start();
-
-        // compute base URL
-        try {
-            String hostAddr = InetAddress.getLocalHost().getHostAddress();
-            if (hostAddr.indexOf(':') > -1) {
-                hostAddr = "[" + hostAddr + "]";
-            }
-            baseURL = "http://" + hostAddr + ":" + server.getAddress().getPort() + "/";
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Could not create base URL", e);
-        }
 
         // initialize thread keys
         for (int i = 0; i < CLIENT_THREADS; i++) {
@@ -217,7 +216,7 @@ public class TestConnectionIDFeature {
     }
 
     public static void shutdown() {
-        server.stop(1);
+        server.stop(0);
         serverExecutor.shutdown();
         executor.shutdown();
     }
