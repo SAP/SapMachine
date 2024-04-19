@@ -81,7 +81,7 @@ public class KeepAliveCache
         userKeepAliveProxy = getUserKeepAliveSeconds("proxy");
     }
 
-    // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries as hidden thread local
+    // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries
     public static final ThreadLocal<String> connectionID = new ThreadLocal<>();
 
     /* maximum # keep-alive connections to maintain at once
