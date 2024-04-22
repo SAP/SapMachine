@@ -392,8 +392,7 @@ class KeepAliveKey {
             public boolean equals(Object other) {
                 if (this == other) {
                     return true;
-                }
-                if (other instanceof KeyObject ok) {
+                } else if (other instanceof KeyObject ok) {
                     return (connectionID == null ? ok.connectionID == null : connectionID.equals(ok.connectionID)) && obj == ok.obj;
                 } else {
                     return false;
