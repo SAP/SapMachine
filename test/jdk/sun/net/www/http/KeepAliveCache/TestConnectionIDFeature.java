@@ -62,17 +62,17 @@ import com.sun.net.httpserver.HttpServer;
  */
 public class TestConnectionIDFeature {
     static final byte[] PAYLOAD = "hello".getBytes();
-    static final int CLIENT_THREADS = 6;
+    static final int CLIENT_CONNECTIONS = 6;
 
     static final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
-    static final ExecutorService executor = Executors.newFixedThreadPool(CLIENT_THREADS);
+    static final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     static HttpServer server;
 
     static ArrayDeque<String> connectionIds = new ArrayDeque<>();
     static Map<String, Integer> clientPorts = new ConcurrentHashMap<>();
     static Map<String, String> clientAsserts = new ConcurrentHashMap<>();
-    static CountDownLatch clientSync = new CountDownLatch(CLIENT_THREADS);
-    static List<CompletableFuture<String>> clientFutures = new ArrayList<>(CLIENT_THREADS);
+    static CountDownLatch clientSync = new CountDownLatch(CLIENT_CONNECTIONS);
+    static List<CompletableFuture<String>> clientFutures = new ArrayList<>(CLIENT_CONNECTIONS);
 
     static class TestHttpHandler implements HttpHandler {
         public void handle(HttpExchange trans) {
@@ -181,7 +181,7 @@ public class TestConnectionIDFeature {
         server.start();
 
         // initialize thread keys
-        for (int i = 0; i < CLIENT_THREADS; i++) {
+        for (int i = 0; i < CLIENT_CONNECTIONS; i++) {
             connectionIds.push(Integer.toString(i));
         }
     }

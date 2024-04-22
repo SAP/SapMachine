@@ -387,17 +387,17 @@ class KeepAliveKey {
      */
     public KeepAliveKey(URL url, Object obj) {
         // SapMachine 2024-04-12: Provide additional key field for KeepAliveCache entries (for FRUN)
-        final record KeyObject(String ci, Object obj) {
+        final record KeyObject(String connectionID, Object obj) {
             @Override
             public boolean equals(Object other) {
                 if (this == other) {
                     return true;
                 }
-                if (other == null || !(other instanceof KeyObject)) {
+                if (other instanceof KeyObject ok) {
+                    return (connectionID == null ? ok.connectionID == null : connectionID.equals(ok.connectionID)) && obj == ok.obj;
+                } else {
                     return false;
                 }
-                KeyObject ok = (KeyObject)other;
-                return ci == ok.ci && obj == ok.obj;
             }
         };
 
