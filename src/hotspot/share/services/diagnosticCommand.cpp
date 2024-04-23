@@ -63,6 +63,10 @@
 // SapMachine 2021-09-01: malloc-trace
 #include "malloctrace/mallocTraceDCmd.hpp"
 #endif
+// SapMachine 2023-08-15: malloc trace2
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTracePosix.hpp"
+#endif
 
 // SapMachine 2019-02-20: Vitals
 #include "vitals/vitalsDCmd.hpp"
@@ -130,6 +134,13 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   // SapMachine 2021-09-01: malloc-trace
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
+#endif
+#if defined(LINUX) || defined(__APPLE__)
+  // SapMachine 2023-08-15: malloc trace2
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceEnableDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDisableDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDumpDCmd>(full_export, true, false));
+
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TouchedMethodsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));

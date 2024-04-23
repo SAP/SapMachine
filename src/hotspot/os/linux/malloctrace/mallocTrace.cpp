@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "malloctrace/assertHandling.hpp"
 #include "malloctrace/locker.hpp"
 #include "malloctrace/mallocTrace.hpp"
+#include "malloctrace/mallocTracePosix.hpp"
 #include "malloctrace/siteTable.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
@@ -129,6 +130,7 @@ public:
 
   static void enable() {
     DEBUG_ONLY(verify();)
+    MallocStatistic::disable(NULL);
     malloctrace_assert(!hooks_are_active(), "Sanity");
     _old_malloc_hook = __malloc_hook;
     __malloc_hook = my_malloc_hook;
