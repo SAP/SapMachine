@@ -65,6 +65,7 @@ tier1_sapmachine = \
     java/net/Socket/ExceptionText.java \
     java/util/jar/Manifest/IncludeInExceptionsTest.java \
     jdk/security/JavaDotSecurity/TestJDKIncludeInExceptions.java \
+    sun/net/www/http/KeepAliveCache/TestConnectionIDFeature.java \
     sun/security/lib/cacerts/VerifyCACerts.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
