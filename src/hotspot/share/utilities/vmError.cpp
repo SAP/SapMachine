@@ -1583,7 +1583,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
                              Thread* thread, address pc, void* siginfo, void* context, const char* filename,
                              int lineno, size_t size)
 {
-#if defined(LINUX) || defined(__APPLE__)
+#if defined(MALLOC_TRACE_AVAILABLE)
   // SapMachine 2023-09-18: Make sure we don't track allocations anymore.
   sap::MallocStatistic::shutdown();
 #endif

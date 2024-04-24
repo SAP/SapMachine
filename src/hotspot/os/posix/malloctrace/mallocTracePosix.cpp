@@ -22,13 +22,14 @@
  *
  */
 
-#if defined(LINUX) || defined(__APPLE__)
-
 #include "precompiled.hpp"
+
+#include "malloctrace/mallocTracePosix.hpp"
+
+#if defined(MALLOC_TRACE_AVAILABLE)
 
 #include "jvm_io.h"
 #include "mallochooks.h"
-#include "malloctrace/mallocTracePosix.hpp"
 
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"

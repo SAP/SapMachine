@@ -130,7 +130,9 @@ public:
 
   static void enable() {
     DEBUG_ONLY(verify();)
+#if defined(MALLOC_TRACE_AVAILABLE)
     MallocStatistic::disable(NULL);
+#endif
     malloctrace_assert(!hooks_are_active(), "Sanity");
     _old_malloc_hook = __malloc_hook;
     __malloc_hook = my_malloc_hook;

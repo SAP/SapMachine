@@ -28,7 +28,9 @@
 #include "services/diagnosticCommand.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if defined(LINUX) || defined(__APPLE__)
+#if (defined(LINUX) || defined(__APPLE__)) && defined(_LP64)
+
+#define MALLOC_TRACE_AVAILABLE 1
 
 class outputStream;
 

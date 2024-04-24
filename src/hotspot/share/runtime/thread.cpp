@@ -2921,7 +2921,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // SapMachine 2024-04-18: Initialize malloc statistic
-#if defined(LINUX) || defined(__APPLE__)
+#if defined(MALLOC_TRACE_AVAILABLE)
   sap::MallocStatistic::initialize();
 #else
   if (MallocTraceAtStartup || UseMallocHooks) {
