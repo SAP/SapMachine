@@ -85,7 +85,7 @@ public class MallocHooksTest {
     }
 
     public static void main(String args[]) throws Exception {
-        if (!Platform.isLinux() && !Platform.isOSX()) {
+        if (!Platform.isLinux() && !Platform.isOSX() && !"64".equals(System.getProperty("sun.arch.data.model"))) {
             return;
         }
 
