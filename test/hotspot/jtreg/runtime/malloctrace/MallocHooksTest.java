@@ -578,10 +578,9 @@ public class MallocHooksTest {
     }
 
     private static void testDumpPercentage(boolean bySize) throws Exception {
-        ProcessBuilder pb = runManyStacks(1024 * 1024 * 10, 1024 * 16, 5, 172369973,
-                                          "-Djava.library.path=" + System.getProperty("java.library.path"),
-                                          "-XX:MallocTraceStackDepth=12");
-        Process p = ProcessTools.startProcess("runManyStack", pb, x -> System.out.println("> " + x), null, -1, null);
+        Process p = runManyStacks(1024 * 1024 * 10, 1024 * 16, 5, 172369973,
+                                  "-Djava.library.path=" + System.getProperty("java.library.path"),
+                                  "-XX:MallocTraceStackDepth=12").start();
         checkIsAttachable(p);
         p.getInputStream().read();
         OutputAnalyzer oa = bySize ? callJcmd(p, "MallocTrace.dump", "-percentage=90") :
@@ -592,10 +591,9 @@ public class MallocHooksTest {
     }
 
     private static void testUniqueStacks() throws Exception {
-        ProcessBuilder pb = runManyStacks(1024 * 1024 * 10, 1024 * 16, 12, 172369975,
-                                          "-Djava.library.path=" + System.getProperty("java.library.path"),
-                                          "-XX:MallocTraceStackDepth=14");
-        Process p = ProcessTools.startProcess("runManyStack", pb, x -> System.out.println("> " + x), null, -1, null);
+        Process p = runManyStacks(1024 * 1024 * 10, 1024 * 16, 12, 172369975,
+                                  "-Djava.library.path=" + System.getProperty("java.library.path"),
+                                  "-XX:MallocTraceStackDepth=14").start();
         checkIsAttachable(p);
         p.getInputStream().read();
         OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-percentage=100");
