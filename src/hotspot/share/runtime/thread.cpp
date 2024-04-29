@@ -156,6 +156,11 @@
 #include "vitals_linux_himemreport.hpp"
 #endif
 
+// SapMachine 2024-04-18: malloc statistic
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTracePosix.hpp"
+#endif
+
 // Initialization after module runtime initialization
 void universe_post_module_init();  // must happen after call_initPhase2
 
@@ -2914,6 +2919,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
+
+  // SapMachine 2024-04-18: Initialize malloc statistic
+#if defined(MALLOC_TRACE_AVAILABLE)
+  sap::MallocStatistic::initialize();
+#else
+  if (MallocTraceAtStartup || UseMallocHooks) {
+    warning("Malloc trace is not supported on this platform");
+  }
+#endif
 
   JFR_ONLY(Jfr::on_create_vm_1();)
 

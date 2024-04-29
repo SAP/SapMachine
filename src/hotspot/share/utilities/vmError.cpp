@@ -74,6 +74,10 @@
 #ifdef LINUX
 #include "malloctrace/mallocTrace.hpp"
 #endif
+// SapMachine 2023-08-15: malloc trace
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTracePosix.hpp"
+#endif
 
 #ifndef PRODUCT
 #include <signal.h>
@@ -1579,6 +1583,11 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
                              Thread* thread, address pc, void* siginfo, void* context, const char* filename,
                              int lineno, size_t size)
 {
+#if defined(MALLOC_TRACE_AVAILABLE)
+  // SapMachine 2023-09-18: Make sure we don't track allocations anymore.
+  sap::MallocStatistic::shutdown();
+#endif
+
   // A single scratch buffer to be used from here on.
   // Do not rely on it being preserved across function calls.
   static char buffer[O_BUFLEN];
