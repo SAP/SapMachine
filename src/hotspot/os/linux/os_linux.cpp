@@ -77,6 +77,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTrace.hpp"
+
 // put OS-includes here
 # include <sys/types.h>
 # include <sys/mman.h>
@@ -2282,6 +2285,9 @@ void os::print_os_info(outputStream* st) {
 
   VM_Version::print_platform_virtualization_info(st);
 
+  // SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+  os::Linux::print_cloud_info(st);
+
   os::Linux::print_steal_info(st);
 }
 
@@ -2644,6 +2650,87 @@ void os::Linux::print_container_info(outputStream* st) {
   }
 
   st->cr();
+}
+
+// SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+static int check_matching_lines_from_file(const char* filename, const char* keywords_to_match[]) {
+  char line[500];
+  FILE* fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return -1;
+  }
+
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    int i = 0;
+    while (keywords_to_match[i] != NULL) {
+      if (strstr(line, keywords_to_match[i]) != NULL) {
+        fclose(fp);
+        return i;
+      }
+      i++;
+    }
+  }
+  fclose(fp);
+  return -1;
+}
+
+// SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+// Add Cloud information where possible, a basic detection can be done by using dmi info
+// Google GCP: /sys/class/dmi/id/product_name contains 'Google Compute Engine' (or just 'Google')
+// Alibaba   : /sys/class/dmi/id/product_name contains 'Alibaba Cloud ECS'
+// OpenStack : /sys/class/dmi/id/product_name contains 'OpenStack' e.g. 'OpenStack Nova'
+// Azure     : /sys/class/dmi/id/chassis_asset_tag contains '7783-7084-3265-9085-8269-3286-77' (means ASCII-encoded: 'MS AZURE VM')
+// AWS KVM/Baremetal : /sys/class/dmi/id/chassis_asset_tag contains 'Amazon EC2'
+// AWS Xen           : /sys/class/dmi/id/bios_version and /sys/class/dmi/id/product_version contain amazon (plus some more info)
+//                     /sys/class/dmi/id/bios_vendor and /sys/class/dmi/id/chassis_vendor contain 'Xen'
+void os::Linux::print_cloud_info(outputStream* st) {
+  // dmidir is /sys/class/dmi/id
+  const char* filename = "/sys/class/dmi/id/product_name";
+  const char* kwcld[] = { "Google", "Google Compute Engine", "Alibaba Cloud", "OpenStack", NULL };
+  int res = check_matching_lines_from_file(filename, kwcld);
+  if (res != -1) { // a matching Cloud identifier has been found
+    st->print("Cloud infrastructure detected:");
+    if (res == 0 || res == 1) {
+      st->print_cr("Google cloud");
+    }
+    if (res == 2) {
+      st->print_cr("Alibaba cloud");
+    }
+    if (res == 3) {
+      st->print_cr("OpenStack based cloud");
+      // output version info too, e.g. "16.1.6-16.1.6~dev5"
+      _print_ascii_file("/sys/class/dmi/id/product_version", st);
+    }
+    return;
+  }
+  // AWS KVM/Baremetal
+  const char* filename2 = "/sys/class/dmi/id/chassis_asset_tag";
+  const char* kwaws[] = { "Amazon EC2", "7783-7084-3265-9085-8269-3286-77", NULL };
+  res = check_matching_lines_from_file(filename2, kwaws);
+  if (res != -1) {
+    st->print("Cloud infrastructure detected:");
+    if (res == 0) {
+      st->print_cr("Amazon EC2 cloud");
+    }
+    if (res == 1) {
+      st->print_cr("Microsoft Azure");
+    }
+    return;
+  }
+  // AWS Xen is a bit tricky, it might not contain a "nice" product name
+  const char* chassis_vendor_file = "/sys/class/dmi/id/chassis_vendor";
+  const char* bios_vendor_file    = "/sys/class/dmi/id/bios_vendor";
+  const char* kwxen[] = { "Xen", NULL };
+  int res1 = check_matching_lines_from_file(chassis_vendor_file, kwxen);
+  int res2 = check_matching_lines_from_file(bios_vendor_file, kwxen);
+  if (res1 != -1 || res2 != -1) {
+    const char* pvfile = "/sys/class/dmi/id/product_version";
+    const char* kwam[] = { "amazon", NULL };
+    res = check_matching_lines_from_file(pvfile, kwam);
+    if (res != -1) {
+      st->print_cr("Cloud infrastructure detected: Amazon Xen-based cloud");
+    }
+  }
 }
 
 void os::Linux::print_steal_info(outputStream* st) {
@@ -5706,6 +5793,21 @@ jint os::init_2(void) {
   if (DumpSharedMappingsInCore) {
     set_coredump_filter(FILE_BACKED_SHARED_BIT);
   }
+
+#ifdef HAVE_GLIBC_MALLOC_HOOKS
+  // SapMachine 2021-09-01: malloc-trace
+  if (EnableMallocTrace) {
+    sap::MallocTracer::enable();
+  }
+#else
+  if (!FLAG_IS_DEFAULT(EnableMallocTrace)) {
+#ifdef __GLIBC__
+    warning("EnableMallocTrace ignored (Glibc too new. Needs glibc version <= 2.31.)");
+#else
+    warning("Not a glibc system. EnableMallocTrace ignored.");
+#endif
+  }
+#endif // __GLIBC__
 
   return JNI_OK;
 }
