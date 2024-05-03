@@ -177,7 +177,7 @@ java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
 java/awt/Toolkit/RealSync/Test.java 6849383 linux-all
-java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
+java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252,8324782 windows-all,macosx-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8072110 macosx-all
 java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.java 8073636 macosx-all
 java/awt/FullScreen/FullScreenInsets/FullScreenInsets.java 7019055,8266245 windows-all,linux-all,macosx-all
@@ -440,8 +440,8 @@ java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/deadKeyMacOSX.java 8233568 macosx-all
 java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.java 8238720 windows-all
 java/awt/PopupMenu/PopupMenuLocation.java 8238720 windows-all
-java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
-java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720 windows-all
+java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720,8324782 windows-all,macosx-all
+java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720,8324782 windows-all,macosx-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
 
 # Several tests which fail sometimes on macos11
@@ -459,7 +459,6 @@ java/awt/KeyboardFocusmanager/TypeAhead/MenuItemActivatedTest/MenuItemActivatedT
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
-java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
 java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
@@ -473,6 +472,9 @@ java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
 java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
+
+# This test fails on macOS 14
+java/awt/Choice/SelectNewItemTest/SelectNewItemTest.java 8324782 macosx-all
 
 ############################################################################
 
@@ -562,8 +564,6 @@ java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807 aix-ppc6
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
-
-jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
 
@@ -688,6 +688,9 @@ sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
 
 # jdk_time
 
+# This test fails on macOS 14
+javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
+
 ############################################################################
 
 # core_tools
@@ -739,8 +742,6 @@ sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8313798 generic-
 ############################################################################
 
 # jdk_other
-
-javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64

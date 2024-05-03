@@ -113,6 +113,10 @@
 #include <sys/utsname.h>
 #include <sys/vminfo.h>
 
+#ifndef _LARGE_FILES
+#error Hotspot on AIX must be compiled with -D_LARGE_FILES
+#endif
+
 // Missing prototypes for various system APIs.
 extern "C"
 int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
@@ -133,7 +137,7 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
-// excerpts from systemcfg.h that might be missing on older os levels
+// excerpts from sys/systemcfg.h that might be missing on older os levels
 #ifndef PV_7
   #define PV_7 0x200000          /* Power PC 7 */
 #endif
@@ -152,7 +156,12 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #ifndef PV_9_Compat
   #define PV_9_Compat  0x408000  /* Power PC 9 */
 #endif
-
+#ifndef PV_10
+  #define PV_10 0x500000          /* Power PC 10 */
+#endif
+#ifndef PV_10_Compat
+  #define PV_10_Compat  0x508000  /* Power PC 10 */
+#endif
 
 static address resolve_function_descriptor_to_code_pointer(address p);
 
@@ -316,27 +325,14 @@ static char cpu_arch[] = "ppc64";
 #error Add appropriate cpu_arch setting
 #endif
 
-// Wrap the function "vmgetinfo" which is not available on older OS releases.
-static int checked_vmgetinfo(void *out, int command, int arg) {
-  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
-    guarantee(false, "cannot call vmgetinfo on AS/400 older than V6R1");
-  }
-  return ::vmgetinfo(out, command, arg);
-}
-
 // Given an address, returns the size of the page backing that address.
 size_t os::Aix::query_pagesize(void* addr) {
-
-  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
-    // AS/400 older than V6R1: no vmgetinfo here, default to 4K
-    return 4*K;
-  }
-
   vm_page_info pi;
   pi.addr = (uint64_t)addr;
-  if (checked_vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
+  if (::vmgetinfo(&pi, VM_PAGE_INFO, sizeof(pi)) == 0) {
     return pi.pagesize;
   } else {
+    trcVerbose("vmgetinfo(VM_PAGE_INFO) failed (errno: %d)", errno);
     assert(false, "vmgetinfo failed to retrieve page size");
     return 4*K;
   }
@@ -438,7 +434,7 @@ static void query_multipage_support() {
   {
     const int MAX_PAGE_SIZES = 4;
     psize_t sizes[MAX_PAGE_SIZES];
-    const int num_psizes = checked_vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
+    const int num_psizes = ::vmgetinfo(sizes, VMINFO_GETPSIZES, MAX_PAGE_SIZES);
     if (num_psizes == -1) {
       trcVerbose("vmgetinfo(VMINFO_GETPSIZES) failed (errno: %d)", errno);
       trcVerbose("disabling multipage support.");
@@ -592,17 +588,6 @@ void os::init_system_properties_values() {
 
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// breakpoint support
-
-void os::breakpoint() {
-  BREAKPOINT;
-}
-
-extern "C" void breakpoint() {
-  // use debugger to set breakpoint here
 }
 
 // retrieve memory information.
@@ -769,10 +754,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
-  if (os::Aix::on_aix()) {
-    guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
-    guarantee(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0, "???");
-  }
+  guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
+  guarantee(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0, "???");
 
   // Start in suspended state, and in os::thread_start, wake the thread up.
   guarantee(pthread_attr_setsuspendstate_np(&attr, PTHREAD_CREATE_SUSPENDED_NP) == 0, "???");
@@ -1102,10 +1085,9 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
-
   if (ebuf && ebuflen > 0) {
     ebuf[0] = '\0';
     ebuf[ebuflen - 1] = '\0';
@@ -1150,6 +1132,26 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   }
   return nullptr;
+}
+// Load library named <filename>
+// If filename matches <name>.so, and loading fails, repeat with <name>.a.
+void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+  void* result = nullptr;
+  char* const file_path = strdup(filename);
+  char* const pointer_to_dot = strrchr(file_path, '.');
+  const char old_extension[] = ".so";
+  const char new_extension[] = ".a";
+  STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
+  // First try to load the existing file.
+  result = dll_load_library(filename, ebuf, ebuflen);
+  // If the load fails,we try to reload by changing the extension to .a for .so files only.
+  // Shared object in .so format dont have braces, hence they get removed for archives with members.
+  if (result == nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
+    snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
+    result = dll_load_library(file_path, ebuf, ebuflen);
+  }
+  FREE_C_HEAP_ARRAY(char, file_path);
+  return result;
 }
 
 void os::print_dll_info(outputStream *st) {
@@ -1256,22 +1258,10 @@ void os::print_memory_info(outputStream* st) {
 
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    if (os::Aix::on_aix()) {
-      st->print_cr("physical total : " SIZE_FORMAT, mi.real_total);
-      st->print_cr("physical free  : " SIZE_FORMAT, mi.real_free);
-      st->print_cr("swap total     : " SIZE_FORMAT, mi.pgsp_total);
-      st->print_cr("swap free      : " SIZE_FORMAT, mi.pgsp_free);
-    } else {
-      // PASE - Numbers are result of QWCRSSTS; they mean:
-      // real_total: Sum of all system pools
-      // real_free: always 0
-      // pgsp_total: we take the size of the system ASP
-      // pgsp_free: size of system ASP times percentage of system ASP unused
-      st->print_cr("physical total     : " SIZE_FORMAT, mi.real_total);
-      st->print_cr("system asp total   : " SIZE_FORMAT, mi.pgsp_total);
-      st->print_cr("%% system asp used : %.2f",
-        mi.pgsp_total ? (100.0f * (mi.pgsp_total - mi.pgsp_free) / mi.pgsp_total) : -1.0f);
-    }
+    st->print_cr("physical total : " SIZE_FORMAT, mi.real_total);
+    st->print_cr("physical free  : " SIZE_FORMAT, mi.real_free);
+    st->print_cr("swap total     : " SIZE_FORMAT, mi.pgsp_total);
+    st->print_cr("swap free      : " SIZE_FORMAT, mi.pgsp_free);
   }
   st->cr();
 
@@ -1294,6 +1284,9 @@ void os::print_memory_info(outputStream* st) {
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   // read _system_configuration.version
   switch (_system_configuration.version) {
+  case PV_10:
+    strncpy(buf, "Power PC 10", buflen);
+    break;
   case PV_9:
     strncpy(buf, "Power PC 9", buflen);
     break;
@@ -1332,6 +1325,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     break;
   case PV_9_Compat:
     strncpy(buf, "PV_9_Compat", buflen);
+    break;
+  case PV_10_Compat:
+    strncpy(buf, "PV_10_Compat", buflen);
     break;
   default:
     strncpy(buf, "unknown", buflen);
@@ -2346,9 +2342,7 @@ void os::init(void) {
   }
 
   // Reset the perfstat information provided by ODM.
-  if (os::Aix::on_aix()) {
-    libperfstat::perfstat_reset();
-  }
+  libperfstat::perfstat_reset();
 
   // Now initialize basic system properties. Note that for some of the values we
   // need libperfstat etc.
@@ -2495,10 +2489,10 @@ int os::open(const char *path, int oflag, int mode) {
   // IV90804: OPENING A FILE IN AFS WITH O_CLOEXEC FAILS WITH AN EINVAL ERROR APPLIES TO AIX 7100-04 17/04/14 PTF PECHANGE
   int oflag_with_o_cloexec = oflag | O_CLOEXEC;
 
-  int fd = ::open64(path, oflag_with_o_cloexec, mode);
+  int fd = ::open(path, oflag_with_o_cloexec, mode);
   if (fd == -1) {
     // we might fail in the open call when O_CLOEXEC is set, so try again without (see IV90804)
-    fd = ::open64(path, oflag, mode);
+    fd = ::open(path, oflag, mode);
     if (fd == -1) {
       return -1;
     }
@@ -2506,8 +2500,8 @@ int os::open(const char *path, int oflag, int mode) {
 
   // If the open succeeded, the file might still be a directory.
   {
-    struct stat64 buf64;
-    int ret = ::fstat64(fd, &buf64);
+    struct stat buf64;
+    int ret = ::fstat(fd, &buf64);
     int st_mode = buf64.st_mode;
 
     if (ret != -1) {
@@ -2561,17 +2555,17 @@ int os::open(const char *path, int oflag, int mode) {
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = O_WRONLY | O_CREAT;
   oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open64(path, oflags, S_IREAD | S_IWRITE);
+  return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek64(fd, (off64_t)0, SEEK_CUR);
+  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
 }
 
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
+  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // Map a block of memory.
@@ -2919,9 +2913,7 @@ void os::Aix::initialize_libo4() {
   }
 }
 
-// AIX: initialize the libperfstat library.
 void os::Aix::initialize_libperfstat() {
-  assert(os::Aix::on_aix(), "AIX only");
   if (!libperfstat::init()) {
     trcVerbose("libperfstat initialization failed.");
     assert(false, "libperfstat initialization failed");

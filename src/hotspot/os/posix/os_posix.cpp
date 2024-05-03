@@ -194,6 +194,17 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// breakpoint support
+
+void os::breakpoint() {
+  BREAKPOINT;
+}
+
+extern "C" void breakpoint() {
+  // use debugger to set breakpoint here
+}
+
 // Return true if user is running as root.
 bool os::have_special_privileges() {
   static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
@@ -753,11 +764,11 @@ void os::dll_unload(void *lib) {
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
-  return (jlong) AIX_ONLY(::lseek64) NOT_AIX(::lseek)(fd, offset, whence);
+  return (jlong) ::lseek(fd, offset, whence);
 }
 
 int os::ftruncate(int fd, jlong length) {
-   return AIX_ONLY(::ftruncate64) NOT_AIX(::ftruncate)(fd, length);
+   return ::ftruncate(fd, length);
 }
 
 const char* os::get_current_directory(char *buf, size_t buflen) {

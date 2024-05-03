@@ -179,17 +179,17 @@ class CodeCache : AllStatic {
 
   // GC support
   static void verify_oops();
-  // If any oops are not marked this method unloads (i.e., breaks root links
-  // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
-  // to "true" iff some code got unloaded.
-  // "unloading_occurred" controls whether metadata should be cleaned because of class unloading.
-  class UnloadingScope: StackObj {
+
+  // Helper scope object managing code cache unlinking behavior, i.e. sets and
+  // restores the closure that determines which nmethods are going to be removed
+  // during the unlinking part of code cache unloading.
+  class UnlinkingScope : StackObj {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
     IsUnloadingBehaviour*       _saved_behaviour;
 
   public:
-    UnloadingScope(BoolObjectClosure* is_alive);
-    ~UnloadingScope();
+    UnlinkingScope(BoolObjectClosure* is_alive);
+    ~UnlinkingScope();
   };
 
   // Code cache unloading heuristics
