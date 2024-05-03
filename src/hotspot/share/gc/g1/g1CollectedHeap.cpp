@@ -2897,7 +2897,7 @@ G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_tr
 
 G1HeapPrinterMark::~G1HeapPrinterMark() {
   _g1h->policy()->print_age_table();
-  //_g1h->rem_set()->print_coarsen_stats();
+  // not (yet) in 17u: _g1h->rem_set()->print_coarsen_stats();
   // We are at the end of the GC. Total collections has already been increased.
   _g1h->rem_set()->print_periodic_summary_info("After GC RS summary", _g1h->total_collections() - 1);
 
@@ -2999,16 +2999,15 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
-
     // Create the heap printer before internal pause timing to have
     // heap information printed as last part of detailed GC log.
     G1HeapPrinterMark hpm(this);
     // Young GC internal pause timing
-    // GL Not (yet) in 17: G1YoungGCNotifyPauseMark npm;
+    // Not (yet) in 17: G1YoungGCNotifyPauseMark npm;
 
     // Verification may use the gang workers, so they must be set up before.
     // Individual parallel phases may override this.
-    // GL Not (yet) in 17: set_young_collection_default_active_worker_threads();
+    // Not (yet) in 17: set_young_collection_default_active_worker_threads();
 
     {
       IsGCActiveMark x;

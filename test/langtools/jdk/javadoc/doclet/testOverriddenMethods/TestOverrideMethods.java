@@ -35,7 +35,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestOverrideMethods  extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestOverrideMethods tester = new TestOverrideMethods();
+        var tester = new TestOverrideMethods();
         tester.runTests();
     }
 
@@ -315,7 +315,7 @@ public class TestOverrideMethods  extends JavadocTester {
         // Only those should be shown in summary; m1, m3, m9 should listed as declared in Base
         checkOutput("pkg6/Sub.html", true,
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
+                    <div class="summary-table three-column-summary">
                     <div class="table-header col-first">Modifier and Type</div>
                     <div class="table-header col-second">Method</div>
                     <div class="table-header col-last">Description</div>

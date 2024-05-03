@@ -39,15 +39,6 @@ class PSCardTable: public CardTable {
 
   volatile int _preprocessing_active_workers;
 
-  // Support methods for resizing the card table.
-  // resize_commit_uncommit() returns true if the pages were committed or
-  // uncommitted
-  bool resize_commit_uncommit(int changed_region, MemRegion new_region);
-  void resize_update_card_table_entries(int changed_region,
-                                        MemRegion new_region);
-  void resize_update_committed_table(int changed_region, MemRegion new_region);
-  void resize_update_covered_table(int changed_region, MemRegion new_region);
-
   bool is_dirty(CardValue* card) {
     return !is_clean(card);
   }
@@ -71,6 +62,15 @@ class PSCardTable: public CardTable {
                      PSPromotionManager* pm,
                      HeapWord* const start,
                      HeapWord* const end);
+
+  // Support methods for resizing the card table.
+  // resize_commit_uncommit() returns true if the pages were committed or
+  // uncommitted
+  bool resize_commit_uncommit(int changed_region, MemRegion new_region);
+  void resize_update_card_table_entries(int changed_region,
+                                        MemRegion new_region);
+  void resize_update_committed_table(int changed_region, MemRegion new_region);
+  void resize_update_covered_table(int changed_region, MemRegion new_region);
 
   void verify_all_young_refs_precise_helper(MemRegion mr);
 

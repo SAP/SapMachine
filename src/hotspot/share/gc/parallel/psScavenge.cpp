@@ -300,8 +300,6 @@ public:
       _active_workers(active_workers),
       _is_empty(is_empty),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
-    assert(_old_gen != nullptr, "Sanity");
-
     if (!_is_empty) {
       PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
       card_table->pre_scavenge(_old_gen->object_space()->bottom(), active_workers);
