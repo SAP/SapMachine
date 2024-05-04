@@ -519,6 +519,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jdk-17.0.12-ea.1_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 8124a9881a3cd077c9e20527472de1915e524e0cccd45d3b31942c6ca35c7285"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jdk-17.0.12-ea.1_macos-aarch64_bin.dmg",
+            "checksum": "sha256 a1e1074974281f30295830517879f6cf0025d4c091d050eeed429fd72689852b"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jdk-17.0.12-ea.1_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 a5d8bc78eef15e81234e0e073a40001716347f60188cb3f6c08657cb7c1fa4a5"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jdk-17.0.12-ea.1_macos-x64_bin.dmg",
             "checksum": "sha256 daa77cd55dc07aa0c96e73a408a3f17619069a31c5f36b81cd9438888b0e80ac"
@@ -545,6 +553,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jre-17.0.12-ea.1_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 82db5775c017ac9a94c4e4f8f4f566f3246cde66edbbf9effee58518e6d47e5e"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jre-17.0.12-ea.1_macos-aarch64_bin.dmg",
+            "checksum": "sha256 235e66d2797787ef18d2e04c65117725e74ae9526cd317f689bf507e83175eb1"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jre-17.0.12-ea.1_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 28a2ee56d4fef5188ead41cb0d896592e4c653f8cfbb3678ba5e54f7c2ebff66"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B1/sapmachine-jre-17.0.12-ea.1_macos-x64_bin.dmg",
             "checksum": "sha256 3bd1999d837662547d6a5cc885db75c1ad19db3e0ee619dcb03b666f1cef0aee"
@@ -565,28 +581,12 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B7/sapmachine-jdk-17.0.11-ea.7_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 1e6f118092edb60bec6065a23b54b136f94d6bfac50353a5f0ef364b4fa720f4"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B7/sapmachine-jdk-17.0.11-ea.7_macos-aarch64_bin.dmg",
-            "checksum": "sha256 8938c2b9ad42722832f06732be7f59abab26a33f631820ab804049980925ffa9"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B7/sapmachine-jdk-17.0.11-ea.7_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 7d407179207d7b4fdfc189f6798045170dafcaf2570587a588e698d04d19296d"
           }
         },
         "jre": {
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B7/sapmachine-jre-17.0.11-ea.7_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 2a9b6f3e5afaf4ccfbb1d11a59cdaa838f6fef29d50a86ce50c8a26775d9293a"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B7/sapmachine-jre-17.0.11-ea.7_macos-aarch64_bin.dmg",
-            "checksum": "sha256 23dda4a224308b41fc959df3cc611ea12b097a7d120444de6fe2b9f8d3b9efd4"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11%2B7/sapmachine-jre-17.0.11-ea.7_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 2428357df157e5c4fb74a4b32aaf5039e0b222bcd23ec1faba07ebd76e65eb78"
           }
         }
       },
