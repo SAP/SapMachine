@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+#include "precompiled.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 
-/*
- * @test PrintStringTableStatsTest
- * @bug 8211821
- * @requires vm.flagless
- * @library /test/lib
- * @run driver PrintStringTableStatsTest
- */
+void CHeapStringHolder::set(const char* string) {
+  clear();
+  if (string != nullptr) {
+    size_t len = strlen(string);
+    _string = NEW_C_HEAP_ARRAY(char, len + 1, mtCompiler);
+    ::memcpy(_string, string, len);
+    _string[len] = 0; // terminating null
+  }
+}
 
-public class PrintStringTableStatsTest {
-    public static void main(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:+PrintStringTableStatistics",
-            "--version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Number of buckets");
-        output.shouldHaveExitValue(0);
-    }
+void CHeapStringHolder::clear() {
+  if (_string != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _string);
+    _string = nullptr;
+  }
 }
