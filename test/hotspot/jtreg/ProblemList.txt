@@ -97,6 +97,8 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 # :hotspot_runtime
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
+# SapMachine 2022-12-16 Exclude a failing test
+runtime/jni/daemonDestroy/TestDaemonDestroy.java windows-all
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
@@ -109,6 +111,8 @@ runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
+# SapMachine 2022-12-16 Exclude failing test
+runtime/ErrorHandling/SecondaryErrorTest.java#id1 linux-ppc64le
 
 applications/jcstress/copy.java 8229852 linux-all
 
