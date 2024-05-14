@@ -757,6 +757,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jdk-11.0.24-ea.2_linux-x64_bin.tar.gz",
             "checksum": "sha256 8d19a1d1cae47d6e53ebb07bef7f4f20fd7c50122a05b20b2cd8dfba1570281c"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jdk-11.0.24-ea.2_macos-aarch64_bin.dmg",
+            "checksum": "sha256 5d79b433cbcca1e74a54262bc2736dd85ca9b234a72229ba942a65173799db4c"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jdk-11.0.24-ea.2_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 106ee7ca50711ba3f6bf4d5d14c47928e4a115600f3dd1530cb54bd599538214"
+          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jdk-11.0.24-ea.2_windows-x64_bin.zip",
             "checksum": "sha256 eb8f9bb76d0f458a1a54030c3cd4d9328a848ad827f211f36185a36c0eeb98ab"
@@ -775,6 +783,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jre-11.0.24-ea.2_linux-x64_bin.tar.gz",
             "checksum": "sha256 1eac77880d8f92b3c2881b61c0447301e9a48095ee947a7b0f51aa72e3e9ef0f"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jre-11.0.24-ea.2_macos-aarch64_bin.dmg",
+            "checksum": "sha256 412b8ec8f7327e979a45b4da43a680e1ba6f87819693050c1ff0eb21941fed17"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jre-11.0.24-ea.2_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 df72a0f6ce4db366199f73a05f873b49faede55a865afa94b2021625b8365ad7"
+          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jre-11.0.24-ea.2_windows-x64_bin.zip",
             "checksum": "sha256 54af1d300b0c8d62b9a9865b36d092e37e05e8bc8a108895bbe98c66d6201bb2"
@@ -784,14 +800,6 @@
       {
         "tag": "sapmachine-11.0.24+1",
         "jdk": {
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jdk-11.0.24-ea.1_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 26010dde2cbaac58130170edf5367ea6b209516e5d60b7d30d3e4f58f186bbf8"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jdk-11.0.24-ea.1_macos-aarch64_bin.dmg",
-            "checksum": "sha256 eac7077acdbfd9601a25b99da3bd2e6915edcb8b747851d1b98ddb4edac42ecc"
-          },
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jdk-11.0.24-ea.1_macos-x64_bin.tar.gz",
             "checksum": "sha256 f935090e7e123998794c53844449f98c2134d69c03d5f57fbc5ef032deac6d26"
@@ -802,14 +810,6 @@
           }
         },
         "jre": {
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jre-11.0.24-ea.1_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 849aa752659140e9e5c80b6e890569e6e49d0fccf74182ea6ac9944ce2cdca0a"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jre-11.0.24-ea.1_macos-aarch64_bin.dmg",
-            "checksum": "sha256 e0da7a149d9ed9f61e4970b67985e9d360dd0d195d995367000988a9cf1b086f"
-          },
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jre-11.0.24-ea.1_macos-x64_bin.tar.gz",
             "checksum": "sha256 65d452adfce825ff7e3e891d2dc7bd913586c82cc72d755baebaa4faa5dc9fd2"
