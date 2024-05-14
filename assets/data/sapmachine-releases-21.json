@@ -6,6 +6,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-21.0.4-ea.2_linux-x64_bin.tar.gz",
+                "checksum": "05d8e82118d5e3981ac8af6c2ff3992b6817e9fac9c7489f131d756aaadff444",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jdk-21.0.4-ea.2_linux-x64_bin.tar.gz"
+              }
+            },
             "linux-x64-musl": {
               "tar.gz": {
                 "name": "sapmachine-jdk-21.0.4-ea.2_linux-x64-musl_bin.tar.gz",
@@ -15,6 +22,13 @@
             }
           },
           "jre": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-21.0.4-ea.2_linux-x64_bin.tar.gz",
+                "checksum": "60631525309696c36aad6c78ca9dca7a9c95d33c25f05c1d8e8083c6c6f71661",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jre-21.0.4-ea.2_linux-x64_bin.tar.gz"
+              }
+            },
             "linux-x64-musl": {
               "tar.gz": {
                 "name": "sapmachine-jre-21.0.4-ea.2_linux-x64-musl_bin.tar.gz",
