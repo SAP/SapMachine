@@ -743,6 +743,21 @@
     "ea": true,
     "releases": [
       {
+        "tag": "sapmachine-11.0.24+2",
+        "jdk": {
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jdk-11.0.24-ea.2_windows-x64_bin.zip",
+            "checksum": "sha256 eb8f9bb76d0f458a1a54030c3cd4d9328a848ad827f211f36185a36c0eeb98ab"
+          }
+        },
+        "jre": {
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B2/sapmachine-jre-11.0.24-ea.2_windows-x64_bin.zip",
+            "checksum": "sha256 54af1d300b0c8d62b9a9865b36d092e37e05e8bc8a108895bbe98c66d6201bb2"
+          }
+        }
+      },
+      {
         "tag": "sapmachine-11.0.24+1",
         "jdk": {
           "linux-aarch64": {
@@ -772,10 +787,6 @@
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jdk-11.0.24-ea.1_macos-x64_bin.dmg",
             "checksum": "sha256 4a70df39d770f9db4b83676874e9f457c5fba1a45d3c24b2c7cdde2598bd314d"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jdk-11.0.24-ea.1_windows-x64_bin.zip",
-            "checksum": "sha256 eca1bf1abb1589125f5a3108f4b50e453effdcc1b54886e67391b4ed59aa9383"
           }
         },
         "jre": {
@@ -806,10 +817,6 @@
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jre-11.0.24-ea.1_macos-x64_bin.dmg",
             "checksum": "sha256 b25f5a96f025b1ff681e808d98ecd578c6a503465177358b2ca1eea240be239b"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B1/sapmachine-jre-11.0.24-ea.1_windows-x64_bin.zip",
-            "checksum": "sha256 d0d7c0e65798a699eedd50eaad686edc54381aeabc77630f30f6bb8fd5bc58d3"
           }
         }
       },
