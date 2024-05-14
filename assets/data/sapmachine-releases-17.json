@@ -46,6 +46,18 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B2/sapmachine-jdk-17.0.12-ea.2_macos-aarch64_bin.tar.gz"
               }
             },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-17.0.12-ea.2_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B2/sapmachine-jdk-17.0.12-ea.2_macos-x64_bin.dmg",
+                "checksum": "56596931325e3288668fda0bd1355743a71fbbc25f2deb7b09431cc2c6818edc"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-17.0.12-ea.2_macos-x64_bin.tar.gz",
+                "checksum": "616b137d92656e026a9ecd8524ea4225a8a49ed4620be6581d312f8fb741bc14",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B2/sapmachine-jdk-17.0.12-ea.2_macos-x64_bin.tar.gz"
+              }
+            },
             "windows-x64": {
               "zip": {
                 "name": "sapmachine-jdk-17.0.12-ea.2_windows-x64_bin.zip",
@@ -93,6 +105,18 @@
                 "name": "sapmachine-jre-17.0.12-ea.2_macos-aarch64_bin.tar.gz",
                 "checksum": "81b14404db509696cb2d03fa74f5340ae6ab9df5ed3bd71df69ff00e145fcd03",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B2/sapmachine-jre-17.0.12-ea.2_macos-aarch64_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-17.0.12-ea.2_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B2/sapmachine-jre-17.0.12-ea.2_macos-x64_bin.dmg",
+                "checksum": "2766b6e968eddccb08a848389f13ae3e1973b0f59ce5efc7f6d344a0777d4a3b"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-17.0.12-ea.2_macos-x64_bin.tar.gz",
+                "checksum": "78dccf98e032d85f2a55df0128f69da0eca78973ea8fba21bf656ede1ac395da",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B2/sapmachine-jre-17.0.12-ea.2_macos-x64_bin.tar.gz"
               }
             },
             "windows-x64": {
