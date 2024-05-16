@@ -24,9 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-#include "compiler/oopMap.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
@@ -41,6 +38,7 @@
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -171,6 +169,7 @@ public:
   PrepareRegionsClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* hr) {
+    hr->prepare_for_full_gc();
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
     _collector->before_marking_update_attribute_table(hr);
     return false;
@@ -318,11 +317,7 @@ void G1FullCollector::phase1_mark_live_objects() {
 
   // Class unloading and cleanup.
   if (ClassUnloading) {
-    GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
-    CodeCache::UnloadingScope unloading_scope(&_is_alive);
-    // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(scope()->timer());
-    _heap->complete_cleaning(purged_class);
+    _heap->unload_classes_and_code("Phase 1: Class Unloading and Cleanup", &_is_alive, scope()->timer());
   }
 
   {

@@ -106,7 +106,6 @@ class CodeCache : AllStatic {
   static TruncatedSeq      _unloading_gc_intervals;
   static TruncatedSeq      _unloading_allocation_rates;
   static volatile bool     _unloading_threshold_gc_requested;
-  static nmethod* volatile _unlinked_head;
 
   static ExceptionCache* volatile _exception_cache_purge_list;
 
@@ -179,17 +178,17 @@ class CodeCache : AllStatic {
 
   // GC support
   static void verify_oops();
-  // If any oops are not marked this method unloads (i.e., breaks root links
-  // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
-  // to "true" iff some code got unloaded.
-  // "unloading_occurred" controls whether metadata should be cleaned because of class unloading.
-  class UnloadingScope: StackObj {
+
+  // Helper scope object managing code cache unlinking behavior, i.e. sets and
+  // restores the closure that determines which nmethods are going to be removed
+  // during the unlinking part of code cache unloading.
+  class UnlinkingScope : StackObj {
     ClosureIsUnloadingBehaviour _is_unloading_behaviour;
     IsUnloadingBehaviour*       _saved_behaviour;
 
   public:
-    UnloadingScope(BoolObjectClosure* is_alive);
-    ~UnloadingScope();
+    UnlinkingScope(BoolObjectClosure* is_alive);
+    ~UnlinkingScope();
   };
 
   // Code cache unloading heuristics
@@ -213,8 +212,7 @@ class CodeCache : AllStatic {
   //    nmethod::is_cold.
   static void arm_all_nmethods();
 
-  static void flush_unlinked_nmethods();
-  static void register_unlinked(nmethod* nm);
+  static void maybe_restart_compiler(size_t freed_memory);
   static void do_unloading(bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
 

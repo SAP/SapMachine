@@ -1775,7 +1775,7 @@ bool CompileBroker::init_compiler_runtime() {
 void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
   BufferBlob* blob = thread->get_buffer_blob();
   if (blob != nullptr) {
-    blob->flush();
+    blob->purge(true /* free_code_cache_data */, true /* unregister_nmethod */);
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
   }
@@ -2289,7 +2289,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     compilable = ci_env.compilable();
 
     if (ci_env.failing()) {
-      failure_reason = ci_env.failure_reason();
+      // Duplicate the failure reason string, so that it outlives ciEnv
+      failure_reason = os::strdup(ci_env.failure_reason(), mtCompiler);
+      failure_reason_on_C_heap = true;
       retry_message = ci_env.retry_message();
       ci_env.report_failure(failure_reason);
     }

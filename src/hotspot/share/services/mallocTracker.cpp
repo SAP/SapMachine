@@ -40,10 +40,11 @@
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
-size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -78,9 +79,7 @@ void MallocMemorySnapshot::make_adjustment() {
 }
 
 void MallocMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
-  ::new ((void*)_snapshot)MallocMemorySnapshot();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
@@ -198,6 +197,8 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT not enabled");
 
+#if !INCLUDE_ASAN
+
   address addr = (address)p;
 
   // Carefully feel your way upwards and try to find a malloc header. Then check if
@@ -275,5 +276,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     }
     return true;
   }
+
+#endif // !INCLUDE_ASAN
+
   return false;
 }

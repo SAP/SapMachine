@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,8 +239,7 @@ bool PSScavenge::invoke() {
   IsGCActiveMark mark;
 
   const bool scavenge_done = PSScavenge::invoke_no_policy();
-  const bool need_full_gc = !scavenge_done ||
-    policy->should_full_GC(heap->old_gen()->free_in_bytes());
+  const bool need_full_gc = !scavenge_done;
   bool full_gc_done = false;
 
   if (UsePerfData) {
@@ -707,16 +706,16 @@ bool PSScavenge::should_attempt_scavenge() {
   // Test to see if the scavenge will likely fail.
   PSAdaptiveSizePolicy* policy = heap->size_policy();
 
-  // A similar test is done in the policy's should_full_GC().  If this is
-  // changed, decide if that test should also be changed.
   size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
   size_t promotion_estimate = MIN2(avg_promoted, young_gen->used_in_bytes());
-  bool result = promotion_estimate < old_gen->free_in_bytes();
+  // Total free size after possible old gen expansion
+  size_t free_in_old_gen = old_gen->max_gen_size() - old_gen->used_in_bytes();
+  bool result = promotion_estimate < free_in_old_gen;
 
   log_trace(ergo)("%s scavenge: average_promoted " SIZE_FORMAT " padded_average_promoted " SIZE_FORMAT " free in old gen " SIZE_FORMAT,
                 result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
                 (size_t) policy->padded_average_promoted_in_bytes(),
-                old_gen->free_in_bytes());
+                free_in_old_gen);
   if (young_gen->used_in_bytes() < (size_t) policy->padded_average_promoted_in_bytes()) {
     log_trace(ergo)(" padded_promoted_average is greater than maximum promotion = " SIZE_FORMAT, young_gen->used_in_bytes());
   }
