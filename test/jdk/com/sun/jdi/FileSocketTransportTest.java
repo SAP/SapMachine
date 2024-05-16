@@ -41,6 +41,7 @@ import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,6 +67,26 @@ public class FileSocketTransportTest {
         return result;
     }
 
+    private static void dumpHsErrorFiles() throws Exception {
+        for (File f: new File(".").listFiles()) {
+            if (!f.isDirectory() && f.getName().startsWith("hs_err")) {
+                System.out.println("Found " + f.getName() + ":");
+                String output = new String(Files.readAllBytes(f.toPath()));
+                System.out.println(output);
+                System.out.println("------- End of " + f.getName());
+                // Print the start again, since we might overflow the buffer with
+                // the whole file.
+                int startLength = 32768;
+
+                if (output.length() > startLength) {
+                    System.out.println("------- Repeating start of " + f.getName());
+                    System.out.println(output.substring(0, startLength));
+                    System.out.println("------- End of start of " + f.getName());
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
         if (args.length == 1 && "--sleep".equals(args[0])) {
             Thread.sleep(30000);
@@ -81,13 +102,16 @@ public class FileSocketTransportTest {
         opts.add("--sleep");
 
         // First check if we get the expected errors.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 opts.toArray(new String[0]));
         Process proc = pb.start();
         new Thread(() -> {
             try {
                 OutputAnalyzer output = new OutputAnalyzer(proc);
+                System.out.println("Output of debuggee:");
+                System.out.println(">>>>> START <<<<<");
                 System.out.println(output.getOutput());
+                System.out.println(">>>>> END <<<<<");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -100,6 +124,7 @@ public class FileSocketTransportTest {
             int read;
 
             for (int i = 0; i < 3; ++i) {
+                System.out.println("Run " + i);
                 // Wait a bit to let the debugging be set up properly.
                 Thread.sleep(3000);
                 checkSocketPresent(socketName);
@@ -110,6 +135,7 @@ public class FileSocketTransportTest {
                 assertEquals(read, received.length);
             }
         } finally {
+            dumpHsErrorFiles();
             Thread.sleep(2000);
             checkSocketPresent(socketName);
             proc.destroy();
