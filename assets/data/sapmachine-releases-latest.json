@@ -316,6 +316,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jdk-21.0.4-ea.3_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 be245f757f3f00d104478613e44235c4ae0a42f911575e9031f0bd0fd0933ca3"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jdk-21.0.4-ea.3_macos-aarch64_bin.dmg",
+            "checksum": "sha256 630b0b63bedcfa092ab7bf29a9b3750025de97670046a5bb98146851a912ac50"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jdk-21.0.4-ea.3_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 72713731d2cb3b424f23951705c21c5e51e91871ba32b12de39c2d8209fd4a59"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jdk-21.0.4-ea.3_macos-x64_bin.dmg",
             "checksum": "sha256 a779fabfd1242cc29faa780619d1f887ca3f8a12ca5d0ab294145bfbd3b25ffd"
@@ -342,6 +350,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jre-21.0.4-ea.3_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 57d7e69f6722b6b7752f89248afbe2e024847c433bcc3114c2f8f76fbac2b8f6"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jre-21.0.4-ea.3_macos-aarch64_bin.dmg",
+            "checksum": "sha256 71122c25a4e57be94e062fcb04f672e65571406ef1718ba7a1fd891a8355ef30"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jre-21.0.4-ea.3_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 8b8d87fcadc24753e1c70870aa06e23e457274bc43eadc7208ea123ef5c2a52d"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B3/sapmachine-jre-21.0.4-ea.3_macos-x64_bin.dmg",
             "checksum": "sha256 2b41a412de8b405458a3e58a005d4b1822676ab55b291fe50adac6373336835a"
@@ -366,14 +382,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jdk-21.0.4-ea.2_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 7846921a556f862362285e7ed2ae1784bcfbfec4a308a64944fff343114a13fb"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jdk-21.0.4-ea.2_macos-aarch64_bin.dmg",
-            "checksum": "sha256 8388ae70bd6cda22ae20fcaea3388bb9547d96b62d02565b8bdc66f41937279c"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jdk-21.0.4-ea.2_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 919bcb9db8eb770c048c884b052a2acd224504420ed70f40ffcfd69f91d32323"
           }
         },
         "jre": {
@@ -384,14 +392,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jre-21.0.4-ea.2_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 e1794480b13010e520efb87bbc75c9c98825f8792a5a2eda2476f2ba08e45f89"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jre-21.0.4-ea.2_macos-aarch64_bin.dmg",
-            "checksum": "sha256 40cc0dbd8cd6eaf92dbb13ff0f29f63f2b12332dfcafd4cc1961e495db7c54c3"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B2/sapmachine-jre-21.0.4-ea.2_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 f04b8d7dd69c6b917d502b784f966a05bcea42441f147402d1b13b70397aa413"
           }
         }
       }
