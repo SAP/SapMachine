@@ -26,6 +26,13 @@
                 "checksum": "fd0148943ac9599c8f55b756aa8f7c9fca8fe1284d9abfde505b4e738ebdce68",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B4/sapmachine-jdk-17.0.12-ea.4_linux-x64-musl_bin.tar.gz"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-17.0.12-ea.4_windows-x64_bin.zip",
+                "checksum": "df285f2e7cf149fadd378b1a63fefbf6250353b210eebe9db156c94620fbc520",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B4/sapmachine-jdk-17.0.12-ea.4_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
@@ -48,6 +55,13 @@
                 "name": "sapmachine-jre-17.0.12-ea.4_linux-x64-musl_bin.tar.gz",
                 "checksum": "79523fcf1f652faf33f4f01a757285c2d14b416268abc176a820e4b3722c8a4f",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B4/sapmachine-jre-17.0.12-ea.4_linux-x64-musl_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-17.0.12-ea.4_windows-x64_bin.zip",
+                "checksum": "88772605f3b84dba74e6f88bc648f8843c93dadd86a58587704e4e5f8e6e1c8d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B4/sapmachine-jre-17.0.12-ea.4_windows-x64_bin.zip"
               }
             }
           }
