@@ -6,6 +6,20 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-23-ea.24_linux-aarch64_bin.tar.gz",
+                "checksum": "d7375ef525771e163118c1c63d26b52279b7da02c73ecb35e181461a1a3da842",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B24/sapmachine-jdk-23-ea.24_linux-aarch64_bin.tar.gz"
+              }
+            },
+            "linux-ppc64le": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-23-ea.24_linux-ppc64le_bin.tar.gz",
+                "checksum": "87e41cb304186c8e6cac8cd901965a5ae8e45c5c7b96c13ea421481a11b613e3",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B24/sapmachine-jdk-23-ea.24_linux-ppc64le_bin.tar.gz"
+              }
+            },
             "linux-x64": {
               "tar.gz": {
                 "name": "sapmachine-jdk-23-ea.24_linux-x64_bin.tar.gz",
@@ -22,6 +36,20 @@
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-23-ea.24_linux-aarch64_bin.tar.gz",
+                "checksum": "78e586b9e98139a7aadb99fd58860b548bc92e2f49250a5ac8814ba02e34aa08",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B24/sapmachine-jre-23-ea.24_linux-aarch64_bin.tar.gz"
+              }
+            },
+            "linux-ppc64le": {
+              "tar.gz": {
+                "name": "sapmachine-jre-23-ea.24_linux-ppc64le_bin.tar.gz",
+                "checksum": "985d2940afad17e2efdc74e55e97f77f0882c7e406cc9edb9566eff6ee61f401",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B24/sapmachine-jre-23-ea.24_linux-ppc64le_bin.tar.gz"
+              }
+            },
             "linux-x64": {
               "tar.gz": {
                 "name": "sapmachine-jre-23-ea.24_linux-x64_bin.tar.gz",
