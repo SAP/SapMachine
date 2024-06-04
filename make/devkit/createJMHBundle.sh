@@ -43,7 +43,7 @@ rm -f *
 fetchJar() {
   url="https://repo.maven.apache.org/maven2/$1/$2/$3/$2-$3.jar"
   if command -v curl > /dev/null; then
-      curl -O --fail $url
+      curl -OL --fail $url
   elif command -v wget > /dev/null; then
       wget $url
   else
