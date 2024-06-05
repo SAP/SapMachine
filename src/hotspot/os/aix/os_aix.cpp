@@ -1997,7 +1997,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
 
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
@@ -2145,15 +2145,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return addr;
-}
-
-// Used to convert frequent JVM_Yield() to nops
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
-void os::naked_yield() {
-  sched_yield();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

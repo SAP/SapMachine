@@ -853,10 +853,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 // Threads::destroy_vm() is normally called from jni_DestroyJavaVM() when
 // the program falls off the end of main(). Another VM exit path is through
-// vm_exit() when the program calls System.exit() to return a value or when
-// there is a serious error in VM. The two shutdown paths are not exactly
-// the same, but they share Shutdown.shutdown() at Java level and before_exit()
-// and VM_Exit op at VM level.
+// vm_exit(), when the program calls System.exit() to return a value, or when
+// there is a serious error in VM.
+// These two separate shutdown paths are not exactly the same, but they share
+// Shutdown.shutdown() at Java level and before_exit() and VM_Exit op at VM level.
 //
 // Shutdown sequence:
 //   + Shutdown native memory tracking if it is on
@@ -1351,10 +1351,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   }
 
   PrintOnClosure cl(st);
-  cl.do_thread(VMThread::vm_thread());
-  Universe::heap()->gc_threads_do(&cl);
-  cl.do_thread(WatcherThread::watcher_thread());
-  cl.do_thread(AsyncLogWriter::instance());
+  non_java_threads_do(&cl);
 
   // SapMachine 2019-11-07: Vitals
   const Thread* vitals_sampler_thread = sapmachine_vitals::samplerthread();
