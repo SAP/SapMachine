@@ -119,7 +119,13 @@ static jdwpTransportError JNICALL fileSocketTransport_StartListening(jdwpTranspo
         return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
     }
 
-    *actual_address = (char*) address;
+    *actual_address = (*callback->alloc)((int)strlen(address) + 1);
+
+    if (*actual_address == NULL) {
+        return JDWPTRANSPORT_ERROR_OUT_OF_MEMORY;
+    } else {
+        strcpy(*actual_address, address);
+    }
 
     if (strlen(address) < MAX_FILE_SOCKET_PATH_LEN) {
         strcpy(path, address);
