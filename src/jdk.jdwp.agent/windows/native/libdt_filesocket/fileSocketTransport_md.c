@@ -27,7 +27,6 @@
 #include <assert.h>
 
 #include "jni.h"
-#include "jvm.h"
 #include "fileSocketTransport.h"
 
 
