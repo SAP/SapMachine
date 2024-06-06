@@ -561,16 +561,17 @@
         {
           "tag": "sapmachine-11.0.24+5",
           "jdk": {
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B5/sapmachine-jdk-11.0.24-ea.5_linux-aarch64_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B5/sapmachine-jdk-11.0.24-ea.5_linux-x64_bin.tar.gz"
           },
           "jre": {
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B5/sapmachine-jre-11.0.24-ea.5_linux-aarch64_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B5/sapmachine-jre-11.0.24-ea.5_linux-x64_bin.tar.gz"
           }
         },
         {
           "tag": "sapmachine-11.0.24+4",
           "jdk": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jdk-11.0.24-ea.4_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jdk-11.0.24-ea.4_linux-ppc64le_bin.tar.gz",
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jdk-11.0.24-ea.4_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jdk-11.0.24-ea.4_macos-aarch64_bin.tar.gz",
@@ -579,7 +580,6 @@
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jdk-11.0.24-ea.4_windows-x64_bin.zip"
           },
           "jre": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jre-11.0.24-ea.4_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jre-11.0.24-ea.4_linux-ppc64le_bin.tar.gz",
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jre-11.0.24-ea.4_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B4/sapmachine-jre-11.0.24-ea.4_macos-aarch64_bin.tar.gz",
@@ -620,16 +620,17 @@
         {
           "tag": "sapmachine-11.0.24+5",
           "jdk": {
+            "linux-aarch64": "sha256 eb94a6d54dd74963abd1bff678ed89037420ef94a6ea58dcffef3bb2ed7a245b",
             "linux-x64": "sha256 5b09894e93c05284d88db859aa941905e99aaada76431f715d19d4241da0fb5f"
           },
           "jre": {
+            "linux-aarch64": "sha256 a083df1c4f737cf8331b05a581e0bc6706ddb220c6ef95f549bd243a5e65b28c",
             "linux-x64": "sha256 73db31ba3b0000173b175658b3c1d7728678d7096c9c4cad14f6c5a7e8e1294b"
           }
         },
         {
           "tag": "sapmachine-11.0.24+4",
           "jdk": {
-            "linux-aarch64": "sha256 f59d1bbad747a71c0d0f3c576e30997214516a381de34d6b51de26d43b0c4344",
             "linux-ppc64le": "sha256 3e62eb1497cb571b772c85e76a70175c01d5be1c4f80d2c77424bcf343be9e6c",
             "macos-aarch64-installer": "sha256 be4f7f5de6fdc1444f60c3d5980052531836800e3fb37015d30d9c0c964522db",
             "macos-aarch64": "sha256 9b79a20099aa547efb70a66d127b62ecc3d3658761c76457d3b2653c97dc8659",
@@ -638,7 +639,6 @@
             "windows-x64": "sha256 a16cd68ed83236c2446c57dbd9e47204701e4c63228e5a8af84de16432023b48"
           },
           "jre": {
-            "linux-aarch64": "sha256 7c7a9389d77c763f787e5a90c4c6ada93c226db6a229555ad61471ace59e89b7",
             "linux-ppc64le": "sha256 04e020339fb26f947926543b49c4aa813656c0e15806ba99820a5c8e796fe8d7",
             "macos-aarch64-installer": "sha256 eac1b6b25d568be2eb1969ded96e1e26ab0df9f61147d7047ecef9388bc4352d",
             "macos-aarch64": "sha256 e72d681dde4a6d8968c5dae64a044a89a457bb43225f696b6a24461551cdcd1f",
