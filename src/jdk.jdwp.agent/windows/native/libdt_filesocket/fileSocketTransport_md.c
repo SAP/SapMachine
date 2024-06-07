@@ -126,7 +126,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
     }
 
     if (server_socket == INVALID_SOCKET) {
-        socklen_t len = sizeof(struct sockaddr_un);
+        int len = (int) sizeof(struct sockaddr_un);
         struct sockaddr_un addr;
         int addr_size = sizeof(addr);
 
