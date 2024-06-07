@@ -60,8 +60,8 @@ class HeapDumper : public StackObj {
   // dumps the heap to the specified file, returns 0 if success.
   // additional info is written to out if not null.
   // compression >= 0 creates a gzipped file with the given compression level.
-  // parallel_thread_num >= 0 indicates thread numbers of parallel object dump
-  int dump(const char* path, outputStream* out = nullptr, int compression = -1, bool overwrite = false, uint parallel_thread_num = 1);
+  // parallel_thread_num >= 0 indicates thread numbers of parallel object dump.
+  int dump(const char* path, outputStream* out = nullptr, int compression = -1, bool overwrite = false, uint parallel_thread_num = default_num_of_dump_threads());
 
   // same as dump with path parameter, but uses the preset HeapDumpPath file or directory
   int dump_to(outputStream* out, int compression, bool overwrite, uint parallel_thread_num);
