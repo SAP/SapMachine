@@ -51,13 +51,9 @@ TARGETS += $(BUILD_LIBDT_SOCKET)
 $(eval $(call SetupJdkLibrary, BUILD_LIBDT_FILESOCKET, \
     NAME := dt_filesocket, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    DISABLED_WARNINGS_clang := format-nonliteral, \
     EXTRA_HEADER_DIRS := \
         include \
         libjdwp/export, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_windows := $(JKDLIB_LIBS) ws2_32.lib Advapi32.lib, \
 ))
 
