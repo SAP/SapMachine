@@ -51,6 +51,7 @@ TARGETS += $(BUILD_LIBDT_SOCKET)
 $(eval $(call SetupJdkLibrary, BUILD_LIBDT_FILESOCKET, \
     NAME := dt_filesocket, \
     OPTIMIZATION := LOW, \
+    DISABLED_WARNINGS_clang_fileSocketTransport.c := format-nonliteral, \
     EXTRA_HEADER_DIRS := \
         include \
         libjdwp/export, \
