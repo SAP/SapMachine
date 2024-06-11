@@ -58,8 +58,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBDT_FILESOCKET, \
     LIBS_windows := $(JKDLIB_LIBS) ws2_32.lib Advapi32.lib, \
 ))
 
-$(BUILD_LIBDT_FILESOCKET): $(call FindLib, java.base, java)
-
 # Include file socket transport with JDWP agent to allow for safe local debugging
 TARGETS += $(BUILD_LIBDT_FILESOCKET)
 
