@@ -699,11 +699,13 @@ const int ObjectAlignmentInBytes = 8;
           "from JVM "                                                       \
           "(also see HeapDumpPath, HeapDumpGzipLevel)")                     \
                                                                             \
+  /* SapMachine 2024-05-10: HeapDumpPath for jcmd */                        \
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \
           "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \
-          "or HeapDumpAfterFullGC is on, the path (filename or "            \
-          "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
-          "in the working directory)")                                      \
+          "or HeapDumpAfterFullGC is on, or a heap dump is triggered by "   \
+          "jcmd GC.heap_dump without specifying a path, the path "          \
+          "(filename or directory) of the dump file. "                      \
+          "(defaults to java_pid<pid>.hprof in the working directory)")     \
                                                                             \
   product(int, HeapDumpGzipLevel, 0, MANAGEABLE,                            \
           "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \
