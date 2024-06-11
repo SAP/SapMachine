@@ -702,10 +702,12 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   manageable(bool, HeapDumpOnOutOfMemoryError, false,                       \
           "Dump heap to file when java.lang.OutOfMemoryError is thrown")    \
                                                                             \
+  /* SapMachine 2024-05-10: HeapDumpPath for jcmd */                        \
   manageable(ccstr, HeapDumpPath, NULL,                                     \
-          "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
-          "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
-          "in the working directory)")                                      \
+          "When HeapDumpOnOutOfMemoryError is on, or a heap dump is "       \
+          "triggered by jcmd GC.heap_dump without specifying a path, "      \
+          "the path (filename or directory) of the dump file. "             \
+          "(defaults to java_pid<pid>.hprof in the working directory)")     \
                                                                             \
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
