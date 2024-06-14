@@ -7,12 +7,20 @@
       {
         "tag": "sapmachine-24+1",
         "jdk": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jdk-24-ea.1_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 a01489aa9e9ade985354cc8fe5f0ba49866255ed1fd7e4e19d421b30b61ceb0d"
+          },
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jdk-24-ea.1_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 0ea0962039429a1d277b68a881405b56abda39ca7d832fdd4411d3db8eeca6f2"
           }
         },
         "jre": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jre-24-ea.1_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 d7e1eabc1503005f95ce00edb00614f9776489a05aa08bb2866a4083c8b861e2"
+          },
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jre-24-ea.1_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 4ffe7fe39d05aa3fc7bb0e237c24f77dedf855fc45a40a7ebca3d4803c6fe1f2"
