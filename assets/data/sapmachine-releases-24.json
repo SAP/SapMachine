@@ -14,6 +14,13 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jdk-24-ea.1_aix-ppc64_bin.tar.gz"
               }
             },
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-24-ea.1_linux-x64_bin.tar.gz",
+                "checksum": "10c49f312f842a8227c3871131e9654b759d4a9dd3848df1e47d29030c39868d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jdk-24-ea.1_linux-x64_bin.tar.gz"
+              }
+            },
             "linux-x64-musl": {
               "tar.gz": {
                 "name": "sapmachine-jdk-24-ea.1_linux-x64-musl_bin.tar.gz",
@@ -28,6 +35,13 @@
                 "name": "sapmachine-jre-24-ea.1_aix-ppc64_bin.tar.gz",
                 "checksum": "d7e1eabc1503005f95ce00edb00614f9776489a05aa08bb2866a4083c8b861e2",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jre-24-ea.1_aix-ppc64_bin.tar.gz"
+              }
+            },
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-24-ea.1_linux-x64_bin.tar.gz",
+                "checksum": "7286d46abd4608ca6573e76764a646379f2eba94d638c73a450573e30649e49d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B1/sapmachine-jre-24-ea.1_linux-x64_bin.tar.gz"
               }
             },
             "linux-x64-musl": {
