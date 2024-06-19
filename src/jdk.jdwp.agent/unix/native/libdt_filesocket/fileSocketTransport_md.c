@@ -145,7 +145,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         server_socket = socket(PF_UNIX, SOCK_STREAM, 0);
 
         if (server_socket == -1) {
-            logAndCleanupFailedAccept("Could not create doamin socket", name);
+            logAndCleanupFailedAccept("Could not create domain socket", name);
             return;
         }
 
@@ -154,7 +154,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             return;
         }
 
-        if (bind(server_socket, (struct sockaddr*) &addr, addr_size) == -1) {
+        if (bind(server_socket, (struct sockaddr*)&addr, addr_size) == -1) {
             logAndCleanupFailedAccept("Could not bind file socket", name);
             return;
         }
@@ -265,4 +265,3 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
 
     return result;
 }
-
