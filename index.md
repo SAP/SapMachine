@@ -3,17 +3,32 @@ layout: default
 title: SapMachine
 ---
  
-<!-- **SapMachine** is a friendly fork of OpenJDK enhanced with optional features, build from and maintained by SAP, targeting enterprise scale usecases. -->
 
-This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers and partners who wish to use OpenJDK to run their applications.
-
-[Download](#download)
+**SapMachine** is a free, cross-platform, fully-functional version of the Open Java Development Kit (OpenJDK) build by and supported from SAP.
 
 <img align="right" width="350" src="assets/images/logo_circular.svg">
 
-## Releases
+It follows the release cadence of OpenJDK's long-running JDK Project, offers long-term support with performance improvements and timely security updates.
+The project ships a new feature release every six months, update releases every quarter, and a long-term support release every three years.
 
-<!-- SapMachine offers builds for the following major releases 11 LTS, 17 LTS, 21 LTS, 22 and 23 EA
+SapMachine is used by SAP in countless ands of production services and is certified by the Java SE standard (TCK).
+With SapMachine, you can develop and run Java applications on major operating systems such as
+Linux, Windows, macOS and AIX.
+<!-- Linux (aarch/ppc64le/x64 glibc/x64 musl), Windows (x64), macOS (aarch/x64) and AIX. -->
+
+SapMachine offers additional features for running Java Platform applications in large enterprise scale environments.
+
+<!-- from https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions#What-is-the-release-roadmap-and-maintenance-schedule-of-SapMachine -->
+SapMachine 
+<!-- 
+[Download](#download)
+-->
+
+<!-- 
+## Releases
+-->
+<!-- 
+SapMachine offers builds for the following major releases 11 LTS, 17 LTS, 21 LTS, 22 and 23 EA
 - SapMachine 21 LTS
 - SapMachine 17 LTS
 - SapMachine 11 LTS ([end of maintenance Dec 2024](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support))
@@ -24,11 +39,13 @@ the short term release
 and the early access builds for
 - SapMachine 23 EA
 -->
+<!--
 SapMachine follows the generic release strategy of OpenJDK with Long Term Support (LTS) releases and updates every three months.  Details can be found on the [Maintenance and Support](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support) page.
 All [releases](https://github.com/SAP/SapMachine/releases), including nightly snapshots, are available on GitHub.
 The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 21](latest/21)).
 
 A description how to directly download the latest stable version of SapMachine for your OS-architecture can be found in the FAQ [Is-there-a-fix-link-to-download-the-latest-stable-version-of-SapMachine](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions#Is-there-a-fix-link-to-download-the-latest-stable-version-of-SapMachine).
+-->
 
 ## Download
 
