@@ -256,4 +256,3 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
 
     return result;
 }
-

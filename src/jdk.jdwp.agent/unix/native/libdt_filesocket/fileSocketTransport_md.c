@@ -72,7 +72,7 @@ static volatile int file_to_delete_valid;
 static void memoryBarrier() {
 #if defined(__linux__) || defined(__APPLE__)
     __sync_synchronize();
-#elif define(_AIX)
+#elif defined(_AIX)
     __sync();
 #else
 #error "Unknown platform"
@@ -155,7 +155,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             return;
         }
 
-        if (bind(server_socket, (struct sockaddr*) &addr, addr_size) == -1) {
+        if (bind(server_socket, (struct sockaddr*)&addr, addr_size) == -1) {
             logAndCleanupFailedAccept("Could not bind file socket", name);
             return;
         }
@@ -266,4 +266,3 @@ int fileSocketTransport_WriteImpl(char* buffer, int size) {
 
     return result;
 }
-
