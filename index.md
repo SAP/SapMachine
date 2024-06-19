@@ -3,12 +3,27 @@ layout: default
 title: SapMachine
 ---
  
+<!-- **SapMachine** is a friendly fork of OpenJDK enhanced with optional features, build from and maintained by SAP, targeting enterprise scale usecases. -->
+
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers and partners who wish to use OpenJDK to run their applications.
+
+[Download](#download)
 
 <img align="right" width="350" src="assets/images/logo_circular.svg">
 
 ## Releases
 
+<!-- SapMachine offers builds for the following major releases 11 LTS, 17 LTS, 21 LTS, 22 and 23 EA
+- SapMachine 21 LTS
+- SapMachine 17 LTS
+- SapMachine 11 LTS ([end of maintenance Dec 2024](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support))
+
+the short term release
+- SapMachine 22
+
+and the early access builds for
+- SapMachine 23 EA
+-->
 SapMachine follows the generic release strategy of OpenJDK with Long Term Support (LTS) releases and updates every three months.  Details can be found on the [Maintenance and Support](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support) page.
 All [releases](https://github.com/SAP/SapMachine/releases), including nightly snapshots, are available on GitHub.
 The latest release for any SapMachine major version can be found at `https://sap.github.io/SapMachine/latest/#MAJOR` (e.g. [SapMachine 21](latest/21)).
