@@ -71,7 +71,7 @@ static volatile int file_to_delete_valid;
 static void memoryBarrier() {
 #if defined(__linux__) || defined(__APPLE__)
     __sync_synchronize();
-#elif define(_AIX)
+#elif defined(_AIX)
     __sync();
 #else
 #error "Unknown platform"
