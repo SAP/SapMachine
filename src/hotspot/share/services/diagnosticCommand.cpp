@@ -492,10 +492,10 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
-// SapMachine 2024-05-10: HeapDumpPath for jcmd
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "STRING", false, "if no filename was specified, but -XX:HeapDumpPath=hdp is set, path hdp is taken"),
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  _filename("filename", "Name of the dump file", "STRING", false, "if no filename was specified, but -XX:HeapDumpPath=<hdp> is set, path <hdp> is taken"),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -554,12 +554,11 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
-  HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-
   // SapMachine 2024-05-10: HeapDumpPath for jcmd
   if (use_heapdump_path) {
-    dumper.dump_to(output(), (int)level, _overwrite.value(), (uint)parallel);
+    HeapDumper::dump_heap(!_all.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
   } else {
+    HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
     dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
   }
 }
