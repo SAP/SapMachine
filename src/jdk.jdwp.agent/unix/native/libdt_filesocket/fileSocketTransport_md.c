@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +241,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         server_handle = socket(PF_UNIX, SOCK_STREAM, 0);
 
         if (server_handle == INVALID_HANDLE_VALUE) {
-            logAndCleanupFailedAccept("Could not create doamin socket", name);
+            logAndCleanupFailedAccept("Could not create domain socket", name);
             return;
         }
 
@@ -256,7 +255,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
             return;
         }
 
-        if (bind(server_handle, (struct sockaddr*) &addr, addr_size) == -1) {
+        if (bind(server_handle, (struct sockaddr*)&addr, addr_size) == -1) {
             logAndCleanupFailedAccept("Could not bind file socket", name);
             return;
         }
