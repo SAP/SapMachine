@@ -138,7 +138,7 @@ void fileSocketTransport_AcceptImpl(char const* name) {
         server_socket = socket(PF_UNIX, SOCK_STREAM, 0);
 
         if (server_socket == INVALID_SOCKET) {
-            logAndCleanupFailedAccept("Could not create doamin socket", name);
+            logAndCleanupFailedAccept("Could not create domain socket", name);
             return;
         }
 
