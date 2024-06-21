@@ -25,6 +25,8 @@
 package com.sap.jdk.ext.process;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import jdk.internal.access.JavaLangProcessBuilderAccess;
 import jdk.internal.access.SharedSecrets;
@@ -32,6 +34,7 @@ import jdk.internal.access.SharedSecrets;
 /**
  * ProcessGroupHelper provides the possibility to create and terminate process groups.
  */
+@SuppressWarnings("removal")
 public final class ProcessGroupHelperImpl {
 
     /**
@@ -42,13 +45,18 @@ public final class ProcessGroupHelperImpl {
     private static JavaLangProcessBuilderAccess jlpba = SharedSecrets.getJavaLangProcessBuilderAccess();
 
     static {
-        System.loadLibrary(LIB_BASE_NAME);
+        if (System.getSecurityManager() == null) {
+            System.loadLibrary(LIB_BASE_NAME);
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                System.loadLibrary(LIB_BASE_NAME);
+                return null;
+            });
+        }
     }
 
     /**
-     * Native method that implements the kill.
-     *
-     * Currently only available on non Windows Platforms.
+     * Native method that calls kill.
      *
      * @param pid Process id of the process leading the process group.
      * @param force Kill forcibly or politely.
@@ -66,7 +74,7 @@ public final class ProcessGroupHelperImpl {
     {
         int rc = killProcessGroup0(p.toHandle().pid(), force);
         if (rc != 0) {
-            throw new IOException("Failed to kill process group (" + rc + ")");
+            throw new IOException("Failed to kill process group (errno = " + rc + ")");
         }
     }
 

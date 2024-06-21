@@ -26,11 +26,13 @@
 
 #include "com_sap_jdk_ext_process_ProcessGroupHelperImpl.h"
 
+#include <errno.h>
 #include <unistd.h>
 #include <signal.h>
 
 JNIEXPORT jint JNICALL Java_com_sap_jdk_ext_process_ProcessGroupHelperImpl_killProcessGroup0
   (JNIEnv *env, jclass ignore, jlong pid_of_leader, jboolean force)
 {
-    return kill(-(pid_t)pid_of_leader, force ? SIGKILL : SIGTERM);
+    int rc = kill(-(pid_t)pid_of_leader, force ? SIGKILL : SIGTERM);
+    return ((rc == -1 && errno != 0) ? errno : rc);
 }
