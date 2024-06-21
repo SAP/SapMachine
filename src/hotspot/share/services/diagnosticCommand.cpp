@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
@@ -493,7 +494,8 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "STRING",true),
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  _filename("filename", "Name of the dump file", "STRING", false, "if no filename was specified, but -XX:HeapDumpPath=<hdp> is set, path <hdp> is taken"),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -514,6 +516,8 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
   jlong parallel = HeapDumper::default_num_of_dump_threads();
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  bool use_heapdump_path = false;
 
   if (_gzip.is_set()) {
     level = _gzip.value();
@@ -536,11 +540,27 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  if (!_filename.is_set()) {
+    if (HeapDumpPath != nullptr) {
+      // use HeapDumpPath (file or directory is possible)
+      use_heapdump_path = true;
+    } else {
+      output()->print_cr("Filename or -XX:HeapDumpPath must be set!");
+      return;
+    }
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
-  HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  if (use_heapdump_path) {
+    HeapDumper::dump_heap(!_all.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  } else {
+    HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
+    dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  }
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
@@ -1044,7 +1064,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   } else if (strcmp(scmd, "dynamic_dump") == 0) {
     is_static = JNI_FALSE;
     output()->print("Dynamic dump: ");
-    if (!UseSharedSpaces) {
+    if (!CDSConfig::is_using_archive()) {
       output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
       return;
     }
@@ -1210,18 +1230,25 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
   MemMapPrinter::print_all_mappings(output(), _human_readable.value());
 }
 
+static constexpr char default_filename[] = "vm_memory_map_<pid>.txt";
+
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
   _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
+  _filename("-F", "file path", "STRING", false, default_filename) {
   _dcmdparser.add_dcmd_option(&_human_readable);
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  stringStream default_name;
-  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
-  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  stringStream defaultname;
+  const char* name = nullptr;
+  if (::strcmp(default_filename, _filename.value()) == 0) {
+    defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
+    name = defaultname.base();
+  } else {
+    name = _filename.value();
+  }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
