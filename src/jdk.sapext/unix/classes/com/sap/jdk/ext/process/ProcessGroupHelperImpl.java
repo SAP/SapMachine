@@ -40,7 +40,7 @@ public final class ProcessGroupHelperImpl {
     /**
      * The base name of the jdk extensions library.
      */
-    public static final String LIB_BASE_NAME = "sapjdkext";
+    public static final String LIB_BASE_NAME = "jdksapext";
 
     private static JavaLangProcessBuilderAccess jlpba = SharedSecrets.getJavaLangProcessBuilderAccess();
 

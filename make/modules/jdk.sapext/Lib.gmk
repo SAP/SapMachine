@@ -27,13 +27,13 @@ include LibCommon.gmk
 
 ifeq ($(call isTargetOsType, unix), true)
   ##############################################################################
-  ## Build libsapjdkext
+  ## Build libjdksapext
   ##############################################################################
 
-  $(eval $(call SetupJdkLibrary, BUILD_LIBSAPJDKEXT, \
-      NAME := sapjdkext, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJDKSAPEXT, \
+      NAME := jdksapext, \
       OPTIMIZATION := LOW, \
   ))
 
-  TARGETS += $(BUILD_LIBSAPJDKEXT)
+  TARGETS += $(BUILD_LIBJDKSAPEXT)
 endif
