@@ -100,7 +100,9 @@ final class ProcessImpl extends Process {
                          java.util.Map<String,String> environment,
                          String dir,
                          ProcessBuilder.Redirect[] redirects,
-                         boolean redirectErrorStream)
+                         boolean redirectErrorStream,
+                         // SapMachine 2024-06-12: process group extension
+                         boolean createNewProcessGroupOnSpawn)
         throws IOException
     {
         String envblock = ProcessEnvironment.toEnvironmentBlock(environment);
