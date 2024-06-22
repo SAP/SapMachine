@@ -59,6 +59,8 @@ public class SharedSecrets {
     private static JavaLangAccess javaLangAccess;
     private static JavaLangInvokeAccess javaLangInvokeAccess;
     private static JavaLangModuleAccess javaLangModuleAccess;
+    // SapMachine 2024-06-12: process group extension
+    private static JavaLangProcessBuilderAccess javaLangProcessBuilderAccess;
     private static JavaLangRefAccess javaLangRefAccess;
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
@@ -146,6 +148,21 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(ModuleDescriptor.class);
             access = javaLangModuleAccess;
+        }
+        return access;
+    }
+
+    // SapMachine 2024-06-12: process group extension
+    public static void setJavaLangProcessBuilderAccess(JavaLangProcessBuilderAccess jlpba) {
+        javaLangProcessBuilderAccess = jlpba;
+    }
+
+    // SapMachine 2024-06-12: process group extension
+    public static JavaLangProcessBuilderAccess getJavaLangProcessBuilderAccess() {
+        var access = javaLangProcessBuilderAccess;
+        if (access == null) {
+            ensureClassInitialized(ProcessBuilder.class);
+            access = javaLangProcessBuilderAccess;
         }
         return access;
     }
