@@ -121,6 +121,8 @@ static void* calloc_by_malloc(size_t elems, size_t size);
 static int posix_memalign_by_aligned_alloc(void** ptr, size_t align, size_t size);
 static void* memalign_by_aligned_alloc(size_t align, size_t size);
 
+#define NEEDS_MALLOC_FALLBACK
+
 static real_malloc_funcs_t impl = {
   (malloc_func_t*) LOAD_DYNAMIC,
   calloc_by_malloc,
@@ -221,6 +223,13 @@ static void assign_function(void** dest, char const* symbol) {
   print("\n");
 }
 
+#if defined(NEEDS_MALLOC_FALLBACK)
+static char  fallback_buffer[1024 * 1024];
+static char* fallback_buffer_pos = fallback_buffer;
+static char* fallback_buffer_end = &fallback_buffer[sizeof(fallback_buffer)];
+static int   still_needs_malloc_fallback = 1;
+#endif
+
 #define LIB_INIT __attribute__((constructor))
 #define EXPORT __attribute__((visibility("default")))
 
@@ -229,6 +238,9 @@ static void LIB_INIT init(void) {
   assign_function((void**) &impl.calloc, "calloc");
   assign_function((void**) &impl.realloc, "realloc");
   assign_function((void**) &impl.free, "free");
+#if defined(NEEDS_MALLOC_FALLBACK)
+  still_needs_malloc_fallback = 0;
+#endif
   assign_function((void**) &impl.memalign, "memalign");
   assign_function((void**) &impl.posix_memalign, "posix_memalign");
   assign_function((void**) &impl.aligned_alloc, "aligned_alloc");
@@ -342,6 +354,23 @@ EXPORT void* REPLACE_NAME(malloc)(size_t size) {
   malloc_hook_t* hook = registered_hooks->malloc_hook;
   void* result;
 
+#if defined(NEEDS_MALLOC_FALLBACK)
+  if (still_needs_malloc_fallback) {
+    // Align to 16 byte and add 16 bytes for the header.
+    size_t real_size = 16 + ((size - 1) | 15) + 1;
+
+    if (fallback_buffer_pos + real_size >= fallback_buffer_end) {
+      return NULL;
+    }
+
+    void* result = fallback_buffer_pos + 16;
+    ((size_t*) result)[-1] = real_size;
+    fallback_buffer_pos += real_size;
+
+    return result;
+  }
+#endif
+
   LOG_FUNC(malloc);
   LOG_SIZE(size);
 
@@ -399,6 +428,18 @@ EXPORT void* REPLACE_NAME(realloc)(void* ptr, size_t size) {
 
 EXPORT void REPLACE_NAME(free)(void* ptr) {
   free_hook_t* hook = registered_hooks->free_hook;
+
+#if defined(NEEDS_MALLOC_FALLBACK)
+  if (((char*) ptr >= fallback_buffer) && ((char*) ptr < fallback_buffer_end)) {
+    // This memory was allocated by the fallback malloc.
+    if (((char*) ptr) + ((size_t*) ptr)[-1] - 16 == fallback_buffer_pos) {
+      // We can undo the last allocation.
+      fallback_buffer_pos -= ((size_t*) ptr)[-1];
+    }
+
+    return;
+  }
+#endif
 
   LOG_FUNC(free);
   LOG_PTR_WITH_SIZE(ptr);
