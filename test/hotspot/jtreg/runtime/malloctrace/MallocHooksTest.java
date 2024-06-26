@@ -610,7 +610,7 @@ public class MallocHooksTest {
         }
     }
 
-    private static ProcessBuilder runStress(int nrOfOps, int maxLiveAllocations, int seed, 
+    private static ProcessBuilder runStress(int nrOfOps, int maxLiveAllocations, int seed,
                                             boolean trackLive, String... opts) {
         String[] args = new String[opts.length + 9];
         System.arraycopy(opts, 0, args, 0, opts.length);
@@ -706,7 +706,7 @@ class Stack {
     public int getStackDepth() {
         return funcs.length;
     }
-    
+
     public String getFunction(int index) {
         return funcs[index];
     }
@@ -714,7 +714,7 @@ class Stack {
     public String toString() {
         StringBuilder result = new StringBuilder();
 
-        result.append("Stack " + index + " of " + maxIndex + ": " + bytes + " bytes, " + 
+        result.append("Stack " + index + " of " + maxIndex + ": " + bytes + " bytes, " +
                       count + " allocations" + System.lineSeparator());
 
         for (String f: funcs) {

@@ -268,7 +268,7 @@ void Allocator::free(void* ptr) {
 }
 
 size_t Allocator::allocated() {
-  return _allocation_size * _entries_per_chunk * _nr_of_chunks; 
+  return _allocation_size * _entries_per_chunk * _nr_of_chunks;
 }
 
 size_t Allocator::unused() {
