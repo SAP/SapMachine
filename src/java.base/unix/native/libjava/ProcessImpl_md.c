@@ -625,7 +625,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                                        jbyteArray envBlock, jint envc,
                                        jbyteArray dir,
                                        jintArray std_fds,
-                                       jboolean redirectErrorStream)
+                                       jboolean redirectErrorStream,
+                                       /* SapMachine 2024-06-12: process group extension */
+                                       jboolean createNewProcessGroupOnSpawn)
 {
     int errnum;
     int resultPid = -1;
@@ -696,6 +698,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
 
     c->redirectErrorStream = redirectErrorStream;
     c->mode = mode;
+
+    /* SapMachine 2024-06-12: process group extension */
+    c->createNewProcessGroupOnSpawn = createNewProcessGroupOnSpawn;
 
     /* In posix_spawn mode, require the child process to signal aliveness
      * right after it comes up. This is because there are implementations of

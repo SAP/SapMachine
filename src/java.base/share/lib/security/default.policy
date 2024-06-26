@@ -180,6 +180,12 @@ grant codeBase "jrt:/jdk.naming.dns" {
     permission java.security.AllPermission;
 };
 
+// SapMachine 2024-06-12: process group extension
+grant codeBase "jrt:/jdk.sapext" {
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.access";
+};
+
 grant codeBase "jrt:/jdk.scripting.nashorn" {
     permission java.security.AllPermission;
 };
