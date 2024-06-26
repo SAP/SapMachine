@@ -518,7 +518,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
 
   // SapMachine 2024-05-10: HeapDumpPath for jcmd
   if (!_filename.is_set()) {
-    if (HeapDumpPath != nullptr) {
+    if (HeapDumpPath != NULL) {
       // use HeapDumpPath (file or directory is possible)
       use_heapdump_path = true;
     } else {
