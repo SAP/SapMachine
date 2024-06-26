@@ -23,11 +23,13 @@ title: SapMachine
 
 <!-- <img align="right" width="350" src="assets/images/logo_circular.svg"> 
  ToDo: add alternate Text alt="Logo of SapMachine" -->
-<img align="left" width="250" src="assets/images/logo_circular.svg" alt="Logo of SapMachine"> 
+<img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine"> 
 
+<p align="right">
 It follows the release cadence of OpenJDK's long-running JDK Project, offers long-term support with performance improvements and timely security updates.
-Thereby the project ships a new feature release every six months, update releases every quarter, and a long-term support release every two<nbsp>years.
+Thereby the project ships a new feature release every six months, update releases every quarter, and a long-term support release every two years.
 
+<p align="right">
 At SAP the default JDK is SapMachine, used countless times for own instances, cloud deployments for customers and on-premise at customers for running SAP applications.
 
 SapMachine is available
