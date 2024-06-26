@@ -2,43 +2,46 @@
 layout: default
 title: SapMachine
 ---
- 
 
-**SapMachine** is a free, cross-platform, fully-functional version of the Open Java Development Kit (OpenJDK) build by and supported from SAP.
+<!-- Intro: eine Melange aus den besten Sniplets von unseren und anderen Seiten -->
+<!-- Intro: um den Leser hier zu behalten, erstmal keine Links zu anderen Projekten -->
+<!-- Intro: Prominenter Download -->
+<!-- Intro:  -->
+<!-- Intro:  -->
+<!-- Intro: Logo kleiner; zB nur 300 -->
+<!-- Intro: möglichst viel relevante Doku in überschaubar viel Text -->
+<!-- Intro: kein Anspruch alles hier schon zu beantworten -->
 
-<img align="right" width="350" src="assets/images/logo_circular.svg">
+<!-- FAQ: steht: major releases alle _drei_ Jahre -->
+<!-- FAQ: Periodisch mal alle Texte durchgehen -->
+<!-- ToDo: w3.org validator -->
+
+**SapMachine** is a free-of-cost, non-commercial, cross-platform, fully-functional, open-source, production-grade version of the Open Java Development Kit (OpenJDK) build by and supported from SAP.
+
+<!-- ToDo: align left -->
+<!-- ToDo: gibt es das U-Boot auch ohne Kreis? -->
+
+<!-- <img align="right" width="350" src="assets/images/logo_circular.svg"> 
+ ToDo: add alternate Text alt="Logo of SapMachine" -->
+<img align="left" width="300" src="assets/images/logo_circular.svg" alt="Logo of SapMachine"> 
 
 It follows the release cadence of OpenJDK's long-running JDK Project, offers long-term support with performance improvements and timely security updates.
-The project ships a new feature release every six months, update releases every quarter, and a long-term support release every three years.
+Thereby the project ships a new feature release every six months, update releases every quarter, and a long-term support release every two years.
 
-SapMachine is used by SAP in countless ands of production services and is certified by the Java SE standard (TCK).
-With SapMachine, you can develop and run Java applications on major operating systems such as
-Linux, Windows, macOS and AIX.
-<!-- Linux (aarch/ppc64le/x64 glibc/x64 musl), Windows (x64), macOS (aarch/x64) and AIX. -->
+At SAP the default JDK is SapMachine, used countless times for own instances, cloud deployments for customers and on-premise at customers for running SAP applications.
 
-SapMachine offers additional features for running Java Platform applications in large enterprise scale environments.
+SapMachine is available
+as Java Development Kit (JDK) and Java Runtime Environment (JRE)
+for Linux, Windows, macOS and AIX. <!-- Linux (aarch/ppc64le/x64 glibc/x64 musl), Windows (x64), macOS (aarch/x64) and AIX. -->
 
-<!-- from https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions#What-is-the-release-roadmap-and-maintenance-schedule-of-SapMachine -->
-SapMachine 
+Certified by the Java SE standard (TCK verified),
+it can be used for all JRE- and JDK-usecases as drop-in replacement
+from small desktop applications up to high-performance large-scale server applications.
+
 <!-- 
 [Download](#download)
 -->
 
-<!-- 
-## Releases
--->
-<!-- 
-SapMachine offers builds for the following major releases 11 LTS, 17 LTS, 21 LTS, 22 and 23 EA
-- SapMachine 21 LTS
-- SapMachine 17 LTS
-- SapMachine 11 LTS ([end of maintenance Dec 2024](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support))
-
-the short term release
-- SapMachine 22
-
-and the early access builds for
-- SapMachine 23 EA
--->
 <!--
 SapMachine follows the generic release strategy of OpenJDK with Long Term Support (LTS) releases and updates every three months.  Details can be found on the [Maintenance and Support](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support) page.
 All [releases](https://github.com/SAP/SapMachine/releases), including nightly snapshots, are available on GitHub.
@@ -48,6 +51,10 @@ A description how to directly download the latest stable version of SapMachine f
 -->
 
 ## Download
+
+<!-- ToDo: Disable Short Term Support Releases -->
+<!-- ToDo: checkboxes hoch, entweder nur vor den Buttons oder ganz hoch -->
+<!-- ToDo: selects in eine Zeile -->
 
 <select id="sapmachine_major_select" class="download_select">
 </select>
@@ -90,7 +97,7 @@ Check out our [FAQ's](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Qu
 
 ### OpenJDK Critical Patch Update
 
-sdfddadfasdf
+As Member of the Critical
 
 ### Maintainer + Lead Maintainer
 
@@ -137,7 +144,7 @@ Our target usergroups are
 * colleagues running SAP-enterprise-applications on SapMachine for business needs and
 * colleagues running SAP-business-need applications on SapMachine.
 
-and in case of in case of issues with the JVM/JDK/JRE/..., we offer assistiance in these cases via the SAP Customer Support ticket. For all other uses cases 
+and in case of in case of issues with the JVM/JDK/JRE/..., we offer assistiance in these cases via the SAP Customer Support ticket. For all other cases it is possible to open an  [issue](https://github.com/SAP/SapMachine/issues) in the github repository.
 
 We provide timely updates of SapMachine.
 
