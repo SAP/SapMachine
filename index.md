@@ -16,9 +16,8 @@ title: SapMachine
 <!-- FAQ: Periodisch mal alle Texte durchgehen -->
 <!-- ToDo: w3.org validator -->
 
-<p style="text-align:justify;">
 **SapMachine** is a free-of-cost, non-commercial, cross-platform, fully-functional, open-source, production-grade version of the Open Java Development Kit (OpenJDK) build by and supported from SAP.
-</p>
+
 <!-- ToDo: align left -->
 <!-- ToDo: gibt es das U-Boot auch ohne Kreis? -->
 
