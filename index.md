@@ -25,7 +25,6 @@ title: SapMachine
  ToDo: add alternate Text alt="Logo of SapMachine" -->
 <img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine"> 
 
-<p style="text-align:right;">
 It follows the release cadence of OpenJDK's long-running JDK Project, offers long-term support with performance improvements and timely security updates.
 Thereby the project ships a new feature release every six months, update releases every quarter, and a long-term support release every two years.
 
@@ -38,7 +37,6 @@ for Linux, Windows, macOS and AIX. <!-- Linux (aarch/ppc64le/x64 glibc/x64 musl)
 Certified by the Java SE standard (TCK verified),
 it can be used for all JRE- and JDK-usecases as drop-in replacement
 from small desktop applications up to high-performance large-scale server applications.
-</p>
 
 <!-- 
 [Download](#download)
