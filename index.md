@@ -25,7 +25,7 @@ title: SapMachine
  ToDo: add alternate Text alt="Logo of SapMachine" -->
 <img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine"> 
 
-<p style="text-align:justify;">
+<p style="text-align:right;">
 It follows the release cadence of OpenJDK's long-running JDK Project, offers long-term support with performance improvements and timely security updates.
 Thereby the project ships a new feature release every six months, update releases every quarter, and a long-term support release every two years.
 
