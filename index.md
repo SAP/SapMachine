@@ -16,6 +16,7 @@ title: SapMachine
 <!-- FAQ: Periodisch mal alle Texte durchgehen -->
 <!-- ToDo: w3.org validator -->
 
+<p style="text-align:justify;">
 **SapMachine** is a free-of-cost, non-commercial, cross-platform, fully-functional, open-source, production-grade version of the Open Java Development Kit (OpenJDK) build by and supported from SAP.
 
 <!-- ToDo: align left -->
@@ -37,6 +38,7 @@ for Linux, Windows, macOS and AIX. <!-- Linux (aarch/ppc64le/x64 glibc/x64 musl)
 Certified by the Java SE standard (TCK verified),
 it can be used for all JRE- and JDK-usecases as drop-in replacement
 from small desktop applications up to high-performance large-scale server applications.
+</p>
 
 <!-- 
 [Download](#download)
@@ -89,9 +91,13 @@ A description how to directly download the latest stable version of SapMachine f
 </div>
 
 ## Documentation
+
+<p style="text-align:justify;">
 Check out our [FAQ's](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions) and [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
 * [Installation](https://github.com/SAP/SapMachine/wiki/Installation) and [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
+</p>
+
 
 <!-- 
 ## Contributions
@@ -115,11 +121,15 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 * Leading the [PowerPC/AIX porting project](http://openjdk.java.net/projects/ppc-aix-port/).
 -->
 
+
 ## Features
 
+<p style="text-align:justify;">
 The intention of SapMachine is stay as close as possible to the OpenJDK and to minimize the differences. This ensures that SapMachine can be used as drop-in replacement.<br>
 Therefore and as a commitment from SAP to Open Source the features are primarly contributed to OpenJDK, whenever possible. [Read more](https://github.com/SAP/SapMachine/wiki/Features-Contributed-by-SAP)<br>
 In rare cases this is not possible. To make these required features available to SAP-internal-customers, these enhancements are shipped with SapMachine-only. These differences are listed [here](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK).
+</p>
+
 
 <!-- 
 * Contributing many new features inspired by Java stakeholders within SAP to the OpenJDK project. This ensures such features are available in long reach and for everybody. Rarely we add such features to SapMachine directly to keep the diff of this project as small as possible. 
@@ -137,6 +147,8 @@ Among the biggest external contributors to the OpenJDK project (see fix ratio fo
 -->
 
 ## License
+
+<p style="text-align:justify;">
 This project is run under the same licensing terms as the upstream OpenJDK project. Please see the [LICENSE](https://github.com/SAP/SapMachine/blob/sapmachine/LICENSE) file in the top-level directory for more information.
 
 This project is OpenSource and as an OpenJDK-distribution, SapMachine is free to use for everyone accepting the GPLv2 license.
@@ -154,7 +166,7 @@ We provide timely updates of SapMachine.
 
 SAP is with SapMachine 
 -->
-
+</p>
 <hr>
 
 2008-2024 by [SAP SE](https://www.sap.com)
