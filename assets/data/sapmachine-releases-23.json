@@ -34,6 +34,18 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jdk-23-ea.28_linux-x64-musl_bin.tar.gz"
               }
             },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-23-ea.28_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jdk-23-ea.28_macos-x64_bin.dmg",
+                "checksum": "574c1bd1e0d647d77e8f86e562a5f3e818ff17244dd0755c4fa1a9f3f236e36f"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-23-ea.28_macos-x64_bin.tar.gz",
+                "checksum": "d2907dbc103b0f9ad9b788fd31f88b49d40d8cfa82f781d845d9ec8d972d6ec8",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jdk-23-ea.28_macos-x64_bin.tar.gz"
+              }
+            },
             "windows-x64": {
               "zip": {
                 "name": "sapmachine-jdk-23-ea.28_windows-x64_bin.zip",
@@ -69,6 +81,18 @@
                 "name": "sapmachine-jre-23-ea.28_linux-x64-musl_bin.tar.gz",
                 "checksum": "c12f43d52c65088b359fc580d0bcfd92555677975a9896038637d4dec78fd4ba",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jre-23-ea.28_linux-x64-musl_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-23-ea.28_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jre-23-ea.28_macos-x64_bin.dmg",
+                "checksum": "d9c22d06a41b7f65dc2424e5f8014f995303c33ae8111ffbbcf99f4194dd1b80"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-23-ea.28_macos-x64_bin.tar.gz",
+                "checksum": "0e361efe0b4d04dae8332b391fd53dab027cb044709d46eca8cdb733d07938eb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jre-23-ea.28_macos-x64_bin.tar.gz"
               }
             },
             "windows-x64": {
