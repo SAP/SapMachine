@@ -6,6 +6,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.24-ea.7_linux-aarch64_bin.tar.gz",
+                "checksum": "8d66df30d3c0658e3fc3f2b421c49f150362affef7979f0b35465832eecf4da7",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jdk-11.0.24-ea.7_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-11.0.24-ea.7_linux-ppc64le_bin.tar.gz",
@@ -19,9 +26,28 @@
                 "checksum": "e5595f5a0763f3cd039b39ed770b497170c96731e743853631618c29a7f16e99",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jdk-11.0.24-ea.7_linux-x64_bin.tar.gz"
               }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-11.0.24-ea.7_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jdk-11.0.24-ea.7_macos-x64_bin.dmg",
+                "checksum": "edc75a04aaa092a9b77e7aef23793b4e54b5e88ea30b98dc5d77ed58cddd3e40"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.24-ea.7_macos-x64_bin.tar.gz",
+                "checksum": "1aba6db7f597af923b6c1f8679f87f952a13aff6ed0c0619f849687c8e76285a",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jdk-11.0.24-ea.7_macos-x64_bin.tar.gz"
+              }
             }
           },
           "jre": {
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.24-ea.7_linux-aarch64_bin.tar.gz",
+                "checksum": "f5ffb87b5723951205db5e09e4fede5d43f1c14254184037ba7c463a6e88aa04",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jre-11.0.24-ea.7_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jre-11.0.24-ea.7_linux-ppc64le_bin.tar.gz",
@@ -34,6 +60,18 @@
                 "name": "sapmachine-jre-11.0.24-ea.7_linux-x64_bin.tar.gz",
                 "checksum": "7a258de22246cc06bea94ebccfb9537b47b891ad04ab96c6b27fa913457acdac",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jre-11.0.24-ea.7_linux-x64_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-11.0.24-ea.7_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jre-11.0.24-ea.7_macos-x64_bin.dmg",
+                "checksum": "4d6ba40b13dfe1062b0b27f162896ad13d6a8bac56da77cf0347888e59236033"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.24-ea.7_macos-x64_bin.tar.gz",
+                "checksum": "78d856f82378087aff46d96e7d69fe14a2b6266b3c94ffee591cce2ea3f385f6",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24%2B7/sapmachine-jre-11.0.24-ea.7_macos-x64_bin.tar.gz"
               }
             }
           }
