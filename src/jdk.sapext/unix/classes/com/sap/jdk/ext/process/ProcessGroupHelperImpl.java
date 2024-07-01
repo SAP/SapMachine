@@ -25,34 +25,20 @@
 package com.sap.jdk.ext.process;
 
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
+import com.sap.jdk.ext.NativeLibHelper;
 import jdk.internal.access.JavaLangProcessBuilderAccess;
 import jdk.internal.access.SharedSecrets;
 
 /**
  * ProcessGroupHelper provides the possibility to create and terminate process groups.
  */
-@SuppressWarnings("removal")
 public final class ProcessGroupHelperImpl {
-
-    /**
-     * The base name of the jdk extensions library.
-     */
-    public static final String LIB_BASE_NAME = "jdksapext";
 
     private static JavaLangProcessBuilderAccess jlpba = SharedSecrets.getJavaLangProcessBuilderAccess();
 
     static {
-        if (System.getSecurityManager() == null) {
-            System.loadLibrary(LIB_BASE_NAME);
-        } else {
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                System.loadLibrary(LIB_BASE_NAME);
-                return null;
-            });
-        }
+        NativeLibHelper.load();
     }
 
     /**
