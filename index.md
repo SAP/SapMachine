@@ -16,9 +16,11 @@ title: SapMachine
 <!-- FAQ: Periodisch mal alle Texte durchgehen -->
 <!-- ToDo: w3.org validator -->
 
-<p style="text-align:justify;">
 **SapMachine** is a free-of-cost, non-commercial, cross-platform, fully-functional, open-source, production-grade version of the Open Java Development Kit (OpenJDK) build by and supported from SAP.
-</p>
+
+<!--
+**SapMachine** is a free, non-commercial, cross-platform, fully-functional, and open-source production-grade version of the Open Java Development Kit (OpenJDK). Developed and supported by SAP, it provides a robust and reliable Java environment.
+-->
 
 <!-- ToDo: align left -->
 <!-- ToDo: gibt es das U-Boot auch ohne Kreis? -->
@@ -27,26 +29,18 @@ title: SapMachine
  ToDo: add alternate Text alt="Logo of SapMachine" -->
 <img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine"> 
 
-<p style="text-align:justify;">
 It follows the release cadence of OpenJDK's long-running JDK Project, offers long-term support with performance improvements and timely security updates.
 Thereby the project ships a new feature release every six months, update releases every quarter, and a long-term support release every two years.
-</p>
 
-<p style="text-align:justify;">
 At SAP the default JDK is SapMachine, used countless times for own instances, cloud deployments for customers and on-premise at customers for running SAP applications.
-</p>
 
-<p style="text-align:justify;">
 SapMachine is available
 as Java Development Kit (JDK) and Java Runtime Environment (JRE)
 for Linux, Windows, macOS and AIX. <!-- Linux (aarch/ppc64le/x64 glibc/x64 musl), Windows (x64), macOS (aarch/x64) and AIX. -->
-</p>
 
-<p style="text-align:justify;">
 Certified by the Java SE standard (TCK verified),
 it can be used for all JRE- and JDK-usecases as drop-in replacement
 from small desktop applications up to high-performance large-scale server applications.
-</p>
 
 <!-- 
 [Download](#download)
@@ -100,11 +94,9 @@ A description how to directly download the latest stable version of SapMachine f
 
 ## Documentation
 
-
 Check out our [FAQ's](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions) and [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
 * [Installation](https://github.com/SAP/SapMachine/wiki/Installation) and [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
-
 
 <!-- 
 ## Contributions
@@ -151,9 +143,11 @@ Among the biggest external contributors to the OpenJDK project (see fix ratio fo
 
 ## License
 
+<!-- 
 This project is run under the same licensing terms as the upstream OpenJDK project. Please see the [LICENSE](https://github.com/SAP/SapMachine/blob/sapmachine/LICENSE) file in the top-level directory for more information.
+-->
 
-This project is OpenSource and as an OpenJDK-distribution, SapMachine is free to use for everyone accepting the GPLv2 license.
+This project is OpenSource and as an OpenJDK-distribution, SapMachine is free to use for everyone accepting the [GPLv2 license](https://github.com/SAP/SapMachine/blob/sapmachine/LICENSE).
 
 <!-- The target usergroups are
 
