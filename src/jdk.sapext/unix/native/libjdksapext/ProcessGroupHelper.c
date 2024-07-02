@@ -22,13 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "jni.h"
-
-#include "com_sap_jdk_ext_process_ProcessGroupHelperImpl.h"
 
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+
+#include "com_sap_jdk_ext_process_ProcessGroupHelperImpl.h"
 
 JNIEXPORT jint JNICALL Java_com_sap_jdk_ext_process_ProcessGroupHelperImpl_killProcessGroup0
   (JNIEnv *env, jclass ignore, jlong pid_of_leader, jboolean force)
