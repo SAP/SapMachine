@@ -111,7 +111,7 @@ JNIEXPORT jint JNICALL Java_com_sap_jdk_ext_util_Console_getWidth0
 #if defined(TIOCGWINSZ)
     struct winsize w;
 
-    if (ioctl(0, TIOCGWINSZ, &w) == 0 || ioctl(1, TIOCGWINSZ, &w) == 0 || ioctl(2, TIOCGWINSZ, &w) == 0) {
+    if (ioctl(STDIN_FILENO, TIOCGWINSZ, &w) == 0 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0 || ioctl(STDERR_FILENO, TIOCGWINSZ, &w) == 0) {
         return w.ws_col;
     }
 #endif

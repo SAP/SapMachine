@@ -35,7 +35,7 @@ public final class NativeLibHelper {
      */
     private static final String LIB_BASE_NAME = "jdksapext";
 
-    private static boolean loaded;
+    private static volatile boolean loaded;
 
     private static synchronized void loadLibrary() {
         if (loaded) {
