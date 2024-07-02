@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,30 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal;
 
 /**
- * @test
- * @bug 8320362
- * @summary Verifies successful connection to external server with
- *          KEYCHAINSTORE-ROOT trust store
- * @library /test/lib
- * @requires os.family == "mac"
- * @run main/othervm/manual HttpsURLConnectionTest https://github.com KeychainStore-Root
+ * The HiddenWait class is used to exclude jdk.JavaMonitorWait events
+ * from being generated when Object.wait() is called on an object of this type.
  */
-import java.io.*;
-import java.net.*;
-import javax.net.ssl.*;
-
-public class HttpsURLConnectionTest {
-    public static void main(String[] args) {
-        System.setProperty( "javax.net.ssl.trustStoreType", args[1]);
-        try {
-            HttpsURLConnection httpsCon = (HttpsURLConnection) new URL(args[0]).openConnection();
-            if(httpsCon.getResponseCode() != 200) {
-                throw new RuntimeException("Test failed : bad http response code : "+ httpsCon.getResponseCode());
-            }
-        } catch(IOException ioe) {
-            throw new RuntimeException("Test failed: " + ioe.getMessage());
-        }
-    }
+public final class HiddenWait {
 }

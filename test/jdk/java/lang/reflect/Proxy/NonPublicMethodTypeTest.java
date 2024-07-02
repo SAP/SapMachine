@@ -21,29 +21,39 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8320362
- * @summary Verifies successful connection to external server with
- *          KEYCHAINSTORE-ROOT trust store
- * @library /test/lib
- * @requires os.family == "mac"
- * @run main/othervm/manual HttpsURLConnectionTest https://github.com KeychainStore-Root
+ * @bug 8333854
+ * @summary Test invoking a method in a proxy interface with package-private
+ *          classes or interfaces in its method type
+ * @run junit NonPublicMethodTypeTest
  */
-import java.io.*;
-import java.net.*;
-import javax.net.ssl.*;
 
-public class HttpsURLConnectionTest {
-    public static void main(String[] args) {
-        System.setProperty( "javax.net.ssl.trustStoreType", args[1]);
-        try {
-            HttpsURLConnection httpsCon = (HttpsURLConnection) new URL(args[0]).openConnection();
-            if(httpsCon.getResponseCode() != 200) {
-                throw new RuntimeException("Test failed : bad http response code : "+ httpsCon.getResponseCode());
-            }
-        } catch(IOException ioe) {
-            throw new RuntimeException("Test failed: " + ioe.getMessage());
-        }
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Proxy;
+
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+
+public final class NonPublicMethodTypeTest {
+    interface NonPublicWorker {
+        void work();
+    }
+
+    public interface PublicWorkable {
+        void accept(NonPublicWorker worker);
+    }
+
+    @Test
+    public void test() {
+        PublicWorkable proxy = (PublicWorkable) Proxy.newProxyInstance(
+               NonPublicMethodTypeTest.class.getClassLoader(),
+               new Class[] {PublicWorkable.class},
+               (_, _, _) -> null);
+        assertNotSame(NonPublicWorker.class.getPackage(),
+                proxy.getClass().getPackage(),
+                "Proxy class should not be able to access method parameter " +
+                        "NonPublic type's package");
+        proxy.accept(() -> {}); // Call should not fail
     }
 }
