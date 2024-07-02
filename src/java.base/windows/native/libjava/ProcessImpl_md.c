@@ -354,9 +354,10 @@ static jlong processCreate(
                             __declspec(align(8)) HANDLE hJob = CreateJobObject(NULL, NULL);
                             if (!hJob) {
                                 win32Error(env, L"CreateJobObject");
+                            } else {
+                                (*env)->SetLongArrayRegion(env, processGroup, 0, 1, (jlong *) &hJob);
+                                AssignProcessToJobObject(hJob, pi.hProcess);
                             }
-                            (*env)->SetLongArrayRegion(env, processGroup, 0, 1, (jlong *) &hJob);
-                            AssignProcessToJobObject(hJob, pi.hProcess);
                             ResumeThread(pi.hThread);
                         }
                         closeSafely(pi.hThread);
