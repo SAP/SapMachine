@@ -28,5 +28,5 @@ package jdk.internal.access;
 import java.io.IOException;
 
 public interface JavaLangProcessAccess {
-    public void destroyProcessGroup(Process master, boolean force) throws IOException;
+    public void destroyProcessGroup(Process leader, boolean force) throws IOException;
 }

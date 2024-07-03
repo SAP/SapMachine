@@ -68,8 +68,8 @@ final class ProcessImpl extends Process {
         SharedSecrets.setJavaLangProcessAccess(
             new JavaLangProcessAccess() {
                 @Override
-                public void destroyProcessGroup(Process p, boolean force) {
-                    ((ProcessImpl)p).terminateProcessGroup(force);
+                public void destroyProcessGroup(Process leader, boolean force) {
+                    ((ProcessImpl)leader).terminateProcessGroup(force);
                 }
             }
         );
