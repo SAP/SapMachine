@@ -1,6 +1,44 @@
 {
   "updates": {
     "23": {
+      "sapmachine-23+29": {
+        "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-23%2B29",
+        "ea": "true",
+        "assets": {
+          "jdk": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-23-ea.29_linux-x64_bin.tar.gz",
+                "checksum": "f2b6f183f968eb5dc7e8425fdb2484c37defad8e15f68d16db59d5651baf0873",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jdk-23-ea.29_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-23-ea.29_linux-x64-musl_bin.tar.gz",
+                "checksum": "7783ed256bd009956d9dbed3cf5e05a35346e1073193d9511ed7a51762d21f71",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jdk-23-ea.29_linux-x64-musl_bin.tar.gz"
+              }
+            }
+          },
+          "jre": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-23-ea.29_linux-x64_bin.tar.gz",
+                "checksum": "879c6efd7a2a28db86ee8020e003ec5ffc47b56aeded0a10372aafdd5ad5a4ff",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jre-23-ea.29_linux-x64_bin.tar.gz"
+              }
+            },
+            "linux-x64-musl": {
+              "tar.gz": {
+                "name": "sapmachine-jre-23-ea.29_linux-x64-musl_bin.tar.gz",
+                "checksum": "65220903045df4bf77723e25613bf763de681f4d61f6ceafc432e2829ed4e879",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jre-23-ea.29_linux-x64-musl_bin.tar.gz"
+              }
+            }
+          }
+        }
+      },
       "sapmachine-23+28": {
         "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-23%2B28",
         "ea": "true",
