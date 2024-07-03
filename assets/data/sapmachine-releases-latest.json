@@ -123,6 +123,10 @@
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jdk-23-ea.29_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 7783ed256bd009956d9dbed3cf5e05a35346e1073193d9511ed7a51762d21f71"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jdk-23-ea.29_windows-x64_bin.zip",
+            "checksum": "sha256 8084b7b27e1771c4a3a56746023c9eb5927331afed6e7426973c49a600b38b6e"
           }
         },
         "jre": {
@@ -141,6 +145,10 @@
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jre-23-ea.29_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 65220903045df4bf77723e25613bf763de681f4d61f6ceafc432e2829ed4e879"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B29/sapmachine-jre-23-ea.29_windows-x64_bin.zip",
+            "checksum": "sha256 c95880e035bdc1e5c1db1bd85e14c0bbeff75698e304a5066d2b25cd81caae2c"
           }
         }
       },
@@ -166,10 +174,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jdk-23-ea.28_macos-x64_bin.tar.gz",
             "checksum": "sha256 d2907dbc103b0f9ad9b788fd31f88b49d40d8cfa82f781d845d9ec8d972d6ec8"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jdk-23-ea.28_windows-x64_bin.zip",
-            "checksum": "sha256 232a571b3478ce6ed0d76f37479ef7477b7620b4b27f252a59744e68db29a0fd"
           }
         },
         "jre": {
@@ -192,10 +196,6 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jre-23-ea.28_macos-x64_bin.tar.gz",
             "checksum": "sha256 0e361efe0b4d04dae8332b391fd53dab027cb044709d46eca8cdb733d07938eb"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B28/sapmachine-jre-23-ea.28_windows-x64_bin.zip",
-            "checksum": "sha256 7cbd8793c2404cf1c48628c5c3e5127f569c3ffb7bf6bcbba012628de2faa85f"
           }
         }
       }
