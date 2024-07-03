@@ -53,6 +53,13 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_macos-x64_bin.dmg",
                 "checksum": "d496fcd120c65f1ab277d565435d8ff7cabcd743e35c7a8cab43068e3ac95cf3"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-24-ea.4_windows-x64_bin.zip",
+                "checksum": "68debcf364f51f1a664596e16d2d5a48d93d5f294ef79aa7be6fed89a29b5d15",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
@@ -101,6 +108,13 @@
                 "name": "sapmachine-jre-24-ea.4_macos-x64_bin.dmg",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_macos-x64_bin.dmg",
                 "checksum": "9cd9e12956f1c13c5cee246236f2eb1db6f7c8baa93f33f5c8b88653dbc6094f"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-24-ea.4_windows-x64_bin.zip",
+                "checksum": "237d091a0b6a5cb1506c51ad53081a0f0a17fc6a34e6b66fb76b36849a295eee",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_windows-x64_bin.zip"
               }
             }
           }
