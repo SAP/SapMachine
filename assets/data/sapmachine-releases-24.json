@@ -14,6 +14,13 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_aix-ppc64_bin.tar.gz"
               }
             },
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-24-ea.4_linux-aarch64_bin.tar.gz",
+                "checksum": "66341a0e3926954de16f66047b07571db5eef4df588c9c110ab112f099fdb53b",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-24-ea.4_linux-ppc64le_bin.tar.gz",
@@ -34,6 +41,13 @@
                 "checksum": "5009bd723e6a69ff63c1210e38f8ba3d539ac6e38a361931844e8aaba9888a34",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_linux-x64-musl_bin.tar.gz"
               }
+            },
+            "macos-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-24-ea.4_macos-x64_bin.tar.gz",
+                "checksum": "3ac1d0df8516cf93072c7ab60782ea7dfbdc8d0670b60f64752210f2546d4d3d",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_macos-x64_bin.tar.gz"
+              }
             }
           },
           "jre": {
@@ -42,6 +56,13 @@
                 "name": "sapmachine-jre-24-ea.4_aix-ppc64_bin.tar.gz",
                 "checksum": "b9721ddc86bef10beeadb79968e76fa635180eed6b64b40c1f9209dafd0c1a48",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_aix-ppc64_bin.tar.gz"
+              }
+            },
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-24-ea.4_linux-aarch64_bin.tar.gz",
+                "checksum": "987a2dbad87b317f8b2c51bee620e6f9f3f56483c22e4890884defbe391c3702",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_linux-aarch64_bin.tar.gz"
               }
             },
             "linux-ppc64le": {
@@ -63,6 +84,13 @@
                 "name": "sapmachine-jre-24-ea.4_linux-x64-musl_bin.tar.gz",
                 "checksum": "6002dd6b8ac9bb63fcc4de4ab46fb082d6fe9e48093587e2b616a90d33816364",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_linux-x64-musl_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-24-ea.4_macos-x64_bin.tar.gz",
+                "checksum": "46baa2279a2d953c6f2216cf1c2080514ce94487730df53386a65098e677486f",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_macos-x64_bin.tar.gz"
               }
             }
           }
