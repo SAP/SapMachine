@@ -502,7 +502,7 @@ Java_java_lang_ProcessImpl_closeHandle(JNIEnv *env, jclass ignored, jlong handle
 JNIEXPORT void JNICALL
 Java_java_lang_ProcessImpl_terminateProcessGroup(JNIEnv *env, jclass ignored, jlong hJob)
 {
-    if (TerminateJobObject((HANDLE) hJob, 1) == 0){
+    if (TerminateJobObject((HANDLE) hJob, 1) == 0) {
         win32Error(env, L"TerminateJobObject");
     }
 }
