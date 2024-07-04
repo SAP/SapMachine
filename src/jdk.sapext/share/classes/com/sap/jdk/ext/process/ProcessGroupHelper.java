@@ -26,20 +26,26 @@ package com.sap.jdk.ext.process;
 
 import java.io.IOException;
 
+import jdk.internal.access.JavaLangProcessAccess;
+import jdk.internal.access.JavaLangProcessBuilderAccess;
+import jdk.internal.access.SharedSecrets;
+
 /**
  * ProcessGroupHelper provides the possibility to create and terminate process groups.
  */
 public final class ProcessGroupHelper {
 
+    private static JavaLangProcessAccess jlpa = SharedSecrets.getJavaLangProcessAccess();
+    private static JavaLangProcessBuilderAccess jlpba = SharedSecrets.getJavaLangProcessBuilderAccess();
+
     /**
-     * With this API a ProcessBuilder instance can be configured to create a new (Unix) process group upon spawning the process.
-     * For Windows, a call to this method is void.
+     * With this API a ProcessBuilder instance can be configured to create a new process group upon spawning the process.
      *
      * @param pb The ProcessBuilder that shall be configured.
      * @param value true if a new process group shall be created, false otherwise.
      */
     public static final void createNewProcessGroupOnSpawn(ProcessBuilder pb, boolean value) {
-        ProcessGroupHelperImpl.createNewProcessGroupOnSpawn(pb, value);
+        jlpba.createNewProcessGroupOnSpawn(pb, value);
     }
 
     /**
@@ -51,10 +57,8 @@ public final class ProcessGroupHelper {
      * @throws IOException Process not alive or not a process group leader (safemode = true); Operation failed.
      * @throws UnsupportedOperationException Operation not supported on this platform
      */
-    public static final void terminateProcessGroupForLeader(Process p, boolean force)
-        throws IOException, UnsupportedOperationException
-    {
-        ProcessGroupHelperImpl.terminateProcessGroupForLeader(p, force);
+    public static final void terminateProcessGroupForLeader(Process p, boolean force) throws IOException {
+        jlpa.destroyProcessGroup(p, force);
     }
 
     private ProcessGroupHelper() {
