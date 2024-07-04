@@ -25,16 +25,29 @@
 package com.sap.jdk.ext.util;
 
 import java.lang.annotation.Native;
-
-import com.sap.jdk.ext.NativeLibHelper;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * This class provides methods for console handling.
  */
+@SuppressWarnings("removal")
 public final class Console {
 
+    /**
+     * The base name of the jdk extensions library.
+     */
+    private static final String LIB_BASE_NAME = "jdksapext";
+
     static {
-        NativeLibHelper.load();
+        if (System.getSecurityManager() == null) {
+            System.loadLibrary(LIB_BASE_NAME);
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                System.loadLibrary(LIB_BASE_NAME);
+                return null;
+            });
+        }
     }
 
     /**

@@ -22,43 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sap.jdk.ext;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+package jdk.internal.access;
 
-@SuppressWarnings("removal")
-public final class NativeLibHelper {
+import java.io.IOException;
 
-    /**
-     * The base name of the jdk extensions library.
-     */
-    private static final String LIB_BASE_NAME = "jdksapext";
-
-    private static volatile boolean loaded;
-
-    private static synchronized void loadLibrary() {
-        if (loaded) {
-            return;
-        }
-
-        if (System.getSecurityManager() == null) {
-            System.loadLibrary(LIB_BASE_NAME);
-        } else {
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                System.loadLibrary(LIB_BASE_NAME);
-                return null;
-            });
-        }
-    }
-
-    public static void load() {
-        if (loaded == false) {
-            loadLibrary();
-        }
-    }
-
-    private NativeLibHelper() {
-        // don't instantiate
-    }
+public interface JavaLangProcessAccess {
+    public void destroyProcessGroup(Process leader, boolean force) throws IOException;
 }
