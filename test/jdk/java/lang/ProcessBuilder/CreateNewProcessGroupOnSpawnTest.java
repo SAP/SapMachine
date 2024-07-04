@@ -23,13 +23,14 @@
 
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.Platform;
+
 import com.sap.jdk.ext.process.ProcessGroupHelper;
 
 /**
  * @test
  * @summary Tests the SapMachine feature to use process groups via ProcessBuilder.
  *          Test that the process group id of the sub process is different from the parent process group id.
- * @requires (os.family != "windows")
  * @library /test/lib
  * @run main CreateNewProcessGroupOnSpawnTest
  */
@@ -40,14 +41,25 @@ public class CreateNewProcessGroupOnSpawnTest {
 
     public static void main(String[] args) throws Throwable {
 
-        System.loadLibrary("CreateNewProcessGroupOnSpawnTest");
+        if (!Platform.isWindows()) {
+            System.loadLibrary("CreateNewProcessGroupOnSpawnTest");
+        }
 
         // Retrieve my process group id
         long mypid = ProcessHandle.current().pid();
-        long mypgid = getpgid0(mypid);
-        System.out.println("My pid: " + mypgid + " my pgid: " + mypgid);
-        if (mypid <= 0 || mypgid <= 0) {
-            throw new RuntimeException("Unexpected value for own processid");
+        long mypgid = -1;
+
+        if (Platform.isWindows()) {
+            System.out.println("My pid: " + mypid);
+            if (mypid <= 0) {
+                throw new RuntimeException("Unexpected value for own processid");
+            }
+        } else {
+            mypgid = getpgid0(mypid);
+            System.out.println("My pid: " + mypid + " my pgid: " + mypgid);
+            if (mypid <= 0 || mypgid <= 0) {
+                throw new RuntimeException("Unexpected value for own processid");
+            }
         }
 
         ProcessBuilder pb = new ProcessBuilder("sleep", "120");
@@ -57,16 +69,23 @@ public class CreateNewProcessGroupOnSpawnTest {
             // Retrieve process group id
             System.out.println("Child started: " + p.toHandle());
             long childpid = p.toHandle().pid();
-            long childpgid = getpgid0(childpid);
-            System.out.println("Child pid: " + childpid + " child pgid: " + childpgid);
-            if (childpgid <= 0 || childpid <= 0) {
-                throw new RuntimeException("Unexpected value for child processid");
-            }
-            System.out.println("We expect child to be in our process group.");
-            if (childpgid == mypgid) {
-                System.out.println("Ok: Child created in my process group as expected.");
+            if (Platform.isWindows()) {
+                System.out.println("Child pid: " + childpid);
+                if (childpid <= 0) {
+                    throw new RuntimeException("Unexpected value for child processid");
+                }
             } else {
-                throw new RuntimeException("Error: child not in my process group.");
+                long childpgid = getpgid0(childpid);
+                System.out.println("Child pid: " + childpid + " child pgid: " + childpgid);
+                if (childpid <= 0 || childpgid <= 0) {
+                    throw new RuntimeException("Unexpected value for child processid");
+                }
+                System.out.println("We expect child to be in our process group.");
+                if (childpgid == mypgid) {
+                    System.out.println("Ok: Child created in my process group as expected.");
+                } else {
+                    throw new RuntimeException("Error: child not in my process group.");
+                }
             }
         } finally {
             // clean up
@@ -82,16 +101,23 @@ public class CreateNewProcessGroupOnSpawnTest {
             // Retrieve process group id
             System.out.println("Child started: " + p.toHandle());
             long childpid = p.toHandle().pid();
-            long childpgid = getpgid0(childpid);
-            System.out.println("Child pid: " + childpid + " child pgid: " + childpgid);
-            if (childpgid <= 0 || childpid <= 0) {
-                throw new RuntimeException("Unexpected value for child processid");
-            }
-            System.out.println("We expect child to be pg leader.");
-            if (childpgid == childpid) {
-                System.out.println("Ok: Child created in its own process group.");
+            if (Platform.isWindows()) {
+                System.out.println("Child pid: " + childpid);
+                if (childpid <= 0) {
+                    throw new RuntimeException("Unexpected value for child processid");
+                }
             } else {
-                throw new RuntimeException("Error: child not in its own process group.");
+                long childpgid = getpgid0(childpid);
+                System.out.println("Child pid: " + childpid + " child pgid: " + childpgid);
+                if (childpid <= 0 || childpgid <= 0) {
+                    throw new RuntimeException("Unexpected value for child processid");
+                }
+                System.out.println("We expect child to be pg leader.");
+                if (childpgid == childpid) {
+                    System.out.println("Ok: Child created in its own process group.");
+                } else {
+                    throw new RuntimeException("Error: child not in its own process group.");
+                }
             }
             ProcessGroupHelper.terminateProcessGroupForLeader(p, false);
             p.waitFor(1, TimeUnit.SECONDS);

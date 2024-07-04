@@ -47,6 +47,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+//SapMachine 2024-07-01: process group extension
+import jdk.internal.access.JavaLangProcessAccess;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
@@ -571,8 +573,27 @@ final class ProcessImpl extends Process {
 
     private static native void init();
 
+    // SapMachine 2024-07-01: process group extension
+    private static native int terminateProcessGroup(long pid, boolean force);
+
+    private void terminateProcessGroup(boolean force) throws IOException {
+        int rc = terminateProcessGroup(pid, force);
+        if (rc != 0) {
+            throw new IOException("Failed to kill process group (errno = " + rc + ")");
+        }
+    }
+
     static {
         init();
+        // SapMachine 2024-07-01: process group extension
+        SharedSecrets.setJavaLangProcessAccess(
+            new JavaLangProcessAccess() {
+                @Override
+                public void destroyProcessGroup(Process leader, boolean force) throws IOException {
+                    ((ProcessImpl)leader).terminateProcessGroup(force);
+                }
+            }
+        );
     }
 
     /**
