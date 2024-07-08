@@ -22,7 +22,7 @@
  *
  */
 
-#if defined(LINUX) || defined(__APPLE__)
+#if defined(_LP64) && (defined(LINUX) || defined(__APPLE__))
 
 #include "precompiled.hpp"
 

@@ -145,7 +145,7 @@
 #include "vitals_linux_himemreport.hpp"
 #endif
 // SapMachine 2024-04-09: malloc statistic
-#if defined(LINUX) || defined(__APPLE__)
+#if defined(_LP64) && (defined(LINUX) || defined(__APPLE__))
 #include "malloctrace/mallocTracePosix.hpp"
 #endif
 
@@ -3865,7 +3865,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JFR_ONLY(Jfr::on_create_vm_1();)
 
   // SapMachine 2024-04-18: Initialize malloc statistic
-#if defined(LINUX) || defined(__APPLE__)
+#if defined(_LP64) && (defined(LINUX) || defined(__APPLE__))
   sap::MallocStatistic::initialize();
 #else
   if (MallocTraceAtStartup || UseMallocHooks) {

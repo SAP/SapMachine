@@ -28,7 +28,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if defined(LINUX) || defined(__APPLE__) && defined(_LP64)
+#if defined(_LP64) && (defined(LINUX) || defined(__APPLE__))
 
 #define MALLOC_TRACE_AVAILABLE 1
 
