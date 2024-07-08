@@ -347,7 +347,7 @@
   </event>
 
   <event name="jdk.MetaspaceChunkFreeListSummary">
-    <setting name="enabled">true</setting>
+    <setting name="enabled">false</setting>
   </event>
 
   <event name="jdk.GarbageCollection">
@@ -492,7 +492,7 @@
   </event>
 
   <event name="jdk.ShenandoahHeapRegionInformation">
-    <setting name="enabled">true</setting>
+    <setting name="enabled">false</setting>
     <setting name="period">everyChunk</setting>
   </event>
 
@@ -785,35 +785,35 @@
   </event>
 
   <event name="jdk.ZPageAllocation">
-    <setting name="enabled">true</setting>
+    <setting name="enabled">false</setting>
     <setting name="stackTrace">false</setting>
     <setting name="threshold">1 ms</setting>
   </event>
 
-  <event name="jdk.ZRelocationSet">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-  </event>
+    <event name="jdk.ZRelocationSet">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
 
-  <event name="jdk.ZRelocationSetGroup">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-  </event>
+    <event name="jdk.ZRelocationSetGroup">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
 
-  <event name="jdk.ZStatisticsCounter">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-  </event>
+    <event name="jdk.ZStatisticsCounter">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
 
-  <event name="jdk.ZStatisticsSampler">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-  </event>
+    <event name="jdk.ZStatisticsSampler">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
 
-  <event name="jdk.ZThreadPhase">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-  </event>
+    <event name="jdk.ZThreadPhase">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
 
   <event name="jdk.ZUncommit">
     <setting name="enabled">true</setting>
