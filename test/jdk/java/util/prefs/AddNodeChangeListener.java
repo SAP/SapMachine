@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
  /* @test
   * @bug  7160252 7197662
+  * @key intermittent
   * @summary Checks if events are delivered to a listener
   *          when a child node is added or removed
   * @run main/othervm -Djava.util.prefs.userRoot=. AddNodeChangeListener
@@ -30,47 +31,93 @@
 
 import java.util.prefs.*;
 
- public class AddNodeChangeListener {
+public class AddNodeChangeListener {
 
-     private static boolean failed = false;
-     private static Preferences userRoot, N2;
-     private static NodeChangeListenerAdd ncla;
+    private static final int SLEEP_ITRS = 10;
+    private static final String N2_STR = "N2";
+    private static boolean failed = false;
+    private static Preferences userRoot, N2;
+    private static NodeChangeListenerAdd ncla;
 
-     public static void main(String[] args)
-         throws BackingStoreException, InterruptedException
-     {
-        userRoot = Preferences.userRoot();
-        ncla = new NodeChangeListenerAdd();
-        userRoot.addNodeChangeListener(ncla);
-        //Should initiate a node added event
-        addNode();
-        // Should not initiate a node added event
-        addNode();
-        //Should initate a child removed event
-        removeNode();
+    public static void main(String[] args)
+             throws BackingStoreException, InterruptedException {
+        try {
+            userRoot = Preferences.userRoot();
+            // Make sure test node is not present before test
+            clearPrefs();
 
-        if (failed)
-            throw new RuntimeException("Failed");
+            ncla = new NodeChangeListenerAdd();
+            userRoot.addNodeChangeListener(ncla);
+            //Should initiate a node added event
+            addNode();
+            // Should not initiate a node added event
+            addNode();
+            //Should initate a child removed event
+            removeNode();
+
+            if (failed) {
+                throw new RuntimeException("Failed");
+            }
+        } finally {
+            // Make sure test node is not present after the test
+            clearPrefs();
+        }
     }
 
     private static void addNode()
-        throws BackingStoreException, InterruptedException
-    {
-        N2 = userRoot.node("N2");
+            throws BackingStoreException, InterruptedException {
+        N2 = userRoot.node(N2_STR);
         userRoot.flush();
-        Thread.sleep(3000);
-        if (ncla.getAddNumber() != 1)
-            failed = true;
+        checkAndSleep(1, "addNode");
     }
 
     private static void removeNode()
-        throws BackingStoreException, InterruptedException
-    {
+            throws BackingStoreException, InterruptedException {
         N2.removeNode();
         userRoot.flush();
-        Thread.sleep(3000);
-        if (ncla.getAddNumber() != 0)
+        checkAndSleep(0, "removeNode");
+    }
+
+    /* Check for the expected value in the listener (1 after addNode(), 0 after removeNode()).
+     * Sleep a few extra times in a loop, if needed, for debugging purposes, to
+     * see if the event gets delivered late.
+     */
+    private static void checkAndSleep(int expectedListenerVal, String methodName) throws InterruptedException {
+        int expectedItr = -1; // iteration in which the expected value was retrieved from the listener, or -1 if never
+        for (int i = 0; i < SLEEP_ITRS; i++) {
+            System.out.print(methodName + " sleep iteration " + i + "...");
+            Thread.sleep(3000);
+            System.out.println("done.");
+            if (ncla.getAddNumber() == expectedListenerVal) {
+                expectedItr = i;
+                break;
+            }
+        }
+
+        if (expectedItr == 0) {
+            System.out.println(methodName + " test passed");
+        } else {
             failed = true;
+            if (expectedItr == -1) {
+                System.out.println("Failed in " + methodName + " - change listener never notified");
+            } else {
+                System.out.println("Failed in " + methodName + " - listener notified on iteration " + expectedItr);
+            }
+        }
+    }
+
+    /* Check if the node already exists in userRoot, and remove it if so. */
+    private static void clearPrefs() throws BackingStoreException {
+        if (userRoot.nodeExists(N2_STR)) {
+            System.out.println("Node " + N2_STR + " already/still exists; clearing");
+            Preferences clearNode = userRoot.node(N2_STR);
+            userRoot.flush();
+            clearNode.removeNode();
+            userRoot.flush();
+            if (userRoot.nodeExists(N2_STR)) {
+                throw new RuntimeException("Unable to clear pre-existing node." + (failed ? " Also, the test failed" : ""));
+            }
+        }
     }
 
     private static class NodeChangeListenerAdd implements NodeChangeListener {
@@ -90,4 +137,4 @@ import java.util.prefs.*;
             return totalNode;
         }
     }
- }
+}
