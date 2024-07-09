@@ -86,7 +86,8 @@
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_macos-x64_bin.tar.gz"
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_macos-x64_bin.tar.gz",
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_windows-x64_bin.zip"
           },
           "jre": {
             "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_aix-ppc64_bin.tar.gz",
@@ -96,18 +97,17 @@
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_macos-x64_bin.tar.gz"
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_macos-x64_bin.tar.gz",
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_windows-x64_bin.zip"
           }
         },
         {
           "tag": "sapmachine-24+4",
           "jdk": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_linux-aarch64_bin.tar.gz",
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_windows-x64_bin.zip"
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jdk-24-ea.4_linux-aarch64_bin.tar.gz"
           },
           "jre": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_linux-aarch64_bin.tar.gz",
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_windows-x64_bin.zip"
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B4/sapmachine-jre-24-ea.4_linux-aarch64_bin.tar.gz"
           }
         }
       ],
@@ -122,7 +122,8 @@
             "macos-aarch64-installer": "sha256 1ff223e1657f95c37909ee5c38f6de44cd7e35e9c83e5ba9872670acdc553d55",
             "macos-aarch64": "sha256 f82835a21f24cbe593257155c87901222aabe827c6e8481a041bd72956acf9bb",
             "macos-x64-installer": "sha256 c7d4e23aae51485aa27fa6859acad07266c904f462000ac80cd2784df7a256cf",
-            "macos-x64": "sha256 a04375fb32edbd68deb288371fdc5048f003a54de41e9b8c6d09b8195231c031"
+            "macos-x64": "sha256 a04375fb32edbd68deb288371fdc5048f003a54de41e9b8c6d09b8195231c031",
+            "windows-x64": "sha256 e5b7b7afabf797073361e025c6fc20aad3b36394cdce35b77d3e47dbc4932c5d"
           },
           "jre": {
             "aix-ppc64": "sha256 681784d5b741951a01c255c1f1aa40fe358b55bf0c2ac4e1fd331adb810a5dd0",
@@ -132,18 +133,17 @@
             "macos-aarch64-installer": "sha256 a71782e8f9e5d5dcabff3af8eac03f3cb439375d06e1d32693776e1bf48f42f8",
             "macos-aarch64": "sha256 d87c431b58bef02b3054213ee153ba4479bc1fe2e6343073ebb8fed149f79058",
             "macos-x64-installer": "sha256 460a590aac2957d3c1a150fc34cbdad06d559444b6a6f2505e0f37b7eb3cdfaf",
-            "macos-x64": "sha256 884b9df2e4d2f1d1214d78471394c9b7f4bd864cb29293c569ca298e7f84d37d"
+            "macos-x64": "sha256 884b9df2e4d2f1d1214d78471394c9b7f4bd864cb29293c569ca298e7f84d37d",
+            "windows-x64": "sha256 b74dc32db6dc21246e995f519574d598be7754ac5a47bc55aa3a905668cbbe77"
           }
         },
         {
           "tag": "sapmachine-24+4",
           "jdk": {
-            "linux-aarch64": "sha256 66341a0e3926954de16f66047b07571db5eef4df588c9c110ab112f099fdb53b",
-            "windows-x64": "sha256 68debcf364f51f1a664596e16d2d5a48d93d5f294ef79aa7be6fed89a29b5d15"
+            "linux-aarch64": "sha256 66341a0e3926954de16f66047b07571db5eef4df588c9c110ab112f099fdb53b"
           },
           "jre": {
-            "linux-aarch64": "sha256 987a2dbad87b317f8b2c51bee620e6f9f3f56483c22e4890884defbe391c3702",
-            "windows-x64": "sha256 237d091a0b6a5cb1506c51ad53081a0f0a17fc6a34e6b66fb76b36849a295eee"
+            "linux-aarch64": "sha256 987a2dbad87b317f8b2c51bee620e6f9f3f56483c22e4890884defbe391c3702"
           }
         }
       ]
