@@ -35,6 +35,18 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_linux-x64-musl_bin.tar.gz"
               }
             },
+            "macos-aarch64": {
+              "dmg": {
+                "name": "sapmachine-jdk-24-ea.5_macos-aarch64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_macos-aarch64_bin.dmg",
+                "checksum": "1ff223e1657f95c37909ee5c38f6de44cd7e35e9c83e5ba9872670acdc553d55"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-24-ea.5_macos-aarch64_bin.tar.gz",
+                "checksum": "f82835a21f24cbe593257155c87901222aabe827c6e8481a041bd72956acf9bb",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_macos-aarch64_bin.tar.gz"
+              }
+            },
             "macos-x64": {
               "dmg": {
                 "name": "sapmachine-jdk-24-ea.5_macos-x64_bin.dmg",
@@ -75,6 +87,18 @@
                 "name": "sapmachine-jre-24-ea.5_linux-x64-musl_bin.tar.gz",
                 "checksum": "2044487d16da64113f7911699b514ec277daa41c0b9fd7cc3d23054afbdc87fd",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_linux-x64-musl_bin.tar.gz"
+              }
+            },
+            "macos-aarch64": {
+              "dmg": {
+                "name": "sapmachine-jre-24-ea.5_macos-aarch64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_macos-aarch64_bin.dmg",
+                "checksum": "a71782e8f9e5d5dcabff3af8eac03f3cb439375d06e1d32693776e1bf48f42f8"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-24-ea.5_macos-aarch64_bin.tar.gz",
+                "checksum": "d87c431b58bef02b3054213ee153ba4479bc1fe2e6343073ebb8fed149f79058",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_macos-aarch64_bin.tar.gz"
               }
             },
             "macos-x64": {
