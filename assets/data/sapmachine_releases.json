@@ -447,6 +447,7 @@
         {
           "tag": "sapmachine-17.0.12+6",
           "jdk": {
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jdk-17.0.12-ea.6_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jdk-17.0.12-ea.6_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jdk-17.0.12-ea.6_linux-x64_bin.tar.gz",
             "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jdk-17.0.12-ea.6_linux-x64-musl_bin.tar.gz",
@@ -457,6 +458,7 @@
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jdk-17.0.12-ea.6_windows-x64_bin.zip"
           },
           "jre": {
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jre-17.0.12-ea.6_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jre-17.0.12-ea.6_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jre-17.0.12-ea.6_linux-x64_bin.tar.gz",
             "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jre-17.0.12-ea.6_linux-x64-musl_bin.tar.gz",
@@ -465,15 +467,6 @@
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jre-17.0.12-ea.6_macos-x64_bin.dmg",
             "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jre-17.0.12-ea.6_macos-x64_bin.tar.gz",
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B6/sapmachine-jre-17.0.12-ea.6_windows-x64_bin.zip"
-          }
-        },
-        {
-          "tag": "sapmachine-17.0.12+5",
-          "jdk": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B5/sapmachine-jdk-17.0.12-ea.5_linux-aarch64_bin.tar.gz"
-          },
-          "jre": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12%2B5/sapmachine-jre-17.0.12-ea.5_linux-aarch64_bin.tar.gz"
           }
         },
         {
@@ -499,6 +492,7 @@
         {
           "tag": "sapmachine-17.0.12+6",
           "jdk": {
+            "linux-aarch64": "sha256 fef0beaf8b8ea678baf8fdde9c2115cc6914a45b6e9ea76b144aaaf2d4214680",
             "linux-ppc64le": "sha256 e897d1fdf4ab95ca0aed72e604c7f616a4a807fcea4c05092ae6a12452a27b8d",
             "linux-x64": "sha256 e0924a8368040bec4ea1e47f5f0cf834f6369f06af4a1a8adbc1d1c1557c7b8b",
             "linux-x64-musl": "sha256 83a7231e6e6328644124fb033a1bcff176266d100372aaa5cff1ea2e13db0f99",
@@ -509,6 +503,7 @@
             "windows-x64": "sha256 0ca22ee60bf24e84e5290f81ab79556c36a5b1012a52a8377a4f9e988b13d51d"
           },
           "jre": {
+            "linux-aarch64": "sha256 5fc0800473b8ee630270622923a710f28faf075f6ccee30514caa96ce3265d60",
             "linux-ppc64le": "sha256 bcfa9b6b63c81785f4fc9501a3921c6f7f1bd6e36b5abe711beca940a1d39646",
             "linux-x64": "sha256 a08f1983188308810deb3a7fd1bb67925416856a91eaf42f2525cecdfc921fa8",
             "linux-x64-musl": "sha256 dacaf17a91ed6903ff874c77eb0806b71e53cd1ee39a3d2a9e46f3c5f4248870",
@@ -517,15 +512,6 @@
             "macos-x64-installer": "sha256 e2c8fdd671b1fca69977b7039fd04ca271b712257e6292a3bdadf2ef76548a05",
             "macos-x64": "sha256 bd8ceffd9ba92668a2a15774c6b126d44b7f233cd6cd685b87a42aabafea13b2",
             "windows-x64": "sha256 c4aba54981b4a2acc4c3c8e16e12a95c511322802c23f88e5f4282c55205d14e"
-          }
-        },
-        {
-          "tag": "sapmachine-17.0.12+5",
-          "jdk": {
-            "linux-aarch64": "sha256 aa2eff3d196bb7abfab5f3f1b72091102ec307a6d69975849a3ab7303b09d92a"
-          },
-          "jre": {
-            "linux-aarch64": "sha256 dd8de03a0de94f1bd59abe535441fa4718560462de29cd5d10dc7f4dda540183"
           }
         },
         {
