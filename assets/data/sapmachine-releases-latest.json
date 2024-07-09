@@ -414,6 +414,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jdk-21.0.4-ea.6_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 278881fce0e0d7e56e178712c8d77e76842f3b174fa46e54cccae9c814fd33e3"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jdk-21.0.4-ea.6_macos-aarch64_bin.dmg",
+            "checksum": "sha256 6d7d5319dfb5e43c4d8417c059eaee407ffc952645f4018a4ab427da7d979f03"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jdk-21.0.4-ea.6_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 0c41a4b1cafe89fedbf792d728925e6f40797e48210117c8f5751697c682f79c"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jdk-21.0.4-ea.6_macos-x64_bin.dmg",
             "checksum": "sha256 2b5a9b2f2c9e0f2bf1637833fbe9164794f9618b52fb82b0072703770b3a3836"
@@ -444,6 +452,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jre-21.0.4-ea.6_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 5a6fa8cb0de38bbbbd5ce0f50f2eb3d1d272fa714d17bf5de479e954fababa7d"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jre-21.0.4-ea.6_macos-aarch64_bin.dmg",
+            "checksum": "sha256 5615b7e5dc0b4b99a8883be7dfd53a736841ac842ca870603112b33c3f63ed49"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jre-21.0.4-ea.6_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 731348b95fc1dd6e3a5f0b83e6c5298e1cf7f4b29a15808231cf66a1b66398d5"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B6/sapmachine-jre-21.0.4-ea.6_macos-x64_bin.dmg",
             "checksum": "sha256 8cc52cdd90f61bfbb6bd5855b3ae9e19a17a7f07ba3351fe232657e81d99167f"
@@ -464,28 +480,12 @@
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B5/sapmachine-jdk-21.0.4-ea.5_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 5cb8f257f68d9978c9e48f18e0895432e653b30846058b7de697bcc878bfe657"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B5/sapmachine-jdk-21.0.4-ea.5_macos-aarch64_bin.dmg",
-            "checksum": "sha256 bb7b3aab1f5f8a4842ecc19a480b37462ebc1c7e5a860301f299969163fa7787"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B5/sapmachine-jdk-21.0.4-ea.5_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 f2c09548acb5a69eceb43ff4b018446b6b12db238b746d2feff44ce0855c399b"
           }
         },
         "jre": {
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B5/sapmachine-jre-21.0.4-ea.5_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 6ab763f98a27045a12f359d9f5186470eceb11ea2b30d93b9366c201fb8c5b53"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B5/sapmachine-jre-21.0.4-ea.5_macos-aarch64_bin.dmg",
-            "checksum": "sha256 074e9a677e93cae98bc11ac1fd31a74aaf537f602b54c3df2512ebd985e6db43"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4%2B5/sapmachine-jre-21.0.4-ea.5_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 90704f1df1e5f412e1ff0a69ec5b714ee6041d2c8fc337d91b105e2f5e58e2c0"
           }
         }
       }
