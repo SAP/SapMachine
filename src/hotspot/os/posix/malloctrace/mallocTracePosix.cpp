@@ -1914,6 +1914,7 @@ bool MallocStatisticImpl::dump_entry(outputStream* st, StatEntryCopy* entry, int
   // Use a temp buffer since the output stream might use unbuffered I/O.
   char ss_tmp[4096];
   stringStream ss(ss_tmp, sizeof(ss_tmp));
+  ss.time_stamp().update(); // We can trigger code which expects the time stamp to be valid.
 
   // Check if we should print this stack.
   if (is_non_empty_string(filter)) {
