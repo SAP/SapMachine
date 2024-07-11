@@ -1160,7 +1160,7 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
 void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address) {
   void* result = real_malloc_funcs->aligned_alloc(align, size);
   uint64_t hash = ptr_hash(result);
-#if !defined(__APPLE__)
+#if !(defined(__APPLE__) || (defined(__GLIBC__) && !defined(_ISOC11_SOURCE)))
   address real_func = (address) aligned_alloc;
 #else
   address real_func = (address) aligned_alloc_hook;

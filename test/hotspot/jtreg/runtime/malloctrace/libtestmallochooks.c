@@ -125,7 +125,7 @@ static void do_alloc_with_stack_impl(int size, int type) {
             mem = memalign(128, size);
             break;
 #endif
-#if !defined(__APPLE__)
+#if !(defined(__APPLE__) || (defined(__GLIBC__) && !defined(_ISOC11_SOURCE)))
         case 5:
             mem = aligned_alloc(128, size);
             break;
@@ -213,7 +213,7 @@ Java_MallocHooksTest_doRandomMemOps(JNIEnv *env, jclass cls, jint nrOfOps, jint 
                 TRACK(MEMALIGN, roots[idx] == NULL ? 0 : funcs->malloc_size(roots[idx]));
 #endif
             } else if (what < 28) {
-#if !defined(__APPLE__)
+#if !(defined(__APPLE__) || (defined(__GLIBC__) && !defined(_ISOC11_SOURCE)))
                 roots[idx] = aligned_alloc(64, malloc_size + 1);
                 TRACK(ALIGNED_ALLOC, roots[idx] == NULL ? 0 : funcs->malloc_size(roots[idx]));
 #endif
