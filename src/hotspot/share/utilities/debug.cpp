@@ -283,7 +283,7 @@ void report_vm_out_of_memory(const char* file, int line, size_t size,
   if (Debugging) return;
 
   // SapMachine 2024-04-18: Check if we should to an emergency dump for the malloc trace.
-#if defined(_LP64) && (defined(LINUX) || defined(__APPLE__))
+#if defined(MALLOC_TRACE_AVAILABLE)
   if ((vm_err_type == OOM_MALLOC_ERROR) || (vm_err_type == OOM_MMAP_ERROR)) {
     sap::MallocStatistic::emergencyDump();
   }
