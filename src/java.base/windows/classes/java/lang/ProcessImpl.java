@@ -45,8 +45,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
-//SapMachine 2024-07-01: process group extension
-import jdk.internal.access.JavaLangProcessAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import sun.security.action.GetPropertyAction;
@@ -61,18 +59,6 @@ import sun.security.action.GetPropertyAction;
 final class ProcessImpl extends Process {
     private static final JavaIOFileDescriptorAccess fdAccess
         = SharedSecrets.getJavaIOFileDescriptorAccess();
-
-    // SapMachine 2024-07-01: process group extension
-    static {
-        SharedSecrets.setJavaLangProcessAccess(
-            new JavaLangProcessAccess() {
-                @Override
-                public void destroyProcessGroup(Process leader, boolean force) {
-                    ((ProcessImpl)leader).terminateProcessGroup(force);
-                }
-            }
-        );
-    }
 
     // Windows platforms support a forcible kill signal.
     static final boolean SUPPORTS_NORMAL_TERMINATION = false;
@@ -668,7 +654,7 @@ final class ProcessImpl extends Process {
     // SapMachine 2024-07-01: process group extension
     private static native void terminateProcessGroup(long hJob);
 
-    private void terminateProcessGroup(boolean force) {
+    void terminateProcessGroup(boolean force) {
         if (hJob == 0) {
             destroy();
         } else {
