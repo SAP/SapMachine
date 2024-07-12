@@ -155,7 +155,9 @@ static void assign_function(void** dest, char const* symbol) {
   if (*dest == NULL) {
     print_error(symbol);
     print_error(" not found!\n");
-    exit(1);
+    /* Don't exit if we don't find the method. It is enough to fail
+     * when the method is called later. */
+    return;
   }
 
   print("Found at ");
