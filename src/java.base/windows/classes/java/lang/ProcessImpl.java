@@ -671,7 +671,7 @@ final class ProcessImpl extends Process {
     // SapMachine 2024-07-01: process group extension
     private static native void terminateProcessGroup(long hJob);
 
-    protected void terminateProcessGroup(boolean force) {
+    void terminateProcessGroup(boolean force) {
         if (hJob == 0) {
             destroy();
         } else {
