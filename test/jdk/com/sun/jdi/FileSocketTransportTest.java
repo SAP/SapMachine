@@ -93,17 +93,16 @@ public class FileSocketTransportTest {
             System.exit(1);
         }
 
-        String socketName = "test.socket";
         if (Platform.isWindows()) {
-            UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(socketName);
-
-            try {
-                SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX);
+            try (SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
+                // Just see if we can create an unix domain socket on Windows.
             } catch (UnsupportedOperationException e) {
                 // Windows version is too old to support unix domain sockets.
                 return;
             }
         }
+
+        String socketName = "test.socket";
 
         List<String> opts = new ArrayList<>();
         opts.add("-agentlib:jdwp=transport=dt_filesocket,address=" +
