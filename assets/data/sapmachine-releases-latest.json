@@ -7,6 +7,10 @@
       {
         "tag": "sapmachine-24+6",
         "jdk": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B6/sapmachine-jdk-24-ea.6_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 340a657a7045ea34d51ba970d0e512e54c09cf787e19aee834d2ad9d7b80ad93"
+          },
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B6/sapmachine-jdk-24-ea.6_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 be81b2fca2686527ce9d31891262012149474f0d373d41442b2e182d7e829215"
@@ -45,6 +49,10 @@
           }
         },
         "jre": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B6/sapmachine-jre-24-ea.6_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 c521fe9114c4b08d3d6c0ae48afda0578ee83cf09ef34ed02bcb257c16509fd7"
+          },
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B6/sapmachine-jre-24-ea.6_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 b8ff31f175216d37787ae452caef8b53ed80d057652d1fd7a243cc881a307ef4"
@@ -80,21 +88,6 @@
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B6/sapmachine-jre-24-ea.6_windows-x64_bin.zip",
             "checksum": "sha256 99518ca178f747ef5947e033d73ec5b029bcdb810892e5d4f08c9dda6d5226d7"
-          }
-        }
-      },
-      {
-        "tag": "sapmachine-24+5",
-        "jdk": {
-          "aix-ppc64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jdk-24-ea.5_aix-ppc64_bin.tar.gz",
-            "checksum": "sha256 06ae47d29caf858bbf6dd3c1cc483048325c2a654ba9f58af5478abf23f46f4d"
-          }
-        },
-        "jre": {
-          "aix-ppc64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B5/sapmachine-jre-24-ea.5_aix-ppc64_bin.tar.gz",
-            "checksum": "sha256 681784d5b741951a01c255c1f1aa40fe358b55bf0c2ac4e1fd331adb810a5dd0"
           }
         }
       }
