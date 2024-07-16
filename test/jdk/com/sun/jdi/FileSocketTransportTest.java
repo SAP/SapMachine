@@ -95,9 +95,9 @@ public class FileSocketTransportTest {
 
         if (Platform.isWindows()) {
             try (SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
-                // Just see if we can create an unix domain socket on Windows.
+                // Just see if we can create a unix domain socket on Windows.
             } catch (UnsupportedOperationException e) {
-                // Windows version is too old to support unix domain sockets.
+                System.out.println("Windows version is too old to support unix domain sockets.");
                 return;
             }
         }
