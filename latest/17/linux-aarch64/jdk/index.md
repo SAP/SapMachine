@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 17 Release for linux-aarch64
-checksum: sha256 50dee283f1c9dbdcb5749d160e53b339b07a081525b658a5c56f1eda07436830
+checksum: sha256 e47e09b5ad51821519331c83b2771cff86fb3f99fcc37e3890954b526d703a31
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.11/sapmachine-jdk-17.0.11_linux-aarch64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12/sapmachine-jdk-17.0.12_linux-aarch64_bin.tar.gz
 ---
