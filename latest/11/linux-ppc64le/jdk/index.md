@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 11 Release for linux-ppc64le
-checksum: sha256 3b6889891aae9541e204fd809258386576f6a75bd5e457a5101ddee693142350
+checksum: sha256 02f0c579f141a06a734fae007d8b8b6466d10fe4f8c364469b93042552801608
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23/sapmachine-jdk-11.0.23_linux-ppc64le_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jdk-11.0.24_linux-ppc64le_bin.tar.gz
 ---
