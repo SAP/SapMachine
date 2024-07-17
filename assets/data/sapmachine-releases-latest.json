@@ -202,6 +202,10 @@
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B9/sapmachine-jdk-22.0.2-ea.9_linux-x64_bin.tar.gz",
             "checksum": "sha256 a74fa536481cb4cb0df04670c2c6bccedb17a21a6d5073c8d789cccaaf1ff092"
+          },
+          "linux-x64-musl": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B9/sapmachine-jdk-22.0.2-ea.9_linux-x64-musl_bin.tar.gz",
+            "checksum": "sha256 0e552176433cd8e8d42cf2075b33ebcf40247314a7f9cc2632a38464dcddd9f0"
           }
         },
         "jre": {
@@ -212,6 +216,10 @@
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B9/sapmachine-jre-22.0.2-ea.9_linux-x64_bin.tar.gz",
             "checksum": "sha256 b7b4a2c3808c0e14d6e46fc33c37898723d96c64910c052038d838afa75638b9"
+          },
+          "linux-x64-musl": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B9/sapmachine-jre-22.0.2-ea.9_linux-x64-musl_bin.tar.gz",
+            "checksum": "sha256 3bd9a81036f51712a6212d1b635ba31577149eb502cbed9fc3bd02c6bd51f7fa"
           }
         }
       },
@@ -225,10 +233,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B2/sapmachine-jdk-22.0.2-ea.2_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 51197fc3847e5f7efff6eb11c50ba81307ceb85b26fb483fe2a153641e873122"
-          },
-          "linux-x64-musl": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B2/sapmachine-jdk-22.0.2-ea.2_linux-x64-musl_bin.tar.gz",
-            "checksum": "sha256 0e21243bc87f5dffe8021baeb6799655962712717dd74b9fd996e63f5bb79dd3"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B2/sapmachine-jdk-22.0.2-ea.2_macos-aarch64_bin.dmg",
@@ -259,10 +263,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B2/sapmachine-jre-22.0.2-ea.2_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 f48d6ae3e409dc827c3f9f6fb09eee1eca39d3eedded9340c8c2ab420fd108ef"
-          },
-          "linux-x64-musl": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B2/sapmachine-jre-22.0.2-ea.2_linux-x64-musl_bin.tar.gz",
-            "checksum": "sha256 9373d0557225b3e5c2beb8562c57bb2bf26faca7a0020f83c3340484378b8855"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2%2B2/sapmachine-jre-22.0.2-ea.2_macos-aarch64_bin.dmg",
