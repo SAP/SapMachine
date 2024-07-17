@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 21 Release for macos-aarch64-installer
-checksum: sha256 5a5464ad09c5b32379da37d28f0328f0ab48ef438edd7aae8fdbbc0dcfe33010
+checksum: sha256 3b698919e75de225354d163b4bfe0cc96df47c377a6d6c0678ff98c62db375f2
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_macos-aarch64_bin.dmg
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4/sapmachine-jdk-21.0.4_macos-aarch64_bin.dmg
 ---
