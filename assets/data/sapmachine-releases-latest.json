@@ -328,6 +328,10 @@
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2/sapmachine-jdk-22.0.2_windows-x64_bin.zip",
             "checksum": "sha256 0c456f7b0827f061220ed661ec108965ac7860a9bc189ceb048ad1ab2c0e2e06"
+          },
+          "windows-x64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2/sapmachine-jdk-22.0.2_windows-x64_bin.msi",
+            "checksum": "sha256 19ddb16b15e997bc8b08b91151ebc79c13577755aa5e1a1176fb0cedfde182ce"
           }
         },
         "jre": {
@@ -370,21 +374,10 @@
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2/sapmachine-jre-22.0.2_windows-x64_bin.zip",
             "checksum": "sha256 ecaa77058f0c3d44565e91efb236d9c1ba73c242fc8f00732206cfbefacf3c62"
-          }
-        }
-      },
-      {
-        "tag": "sapmachine-22.0.1",
-        "jdk": {
+          },
           "windows-x64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jdk-22.0.1_windows-x64_bin.msi",
-            "checksum": "sha256 6fad90d79bb99ac3657361d4f1fd7447cec2ae59bd7f7cbd0ec31f771f7db19d"
-          }
-        },
-        "jre": {
-          "windows-x64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jre-22.0.1_windows-x64_bin.msi",
-            "checksum": "sha256 6e8c3eb34e7ad342e675007c374fe36d61ca19429bce8b6b349b9b0187223d33"
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2/sapmachine-jre-22.0.2_windows-x64_bin.msi",
+            "checksum": "sha256 c00374d43e8ecde3d5c47ac74fb8fb479f1aafc778a39cfaad8874eb00a2fbd7"
           }
         }
       }
