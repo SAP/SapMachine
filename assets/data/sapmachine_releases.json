@@ -754,7 +754,8 @@
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jdk-11.0.24_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jdk-11.0.24_macos-x64_bin.dmg",
             "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jdk-11.0.24_macos-x64_bin.tar.gz",
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jdk-11.0.24_windows-x64_bin.zip"
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jdk-11.0.24_windows-x64_bin.zip",
+            "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jdk-11.0.24_windows-x64_bin.msi"
           },
           "jre": {
             "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jre-11.0.24_linux-aarch64_bin.tar.gz",
@@ -764,16 +765,8 @@
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jre-11.0.24_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jre-11.0.24_macos-x64_bin.dmg",
             "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jre-11.0.24_macos-x64_bin.tar.gz",
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jre-11.0.24_windows-x64_bin.zip"
-          }
-        },
-        {
-          "tag": "sapmachine-11.0.23",
-          "jdk": {
-            "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23/sapmachine-jdk-11.0.23_windows-x64_bin.msi"
-          },
-          "jre": {
-            "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.23/sapmachine-jre-11.0.23_windows-x64_bin.msi"
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jre-11.0.24_windows-x64_bin.zip",
+            "windows-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.24/sapmachine-jre-11.0.24_windows-x64_bin.msi"
           }
         },
         {
@@ -797,7 +790,8 @@
             "macos-aarch64": "sha256 ec3a2c845930f622497a222896cc74e2852b3fa37c78b2a8857434f8fc97ca9c",
             "macos-x64-installer": "sha256 3cba4b420d5309691c51e3b348779dbdd6ed276db2d4d0f4746b2051e50fb95c",
             "macos-x64": "sha256 2022ece5381172f94cbfd1e1da26f4e39b1859b7adabe3f0cede312f9e78f83c",
-            "windows-x64": "sha256 0abc259eded1a6519b1ac9f4ae872e5587ea5cf6523b9c4ba55a7f7fe5c04bd0"
+            "windows-x64": "sha256 0abc259eded1a6519b1ac9f4ae872e5587ea5cf6523b9c4ba55a7f7fe5c04bd0",
+            "windows-x64-installer": "sha256 f7774e7879c19683fcab9def54c6c9780ad6d50a780d4ec95663b3b5ca49a904"
           },
           "jre": {
             "linux-aarch64": "sha256 7208b52fee7fe8c8209b4b8d8bb73f28bdb98f3dee3f83f239da1122f1db3bae",
@@ -807,16 +801,8 @@
             "macos-aarch64": "sha256 e23f1987ea6b3dd21da5109104853ecb4a52a3ae1e2e78aec13f0586ffd209ed",
             "macos-x64-installer": "sha256 c9642fd78860aad84b343cde73db07b7f54f6975d5b6afb5aa56082fa9b7f3ed",
             "macos-x64": "sha256 60d9eea9ebdfecb94c08f8f39a70728780fb48c3e894e8965eb89bdd7c19c30b",
-            "windows-x64": "sha256 3c2966e50e1d826ff2caba71e2881db5e5d21c3adafc526bd9d92a6a77a92162"
-          }
-        },
-        {
-          "tag": "sapmachine-11.0.23",
-          "jdk": {
-            "windows-x64-installer": "sha256 abaa676822e192ba458c27dca40f3d1122fe318387801a36081dbbecd2895ab6"
-          },
-          "jre": {
-            "windows-x64-installer": "sha256 15f02c0e0a28a3152213e9b3043c43dd298baf81a5e09d515a4738b7b5284d26"
+            "windows-x64": "sha256 3c2966e50e1d826ff2caba71e2881db5e5d21c3adafc526bd9d92a6a77a92162",
+            "windows-x64-installer": "sha256 9ba1b89f3e5991eb3a11489580527c3f4dfe5ed35b2d4106abd94168fe2ca662"
           }
         },
         {
