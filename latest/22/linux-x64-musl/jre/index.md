@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 22 Release for linux-x64-musl
-checksum: sha256 ac1f106d65371e4f2054f0731558bb9ee26c58bc38daa2f9a40e8280d7f8e954
+checksum: sha256 667f8f98ebfb852f9d7ee7c211c0245d52d1f06affaa45ff629fc3a33b771fc2
 redirect_to:
   - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2/sapmachine-jre-22.0.2_linux-x64-musl_bin.tar.gz
 ---
