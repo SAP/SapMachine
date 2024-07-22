@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 21 Release for macos-x64
-checksum: sha256 ccff4dbe46afd2ba96e69e6d66067c6501e6c46247b25b72d3bd8d410a14c647
+checksum: sha256 720b1c9ccb0da1ac84ab3daa0bd42eafb6538df089a26ee5d3c59bfb545fc24a
 redirect_to:
   - https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4/sapmachine-jre-21.0.4_macos-x64_bin.tar.gz
 ---
