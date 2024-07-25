@@ -2449,6 +2449,7 @@ public:
 void MallocTraceEnablePeriodicTask::task() {
   enable_from_flags();
   enable_delayed_dump();
+  disenroll();
 }
 
 } // namespace mallocStatImpl
