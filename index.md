@@ -12,9 +12,7 @@ The project ships a new feature release every six months, with one designated as
 
 For SAP, the default JDK is SapMachine. It is the engine of countless applications and services, in cloud deployments as well as standalone on-premise installations at both, SAP and its customers.
 
-Christoph: SapMachine is available on various combinations of Operating System/CPU architectures and it is certified to meet the Java SE standard. It can be used as drop-in replacement for any JDK in any Java based application from small desktop applications up to high-performance large-scale server applications.
-
-AI: SapMachine is compatible with a variety of operating system and CPU architecture combinations, and it is certified to adhere to the Java SE standard. It can serve as a drop-in replacement for any JDK in Java-based applications, ranging from small desktop applications to high-performance, large-scale server applications.
+SapMachine is available on a variety of Operating System/CPU architecture combinations, and it is certified to adhere to the Java SE standard. It can serve as a drop-in replacement for any JDK in Java-based applications, ranging from small desktop applications to high-performance, large-scale server applications.
 
 Certified by the Java SE standard (TCK verified),
 it can be used for all JRE- and JDK-usecases as drop-in replacement
