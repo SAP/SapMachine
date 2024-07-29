@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 22 Release for linux-aarch64
-checksum: sha256 76e53fc4b05924aa1693a7304ac1d6f913f394fcdea73f789bb8118ecaaaedb1
+checksum: sha256 e772f8e8d703c3f679f54a2a3e57e74e69e6c3107f5e162c2aa536506a17d598
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jre-22.0.1_linux-aarch64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2/sapmachine-jre-22.0.2_linux-aarch64_bin.tar.gz
 ---

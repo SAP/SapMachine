@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 22 Release for windows-x64
-checksum: sha256 e86a4277c8cf7d9cdb7f784fe20fcd43e58bd0d8e8881e0c6ee2ac6dff55f2c6
+checksum: sha256 ecaa77058f0c3d44565e91efb236d9c1ba73c242fc8f00732206cfbefacf3c62
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.1/sapmachine-jre-22.0.1_windows-x64_bin.zip
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-22.0.2/sapmachine-jre-22.0.2_windows-x64_bin.zip
 ---

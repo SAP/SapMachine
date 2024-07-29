@@ -1,41 +1,41 @@
 {
     "majors": [
         {
-            "id": "jmc_8",
-            "label": "JMC 8",
+            "id": "jmc_9",
+            "label": "JMC 9",
             "lts": false,
             "ea": false
         },
         {
-            "id": "jmc_8-ea",
-            "label": "JMC 8",
+            "id": "jmc_9-ea",
+            "label": "JMC 9",
             "lts": false,
             "ea": true
         }
     ],
     "assets": {
-        "jmc_8": {
+        "jmc_9": {
             "releases": [
                 {
-                    "tag": "jmc-8.3.0-ga",
+                    "tag": "jmc-9.0.0-ga",
                     "urls": {
-                        "linux-x64": "https://github.com/SAP/jmc/releases/download/8.3.0-ga-sap/sap.jmc-8.3.0-linux.gtk.x86_64.tar.gz",
-                        "macos-aarch64": "https://github.com/SAP/jmc/releases/download/8.3.0-ga-sap/sap.jmc-8.3.0-macosx.cocoa.aarch64.tar.gz",
-                        "macos-x64": "https://github.com/SAP/jmc/releases/download/8.3.0-ga-sap/sap.jmc-8.3.0-macosx.cocoa.x86_64.tar.gz",
-                        "windows-x64": "https://github.com/SAP/jmc/releases/download/8.3.0-ga-sap/sap.jmc-8.3.0-win32.win32.x86_64.zip"
+                        "linux-x64": "https://github.com/SAP/jmc/releases/download/9.0.0-ga-sap/sap.jmc-9.0.0-linux.gtk.x86_64.tar.gz",
+                        "macos-aarch64": "https://github.com/SAP/jmc/releases/download/9.0.0-ga-sap/sap.jmc-9.0.0-macosx.cocoa.aarch64.tar.gz",
+                        "macos-x64": "https://github.com/SAP/jmc/releases/download/9.0.0-ga-sap/sap.jmc-9.0.0-macosx.cocoa.x86_64.tar.gz",
+                        "windows-x64": "https://github.com/SAP/jmc/releases/download/9.0.0-ga-sap/sap.jmc-9.0.0-win32.win32.x86_64.zip"
                     }
                 }
             ]
         },
-        "jmc_8-ea": {
+        "jmc_9-ea": {
             "releases": [
                 {
-                    "tag": "jmc-8.3.0-rc",
+                    "tag": "jmc-9.0.0-rc",
                     "urls": {
-                        "linux-x64": "https://github.com/SAP/jmc/releases/download/8.3.0-rc-sap/sap.jmc-8.3.0-SNAPSHOT-linux.gtk.x86_64.tar.gz",
-                        "macos-aarch64": "https://github.com/SAP/jmc/releases/download/8.3.0-rc-sap/sap.jmc-8.3.0-SNAPSHOT-macosx.cocoa.aarch64.tar.gz",
-                        "macos-x64": "https://github.com/SAP/jmc/releases/download/8.3.0-rc-sap/sap.jmc-8.3.0-SNAPSHOT-macosx.cocoa.x86_64.tar.gz",
-                        "windows-x64": "https://github.com/SAP/jmc/releases/download/8.3.0-rc-sap/sap.jmc-8.3.0-SNAPSHOT-win32.win32.x86_64.zip"
+                        "linux-x64": "https://github.com/SAP/jmc/releases/download/9.0.0-rc-sap/sap.jmc-9.0.0-linux.gtk.x86_64.tar.gz",
+                        "macos-aarch64": "https://github.com/SAP/jmc/releases/download/9.0.0-rc-sap/sap.jmc-9.0.0-macosx.cocoa.aarch64.tar.gz",
+                        "macos-x64": "https://github.com/SAP/jmc/releases/download/9.0.0-rc-sap/sap.jmc-9.0.0-macosx.cocoa.x86_64.tar.gz",
+                        "windows-x64": "https://github.com/SAP/jmc/releases/download/9.0.0-rc-sap/sap.jmc-9.0.0-win32.win32.x86_64.zip"
                     }
                 }
             ]

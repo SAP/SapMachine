@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 21 Release for linux-x64-musl
-checksum: sha256 c8210653bb29e476ac84d4d096f6ecb56fe210e0ba24378e1d48a8cbd0f7eb5e
+checksum: sha256 70f15cd6b4973fe20021d77e7b7043407c3ac8c440416739ac432a3108e1d626
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.3/sapmachine-jdk-21.0.3_linux-x64-musl_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.4/sapmachine-jdk-21.0.4_linux-x64-musl_bin.tar.gz
 ---
