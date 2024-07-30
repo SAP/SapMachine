@@ -580,7 +580,7 @@ const int ObjectAlignmentInBytes = 8;
           "malloc trace if enabled at startup.")                            \
           range(1, 1000)                                                    \
                                                                             \
-  product(bool, MallocTraceUseBacktrace, true,                              \
+  product(bool, MallocTraceUseBacktrace, PPC_ONLY(false) NOT_PPC(true),     \
           "If set we use the backtrace() call to sample the stacks of "     \
           "the malloc trace if enabled at startup. Note that while this "   \
           "creates better stack traces, it is also slower and not "         \
