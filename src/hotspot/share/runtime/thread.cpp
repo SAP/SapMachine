@@ -144,6 +144,10 @@
 #ifdef LINUX
 #include "vitals_linux_himemreport.hpp"
 #endif
+// SapMachine 2024-04-09: malloc statistic
+#if defined(_LP64) && (defined(LINUX) || defined(__APPLE__))
+#include "malloctrace/mallocTracePosix.hpp"
+#endif
 
 // Initialization after module runtime initialization
 void universe_post_module_init();  // must happen after call_initPhase2
@@ -3859,6 +3863,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   JFR_ONLY(Jfr::on_create_vm_1();)
+
+  // SapMachine 2024-04-18: Initialize malloc statistic
+#if defined(MALLOC_TRACE_AVAILABLE)
+  sap::MallocStatistic::initialize();
+#else
+  if (MallocTraceAtStartup || UseMallocHooks) {
+    warning("Malloc trace is not supported on this platform");
+  }
+#endif
 
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
