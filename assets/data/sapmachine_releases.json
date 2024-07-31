@@ -154,6 +154,7 @@
           "tag": "sapmachine-23+34",
           "jdk": {
             "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_aix-ppc64_bin.tar.gz",
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_linux-x64_bin.tar.gz",
             "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_linux-x64-musl_bin.tar.gz",
@@ -164,6 +165,7 @@
           },
           "jre": {
             "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_aix-ppc64_bin.tar.gz",
+            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_linux-aarch64_bin.tar.gz",
             "linux-ppc64le": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_linux-ppc64le_bin.tar.gz",
             "linux-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_linux-x64_bin.tar.gz",
             "linux-x64-musl": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_linux-x64-musl_bin.tar.gz",
@@ -176,11 +178,9 @@
         {
           "tag": "sapmachine-23+33",
           "jdk": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B33/sapmachine-jdk-23-ea.33_linux-aarch64_bin.tar.gz",
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B33/sapmachine-jdk-23-ea.33_windows-x64_bin.zip"
           },
           "jre": {
-            "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B33/sapmachine-jre-23-ea.33_linux-aarch64_bin.tar.gz",
             "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B33/sapmachine-jre-23-ea.33_windows-x64_bin.zip"
           }
         }
@@ -190,6 +190,7 @@
           "tag": "sapmachine-23+34",
           "jdk": {
             "aix-ppc64": "sha256 5a4eebffbef5085d85dbafde87795f17d9cd7ec0ef976c38bb9742834d41fe17",
+            "linux-aarch64": "sha256 4b6b47633c1842aaa9c110741c9c922623d90d163e4ee0c6ab200c6df978264b",
             "linux-ppc64le": "sha256 6b66ba23ae8d6c25693197c09bb4f991e895b19ec04adce32c8c79c4c6dcb27c",
             "linux-x64": "sha256 9be7bdd3821c1abd8e3726bb519d52a3f228eb2b82a7d76da45c20420821eade",
             "linux-x64-musl": "sha256 08884c899f8b1b2ea2190a0d4cc7bd675d50edee4fdfb087531f3ae24d8fd8d3",
@@ -200,6 +201,7 @@
           },
           "jre": {
             "aix-ppc64": "sha256 e19733827a038ba0054d2d8ccffdb4d5d2605c600f81bbf6c2041e0f8d58c2fd",
+            "linux-aarch64": "sha256 98e9670cf12bf44d6c8f032e12d3d66c2c31ee22eda20405f15680dce8ce2b81",
             "linux-ppc64le": "sha256 efef8101e9afc4f08bb7eeb510198a2a89ac1d70b5a58baf578f6f6460e0b892",
             "linux-x64": "sha256 3aa0e8623a25481ca9c5b1bcc07aaf13b72daa3337650f03c5221bd21b652cca",
             "linux-x64-musl": "sha256 e772956a5fe4cbdb58ee5b1c3743aba13d777d381b612195a5fa521105d06fe1",
@@ -212,11 +214,9 @@
         {
           "tag": "sapmachine-23+33",
           "jdk": {
-            "linux-aarch64": "sha256 0912203903542766dc346bdd4e99d0f97a7bbfbfb17d7c7380806a0ebfa338b5",
             "windows-x64": "sha256 8cb6862f47b0bd4e0bb392728f23445e7e450f752c43046ecd5a6ed4f3d168b6"
           },
           "jre": {
-            "linux-aarch64": "sha256 1d9383fb523acc08e671ecadab4624912ad39c6599219090b958e5b884cbb84b",
             "windows-x64": "sha256 3601dea5810ac2021da8967ad5f6e022d10726be0bfb5bfed462b483e80ce86f"
           }
         }
