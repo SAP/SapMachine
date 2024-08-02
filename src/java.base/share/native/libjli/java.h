@@ -176,6 +176,9 @@ jboolean IsWhiteSpaceOption(const char* name);
 // Utility function defined in args.c
 int isTerminalOpt(char *arg);
 
+// SapMachine 2023-09-18: new malloc trace
+jboolean ShouldPreloadLibMallocHooks(int argc, char **argv);
+
 const char* GetProgramName();
 const char* GetFullVersion();
 jboolean IsJavaArgs();

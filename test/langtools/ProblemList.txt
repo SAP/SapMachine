@@ -38,6 +38,12 @@ jdk/javadoc/doclet/testIOException/TestIOException.java                         
 jdk/jshell/UserJdiUserRemoteTest.java                                           8173079    linux-all
 jdk/jshell/UserInputTest.java                                                   8169536    generic-all
 
+# SapMachine 2019-01-31 These fail in the SapMachine CI infrastructure.
+jdk/jshell/ExceptionMessageTest.java                                macosx-all
+jdk/jshell/JdiFailingLaunchExecutionControlTest.java                macosx-all
+jdk/jshell/JdiFailingListenExecutionControlTest.java                macosx-all
+jdk/jshell/JdiHangingLaunchExecutionControlTest.java                macosx-all
+
 ###########################################################################
 #
 # javac
