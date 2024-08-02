@@ -43,6 +43,9 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
+/* SapMachine 2024-06-12: process group extension */
+#include <errno.h>
+#include <unistd.h>
 
 #include <spawn.h>
 
@@ -634,7 +637,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                                        jbyteArray envBlock, jint envc,
                                        jbyteArray dir,
                                        jintArray std_fds,
-                                       jboolean redirectErrorStream)
+                                       jboolean redirectErrorStream,
+                                       /* SapMachine 2024-06-12: process group extension */
+                                       jboolean createNewProcessGroupOnSpawn)
 {
     int errnum;
     int resultPid = -1;
@@ -705,6 +710,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
 
     c->redirectErrorStream = redirectErrorStream;
     c->mode = mode;
+
+    /* SapMachine 2024-06-12: process group extension */
+    c->createNewProcessGroupOnSpawn = createNewProcessGroupOnSpawn;
 
     /* In posix_spawn mode, require the child process to signal aliveness
      * right after it comes up. This is because there are implementations of
@@ -814,4 +822,12 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     closeSafely(out[0]); out[0] = -1;
     closeSafely(err[0]); err[0] = -1;
     goto Finally;
+}
+
+/* SapMachine 2024-06-12: process group extension */
+JNIEXPORT jint JNICALL
+Java_java_lang_ProcessImpl_terminateProcessGroup(JNIEnv *env, jclass ignore, jlong pid_of_leader, jboolean force)
+{
+    int rc = kill(-(pid_t)pid_of_leader, force ? SIGKILL : SIGTERM);
+    return ((rc == -1 && errno != 0) ? errno : rc);
 }
