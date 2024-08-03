@@ -1437,7 +1437,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_init_thread(current),
+           callee_method->method_holder()->is_reentrant_initialization(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call
@@ -1996,7 +1996,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
     VMReg b = regs_without_member_name[i].first();
-    assert(a->value() == b->value(), "register allocation mismatch: a=" INTX_FORMAT ", b=" INTX_FORMAT, a->value(), b->value());
+    assert(a->value() == b->value(), "register allocation mismatch: a= %d, b= %d", a->value(), b->value());
   }
   assert(regs_with_member_name[member_arg_pos].first()->is_valid(), "bad member arg");
 }

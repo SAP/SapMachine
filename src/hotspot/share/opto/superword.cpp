@@ -2748,7 +2748,7 @@ bool SuperWord::output() {
         }
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
-        Node* in1 = first->in(1);
+        Node* in1 = vector_opd(p, 1);
         Node* in2 = first->in(2);
         // If rotation count is non-constant or greater than 8bit value create a vector.
         if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
@@ -4206,7 +4206,10 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
       break; // stop looking at addp's
     }
   }
-  if (is_loop_member(adr)) {
+  if (!invariant(adr)) {
+    // The address must be invariant for the current loop. But if we are in a main-loop,
+    // it must also be invariant of the pre-loop, otherwise we cannot use this address
+    // for the pre-loop limit adjustment required for main-loop alignment.
     assert(!valid(), "adr is loop variant");
     return;
   }
