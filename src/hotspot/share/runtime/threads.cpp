@@ -1385,22 +1385,6 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   PrintOnClosure cl(st);
   non_java_threads_do(&cl);
 
-  // SapMachine 2019-11-07: Vitals
-  const Thread* vitals_sampler_thread = sapmachine_vitals::samplerthread();
-  if (vitals_sampler_thread != NULL) {
-    vitals_sampler_thread->print_on(st);
-    st->cr();
-  }
-
-#ifdef LINUX
-  // SapMachine 2022-05-07: HiMemReport
-  const Thread* himem_reporter_thread = sapmachine_vitals::himem_reporter_thread();
-  if (himem_reporter_thread != NULL) {
-    himem_reporter_thread->print_on(st);
-    st->cr();
-  }
-#endif
-
   st->flush();
 }
 
