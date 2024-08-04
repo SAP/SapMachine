@@ -119,6 +119,14 @@
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B35/sapmachine-jdk-23-ea.35_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 5414e54981c7f92bd370d335ae0e5ee8f55e5f7c506a3e0df4a55de9f7a98132"
+          },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B35/sapmachine-jdk-23-ea.35_macos-aarch64_bin.dmg",
+            "checksum": "sha256 a9b395029a20bdf2d16fa8721be7166fa872dd633d3393b90f99a56927a10cdb"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B35/sapmachine-jdk-23-ea.35_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 8d20e216aae0ba9a571a4cecc74a4f3768c57ddc765bce7a008ed5a38804496c"
           }
         },
         "jre": {
@@ -133,6 +141,14 @@
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B35/sapmachine-jre-23-ea.35_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 ca30465e6c65f1da2f983162aee4e13f51ec3c54603e9729bb93a609b2209800"
+          },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B35/sapmachine-jre-23-ea.35_macos-aarch64_bin.dmg",
+            "checksum": "sha256 72952defe9c22719da404ed289b2568f8de6b833e0227be3adc8f0d07f4e0530"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B35/sapmachine-jre-23-ea.35_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 fabca0cefefd9e474fbab3ca4005ba510d8fdb65be88faf917d7cbf045aea278"
           }
         }
       },
@@ -146,14 +162,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 6b66ba23ae8d6c25693197c09bb4f991e895b19ec04adce32c8c79c4c6dcb27c"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_macos-aarch64_bin.dmg",
-            "checksum": "sha256 825f0b29c19dcada99bde49648f60a7ab5065be03385406074339c09a5733f7b"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 8af0a9c66c9535ddddaa4d8d0a10aa59e0267db856379aa4cc52823e7c65fca5"
           },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jdk-23-ea.34_macos-x64_bin.dmg",
@@ -176,14 +184,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 efef8101e9afc4f08bb7eeb510198a2a89ac1d70b5a58baf578f6f6460e0b892"
-          },
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_macos-aarch64_bin.dmg",
-            "checksum": "sha256 7243143b2b54f27746d5734aebb2029858f1242a2aea77c2317382e7ef43aa94"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 4769c22e92e4aa0edf677883e9ad51e679f3ab93a01f04556d77a2e7ff66a7ba"
           },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23%2B34/sapmachine-jre-23-ea.34_macos-x64_bin.dmg",
