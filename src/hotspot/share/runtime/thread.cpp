@@ -4498,7 +4498,6 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   p->set_on_thread_list();
 
   _number_of_threads++;
-
   oop threadObj = p->threadObj();
   bool daemon = true;
   // Bootstrapping problem: threadObj can be null for initial

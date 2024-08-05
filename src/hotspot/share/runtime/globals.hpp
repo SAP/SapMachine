@@ -1475,8 +1475,8 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   /* SapMachine 2019-02-28 Enable this per default. */                      \
   product(bool, ExtensiveErrorReports,                                      \
-          PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
-          "Error reports are more extensive.")                              \
+                 PRODUCT_ONLY(true) NOT_PRODUCT(true),                      \
+                 "Error reports are more extensive.")                       \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \
           "If DisplayVMOutput is true, display all VM output to stderr")    \
