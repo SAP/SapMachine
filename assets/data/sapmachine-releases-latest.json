@@ -585,6 +585,21 @@
     "ea": true,
     "releases": [
       {
+        "tag": "sapmachine-17.0.13+2",
+        "jdk": {
+          "linux-x64-musl": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B2/sapmachine-jdk-17.0.13-ea.2_linux-x64-musl_bin.tar.gz",
+            "checksum": "sha256 6f4fbc0e66be926276697df3712f089db188077a77c6fddc83e0e972327520ce"
+          }
+        },
+        "jre": {
+          "linux-x64-musl": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B2/sapmachine-jre-17.0.13-ea.2_linux-x64-musl_bin.tar.gz",
+            "checksum": "sha256 c6ab4f2be598fc62e718f6f7927845dfce36977c152ea4e89f872142636c7e95"
+          }
+        }
+      },
+      {
         "tag": "sapmachine-17.0.13+1",
         "jdk": {
           "linux-aarch64": {
@@ -598,10 +613,6 @@
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B1/sapmachine-jdk-17.0.13-ea.1_linux-x64_bin.tar.gz",
             "checksum": "sha256 24fbd99cf6cd4e597dd771b96a7a217141fb305782c339fd97f07df9631daa04"
-          },
-          "linux-x64-musl": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B1/sapmachine-jdk-17.0.13-ea.1_linux-x64-musl_bin.tar.gz",
-            "checksum": "sha256 b76fb7578bb0e437210706c848c5a38948e4a0c811d4fb7438c86a237ab520e0"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B1/sapmachine-jdk-17.0.13-ea.1_macos-aarch64_bin.dmg",
@@ -636,10 +647,6 @@
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B1/sapmachine-jre-17.0.13-ea.1_linux-x64_bin.tar.gz",
             "checksum": "sha256 bc2a4d016eb79f7965309d2fb070e7144a7d754cc1c18be3165013426288f403"
-          },
-          "linux-x64-musl": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B1/sapmachine-jre-17.0.13-ea.1_linux-x64-musl_bin.tar.gz",
-            "checksum": "sha256 3a693d4f553919c8d32c7fdaddecdb08f2b05c620694fee0a5dac7748ef4ade2"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B1/sapmachine-jre-17.0.13-ea.1_macos-aarch64_bin.dmg",
