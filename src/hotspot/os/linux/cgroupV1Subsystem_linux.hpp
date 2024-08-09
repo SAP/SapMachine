@@ -88,6 +88,10 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    // SapMachine 2024-07-05: Vitals use subsystem path directly
+    virtual char* subsystem_path() override {
+      return reader()->subsystem_path();
+    }
   private:
     /* Some container runtimes set limits via cgroup
      * hierarchy. If set to true consider also memory.stat
