@@ -7,6 +7,10 @@
       {
         "tag": "sapmachine-24+10",
         "jdk": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B10/sapmachine-jdk-24-ea.10_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 7769237fa10d83b48bbded1f9a93e3abbf8d9c18b4420955b6ecb347183a1084"
+          },
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B10/sapmachine-jdk-24-ea.10_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 eccb9122540bcc30791feaa511c60998494c89368899928fa8535ae7a81c5165"
@@ -45,6 +49,10 @@
           }
         },
         "jre": {
+          "aix-ppc64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B10/sapmachine-jre-24-ea.10_aix-ppc64_bin.tar.gz",
+            "checksum": "sha256 fe06889eaf0e2900f5953301d799a4e2dba43decfec11b36aee5773ac9e27590"
+          },
           "linux-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B10/sapmachine-jre-24-ea.10_linux-aarch64_bin.tar.gz",
             "checksum": "sha256 2403c112cf10cad36cd66d78e1d971d454cec761bc404e977077c6c9eac384a2"
@@ -80,21 +88,6 @@
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B10/sapmachine-jre-24-ea.10_windows-x64_bin.zip",
             "checksum": "sha256 0d6f615e43026fcff2f9c0c13cdd771d17d5717a55e645d1f1edfc9497896342"
-          }
-        }
-      },
-      {
-        "tag": "sapmachine-24+9",
-        "jdk": {
-          "aix-ppc64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B9/sapmachine-jdk-24-ea.9_aix-ppc64_bin.tar.gz",
-            "checksum": "sha256 95611b945a94625680df3d8ceb748c8022727a766f24fab6711441b7832369f8"
-          }
-        },
-        "jre": {
-          "aix-ppc64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B9/sapmachine-jre-24-ea.9_aix-ppc64_bin.tar.gz",
-            "checksum": "sha256 25ec0d900e71890e8c0678b28c38249a216871a16a1b059abe9bf19e861b388d"
           }
         }
       }
