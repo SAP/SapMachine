@@ -30,7 +30,6 @@
 #include "mallochooks.h"
 #include "malloctrace/mallocTracePosix.hpp"
 
-#include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -1387,12 +1386,8 @@ void MallocStatisticImpl::record_allocation(void* ptr, uint64_t hash, int nr_of_
         if (os::print_function_and_library_name(&ss, frame, tmp, sizeof(tmp), true, true, false)) {
           ss.cr();
         } else {
-          CodeBlob* blob = CodeCache::find_blob((void*) frame);
-
-          if (blob != nullptr) {
-            ss.print_raw(" ");
-            blob->print_value_on(&ss);
-            ss.cr();
+          if ((frame >= CodeCache::low_bound()) && (frame < CodeCache::high_bound())) {
+            ss.print_raw_cr(" <code cache>");
           } else {
             ss.print_raw_cr(" <unknown code>");
           }
@@ -1843,11 +1838,8 @@ static void print_frame(outputStream* st, address frame) {
   if (os::print_function_and_library_name(st, frame, tmp, sizeof(tmp), true, true, false)) {
     st->cr();
   } else {
-    CodeBlob* blob = CodeCache::find_blob((void*) frame);
-
-    if (blob != nullptr) {
-      st->print_raw(" ");
-      blob->print_value_on(st);
+    if ((frame >= CodeCache::low_bound()) && (frame < CodeCache::high_bound())) {
+      st->print_raw_cr(" <code cache>");
     } else {
       st->print_raw_cr(" <unknown code>");
     }
