@@ -1,6 +1,30 @@
 {
   "updates": {
     "11.0.25": {
+      "sapmachine-11.0.25+3": {
+        "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.25%2B3",
+        "ea": "true",
+        "assets": {
+          "jdk": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.25-ea.3_linux-x64_bin.tar.gz",
+                "checksum": "95b90eb6c0aef14daefa444fc63afba86fe488feb1eb508e1e011e040b767137",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B3/sapmachine-jdk-11.0.25-ea.3_linux-x64_bin.tar.gz"
+              }
+            }
+          },
+          "jre": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.25-ea.3_linux-x64_bin.tar.gz",
+                "checksum": "00d530f3f1d473bb5e0f2df54e5a62c456a54b6477dbfb72a546e0d818042418",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B3/sapmachine-jre-11.0.25-ea.3_linux-x64_bin.tar.gz"
+              }
+            }
+          }
+        }
+      },
       "sapmachine-11.0.25+2": {
         "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.25%2B2",
         "ea": "true",
