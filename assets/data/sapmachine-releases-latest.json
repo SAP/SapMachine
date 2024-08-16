@@ -811,6 +811,10 @@
       {
         "tag": "sapmachine-11.0.25+3",
         "jdk": {
+          "linux-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B3/sapmachine-jdk-11.0.25-ea.3_linux-aarch64_bin.tar.gz",
+            "checksum": "sha256 9760019cea162f1aa9cbe88ec1c7cdfa8cd0ea8727471136ef319e8650e4e106"
+          },
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B3/sapmachine-jdk-11.0.25-ea.3_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 71204f3cb5e8cb9649bd1e84d33479f41ff7792de0235831a0c99195c30c534d"
@@ -837,6 +841,10 @@
           }
         },
         "jre": {
+          "linux-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B3/sapmachine-jre-11.0.25-ea.3_linux-aarch64_bin.tar.gz",
+            "checksum": "sha256 4284957e53d46b8e0af92dbb20e3cde7a02b3899a50dc4e2609b2a7387194986"
+          },
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B3/sapmachine-jre-11.0.25-ea.3_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 85b5f58c69682cb22e446d505206aba37036735218236d7c4f8e25d11943ed57"
@@ -866,20 +874,12 @@
       {
         "tag": "sapmachine-11.0.25+2",
         "jdk": {
-          "linux-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B2/sapmachine-jdk-11.0.25-ea.2_linux-aarch64_bin.tar.gz",
-            "checksum": "sha256 6883b963039a56033861db1c1b2c0a24adf4bf503f1cb675a01a634ec70793e7"
-          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B2/sapmachine-jdk-11.0.25-ea.2_windows-x64_bin.zip",
             "checksum": "sha256 a81fda698f613393e424e0020d6bd6da4eb90c34a3373fe18047646eb0cc4c96"
           }
         },
         "jre": {
-          "linux-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B2/sapmachine-jre-11.0.25-ea.2_linux-aarch64_bin.tar.gz",
-            "checksum": "sha256 d8cb6f011b563c798ea03d11e31c6e5822ac14eefeebe68b589040d67325b5fb"
-          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B2/sapmachine-jre-11.0.25-ea.2_windows-x64_bin.zip",
             "checksum": "sha256 cf9a5e6c1449f8455769831e12cc846d96478c9a97855629bd18557a56ec5fb5"
