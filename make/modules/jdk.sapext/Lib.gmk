@@ -25,18 +25,16 @@
 
 include LibCommon.gmk
 
-ifeq ($(call isTargetOsType, unix), true)
-  ##############################################################################
-  ## Build libjdksapext
-  ##############################################################################
+##############################################################################
+## Build libjdksapext
+##############################################################################
 
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJDKSAPEXT, \
-      NAME := jdksapext, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-  ))
+$(eval $(call SetupJdkLibrary, BUILD_LIBJDKSAPEXT, \
+    NAME := jdksapext, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+))
 
-  TARGETS += $(BUILD_LIBJDKSAPEXT)
-endif
+TARGETS += $(BUILD_LIBJDKSAPEXT)
