@@ -405,12 +405,20 @@
       {
         "tag": "sapmachine-21.0.5+4",
         "jdk": {
+          "linux-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jdk-21.0.5-ea.4_linux-x64_bin.tar.gz",
+            "checksum": "sha256 b3d5eed55dd606f6354bcf49ff0e64d9d3877490e8f4691546cd60b4f47bb883"
+          },
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jdk-21.0.5-ea.4_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 8110ce208d9c27f127fec78c99b5ed1fe98ccb9c3085661eed8bd630bec2ca7b"
           }
         },
         "jre": {
+          "linux-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jre-21.0.5-ea.4_linux-x64_bin.tar.gz",
+            "checksum": "sha256 ac53c0233bfc7da3edfcb288dfe1084b20d2e67dc13ebbccfbbcafe4957494c0"
+          },
           "linux-x64-musl": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jre-21.0.5-ea.4_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 6d0def5aa53cacc36dcc9e6bc25a999a1a186aced4e105ea31749a163753b16f"
@@ -431,10 +439,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B3/sapmachine-jdk-21.0.5-ea.3_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 a1ffacf14a74e215210f911ff458ed4922280c00adffc1520c7d1837b67495c8"
-          },
-          "linux-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B3/sapmachine-jdk-21.0.5-ea.3_linux-x64_bin.tar.gz",
-            "checksum": "sha256 d7645914ba288096000f09ddb3b279c966f45ec102044941e83dc37a844d69d9"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B3/sapmachine-jdk-21.0.5-ea.3_macos-aarch64_bin.dmg",
@@ -469,10 +473,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B3/sapmachine-jre-21.0.5-ea.3_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 4c1239b8720eb692388f28cea214bfe9382e38d77762a6de48a3ed2d22efbed8"
-          },
-          "linux-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B3/sapmachine-jre-21.0.5-ea.3_linux-x64_bin.tar.gz",
-            "checksum": "sha256 fb4478223f89c94eef83680ac9bdd059d15e51ce03a7e41525f0f3d0a1dc4491"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B3/sapmachine-jre-21.0.5-ea.3_macos-aarch64_bin.dmg",
