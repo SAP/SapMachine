@@ -72,9 +72,18 @@
 #ifdef LINUX
 #include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+// SapMachine 2021-09-01: malloc-trace
+#include "malloctrace/mallocTraceDCmd.hpp"
 #include "trimCHeapDCmd.hpp"
 #include <errno.h>
 #endif
+// SapMachine 2023-08-15: malloc trace2
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTracePosix.hpp"
+#endif
+
+// SapMachine 2019-02-20: Vitals
+#include "vitals/vitalsDCmd.hpp"
 
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
@@ -110,6 +119,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export, true, false));
+  // SapMachine 2019-02-20: Vitals
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sapmachine_vitals::VitalsDCmd>(full_export, true, false));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
@@ -140,6 +151,15 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
+  // SapMachine 2021-09-01: malloc-trace
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
+#endif
+#if defined(LINUX) || defined(__APPLE__)
+  // SapMachine 2023-08-15: malloc trace2
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceEnableDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDisableDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDumpDCmd>(full_export, true, false));
+
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
@@ -160,7 +180,8 @@ void DCmd::register_dcmds(){
 
   // Debug on cmd (only makes sense with JVMTI since the agentlib needs it).
 #if INCLUDE_JVMTI
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, true));
+  // SapMachine 2022-12-12 Revert JDK-8226608, we should show the VM.start_java_debugging command in jcmd help
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugOnCmdStartDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
 
 #if INCLUDE_CDS
@@ -473,7 +494,8 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "FILE",true),
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  _filename("filename", "Name of the dump file", "FILE", false, "if no filename was specified, but -XX:HeapDumpPath=<hdp> is set, path <hdp> is taken"),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -494,6 +516,8 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
   jlong parallel = HeapDumper::default_num_of_dump_threads();
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  bool use_heapdump_path = false;
 
   if (_gzip.is_set()) {
     level = _gzip.value();
@@ -516,11 +540,27 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  if (!_filename.is_set()) {
+    if (HeapDumpPath != nullptr) {
+      // use HeapDumpPath (file or directory is possible)
+      use_heapdump_path = true;
+    } else {
+      output()->print_cr("Filename or -XX:HeapDumpPath must be set!");
+      return;
+    }
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
-  HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  if (use_heapdump_path) {
+    HeapDumper::dump_heap(!_all.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  } else {
+    HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
+    dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  }
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
