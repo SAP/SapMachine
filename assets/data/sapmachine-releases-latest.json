@@ -418,6 +418,10 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jdk-21.0.5-ea.5_macos-x64_bin.tar.gz",
             "checksum": "sha256 7420626ff5490623cc9c543ff2dd09d7a78367992c1a36e3c1b58fa3dfa7bad5"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jdk-21.0.5-ea.5_windows-x64_bin.zip",
+            "checksum": "sha256 ad7b72cc39fab742604ccdea3556b4ba2098354ec51e799e59de30fc4d68493f"
           }
         },
         "jre": {
@@ -444,6 +448,10 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jre-21.0.5-ea.5_macos-x64_bin.tar.gz",
             "checksum": "sha256 5a147acf03ba52ec47f7acdc8b9c9855cd1cd07f824130af2ded630edfa13755"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jre-21.0.5-ea.5_windows-x64_bin.zip",
+            "checksum": "sha256 068cf78a26e44e8253141fcdb4419048a07c27af494e7cb5fed27f390fb9c868"
           }
         }
       },
@@ -457,10 +465,6 @@
           "macos-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jdk-21.0.5-ea.4_macos-aarch64_bin.tar.gz",
             "checksum": "sha256 a40182c3e8c8973103f4613484eb69c63fbaaa16a32f43237bb97e11f8cfa55e"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jdk-21.0.5-ea.4_windows-x64_bin.zip",
-            "checksum": "sha256 390114737f2b0edf1d262dbb84b6da4d2bcfee14712560a1074ee5554b7eba28"
           }
         },
         "jre": {
@@ -475,10 +479,6 @@
           "macos-aarch64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jre-21.0.5-ea.4_macos-aarch64_bin.tar.gz",
             "checksum": "sha256 ad51fb18e81e82e473260e883b4ce212321a166d6e46fa09be117d1ef4debe7a"
-          },
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B4/sapmachine-jre-21.0.5-ea.4_windows-x64_bin.zip",
-            "checksum": "sha256 f616a2bf4578b80d863cf059fa2dd257e0bd25e83bd237a7100649ee652d9c42"
           }
         }
       }
