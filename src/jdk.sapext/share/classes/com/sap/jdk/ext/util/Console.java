@@ -31,7 +31,7 @@ import java.security.PrivilegedAction;
 /**
  * This class provides methods for console handling.
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 public final class Console {
 
     /**
