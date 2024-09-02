@@ -87,7 +87,8 @@
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jdk-24-ea.13_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jdk-24-ea.13_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jdk-24-ea.13_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jdk-24-ea.13_macos-x64_bin.tar.gz"
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jdk-24-ea.13_macos-x64_bin.tar.gz",
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jdk-24-ea.13_windows-x64_bin.zip"
           },
           "jre": {
             "aix-ppc64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_aix-ppc64_bin.tar.gz",
@@ -98,16 +99,8 @@
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_macos-x64_bin.tar.gz"
-          }
-        },
-        {
-          "tag": "sapmachine-24+12",
-          "jdk": {
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B12/sapmachine-jdk-24-ea.12_windows-x64_bin.zip"
-          },
-          "jre": {
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B12/sapmachine-jre-24-ea.12_windows-x64_bin.zip"
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_macos-x64_bin.tar.gz",
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_windows-x64_bin.zip"
           }
         }
       ],
@@ -123,7 +116,8 @@
             "macos-aarch64-installer": "sha256 b61125e00cbd36690a233282f1b3d32adec8a12f4f731ac6daa799e4fc7356cd",
             "macos-aarch64": "sha256 1a4504a095e39d1901e86912b4092b2e0bda8ee4fd1e060600627b45d2ad5d91",
             "macos-x64-installer": "sha256 bd4169a791596aab641fce777367b0db620e240ceb641643cab0ed01efd5bcf2",
-            "macos-x64": "sha256 5cad0ec87ac7d47d3e9abcf0ab238d73f912b12978593b06f4e4658ad30badbc"
+            "macos-x64": "sha256 5cad0ec87ac7d47d3e9abcf0ab238d73f912b12978593b06f4e4658ad30badbc",
+            "windows-x64": "sha256 35118966cd212aa2ad4ad971380e01d4f28fcccd69de760dda2978a13ffdaca1"
           },
           "jre": {
             "aix-ppc64": "sha256 a4b2a9a376c487743da6d8d5e4bff2ee7aad06005639b339db9875cf6dbb7df0",
@@ -134,16 +128,8 @@
             "macos-aarch64-installer": "sha256 b85d5cf4787d2731fc60d462d0768c938b0771fc967f1ae52279830ef79960ad",
             "macos-aarch64": "sha256 a6d08881985aa5673fd4ba7046ebdf2fcbf7c9f617eeb6370f8a248995e3b6aa",
             "macos-x64-installer": "sha256 777c57795aeebb50f3b2380d68658273deee0c459756504f9618a66433bc64fa",
-            "macos-x64": "sha256 65411020aa32fc1888277f66f9dd17ddb006a07239413d31e2f64d921002691d"
-          }
-        },
-        {
-          "tag": "sapmachine-24+12",
-          "jdk": {
-            "windows-x64": "sha256 2bd805d63cff27b29afc4a96971eb38782cdad991de00d91c17f515bd25cec81"
-          },
-          "jre": {
-            "windows-x64": "sha256 8e9a6db3dfe6313efa92383992a3c15349ff50467de974355a1061d83a2d9bd9"
+            "macos-x64": "sha256 65411020aa32fc1888277f66f9dd17ddb006a07239413d31e2f64d921002691d",
+            "windows-x64": "sha256 a84e77195cc34573f77ae5f44ac50d3f19c7eb0edc486d077baa5282258a7691"
           }
         }
       ]
