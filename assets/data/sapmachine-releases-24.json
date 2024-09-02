@@ -7,6 +7,13 @@
         "ea": "true",
         "assets": {
           "jdk": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-24-ea.13_linux-x64_bin.tar.gz",
+                "checksum": "a6adfd8c6f43438be2e27fccd1fce679e91420d713d954984902f51e4bc0f114",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jdk-24-ea.13_linux-x64_bin.tar.gz"
+              }
+            },
             "linux-x64-musl": {
               "tar.gz": {
                 "name": "sapmachine-jdk-24-ea.13_linux-x64-musl_bin.tar.gz",
@@ -16,6 +23,13 @@
             }
           },
           "jre": {
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-24-ea.13_linux-x64_bin.tar.gz",
+                "checksum": "ff1b70be1efe1ffde5f4f5d8990bb415687aa1df268663f15c9332b7f305312f",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B13/sapmachine-jre-24-ea.13_linux-x64_bin.tar.gz"
+              }
+            },
             "linux-x64-musl": {
               "tar.gz": {
                 "name": "sapmachine-jre-24-ea.13_linux-x64-musl_bin.tar.gz",
