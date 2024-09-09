@@ -97,6 +97,10 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    // SapMachine 2024-07-05: Vitals use subsystem path directly
+    virtual char* subsystem_path() override {
+      return reader()->subsystem_path();
+    }
 };
 
 class CgroupV2Subsystem: public CgroupSubsystem {
