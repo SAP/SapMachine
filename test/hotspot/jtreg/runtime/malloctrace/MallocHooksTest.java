@@ -35,7 +35,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -596,11 +598,25 @@ public class MallocHooksTest {
                                   "-XX:MallocTraceStackDepth=14").start();
         checkIsAttachable(p);
         p.getInputStream().read();
-        OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-percentage=100");
+        // The output can be large, so dump it directly, since the output of
+        // jcmd is temporary hold in the JVM and there is a limit of 100 MB.
+        final String[] stacks = new String[1];
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    stacks[0] = new String(p.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+        OutputAnalyzer oa = callJcmd(p, "MallocTrace.dump", "-percentage=100", "-dump-file=stderr");
         oa.shouldHaveExitValue(0);
         p.destroy();
+        t.join();
 
-        MallocTraceResult result = MallocTraceResult.fromString(oa.getOutput());
+        MallocTraceResult result = MallocTraceResult.fromString(stacks[0]);
         HashSet<Stack> seenStacks = new HashSet<>();
 
         for (int i = 0; i < result.nrOfStacks(); ++i) {
