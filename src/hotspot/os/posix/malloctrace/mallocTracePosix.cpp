@@ -1838,6 +1838,10 @@ static void print_frame(outputStream* st, address frame) {
   if (os::print_function_and_library_name(st, frame, tmp, sizeof(tmp), true, true, false)) {
     st->cr();
   } else {
+    // We don't try to print the code blob at the given address, since the pc at the
+    // time the stack trace was taken might not be valid anymore (e.g. because of recompilation).
+    // Most of the time this might not occur, but we don't want to print wrong stack traces.
+    // So we now only indicate that the code was in the code cache.
     if ((frame >= CodeCache::low_bound()) && (frame < CodeCache::high_bound())) {
       st->print_raw_cr(" <code cache>");
     } else {
