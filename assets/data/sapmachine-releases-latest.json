@@ -411,6 +411,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jdk-21.0.5-ea.6_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 53d3af4f19839d6469a977a26b3e79e42a284e703a354f78248d6674dac852c9"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jdk-21.0.5-ea.6_macos-aarch64_bin.dmg",
+            "checksum": "sha256 df4f2bfe311dbb15ed00d954c3ec9366a77affa8f791d892dbb148f62a1f921e"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jdk-21.0.5-ea.6_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 86dd2f0dea1584525a74de01df49cf3669f06af9378cd6678952c101b07f0e5f"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jdk-21.0.5-ea.6_macos-x64_bin.dmg",
             "checksum": "sha256 0c18397f19d48f3720684a5290cee0a209dab72bfdd033b1be104cbbfb266bec"
@@ -441,6 +449,14 @@
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jre-21.0.5-ea.6_linux-x64-musl_bin.tar.gz",
             "checksum": "sha256 e3cbca28bd3abcb7067f13ee77680c4e7cccab87100510256995a96c9d6ada61"
           },
+          "macos-aarch64-installer": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jre-21.0.5-ea.6_macos-aarch64_bin.dmg",
+            "checksum": "sha256 43dc271f2ecffe8b1f9acbcfea0b3a51389493a18a7512011666ebadb4dc4265"
+          },
+          "macos-aarch64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jre-21.0.5-ea.6_macos-aarch64_bin.tar.gz",
+            "checksum": "sha256 ce5051c0644549722870a58c5d6f98d341cfe6d93474717288f44ebc79a1964e"
+          },
           "macos-x64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B6/sapmachine-jre-21.0.5-ea.6_macos-x64_bin.dmg",
             "checksum": "sha256 9cbb220cc493cd52a69654fae60ecb388eba55b28576748792aca4625188638e"
@@ -454,28 +470,12 @@
       {
         "tag": "sapmachine-21.0.5+5",
         "jdk": {
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jdk-21.0.5-ea.5_macos-aarch64_bin.dmg",
-            "checksum": "sha256 2facf878207678680e70b42c9bd188590d7b1e1baaf1b2b3c0d9a7ada23c7722"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jdk-21.0.5-ea.5_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 1ec57a05aef616b3176d86e9129e37e872cbc703537ad38e162fb04c9fead0f1"
-          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jdk-21.0.5-ea.5_windows-x64_bin.zip",
             "checksum": "sha256 ad7b72cc39fab742604ccdea3556b4ba2098354ec51e799e59de30fc4d68493f"
           }
         },
         "jre": {
-          "macos-aarch64-installer": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jre-21.0.5-ea.5_macos-aarch64_bin.dmg",
-            "checksum": "sha256 a31defe7b3e7f55203a9de25d8aacdee6add54dd223f0682134192faa5cd195a"
-          },
-          "macos-aarch64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jre-21.0.5-ea.5_macos-aarch64_bin.tar.gz",
-            "checksum": "sha256 03cc4adf04589628d228e277e7a9cd52ba390e90ae51920910643f7de04b5553"
-          },
           "windows-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B5/sapmachine-jre-21.0.5-ea.5_windows-x64_bin.zip",
             "checksum": "sha256 068cf78a26e44e8253141fcdb4419048a07c27af494e7cb5fed27f390fb9c868"
