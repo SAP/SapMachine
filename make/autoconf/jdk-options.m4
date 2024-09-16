@@ -234,8 +234,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
     else
       AC_MSG_ERROR([Async profiler import path was set, but LICENSE file not found there])
     fi
-  else
-    AC_MSG_ERROR([Async profiler import path must have a value])
   fi
   AC_SUBST(ASYNC_PROFILER_IMPORT_PATH)
   AC_SUBST(ASYNC_PROFILER_IMPORT_ENABLED)
