@@ -172,6 +172,7 @@ module java.base {
         jdk.jartool,
         jdk.jlink,
         jdk.jfr,
+        jdk.management,
         jdk.net,
         // SapMachine 2024-06-12: process group extension
         jdk.sapext,
