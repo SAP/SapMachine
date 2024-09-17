@@ -838,6 +838,10 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B6/sapmachine-jdk-11.0.25-ea.6_macos-x64_bin.tar.gz",
             "checksum": "sha256 a90c13fe99dd33716721063f31d9c6c80124d5a9636d3c8cc1f6afbf52ece620"
+          },
+          "windows-x64": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B6/sapmachine-jdk-11.0.25-ea.6_windows-x64_bin.zip",
+            "checksum": "sha256 1903dae303dc3ed04bb242eab2a31f70830df735b3d3a9758121c889bc9e9855"
           }
         },
         "jre": {
@@ -868,21 +872,10 @@
           "macos-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B6/sapmachine-jre-11.0.25-ea.6_macos-x64_bin.tar.gz",
             "checksum": "sha256 d3acc7103db4f5ccfd224bc3f594a10880a4601fc69e5b6806ef9c56d2a6b1d2"
-          }
-        }
-      },
-      {
-        "tag": "sapmachine-11.0.25+5",
-        "jdk": {
+          },
           "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B5/sapmachine-jdk-11.0.25-ea.5_windows-x64_bin.zip",
-            "checksum": "sha256 9554942b80e40dbec101f41f05c43f05a23650ad2ae72f81f36937a87882b4ac"
-          }
-        },
-        "jre": {
-          "windows-x64": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B5/sapmachine-jre-11.0.25-ea.5_windows-x64_bin.zip",
-            "checksum": "sha256 92f4711c31f815d92841c8b41e7ead4fd9bbe630b0ca34edcd3fc6d1de479cac"
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B6/sapmachine-jre-11.0.25-ea.6_windows-x64_bin.zip",
+            "checksum": "sha256 75677329c86762792d53df572efc97f081a38e8fae6e4c29ab881e90536188f8"
           }
         }
       },
