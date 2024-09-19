@@ -248,6 +248,41 @@ ifeq ($(GCOV_ENABLED), true)
 endif
 
 ################################################################################
+# SapMachine 2024-09-13: Async profiler import
+
+ifeq ($(call isTargetOs, linux macosx)+$(ASYNC_PROFILER_IMPORT_ENABLED), true+true)
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JDK, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JDK_IMAGE_DIR), \
+      FILES := bin/asprof lib/libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+      MACRO := install-file-and-sign, \
+  ))
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JRE, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JRE_IMAGE_DIR), \
+      FILES := bin/asprof lib/libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+      MACRO := install-file-and-sign, \
+  ))
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_TO_JDK, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JDK_IMAGE_DIR), \
+      FILES := lib/async-profiler.jar lib/converter.jar legal/async/CHANGELOG.md legal/async/LICENSE legal/async/README.md, \
+  ))
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_TO_JRE, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JRE_IMAGE_DIR), \
+      FILES := lib/async-profiler.jar lib/converter.jar legal/async/CHANGELOG.md legal/async/LICENSE legal/async/README.md, \
+  ))
+
+  JDK_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_TO_JDK)
+  JRE_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_TO_JRE)
+endif
+
+################################################################################
 # Debug symbols
 # Since debug symbols are not included in the jmod files, they need to be copied
 # in manually after generating the images.
