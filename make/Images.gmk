@@ -46,8 +46,9 @@ ALL_MODULES := $(call FindAllModules) $(EXTRA_MODULES)
 
 $(eval $(call ReadImportMetaData))
 
+# SapMachine 2021-09-24: add jcmd to JRE
 JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
-    $(PLATFORM_MODULES) jdk.jdwp.agent)
+    $(PLATFORM_MODULES) jdk.jdwp.agent jdk.jcmd)
 JDK_MODULES += $(ALL_MODULES)
 
 JRE_MODULES_LIST := $(call CommaList, $(JRE_MODULES))
@@ -244,6 +245,57 @@ ifeq ($(GCOV_ENABLED), true)
 
   SYMBOLS_TARGETS += $(COPY_GCOV_GCNO)
 
+endif
+
+# SapMachine 2024-09-13: import async profiler binaries
+################################################################################
+# Async profiler import
+# we can reference into the workspace where we download the async profiler;
+# this has to be set via configure
+ifeq ($(ASYNC_PROFILER_IMPORT_ENABLED), true)
+ifeq ($(call isTargetOs, linux macosx), true)
+
+$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JDK, \
+    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/bin, \
+    DEST := $(JDK_IMAGE_DIR)/bin, \
+    FILES := asprof, \
+))
+
+$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JRE, \
+    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/bin, \
+    DEST := $(JRE_IMAGE_DIR)/bin, \
+    FILES := asprof, \
+))
+
+$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LIB_TO_JDK, \
+    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
+    DEST := $(JDK_IMAGE_DIR)/lib, \
+    FILES := async-profiler.jar converter.jar libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+))
+
+$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LIB_TO_JRE, \
+    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
+    DEST := $(JRE_IMAGE_DIR)/lib, \
+    FILES := async-profiler.jar converter.jar libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+))
+
+$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JDK, \
+    SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+    DEST := $(JDK_IMAGE_DIR)/legal/async, \
+    FILES := CHANGELOG.md LICENSE README.md, \
+))
+
+$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JRE, \
+    SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+    DEST := $(JRE_IMAGE_DIR)/legal/async, \
+    FILES := CHANGELOG.md LICENSE README.md, \
+))
+
+
+JDK_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_LIB_TO_JDK) $(COPY_ASYNC_PROFILER_LEGAL_TO_JDK)
+JRE_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_LIB_TO_JRE) $(COPY_ASYNC_PROFILER_LEGAL_TO_JRE)
+
+endif
 endif
 
 ################################################################################
