@@ -250,90 +250,80 @@ endif
 # SapMachine 2024-09-13: import async profiler binaries
 ################################################################################
 # Async profiler import
-# we can reference into the workspace where we download the async profiler;
-# this has to be set via configure
-ifeq ($(ASYNC_PROFILER_IMPORT_ENABLED), true)
-ifeq ($(call isTargetOs, linux macosx), true)
 
-$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JDK, \
-    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/bin, \
-    DEST := $(JDK_IMAGE_DIR)/bin, \
-    FILES := asprof, \
-))
+ifeq ($(call isTargetOs, linux macosx)+$(ASYNC_PROFILER_IMPORT_ENABLED), true+true)
 
-$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JRE, \
-    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/bin, \
-    DEST := $(JRE_IMAGE_DIR)/bin, \
-    FILES := asprof, \
-))
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JDK, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH)/bin, \
+      DEST := $(JDK_IMAGE_DIR)/bin, \
+      FILES := asprof, \
+  ))
 
-$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LIB_TO_JDK, \
-    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
-    DEST := $(JDK_IMAGE_DIR)/lib, \
-    FILES := async-profiler.jar converter.jar libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
-))
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JRE, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH)/bin, \
+      DEST := $(JRE_IMAGE_DIR)/bin, \
+      FILES := asprof, \
+  ))
 
-$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LIB_TO_JRE, \
-    SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
-    DEST := $(JRE_IMAGE_DIR)/lib, \
-    FILES := async-profiler.jar converter.jar libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
-))
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LIB_TO_JDK, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
+      DEST := $(JDK_IMAGE_DIR)/lib, \
+      FILES := async-profiler.jar converter.jar libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+  ))
 
-$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JDK, \
-    SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
-    DEST := $(JDK_IMAGE_DIR)/legal/async, \
-    FILES := CHANGELOG.md LICENSE README.md, \
-))
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LIB_TO_JRE, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
+      DEST := $(JRE_IMAGE_DIR)/lib, \
+      FILES := async-profiler.jar converter.jar libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+  ))
 
-$(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JRE, \
-    SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
-    DEST := $(JRE_IMAGE_DIR)/legal/async, \
-    FILES := CHANGELOG.md LICENSE README.md, \
-))
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JDK, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JDK_IMAGE_DIR)/legal/async, \
+      FILES := CHANGELOG.md LICENSE README.md, \
+  ))
 
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JRE, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JRE_IMAGE_DIR)/legal/async, \
+      FILES := CHANGELOG.md LICENSE README.md, \
+  ))
 
-JDK_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_LIB_TO_JDK) $(COPY_ASYNC_PROFILER_LEGAL_TO_JDK)
-JRE_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_LIB_TO_JRE) $(COPY_ASYNC_PROFILER_LEGAL_TO_JRE)
+  JDK_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_LIB_TO_JDK) $(COPY_ASYNC_PROFILER_LEGAL_TO_JDK)
+  JRE_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_LIB_TO_JRE) $(COPY_ASYNC_PROFILER_LEGAL_TO_JRE)
 
-# SapMachine 2024-09-24: sign async profiler binaries on macOS
-ifeq ($(call isTargetOs, macosx), true)
-# for now we reference the default / default-debug plist entitlements file; maybe asprof needs something special ?
-ifeq ($(MACOSX_CODESIGN_MODE), hardened)
-  CODESIGN_APOPTS=-f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime
-  ASYNC_CODESIGN=true
-  PLIST_FILE=default.plist
-endif
-ifeq ($(MACOSX_CODESIGN_MODE), debug)
-  CODESIGN_APOPTS=-f -s -
-  ASYNC_CODESIGN=true
-  PLIST_FILE=default-debug.plist
-endif
+  ifeq ($(call isTargetOs, macosx), true)
+    ifeq ($(MACOSX_CODESIGN_MODE), hardened)
+      CODESIGN_APOPTS=-f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime
+      PLIST_FILE=default.plist
+    else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+      CODESIGN_APOPTS=-f -s -
+      PLIST_FILE=default-debug.plist
+    endif
 
-ifeq ($(ASYNC_CODESIGN), true)
-codesign_async_profiler_jdk: $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_LIB_TO_JDK)
-	$(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/bin/asprof
-	$(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/bin/asprof
-	$(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
-	$(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
+    ifneq ($(MACOSX_CODESIGN_MODE), disabled)
+      codesign_async_profiler_jdk: $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_LIB_TO_JDK)
+          $(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/bin/asprof
+          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/bin/asprof
+          $(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
+          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
 
-codesign_async_profiler_jre: $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_LIB_TO_JRE)
-	$(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/bin/asprof
-	$(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/bin/asprof
-	$(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
-	$(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
-else
-codesign_async_profiler_jdk:
-	$(ECHO) No JDK Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
+      codesign_async_profiler_jre: $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_LIB_TO_JRE)
+          $(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/bin/asprof
+          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/bin/asprof
+          $(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
+          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
+    else
+      codesign_async_profiler_jdk:
+          $(ECHO) No JDK Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
 
-codesign_async_profiler_jre:
-	$(ECHO) No JRE Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
-endif
+      codesign_async_profiler_jre:
+          $(ECHO) No JRE Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
+    endif
 
-JDK_TARGETS += codesign_async_profiler_jdk
-JRE_TARGETS += codesign_async_profiler_jre
-endif
-
-endif
+    JDK_TARGETS += codesign_async_profiler_jdk
+    JRE_TARGETS += codesign_async_profiler_jre
+  endif
 endif
 
 ################################################################################
