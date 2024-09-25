@@ -13,6 +13,13 @@
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jdk-21.0.5-ea.8_aix-ppc64_bin.tar.gz"
               }
             },
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-21.0.5-ea.8_linux-aarch64_bin.tar.gz",
+                "checksum": "e53f4038dc72a182041aad80ee32e2d7949e5b64c2f4e922400c03cde0302383",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jdk-21.0.5-ea.8_linux-aarch64_bin.tar.gz"
+              }
+            },
             "linux-ppc64le": {
               "tar.gz": {
                 "name": "sapmachine-jdk-21.0.5-ea.8_linux-ppc64le_bin.tar.gz",
@@ -45,6 +52,18 @@
                 "checksum": "f3e43537639efd98bf7e17aa98fdbe137bac49a4c12c3dc6e15b6d7304a87d7d",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jdk-21.0.5-ea.8_macos-aarch64_bin.tar.gz"
               }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jdk-21.0.5-ea.8_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jdk-21.0.5-ea.8_macos-x64_bin.dmg",
+                "checksum": "f629e369aba5a59a695c82a179eadaf931d7f781588c6c68ba8c9fcb3830735a"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jdk-21.0.5-ea.8_macos-x64_bin.tar.gz",
+                "checksum": "9573131061fc12ffd1e3c99b350a3214d24903dcee53fd50f614fbc10d0923a3",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jdk-21.0.5-ea.8_macos-x64_bin.tar.gz"
+              }
             }
           },
           "jre": {
@@ -53,6 +72,13 @@
                 "name": "sapmachine-jre-21.0.5-ea.8_aix-ppc64_bin.tar.gz",
                 "checksum": "1f37dc2364e8c989cccfeb0229802bbcb7de15bc6ffa4f12b38a1a0b2317c2b2",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jre-21.0.5-ea.8_aix-ppc64_bin.tar.gz"
+              }
+            },
+            "linux-aarch64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-21.0.5-ea.8_linux-aarch64_bin.tar.gz",
+                "checksum": "cbe7950b51530c3ed5bcd799ca1d13727eb3c34b4d89fbf8748cac0bd53a4cd5",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jre-21.0.5-ea.8_linux-aarch64_bin.tar.gz"
               }
             },
             "linux-ppc64le": {
@@ -86,6 +112,18 @@
                 "name": "sapmachine-jre-21.0.5-ea.8_macos-aarch64_bin.tar.gz",
                 "checksum": "45df40197fe6242cb4f242906005dcc35361ba097c065d531af73d71d349a8df",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jre-21.0.5-ea.8_macos-aarch64_bin.tar.gz"
+              }
+            },
+            "macos-x64": {
+              "dmg": {
+                "name": "sapmachine-jre-21.0.5-ea.8_macos-x64_bin.dmg",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jre-21.0.5-ea.8_macos-x64_bin.dmg",
+                "checksum": "cdff29b755b3b3d5ae63239730ce569c14825caa69bbab6d1e862b7af14dc1c7"
+              },
+              "tar.gz": {
+                "name": "sapmachine-jre-21.0.5-ea.8_macos-x64_bin.tar.gz",
+                "checksum": "84d6ed2a4657d3f14378280b575648e5be3a992f69efb1657904c74dd2a7d013",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-21.0.5%2B8/sapmachine-jre-21.0.5-ea.8_macos-x64_bin.tar.gz"
               }
             }
           }
