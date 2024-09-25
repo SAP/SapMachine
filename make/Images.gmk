@@ -303,22 +303,22 @@ ifeq ($(call isTargetOs, linux macosx)+$(ASYNC_PROFILER_IMPORT_ENABLED), true+tr
 
     ifneq ($(MACOSX_CODESIGN_MODE), disabled)
       codesign_async_profiler_jdk: $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_LIB_TO_JDK)
-          $(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/bin/asprof
-          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/bin/asprof
-          $(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
-          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
+	      $(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/bin/asprof
+	      $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/bin/asprof
+	      $(CODESIGN) --remove-signature $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
+	      $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JDK_IMAGE_DIR)/lib/libasyncProfiler.dylib
 
       codesign_async_profiler_jre: $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_LIB_TO_JRE)
-          $(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/bin/asprof
-          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/bin/asprof
-          $(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
-          $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
+	      $(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/bin/asprof
+	      $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/bin/asprof
+	      $(CODESIGN) --remove-signature $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
+	      $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) $(JRE_IMAGE_DIR)/lib/libasyncProfiler.dylib
     else
       codesign_async_profiler_jdk:
-          $(ECHO) No JDK Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
+	      $(ECHO) No JDK Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
 
       codesign_async_profiler_jre:
-          $(ECHO) No JRE Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
+	      $(ECHO) No JRE Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
     endif
 
     JDK_TARGETS += codesign_async_profiler_jdk
