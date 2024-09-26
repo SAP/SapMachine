@@ -140,8 +140,46 @@ ifeq ($(call isTargetOs, macosx), true)
 	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
 	fi
   endef
+
+  # SapMachine 2024-09-13: import async profiler binaries
+  ifeq ($(MACOSX_CODESIGN_MODE), hardened)
+    CODESIGN_APOPTS=-f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime
+    PLIST_FILE=default.plist
+  else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+    CODESIGN_APOPTS=-f -s -
+    PLIST_FILE=default-debug.plist
+  endif
+
+  define install-file-and-sign
+	$(call MakeTargetDir)
+	$(RM) '$(call DecodeSpace, $@)'
+        # Work around a weirdness with cp on Macosx. When copying a symlink, if
+        # the target of the link is write protected (e.g. 444), cp will add
+        # write permission for the user on the target file (644). Avoid this by
+        # using ln to create a new link instead.
+	if [ -h '$(call DecodeSpace, $<)' ]; then \
+	  $(LN) -s "`$(READLINK) '$(call DecodeSpace, $<)'`" '$(call DecodeSpace, $@)'; \
+	else \
+	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
+	fi
+	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
+          $(CHMOD) u+w '$(call DecodeSpace, $@)'; \
+	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
+	fi
+    ifeq ($(MACOSX_CODESIGN_MODE), disabled)
+	  $(ECHO) No Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
+    else
+	  $(CODESIGN) --remove-signature '$(call DecodeSpace, $@)'
+	  $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) '$(call DecodeSpace, $@)'
+    endif
+  endef
 else
   define install-file
+	$(call MakeTargetDir)
+	$(CP) -fP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
+  endef
+  # SapMachine 2024-09-13: import async profiler binaries
+  define install-file-and-sign
 	$(call MakeTargetDir)
 	$(CP) -fP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
   endef
