@@ -228,11 +228,11 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
       [Set import path for downloaded async profiler binaries])])
   if test "x$with_async_profiler_import_path" != x; then
     ASYNC_PROFILER_IMPORT_PATH="$with_async_profiler_import_path"
-    if test -f "$ASYNC_PROFILER_IMPORT_PATH/LICENSE"; then
+    if test -f "$ASYNC_PROFILER_IMPORT_PATH/bin/asprof"; then
       ASYNC_PROFILER_IMPORT_ENABLED=true
-      AC_MSG_NOTICE([LICENSE file exists, enabling async-profiler import])
+      AC_MSG_NOTICE([asprof exists, enabling async-profiler import])
     else
-      AC_MSG_ERROR([Async profiler import path was set, but LICENSE file not found there])
+      AC_MSG_ERROR([async-profiler import path was set, but asprof was not found])
     fi
   fi
   AC_SUBST(ASYNC_PROFILER_IMPORT_PATH)
