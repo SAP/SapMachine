@@ -150,29 +150,18 @@ ifeq ($(call isTargetOs, macosx), true)
     PLIST_FILE=default-debug.plist
   endif
 
-  define install-file-and-sign
-	$(call MakeTargetDir)
-	$(RM) '$(call DecodeSpace, $@)'
-        # Work around a weirdness with cp on Macosx. When copying a symlink, if
-        # the target of the link is write protected (e.g. 444), cp will add
-        # write permission for the user on the target file (644). Avoid this by
-        # using ln to create a new link instead.
-	if [ -h '$(call DecodeSpace, $<)' ]; then \
-	  $(LN) -s "`$(READLINK) '$(call DecodeSpace, $<)'`" '$(call DecodeSpace, $@)'; \
-	else \
-	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
-	fi
-	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
-          $(CHMOD) u+w '$(call DecodeSpace, $@)'; \
-	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
-	fi
-    ifeq ($(MACOSX_CODESIGN_MODE), disabled)
+  ifeq ($(MACOSX_CODESIGN_MODE), disabled)
+    define install-file-and-sign
+	  $(install-file)
 	  $(ECHO) No Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
-    else
+    endef
+  else
+    define install-file-and-sign
+	  $(install-file)
 	  $(CODESIGN) --remove-signature '$(call DecodeSpace, $@)'
 	  $(CODESIGN) $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/$(PLIST_FILE) '$(call DecodeSpace, $@)'
-    endif
-  endef
+    endef
+  endif
 else
   define install-file
 	$(call MakeTargetDir)
@@ -180,8 +169,7 @@ else
   endef
   # SapMachine 2024-09-13: import async profiler binaries
   define install-file-and-sign
-	$(call MakeTargetDir)
-	$(CP) -fP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
+	$(install-file)
   endef
 endif
 
