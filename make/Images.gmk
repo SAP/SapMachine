@@ -247,9 +247,8 @@ ifeq ($(GCOV_ENABLED), true)
 
 endif
 
-# SapMachine 2024-09-13: import async profiler binaries
 ################################################################################
-# Async profiler import
+# SapMachine 2024-09-13: Async profiler import
 
 ifeq ($(call isTargetOs, linux macosx)+$(ASYNC_PROFILER_IMPORT_ENABLED), true+true)
 
@@ -267,32 +266,20 @@ ifeq ($(call isTargetOs, linux macosx)+$(ASYNC_PROFILER_IMPORT_ENABLED), true+tr
       MACRO := install-file-and-sign, \
   ))
 
-  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_JARS_TO_JDK, \
-      SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
-      DEST := $(JDK_IMAGE_DIR)/lib, \
-      FILES := async-profiler.jar converter.jar, \
-  ))
-
-  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_JARS_TO_JRE, \
-      SRC := $(ASYNC_PROFILER_IMPORT_PATH)/lib, \
-      DEST := $(JRE_IMAGE_DIR)/lib, \
-      FILES := async-profiler.jar converter.jar, \
-  ))
-
-  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JDK, \
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_TO_JDK, \
       SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
-      DEST := $(JDK_IMAGE_DIR)/legal/async, \
-      FILES := CHANGELOG.md LICENSE README.md, \
+      DEST := $(JDK_IMAGE_DIR), \
+      FILES := lib/async-profiler.jar lib/converter.jar legal/async/CHANGELOG.md legal/async/LICENSE legal/async/README.md, \
   ))
 
-  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_LEGAL_TO_JRE, \
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_TO_JRE, \
       SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
-      DEST := $(JRE_IMAGE_DIR)/legal/async, \
-      FILES := CHANGELOG.md LICENSE README.md, \
+      DEST := $(JRE_IMAGE_DIR), \
+      FILES := lib/async-profiler.jar lin/converter.jar legal/async/CHANGELOG.md legal/async/LICENSE legal/async/README.md, \
   ))
 
-  JDK_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_JARS_TO_JDK) $(COPY_ASYNC_PROFILER_LEGAL_TO_JDK)
-  JRE_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_JARS_TO_JRE) $(COPY_ASYNC_PROFILER_LEGAL_TO_JRE)
+  JDK_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_TO_JDK)
+  JRE_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_TO_JRE)
 endif
 
 ################################################################################
