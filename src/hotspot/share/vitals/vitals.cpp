@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1212,17 +1212,17 @@ static bool get_nmt_values(nmt_values_t* out) {
     out->thread_stacks_committed =
         vm_snapshot.by_type(mtThreadStack)->committed();
     out->thread_stacks_committed =
-        vm_snapshot.by_type(MEMFLAGS::mtThreadStack)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtThreadStack)->malloc_size();
+        vm_snapshot.by_type(MemTag::mtThreadStack)->committed() +
+        mlc_snapshot->by_type(MemTag::mtThreadStack)->malloc_size();
     out->gc_overhead =
-        vm_snapshot.by_type(MEMFLAGS::mtGC)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtGC)->malloc_size();
+        vm_snapshot.by_type(MemTag::mtGC)->committed() +
+        mlc_snapshot->by_type(MemTag::mtGC)->malloc_size();
     out->other_memory =
-        vm_snapshot.by_type(MEMFLAGS::mtOther)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtOther)->malloc_size();
+        vm_snapshot.by_type(MemTag::mtOther)->committed() +
+        mlc_snapshot->by_type(MemTag::mtOther)->malloc_size();
     out->overhead =
-        vm_snapshot.by_type(MEMFLAGS::mtNMT)->committed() +
-        mlc_snapshot->by_type(MEMFLAGS::mtNMT)->malloc_size() +
+        vm_snapshot.by_type(MemTag::mtNMT)->committed() +
+        mlc_snapshot->by_type(MemTag::mtNMT)->malloc_size() +
         mlc_snapshot->malloc_overhead();
     out->malloced_num =
         mlc_snapshot->total_count();
