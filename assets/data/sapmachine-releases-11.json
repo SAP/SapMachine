@@ -1,6 +1,44 @@
 {
   "updates": {
     "11.0.25": {
+      "sapmachine-11.0.25+7": {
+        "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.25%2B7",
+        "ea": "true",
+        "assets": {
+          "jdk": {
+            "linux-ppc64le": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.25-ea.7_linux-ppc64le_bin.tar.gz",
+                "checksum": "9fa578710d894ad1f9af7eb8b92d369c256022b4a91c66582de67feee9294ac4",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B7/sapmachine-jdk-11.0.25-ea.7_linux-ppc64le_bin.tar.gz"
+              }
+            },
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jdk-11.0.25-ea.7_linux-x64_bin.tar.gz",
+                "checksum": "fc0b5703505b145f01b1b2f19cc355dac41daa00d5a02e39ceab901e63e0f8bf",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B7/sapmachine-jdk-11.0.25-ea.7_linux-x64_bin.tar.gz"
+              }
+            }
+          },
+          "jre": {
+            "linux-ppc64le": {
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.25-ea.7_linux-ppc64le_bin.tar.gz",
+                "checksum": "4d3704a2fe86d231e09e2a6ac9010d674d12a4a81b42a571a5b24dee6d1f3bb2",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B7/sapmachine-jre-11.0.25-ea.7_linux-ppc64le_bin.tar.gz"
+              }
+            },
+            "linux-x64": {
+              "tar.gz": {
+                "name": "sapmachine-jre-11.0.25-ea.7_linux-x64_bin.tar.gz",
+                "checksum": "52fd0af586e53ab66f07882669a2ed9f1fdc3a66b9d669442d969e53656db1ed",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25%2B7/sapmachine-jre-11.0.25-ea.7_linux-x64_bin.tar.gz"
+              }
+            }
+          }
+        }
+      },
       "sapmachine-11.0.25+6": {
         "url": "https://github.com/SAP/SapMachine/releases/tag/sapmachine-11.0.25%2B6",
         "ea": "true",
