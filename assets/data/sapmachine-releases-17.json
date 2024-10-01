@@ -57,6 +57,13 @@
                 "checksum": "0ec47c2228abda9e8b7f5cd617a9fbd3467b2eeff15a93a2fda4379efe5bf0ef",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jdk-17.0.13-ea.9_macos-x64_bin.tar.gz"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-17.0.13-ea.9_windows-x64_bin.zip",
+                "checksum": "98cc911b80d1b613aa9439a5ec0264af162539ed3614f69281c9573551c303c0",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jdk-17.0.13-ea.9_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
@@ -110,6 +117,13 @@
                 "name": "sapmachine-jre-17.0.13-ea.9_macos-x64_bin.tar.gz",
                 "checksum": "6ab3ec85ea8659f65e1b439a9e88340a3b1967010f29b5ee3824539f840ebd68",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jre-17.0.13-ea.9_macos-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-17.0.13-ea.9_windows-x64_bin.zip",
+                "checksum": "ccc26bb987517277b0400d5fa317dcc78d442d6c086db44a6ed5b92f1d42f9fc",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jre-17.0.13-ea.9_windows-x64_bin.zip"
               }
             }
           }
