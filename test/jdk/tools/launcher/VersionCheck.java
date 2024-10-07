@@ -43,7 +43,6 @@ import java.util.Set;
 public class VersionCheck extends TestHelper {
 
     // tools that do not accept -J-option
-    // SapMachine 2024-10-07: asprof was added on some platforms but has different command line flags
     static final String[] BLACKLIST_JOPTION = {
         "controlpanel",
         "jabswitch",
@@ -64,6 +63,7 @@ public class VersionCheck extends TestHelper {
         "jpackage",
         "ssvagent",
         "jwebserver",
+        // SapMachine 2024-10-07: asprof was added on some platforms but has different command line flags
         "asprof"
     };
 
@@ -111,6 +111,7 @@ public class VersionCheck extends TestHelper {
         "serialver",
         "servertool",
         "ssvagent",
+        // SapMachine 2024-10-07: asprof was added on some platforms but has different command line flags
         "asprof"
     };
 
