@@ -353,6 +353,37 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
      * we return back, otherwise proceed to set the environment.
      */
 #ifdef SETENV_REQUIRED
+
+    /* SapMachine 2023-09-18: new malloc trace */
+#if defined(LINUX)
+    if (ShouldPreloadLibMallocHooks(*pargc, *pargv) == JNI_TRUE) {
+        char const* env_name = "LD_PRELOAD";
+        char const* libpath = "/lib/libmallochooks.so";
+        char const* old_env = getenv(env_name);
+        char* env_entry;
+
+        if ((old_env == NULL) || (old_env[0] == '0')) {
+            size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
+            env_entry = JLI_MemAlloc(size);
+
+            snprintf(env_entry, size, "%s=%s%s", env_name, jrepath, libpath);
+        } else {
+            size_t size = JLI_StrLen(jrepath) + JLI_StrLen(libpath) + JLI_StrLen(env_name) +
+                          3 + JLI_StrLen(old_env);
+            env_entry = JLI_MemAlloc(size);
+
+            snprintf(env_entry, size, "%s=%s%s:%s", env_name, jrepath, libpath, old_env);
+        }
+
+        if (putenv(env_entry) == 0) {
+            /* We exec here, since the code below might return without exec.
+             * This can lead to double exec in the worst case, but we don't care.
+             */
+            execve(execname, argv, environ);
+        }
+    }
+#endif
+
     mustsetenv = RequiresSetenv(jvmpath);
     JLI_TraceLauncher("mustsetenv: %s\n", mustsetenv ? "TRUE" : "FALSE");
 

@@ -2021,7 +2021,8 @@ void HeapDumper::set_error(char const* error) {
 // Called by out-of-memory error reporting by a single Java thread
 // outside of a JVM safepoint
 void HeapDumper::dump_heap_from_oome() {
-  HeapDumper::dump_heap(true);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  HeapDumper::dump_heap(false, true);
 }
 
 // Called by error reporting by a single Java thread outside of a JVM safepoint,
@@ -2030,10 +2031,17 @@ void HeapDumper::dump_heap_from_oome() {
 // general use, however, this method will need modification to prevent
 // inteference when updating the static variables base_path and dump_file_seq below.
 void HeapDumper::dump_heap() {
-  HeapDumper::dump_heap(false);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  HeapDumper::dump_heap(false, false);
 }
 
-void HeapDumper::dump_heap(bool oome) {
+// SapMachine 2024-05-10: HeapDumpPath for jcmd
+void HeapDumper::dump_heap(bool gc_before_heap_dump, outputStream* out, int compression, bool overwrite) {
+  HeapDumper::dump_heap(gc_before_heap_dump, false, out, compression, overwrite);
+}
+
+// SapMachine 2024-05-10: HeapDumpPath for jcmd
+void HeapDumper::dump_heap(bool gc_before_heap_dump, bool oome, outputStream* out, int compression, bool overwrite) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
   char* my_path;
@@ -2105,8 +2113,10 @@ void HeapDumper::dump_heap(bool oome) {
   }
   dump_file_seq++;   // increment seq number for next time we dump
 
-  HeapDumper dumper(false /* no GC before heap dump */,
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  HeapDumper dumper(gc_before_heap_dump /* GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path, tty);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  dumper.dump(my_path, out, compression, overwrite);
   os::free(my_path);
 }

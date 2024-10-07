@@ -139,6 +139,16 @@
 #include "jfr/jfr.hpp"
 #endif
 
+// SapMachine 2019-02-20 : vitals
+#include "vitals/vitals.hpp"
+#ifdef LINUX
+#include "vitals_linux_himemreport.hpp"
+#endif
+// SapMachine 2024-04-09: malloc statistic
+#if defined(_LP64) && (defined(LINUX) || defined(__APPLE__))
+#include "malloctrace/mallocTracePosix.hpp"
+#endif
+
 // Initialization after module runtime initialization
 void universe_post_module_init();  // must happen after call_initPhase2
 
@@ -3854,6 +3864,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   JFR_ONLY(Jfr::on_create_vm_1();)
 
+  // SapMachine 2024-04-18: Initialize malloc statistic
+#if defined(MALLOC_TRACE_AVAILABLE)
+  sap::MallocStatistic::initialize();
+#else
+  if (MallocTraceAtStartup || UseMallocHooks) {
+    warning("Malloc trace is not supported on this platform");
+  }
+#endif
+
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
 
@@ -4049,6 +4068,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (MemProfiling)                   MemProfiler::engage();
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
+
+  // SapMachine 2019-02-20 : vitals
+  if (EnableVitals) {
+    sapmachine_vitals::initialize();
+  }
+#ifdef LINUX
+  if (HiMemReport) {
+    sapmachine_vitals::initialize_himem_report_facility();
+  }
+#endif // LINUX
 
   BiasedLocking::init();
 
@@ -4485,6 +4514,10 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Possible GC point.
   Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
+
+  // SapMachine 2019-02-20 : vitals
+  sapmachine_vitals::counters::inc_threads_created(1);
+
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
@@ -4734,6 +4767,22 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     st->cr();
   }
 
+  // SapMachine 2019-11-07 : vitals
+  const Thread* vitals_sampler_thread = sapmachine_vitals::samplerthread();
+  if (vitals_sampler_thread != NULL) {
+    vitals_sampler_thread->print_on(st);
+    st->cr();
+  }
+
+#ifdef LINUX
+  // SapMachine 2022-05-07 : HiMemReport
+  const Thread* himem_reporter_thread = sapmachine_vitals::himem_reporter_thread();
+  if (himem_reporter_thread != NULL) {
+    himem_reporter_thread->print_on(st);
+    st->cr();
+  }
+#endif
+
   st->flush();
 }
 
@@ -4786,6 +4835,14 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   st->print_cr("Other Threads:");
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
+  // SapMachine 2019-11-07 : vitals
+  print_on_error(const_cast<Thread*>(sapmachine_vitals::samplerthread()),
+                 st, current, buf, buflen, &found_current);
+#ifdef LINUX
+  // SapMachine 2022-05-07 : HiMemReport
+  print_on_error(const_cast<Thread*>(sapmachine_vitals::himem_reporter_thread()),
+                 st, current, buf, buflen, &found_current);
+#endif
 
   if (Universe::heap() != NULL) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
