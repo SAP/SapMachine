@@ -156,6 +156,8 @@ module java.base {
         jdk.jlink,
         jdk.jfr,
         jdk.net,
+        // SapMachine 2024-06-12: process group extension
+        jdk.sapext,
         jdk.incubator.foreign;
     exports jdk.internal.access.foreign to
         jdk.incubator.foreign;

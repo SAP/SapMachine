@@ -90,6 +90,8 @@ class Linux {
 
   static void print_process_memory_info(outputStream* st);
   static void print_system_memory_info(outputStream* st);
+  // SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+  static void print_cloud_info(outputStream* st);
   static bool print_container_info(outputStream* st);
   static void print_steal_info(outputStream* st);
   static void print_distro_info(outputStream* st);
