@@ -534,7 +534,8 @@
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_macos-x64_bin.tar.gz"
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_macos-x64_bin.tar.gz",
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_windows-x64_bin.zip"
           },
           "jre": {
             "linux-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_linux-aarch64_bin.tar.gz",
@@ -544,16 +545,8 @@
             "macos-aarch64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_macos-aarch64_bin.dmg",
             "macos-aarch64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_macos-aarch64_bin.tar.gz",
             "macos-x64-installer": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_macos-x64_bin.dmg",
-            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_macos-x64_bin.tar.gz"
-          }
-        },
-        {
-          "tag": "sapmachine-17.0.13+9",
-          "jdk": {
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jdk-17.0.13-ea.9_windows-x64_bin.zip"
-          },
-          "jre": {
-            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jre-17.0.13-ea.9_windows-x64_bin.zip"
+            "macos-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_macos-x64_bin.tar.gz",
+            "windows-x64": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_windows-x64_bin.zip"
           }
         },
         {
@@ -586,7 +579,8 @@
             "macos-aarch64-installer": "sha256 71ddab571184ffdfb71ddf06cd12497ed3d747a44f9e9bcb7318d4432f3bce05",
             "macos-aarch64": "sha256 db187613e824538fba5126714d14ff1359e1608a8c3948ea24189bf82173474b",
             "macos-x64-installer": "sha256 615913091eab54acfc75116df4f021d0701edbf52cf79b1d3d0b3c2bdb3d1f23",
-            "macos-x64": "sha256 ca09e57d7adf9c93021473c2829d611f5ddefc13c0b0c7cc5bf74fad87976682"
+            "macos-x64": "sha256 ca09e57d7adf9c93021473c2829d611f5ddefc13c0b0c7cc5bf74fad87976682",
+            "windows-x64": "sha256 3eb5835722703334a7c6cbc2100c8450287ecb46b00176a075b9306971e4d90d"
           },
           "jre": {
             "linux-aarch64": "sha256 392400c7c3c744b98b3ea00b91ecb1889a48deeb37eaf2ad254aff6595af6958",
@@ -596,16 +590,8 @@
             "macos-aarch64-installer": "sha256 def09cbe4899b041362bc09232ea45fa469644ffb529fb5611ba98f6082f9910",
             "macos-aarch64": "sha256 a6d7edb8cc3b231ac3b147f7cbaacd1938d65c5753041bdbde671ded92806225",
             "macos-x64-installer": "sha256 7a58ede5a3f1852b4b1c573f4653f0d8ca2c1b757d5bce2da831439017f439ac",
-            "macos-x64": "sha256 8031622bcecbaf6f31d2d1dc5b536ffec89ddb01373095bfec4dece0e483f1bd"
-          }
-        },
-        {
-          "tag": "sapmachine-17.0.13+9",
-          "jdk": {
-            "windows-x64": "sha256 98cc911b80d1b613aa9439a5ec0264af162539ed3614f69281c9573551c303c0"
-          },
-          "jre": {
-            "windows-x64": "sha256 ccc26bb987517277b0400d5fa317dcc78d442d6c086db44a6ed5b92f1d42f9fc"
+            "macos-x64": "sha256 8031622bcecbaf6f31d2d1dc5b536ffec89ddb01373095bfec4dece0e483f1bd",
+            "windows-x64": "sha256 d722eec46e40f196594f51ed06c0476189fdb1f66a55c2077a1f9f7be1c7cbbc"
           }
         },
         {
