@@ -698,12 +698,20 @@
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_linux-x64_bin.tar.gz",
             "checksum": "sha256 6cd92b81696ba7428aeb2466ba85becca849b4358d3df448ff1f6e253d0a1df5"
+          },
+          "linux-x64-musl": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jdk-17.0.13-ea.10_linux-x64-musl_bin.tar.gz",
+            "checksum": "sha256 0f448638748978c10970fac411bf82069315f9ce8c0a53387232514ddbcbfad6"
           }
         },
         "jre": {
           "linux-x64": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_linux-x64_bin.tar.gz",
             "checksum": "sha256 c5dabec9cd210afca4f50d58ca177d9dbdf1ee430c4a63524c095eea3fa625fb"
+          },
+          "linux-x64-musl": {
+            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B10/sapmachine-jre-17.0.13-ea.10_linux-x64-musl_bin.tar.gz",
+            "checksum": "sha256 eef0f290b4d936506ba1827917bba35a5105fca0aa86afdfb0cf1996660769f5"
           }
         }
       },
@@ -717,10 +725,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jdk-17.0.13-ea.9_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 5c8c891d12af5ee230b376b0d21c1fca1e974ef215c9a3438ebbfcd2cbd4dd20"
-          },
-          "linux-x64-musl": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jdk-17.0.13-ea.9_linux-x64-musl_bin.tar.gz",
-            "checksum": "sha256 ea9506b3fc46dcb5ffd0346b859283c8e87140a248fcfcbbc53bd03efb4f3e27"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jdk-17.0.13-ea.9_macos-aarch64_bin.dmg",
@@ -751,10 +755,6 @@
           "linux-ppc64le": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jre-17.0.13-ea.9_linux-ppc64le_bin.tar.gz",
             "checksum": "sha256 aabf1823e03c45cadb1db83ace8595c977bcc31f97963e268a0d5cfa59fe2853"
-          },
-          "linux-x64-musl": {
-            "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jre-17.0.13-ea.9_linux-x64-musl_bin.tar.gz",
-            "checksum": "sha256 782ab6988cb544b12916f0d469d91bffcaced5d13e468d1793dd66cd2eebef83"
           },
           "macos-aarch64-installer": {
             "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13%2B9/sapmachine-jre-17.0.13-ea.9_macos-aarch64_bin.dmg",
