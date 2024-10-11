@@ -63,7 +63,9 @@ public class HelpFlagsTest extends TestHelper {
         "jmc",
         "jweblauncher",
         "jcontrol",
-        "ssvagent"
+        "ssvagent",
+        // SapMachine 2024-10-07: asprof was added on some platforms but has different command line flags
+        "asprof"
     };
 
     // Lists which tools support which flags.
