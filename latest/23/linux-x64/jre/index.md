@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 23 Release for linux-x64
-checksum: sha256 ff38e9a6d0cef1e589681e9725a7abf04faac8377f8b3556549f917400ef16af
+checksum: sha256 88ad5f98412d6bdb29032d2c3691e65e2af7e46dd0b56f30583f9003a0b7f824
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-23/sapmachine-jre-23_linux-x64_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-23.0.1/sapmachine-jre-23.0.1_linux-x64_bin.tar.gz
 ---
