@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 17 Release for windows-x64
-checksum: sha256 fa2ac8287963cbd2e23714253c50fc2edfdcc5bd511a42f36afe1f1982fef50d
+checksum: sha256 d2950a7c015e49afd555ca13a574d44e98e71d9b23a60eb6a3fac304bb3a3feb
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12/sapmachine-jdk-17.0.12_windows-x64_bin.zip
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13/sapmachine-jdk-17.0.13_windows-x64_bin.zip
 ---

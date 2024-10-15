@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Latest SapMachine 17 Release for linux-ppc64le
-checksum: sha256 ce1479aed0d73f55d07532a5cd6fb92b77535fc8cc876eed0cdd8217d1855ec6
+checksum: sha256 b00f7b4a2d167912df8dd1850602dd26c5a20a0fafb82895091028c328752ee0
 redirect_to:
-  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.12/sapmachine-jre-17.0.12_linux-ppc64le_bin.tar.gz
+  - https://github.com/SAP/SapMachine/releases/download/sapmachine-17.0.13/sapmachine-jre-17.0.13_linux-ppc64le_bin.tar.gz
 ---
