@@ -58,6 +58,13 @@
                 "checksum": "4bf2d0c301e3d077a8c3de675cd167290f363b4fb631322e528344aa895b0e68",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B20/sapmachine-jdk-24-ea.20_macos-x64_bin.tar.gz"
               }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jdk-24-ea.20_windows-x64_bin.zip",
+                "checksum": "31a49de8df1dce3b70696182175c4afdc7a5039d7da6d0986de7188fa62cbf11",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B20/sapmachine-jdk-24-ea.20_windows-x64_bin.zip"
+              }
             }
           },
           "jre": {
@@ -111,6 +118,13 @@
                 "name": "sapmachine-jre-24-ea.20_macos-x64_bin.tar.gz",
                 "checksum": "fc78e0ea4d7b4b64ec3de4c88dfccaddc54a94743c19885e10c8c2207366dcb5",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B20/sapmachine-jre-24-ea.20_macos-x64_bin.tar.gz"
+              }
+            },
+            "windows-x64": {
+              "zip": {
+                "name": "sapmachine-jre-24-ea.20_windows-x64_bin.zip",
+                "checksum": "b6d52d9423a9ffb9adb578502707d34a59c5dd0d78d76579725ecf18b5d33a02",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-24%2B20/sapmachine-jre-24-ea.20_windows-x64_bin.zip"
               }
             }
           }
