@@ -224,6 +224,11 @@
                 "name": "sapmachine-jdk-23_windows-x64_bin.zip",
                 "checksum": "d4c86b3374f1c82615c1c92eb760d4c7153395a9856df34bb93ede9d1c077de4",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23/sapmachine-jdk-23_windows-x64_bin.zip"
+              },
+              "msi": {
+                "name": "sapmachine-jdk-23_windows-x64_bin.msi",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23/sapmachine-jdk-23_windows-x64_bin.msi",
+                "checksum": "a02bc9ee2962ff546fda42537a5c74398a663343d9883a7d75d96486821996ed"
               }
             }
           },
@@ -292,6 +297,10 @@
                 "name": "sapmachine-jre-23_windows-x64_bin.zip",
                 "checksum": "613268d13ff292bb41ab66e27057ab20166c9a644f6f4275765efb45150f853f",
                 "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23/sapmachine-jre-23_windows-x64_bin.zip"
+              },
+              "msi": {
+                "name": "sapmachine-jre-23_windows-x64_bin.msi",
+                "url": "https://github.com/SAP/SapMachine/releases/download/sapmachine-23/sapmachine-jre-23_windows-x64_bin.msi"
               }
             }
           }
