@@ -7,14 +7,14 @@ title: SapMachine
 
 <img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine">
 
-This Distribution supports all major Operation Systems and CPU architectures, including PowerPC and AIX.
+This Distribution supports all major Operation Systems.
 SapMachine comes with long-term support releases that include bug fixes and performance updates; you can learn more about support and maintenance in our [wiki](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support).
 
 Our goal is to keep SapMachine as close to OpenJDK as possible,
 only adding additional features when absolutely necessary; you can find a list of these
 in the [wiki](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK). One major difference is that we started including [async-profiler](https://github.com/jvm-profiling-tools/async-profiler) in our distribution.
 
-Our team's many contributions include the [PowerPC/AIX support](http://openjdk.java.net/projects/ppc-aix-port/), [helpful NullPointerExceptions](https://openjdk.org/jeps/358), a [website for JFR events](https://sap.github.io/SapMachine/jfrevents/), our own [IntelliJ Profiler plugin](https://plugins.jetbrains.com/plugin/20937-java-jfr-profiler), and more.
+Our team's many contributions to the OpenJDK and the ecosystem include the [PowerPC/AIX support](http://openjdk.java.net/projects/ppc-aix-port/), [helpful NullPointerExceptions](https://openjdk.org/jeps/358), a [website for JFR events](https://sap.github.io/SapMachine/jfrevents/), our own [IntelliJ Profiler plugin](https://plugins.jetbrains.com/plugin/20937-java-jfr-profiler), and more.
 
 ## Download
 
