@@ -3,7 +3,7 @@ layout: default
 title: SapMachine
 ---
 
-**SapMachine** is the free, multiplatform, production-ready, and [Java SE certified](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility) [OpenJDK](https://openjdk.org/) (Open Java Development Kit) distribution by [SAP](https://sapmachine.io). It serves as the default JDK for SAP's countless applications and services.
+**SapMachine** is the free, multiplatform, production-ready, and [Java SE certified](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility) [OpenJDK](https://openjdk.org/) (Open Java Development Kit) distribution by [SAP](https://sap.com). It serves as the default JDK for SAP's countless applications and services.
 
 <img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine">
 
@@ -14,9 +14,13 @@ Our goal is to keep SapMachine as close to OpenJDK as possible,
 only adding additional features when absolutely necessary; you can find a list of these
 in the [wiki](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK). One major difference is that we started including [async-profiler](https://github.com/jvm-profiling-tools/async-profiler) in our distribution.
 
-Our team's many contributions to the OpenJDK and the ecosystem include the [PowerPC/AIX support](http://openjdk.java.net/projects/ppc-aix-port/), [helpful NullPointerExceptions](https://openjdk.org/jeps/358), a [website for JFR events](https://sap.github.io/SapMachine/jfrevents/), our own [IntelliJ Profiler plugin](https://plugins.jetbrains.com/plugin/20937-java-jfr-profiler), and more.
+Our team's many contributions to the OpenJDK and the ecosystem include the [PowerPC/AIX support](http://openjdk.java.net/projects/ppc-aix-port/),
+ [helpful NullPointerExceptions](https://openjdk.org/jeps/358), a [website for JFR events](https://sap.github.io/SapMachine/jfrevents/),
+ our own [IntelliJ Profiler plugin](https://plugins.jetbrains.com/plugin/20937-java-jfr-profiler).
 
 ## Download
+
+In the following, you find downloads of our JDK and our build of the JDK Mission Control:
 
 <select id="sapmachine_major_select" class="download_select">
 </select>
