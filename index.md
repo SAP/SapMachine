@@ -59,7 +59,3 @@ Check out our [FAQ's](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Qu
 * [Certifications and Java Compatibility](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility)
 * [Differences between SapMachine and OpenJDK](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK)
 * [License](https://github.com/SAP/SapMachine/blob/sapmachine/LICENSE)
-
-<hr>
-
-2017-2024 by [SAP SE](https://www.sap.com)
