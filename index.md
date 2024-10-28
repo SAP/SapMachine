@@ -3,7 +3,7 @@ layout: default
 title: SapMachine
 ---
 
-**SapMachine** is the free, multiplatform, production-ready, and [Java SE certified](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility) [OpenJDK](https://openjdk.org/) (Open Java Development Kit) distribution by [SAP](https://sap.com). It serves as the default JDK for SAP's countless applications and services.
+**SapMachine** is a distribution of [OpenJDK](https://openjdk.org/) developed by SAP. It is designed to be free, cross-platform, production-ready, and [Java SE certified](https://github.com/SAP/SapMachine/wiki/Certification-and-Java-Compatibility). This distribution serves as the default Java Runtime for SAP's numerous applications and services.
 
 <img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine">
 
