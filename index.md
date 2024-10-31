@@ -8,7 +8,7 @@ title: SapMachine
 <img align="left" width="240" src="assets/images/logo_circular.svg" alt="Logo of SapMachine">
 
 SapMachine supports all major operating systems.
-SapMachine comes with long-term support releases that include bug fixes and performance updates; you can learn more about support and maintenance in our [wiki](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support).
+It comes with long-term support releases that include bug fixes and performance updates; you can learn more about support and maintenance in our [Wiki](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support).
 
 Our goal is to keep SapMachine as close to OpenJDK as possible,
 only adding additional features when absolutely necessary; you can find a list of these in the [wiki](https://github.com/SAP/SapMachine/wiki/Differences-between-SapMachine-and-OpenJDK).
