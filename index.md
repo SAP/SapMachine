@@ -52,7 +52,7 @@ In the following, you find downloads of our JDK and our build of the JDK Mission
 
 ## Documentation
 
-Check out our [FAQ's](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions) and [Wiki Pages](https://github.com/SAP/SapMachine/wiki) for more information, including:
+Check out our [FAQ's](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions) and [Wiki pages](https://github.com/SAP/SapMachine/wiki) for more information, including:
 
 * [Installation](https://github.com/SAP/SapMachine/wiki/Installation) and [Docker Images](https://github.com/SAP/SapMachine/wiki/Docker-Images)
 * [Maintenance and Support](https://github.com/SAP/SapMachine/wiki/Maintenance-and-Support)
