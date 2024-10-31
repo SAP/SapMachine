@@ -18,7 +18,7 @@ Our team's many contributions to the OpenJDK and the ecosystem include the [Powe
 
 ## Download
 
-In the following, you find downloads of our JDK and our build of the JDK Mission Control:
+In the following, you find downloads of SapMachine and our build of [JDK Mission Control (JMC)](https://openjdk.org/projects/jmc/):
 
 <select id="sapmachine_major_select" class="download_select">
 </select>
