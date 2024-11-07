@@ -265,7 +265,6 @@ void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register
   la(bytecode, Address(cache,
                        ConstantPoolCache::base_offset() +
                        ConstantPoolCacheEntry::indices_offset()));
-  membar(MacroAssembler::AnyAny);
   lwu(bytecode, bytecode);
   membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   const int shift_count = (1 + byte_no) * BitsPerByte;
@@ -850,7 +849,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       assert(lock_offset == 0,
              "displached header must be first word in BasicObjectLock");
 
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, tmp, count, /*fallthrough*/nullptr);
 
       // Test if the oopMark is an obvious stack pointer, i.e.,
       //  1) (mark & 7) == 0, and
@@ -964,7 +963,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       beqz(header_reg, count);
 
       // Atomic swap back the old header
-      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, tmp_reg, count, /*fallthrough*/nullptr);
     }
 
     // Call the runtime routine for slow case.
