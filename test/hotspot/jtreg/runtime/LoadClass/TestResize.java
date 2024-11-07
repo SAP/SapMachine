@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8184765
  * @summary make sure the SystemDictionary gets resized when load factor is too high
  * @requires vm.debug
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -116,10 +117,10 @@ public class TestResize {
     // that will allow us to calculate the table's load factor.
     // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
     // that will allow us to detect if the system dictionary resized.
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
-                                                              "-Xlog:safepoint+cleanup",
-                                                              "TriggerResize",
-                                                              "50000");
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
+                                                                         "-Xlog:safepoint+cleanup",
+                                                                         "TriggerResize",
+                                                                         "50000");
     analyzeOutputOn(pb);
   }
 }

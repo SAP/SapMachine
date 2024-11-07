@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestVitalsOff {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:-EnableVitals",
                 "-XX:MaxMetaspaceSize=16m",
                 "-Xlog:vitals",
@@ -45,5 +45,4 @@ public class TestVitalsOff {
         output.shouldHaveExitValue(0);
         output.shouldNotContain("Initializing Vitals");
     }
-
 }

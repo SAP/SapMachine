@@ -52,7 +52,9 @@ public class Scimark {
             sciMark2Cp = artifacts.get("gov.nist.math.scimark-2.0").toString();
         }
 
-        OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createTestJvm(
+        System.setProperty("test.noclasspath", "true");
+
+        OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createTestJavaProcessBuilder(
             "-cp", sciMark2Cp,
             "jnt.scimark2.commandline", "-large")
             .start());

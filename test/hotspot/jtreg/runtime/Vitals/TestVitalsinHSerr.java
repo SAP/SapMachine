@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @summary Test that Vitals report appears in hs-err file
  * @library /test/lib
  * @requires vm.debug
- * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestVitalsinHSerr
@@ -40,7 +39,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestVitalsinHSerr {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-Xmx100M",
                 "-XX:-CreateCoredumpOnCrash",
@@ -58,5 +57,4 @@ public class TestVitalsinHSerr {
         output.shouldContain("Now");        // hs-err file (in this case, dumped to stdout) should contain vitals
 
     }
-
 }

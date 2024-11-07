@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestVitalsInvalidSampleInterval {
 
     public static void main(String[] args) throws Exception {
-
         // Invalid Sample interval prints a warning and runs with Vitals disabled
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:VitalsSampleInterval=0",
                 "-XX:MaxMetaspaceSize=16m",
                 "-Xmx128m",
@@ -44,7 +43,5 @@ public class TestVitalsInvalidSampleInterval {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(1);
         output.shouldContain("Improperly specified VM option 'VitalsSampleInterval=0'");
-
     }
-
 }

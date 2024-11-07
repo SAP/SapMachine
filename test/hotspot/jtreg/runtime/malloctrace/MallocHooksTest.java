@@ -276,7 +276,7 @@ public class MallocHooksTest {
         args[opts.length + 2] = "enablingStress";
         args[opts.length + 3] = "" + nrOfThreads;
         args[opts.length + 4] = "" + nrOfEnables;
-        Process p = ProcessTools.createJavaProcessBuilder(args).start();
+        Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
         checkIsAttachable(p);
         // Make sure java is running when we return
         p.getInputStream().read();
@@ -290,7 +290,7 @@ public class MallocHooksTest {
         args[opts.length + 1] = MallocHooksTest.class.getName();
         args[opts.length + 2] = "wait";
         args[opts.length + 3] = "1";
-        Process p = ProcessTools.createJavaProcessBuilder(args).start();
+        Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
         checkIsAttachable(p);
         // Make sure java is running when we return
         p.getInputStream().read();
@@ -528,7 +528,7 @@ public class MallocHooksTest {
         args[opts.length + 1] = MallocHooksTest.class.getName();
         args[opts.length + 2] = "sleep";
         args[opts.length + 3] = Integer.toString(sleep);
-        Process p = ProcessTools.createJavaProcessBuilder(args).start();
+        Process p = ProcessTools.createLimitedTestJavaProcessBuilder(args).start();
         checkIsAttachable(p);
 
         return new OutputAnalyzer(p);
@@ -576,7 +576,7 @@ public class MallocHooksTest {
         args[opts.length + 6] = Integer.toString(size);
         args[opts.length + 7] = Integer.toString(maxStack);
         args[opts.length + 8] = Integer.toString(seed);
-        return ProcessTools.createJavaProcessBuilder(args);
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static void testDumpPercentage(boolean bySize) throws Exception {
@@ -638,17 +638,17 @@ public class MallocHooksTest {
         args[opts.length + 6] = Integer.toString(maxLiveAllocations);
         args[opts.length + 7] = Integer.toString(seed);
         args[opts.length + 8] = Boolean.toString(trackLive);
-        return ProcessTools.createJavaProcessBuilder(args);
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static ProcessBuilder checkEnvProc(String env) {
         String[] args = {MallocHooksTest.class.getName(), "checkEnv", env};
-        return ProcessTools.createJavaProcessBuilder(args);
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static ProcessBuilder checkEnvProcWithHooks(String env) {
         String[] args = {"-XX:+UseMallocHooks", MallocHooksTest.class.getName(),"checkEnv", env};
-        return ProcessTools.createJavaProcessBuilder(args);
+        return ProcessTools.createLimitedTestJavaProcessBuilder(args);
     }
 
     private static String getLdPrelodEnv() {

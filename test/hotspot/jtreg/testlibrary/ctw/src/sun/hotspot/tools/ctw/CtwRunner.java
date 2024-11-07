@@ -174,7 +174,7 @@ public class CtwRunner {
         while (!done) {
             String[] cmd = cmd(classStart, classStop);
             try {
-                ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
+                ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
                 String commandLine = pb.command()
                         .stream()
                         .collect(Collectors.joining(" "));
@@ -290,6 +290,7 @@ public class CtwRunner {
                     "-XX:+StressGCM",
                     "-XX:+StressIGVN",
                     "-XX:+StressCCP",
+                    "-XX:+StressIncrementalInlining",
                     // StressSeed is uint
                     "-XX:StressSeed=" + Math.abs(rng.nextLong()),
                     // CTW entry point

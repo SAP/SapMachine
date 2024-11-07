@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public class TestCommon extends CDSTestUtils {
     // Create AppCDS archive using most common args - convenience method
     public static OutputAnalyzer createArchive(String appJar, String classList[],
                                                String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
+        CDSOptions opts = (new CDSOptions()).setAppJar(appJar);
         opts.setClassList(classList);
         opts.addSuffix(suffix);
         return createArchive(opts);
@@ -164,7 +164,7 @@ public class TestCommon extends CDSTestUtils {
 
     public static OutputAnalyzer createArchive(String appJarDir, String appJar, String classList[],
                                                String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
+        CDSOptions opts = (new CDSOptions()).setAppJar(appJar);
         opts.setAppJarDir(appJarDir);
         opts.setClassList(classList);
         opts.addSuffix(suffix);
@@ -194,7 +194,7 @@ public class TestCommon extends CDSTestUtils {
     }
 
     // Create AppCDS archive using appcds options
-    public static OutputAnalyzer createArchive(AppCDSOptions opts)
+    public static OutputAnalyzer createArchive(CDSOptions opts)
         throws Exception {
         ArrayList<String> cmd = new ArrayList<String>();
         ArrayList<String> verifyOpts = new ArrayList<String>();
@@ -285,7 +285,7 @@ public class TestCommon extends CDSTestUtils {
             }
         }
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }
@@ -394,8 +394,8 @@ public class TestCommon extends CDSTestUtils {
         }
     }
 
-    // Execute JVM using AppCDS archive with specified AppCDSOptions
-    public static OutputAnalyzer runWithArchive(AppCDSOptions opts)
+    // Execute JVM using AppCDS archive with specified CDSOptions
+    public static OutputAnalyzer runWithArchive(CDSOptions opts)
         throws Exception {
 
         ArrayList<String> cmd = new ArrayList<String>();
@@ -432,7 +432,7 @@ public class TestCommon extends CDSTestUtils {
             }
         }
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
         if (opts.appJarDir != null) {
             pb.directory(new File(opts.appJarDir));
         }
@@ -441,7 +441,7 @@ public class TestCommon extends CDSTestUtils {
 
 
     public static OutputAnalyzer execCommon(String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions());
+        CDSOptions opts = (new CDSOptions());
         opts.addSuffix(suffix);
         return runWithArchive(opts);
     }
@@ -449,53 +449,53 @@ public class TestCommon extends CDSTestUtils {
     // This is the new API for running a Java process with CDS enabled.
     // See comments in the CDSTestUtils.Result class for how to use this method.
     public static Result run(String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions());
+        CDSOptions opts = (new CDSOptions());
         opts.addSuffix(suffix);
         return new Result(opts, runWithArchive(opts));
     }
 
     public static Result runWithoutCDS(String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions());
+        CDSOptions opts = (new CDSOptions());
         opts.addSuffix(suffix).setXShareMode("off");;
         return new Result(opts, runWithArchive(opts));
     }
 
     public static Result runWithRelativePath(String jarDir, String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions());
+        CDSOptions opts = (new CDSOptions());
         opts.setAppJarDir(jarDir);
         opts.addSuffix(suffix);
         return new Result(opts, runWithArchive(opts));
     }
 
     public static OutputAnalyzer exec(String appJar, String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
+        CDSOptions opts = (new CDSOptions()).setAppJar(appJar);
         opts.addSuffix(suffix);
         return runWithArchive(opts);
     }
 
     public static Result runWithModules(String prefix[], String upgrademodulepath, String modulepath,
                                             String mid, String... testClassArgs) throws Exception {
-        AppCDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
+        CDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
                                                mid, testClassArgs);
         return new Result(opts, runWithArchive(opts));
     }
 
     public static OutputAnalyzer execAuto(String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions());
+        CDSOptions opts = (new CDSOptions());
         opts.addSuffix(suffix).setXShareMode("auto");
         return runWithArchive(opts);
     }
 
     public static OutputAnalyzer execOff(String... suffix) throws Exception {
-        AppCDSOptions opts = (new AppCDSOptions());
+        CDSOptions opts = (new CDSOptions());
         opts.addSuffix(suffix).setXShareMode("off");
         return runWithArchive(opts);
     }
 
 
-    private static AppCDSOptions makeModuleOptions(String prefix[], String upgrademodulepath, String modulepath,
+    private static CDSOptions makeModuleOptions(String prefix[], String upgrademodulepath, String modulepath,
                                             String mid, String testClassArgs[]) {
-        AppCDSOptions opts = (new AppCDSOptions());
+        CDSOptions opts = (new CDSOptions());
 
         opts.addPrefix(prefix);
         if (upgrademodulepath == null) {
@@ -511,7 +511,7 @@ public class TestCommon extends CDSTestUtils {
     public static OutputAnalyzer execModule(String prefix[], String upgrademodulepath, String modulepath,
                                             String mid, String... testClassArgs)
         throws Exception {
-        AppCDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
+        CDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
                                                mid, testClassArgs);
         return runWithArchive(opts);
     }

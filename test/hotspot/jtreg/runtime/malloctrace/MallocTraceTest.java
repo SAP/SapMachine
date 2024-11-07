@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class MallocTraceTest {
         if (args[0].equals("off") || args[0].equals("on")) {
             boolean active = args[0].equals("on");
             String option = active ? "-XX:+EnableMallocTrace" : "-XX:-EnableMallocTrace";
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                     option, "-XX:+PrintMallocTraceAtExit", "-version");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.reportDiagnosticSummary();

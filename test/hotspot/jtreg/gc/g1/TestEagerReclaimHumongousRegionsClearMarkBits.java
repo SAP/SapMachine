@@ -30,6 +30,7 @@ package gc.g1;
  * mark bitmaps at reclaim.
  * @key randomness
  * @requires vm.gc.G1
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -118,7 +119,7 @@ class TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast {
 
 public class TestEagerReclaimHumongousRegionsClearMarkBits {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UseG1GC",
             "-Xms128M",
             "-Xmx128M",
@@ -129,7 +130,6 @@ public class TestEagerReclaimHumongousRegionsClearMarkBits {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+VerifyAfterGC",
             "-XX:ConcGCThreads=1", // Want to make marking as slow as possible.
-            "-XX:+IgnoreUnrecognizedVMOptions", // G1VerifyBitmaps is develop only.
             "-XX:+G1VerifyBitmaps",
             TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

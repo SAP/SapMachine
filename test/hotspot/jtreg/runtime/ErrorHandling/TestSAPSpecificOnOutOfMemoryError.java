@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class TestSAPSpecificOnOutOfMemoryError {
         args.add("-Xmx128m");
         args.add(TestSAPSpecificOnOutOfMemoryError.class.getName());
         args.add("throwOOME");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
         int exitValue = output.getExitValue();

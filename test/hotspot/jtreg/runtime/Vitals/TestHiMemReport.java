@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class TestHiMemReport {
     };
 
     static void testPrint() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
@@ -114,7 +114,7 @@ public class TestHiMemReport {
     }
 
     static void testDump() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:NativeMemoryTracking=summary",
                 "-XX:HiMemReportDir=himemreport-1",
@@ -147,7 +147,7 @@ public class TestHiMemReport {
     static void testDumpWithExecToReportDir() throws Exception {
         String reportDirName = "himemreport-2";
         // Here we not only dump, but we also execute several jcmds. Therefore we take some more seconds to sleep
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:HiMemReportDir=himemreport-2",
                 "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders;GC.heap_dump",
@@ -254,7 +254,7 @@ public class TestHiMemReport {
 
     // Test multiple Execs, with the output of the commands going to stderr
     static void testDumpWithExecToStderr() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders",
                 "-XX:NativeMemoryTracking=summary",
@@ -301,7 +301,7 @@ public class TestHiMemReport {
      * (I'm not sure that this always works, but I would like to know if it does not, and if not, in what context)
      */
     static void testHasNaturalMax() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-Xlog:vitals", "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
@@ -322,8 +322,7 @@ public class TestHiMemReport {
         else if (args[0].equals("sleep")) {
             int numSeconds = Integer.parseInt(args[1]);
             Thread.sleep(numSeconds * 1000);
-        }else
+        } else
             throw new RuntimeException("Invalid test " + args[0]);
     }
-
 }
