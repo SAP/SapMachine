@@ -2451,13 +2451,6 @@ void MallocTraceEnablePeriodicTask::task() {
 } // namespace mallocStatImpl
 
 void MallocStatistic::initialize() {
-  // Don't enable this if the other malloc trace is on.
-#if defined(LINUX)
-  if (EnableMallocTrace) {
-    return;
-  }
-#endif
-
   // Remove the hooks from the preload env, so we don't
   // preload mallochooks for spawned programs.
   mallocStatImpl::remove_malloc_hooks_from_env();

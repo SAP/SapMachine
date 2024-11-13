@@ -71,8 +71,6 @@
 #ifdef LINUX
 #include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
-// SapMachine 2021-09-01: malloc-trace
-#include "malloctrace/mallocTraceDCmd.hpp"
 #include "trimCHeapDCmd.hpp"
 #include <errno.h>
 #endif
@@ -148,8 +146,6 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
-  // SapMachine 2021-09-01: malloc-trace
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDCmd>(full_export, true, false));
 #endif // LINUX
 #if defined(LINUX) || defined(_WIN64)
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));

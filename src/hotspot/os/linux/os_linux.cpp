@@ -84,9 +84,6 @@
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
-// SapMachine 2021-09-01: malloc-trace
-#include "malloctrace/mallocTrace.hpp"
-
 // put OS-includes here
 # include <ctype.h>
 # include <stdlib.h>
@@ -4810,21 +4807,6 @@ jint os::init_2(void) {
       vm_exit_during_initialization("Setting timer slack failed: %s", os::strerror(errno));
     }
   }
-
-#ifdef HAVE_GLIBC_MALLOC_HOOKS
-  // SapMachine 2021-09-01: malloc-trace
-  if (EnableMallocTrace) {
-    sap::MallocTracer::enable();
-  }
-#else
-  if (!FLAG_IS_DEFAULT(EnableMallocTrace)) {
-#ifdef __GLIBC__
-    warning("EnableMallocTrace ignored (Glibc too new. Needs glibc version <= 2.31.)");
-#else
-    warning("Not a glibc system. EnableMallocTrace ignored.");
-#endif
-  }
-#endif // __GLIBC__
 
   return JNI_OK;
 }
