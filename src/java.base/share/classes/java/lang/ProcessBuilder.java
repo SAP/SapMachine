@@ -35,6 +35,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+// SapMachine 2024-06-12: process group extension
+import jdk.internal.access.JavaLangProcessBuilderAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.ProcessStartEvent;
 import sun.security.action.GetPropertyAction;
 
@@ -196,6 +199,19 @@ public final class ProcessBuilder
     private Map<String,String> environment;
     private boolean redirectErrorStream;
     private Redirect[] redirects;
+
+    // SapMachine 2024-06-12: process group extension
+    private boolean createNewProcessGroupOnSpawn;
+    static {
+        SharedSecrets.setJavaLangProcessBuilderAccess(
+            new JavaLangProcessBuilderAccess() {
+                @Override
+                public void createNewProcessGroupOnSpawn(ProcessBuilder pb, boolean value) {
+                    pb.createNewProcessGroupOnSpawn = value;
+                }
+            }
+        );
+    }
 
     /**
      * Constructs a process builder with the specified operating
@@ -1111,7 +1127,9 @@ public final class ProcessBuilder
                                      environment,
                                      dir,
                                      redirects,
-                                     redirectErrorStream);
+                                     redirectErrorStream,
+                                     // SapMachine 2024-06-12: process group extension
+                                     createNewProcessGroupOnSpawn);
             ProcessStartEvent event = new ProcessStartEvent();
             if (event.isEnabled()) {
                 StringJoiner command = new StringJoiner(" ");
