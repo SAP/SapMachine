@@ -193,6 +193,29 @@ public:
   }
   virtual void execute(DCmdSource source, TRAPS);
 };
+
+// SapMachine 2024-12-05
+#if defined(WITH_SAP_JMC_AGENT)
+class JVMTIJmcAgentLoadDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _option;
+public:
+  JVMTIJmcAgentLoadDCmd(outputStream* output, bool heap);
+  static int num_arguments() { return 1; }
+  static const char* name() { return "JVMTI.jmc_agent_load"; }
+  static const char* description() {
+    return "Load the JCM agent.";
+  }
+  static const char* impact() { return "Low"; }
+  static const JavaPermission permission() {
+    JavaPermission p = { "java.lang.management.ManagementPermission",
+                         "control", NULL };
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+#endif // WITH_SAP_JMC_AGENT
+
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 

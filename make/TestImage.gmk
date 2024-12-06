@@ -49,6 +49,14 @@ $(README):
 
 TARGETS += $(BUILD_INFO_PROPERTIES) $(README)
 
+# SapMachine 2024-12-05: Copy test jar for SAP JMC agent if needed.
+ifeq ($(SAP_JMC_AGENT_ENABLED), true)
+  $(TEST_IMAGE_DIR)/jars/agent-tests.jar: $(SAP_JMC_AGENT_PATH)/agent-$(SAP_JMC_AGENT_VERSION)-sap-tests.jar
+	$(call install-file)
+
+  TARGETS += $(TEST_IMAGE_DIR)/jars/agent-tests.jar
+endif
+
 ################################################################################
 
 prepare-test-image: $(TARGETS)
