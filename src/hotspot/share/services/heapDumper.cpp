@@ -2728,7 +2728,8 @@ void HeapDumper::set_error(char const* error) {
 // Called by out-of-memory error reporting by a single Java thread
 // outside of a JVM safepoint
 void HeapDumper::dump_heap_from_oome() {
-  HeapDumper::dump_heap(true);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  HeapDumper::dump_heap(false, true);
 }
 
 // Called by error reporting by a single Java thread outside of a JVM safepoint,
@@ -2737,17 +2738,26 @@ void HeapDumper::dump_heap_from_oome() {
 // general use, however, this method will need modification to prevent
 // inteference when updating the static variables base_path and dump_file_seq below.
 void HeapDumper::dump_heap() {
-  HeapDumper::dump_heap(false);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  HeapDumper::dump_heap(false, false);
 }
 
-void HeapDumper::dump_heap(bool oome) {
+// SapMachine 2024-05-10: HeapDumpPath for jcmd
+void HeapDumper::dump_heap(bool gc_before_heap_dump, outputStream* out, int compression, bool overwrite, uint parallel_thread_num) {
+  HeapDumper::dump_heap(gc_before_heap_dump, false, out, compression, overwrite, parallel_thread_num);
+}
+
+// SapMachine 2024-05-10: HeapDumpPath for jcmd
+void HeapDumper::dump_heap(bool gc_before_heap_dump, bool oome, outputStream* out, int compression, bool overwrite, uint parallel_thread_num) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
   char* my_path;
   const int max_digit_chars = 20;
 
   const char* dump_file_name = "java_pid";
-  const char* dump_file_ext  = HeapDumpGzipLevel > 0 ? ".hprof.gz" : ".hprof";
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  const int ziplevel = compression < 0 ? HeapDumpGzipLevel : compression;
+  const char* dump_file_ext  = ziplevel > 0 ? ".hprof.gz" : ".hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
@@ -2812,8 +2822,10 @@ void HeapDumper::dump_heap(bool oome) {
   }
   dump_file_seq++;   // increment seq number for next time we dump
 
-  HeapDumper dumper(false /* no GC before heap dump */,
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  HeapDumper dumper(gc_before_heap_dump /* GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path, tty, HeapDumpGzipLevel);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  dumper.dump(my_path, out, ziplevel, overwrite, parallel_thread_num);
   os::free(my_path);
 }
