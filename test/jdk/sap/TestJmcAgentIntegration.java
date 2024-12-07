@@ -31,6 +31,6 @@ public class TestJmcAgentIntegration {
         URLClassLoader cl = new URLClassLoader(new URL[] {url}, TestJmcAgentIntegration.class.getClassLoader());
         Class<?> testClass = Class.forName("org.openjdk.jmc.agent.sap.test.TestRunner", true, cl);
         Method mainMethod = testClass.getDeclaredMethod("main", String[].class);
-        mainMethod.invoke(null, new Object[] {new String[0]});
+        mainMethod.invoke(null, new Object[] {new String[] {"-dump"}});
     }
 }
