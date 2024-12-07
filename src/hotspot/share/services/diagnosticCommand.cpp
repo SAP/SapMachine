@@ -374,7 +374,7 @@ void JVMTIJmcAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   jio_snprintf(agent_line, len, "%s/lib/%s%s%s", java_home, agent_jar, option == NULL ? "" : "=",
     option == NULL ? "" : option);
-  JvmtiAgentList::load_agent("instrument", "false", agent_line, output());
+  JvmtiAgentList::load_agent("instrument", false, agent_line, output());
 
   os::free(agent_line);
 }
