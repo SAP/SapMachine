@@ -102,6 +102,10 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
+// SapMachine 2019-09-01: Vitals
+#include "runtime/globals.hpp"
+#include "vitals/vitals.hpp"
+
 GrowableArray<Method*>* collected_profiled_methods;
 
 static int compare_methods(Method** a, Method** b) {
@@ -357,6 +361,14 @@ void print_statistics() {
     CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
   }
 
+  // SapMachine 2019-09-01: Vitals
+  if (DumpVitalsAtExit) {
+    sapmachine_vitals::dump_reports();
+  }
+  if (PrintVitalsAtExit) {
+    sapmachine_vitals::print_report(tty);
+  }
+
   ThreadsSMRSupport::log_statistics();
 
   if (log_is_enabled(Info, perf, class, link)) {
@@ -522,6 +534,11 @@ void before_exit(JavaThread* thread, bool halt) {
       tty->print_cr("ERROR: fail_cnt=" SIZE_FORMAT, fail_cnt);
       guarantee(fail_cnt == 0, "unexpected StringTable verification failures");
     }
+  }
+
+  // SapMachine 2021-09-01: Shutdown vitals thread
+  if (EnableVitals) {
+    sapmachine_vitals::cleanup();
   }
 
   #undef BEFORE_EXIT_NOT_RUN
