@@ -51,10 +51,6 @@ public:
   static const char* impact() {
     return "Low.";
   }
-  static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "monitor", NULL };
-    return p;
-  }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
