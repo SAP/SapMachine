@@ -90,7 +90,7 @@ public class FileSocketTransportTest {
         opts.add("--sleep");
 
         // First check if we get the expected errors.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 opts.toArray(new String[0]));
         Process proc = pb.start();
         new Thread(() -> {
