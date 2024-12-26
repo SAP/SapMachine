@@ -173,6 +173,8 @@ module java.base {
         jdk.jfr,
         jdk.management,
         jdk.net,
+        // SapMachine 2024-06-12: process group extension
+        jdk.sapext,
         jdk.sctp,
         jdk.crypto.cryptoki;
     exports jdk.internal.classfile.components to

@@ -87,7 +87,9 @@ final class ProcessImpl extends Process {
                          java.util.Map<String,String> environment,
                          String dir,
                          ProcessBuilder.Redirect[] redirects,
-                         boolean redirectErrorStream)
+                         boolean redirectErrorStream,
+                         // SapMachine 2024-06-12: process group extension
+                         boolean createNewProcessGroupOnSpawn)
         throws IOException
     {
         String envblock = ProcessEnvironment.toEnvironmentBlock(environment);
@@ -144,7 +146,8 @@ final class ProcessImpl extends Process {
             }
 
             Process p = new ProcessImpl(cmdarray, envblock, dir,
-                                   stdHandles, forceNullOutputStream, redirectErrorStream);
+                                   // SapMachine 2024-07-01: process group extension
+                                   stdHandles, forceNullOutputStream, redirectErrorStream, createNewProcessGroupOnSpawn);
             if (redirects != null) {
                 // Copy the handles's if they are to be redirected to another process
                 if (stdHandles[0] >= 0
@@ -411,12 +414,17 @@ final class ProcessImpl extends Process {
     private InputStream stdout_stream;
     private InputStream stderr_stream;
 
+    // SapMachine 2024-07-01: process group extension
+    private final long hJob;
+
     private ProcessImpl(String cmd[],
                         final String envblock,
                         final String path,
                         final long[] stdHandles,
                         boolean forceNullOutputStream,
-                        final boolean redirectErrorStream)
+                        final boolean redirectErrorStream,
+                        // SapMachine 2024-07-01: process group extension
+                        final boolean createNewProcessGroupOnSpawn)
         throws IOException
     {
         String cmdstr;
@@ -476,11 +484,18 @@ final class ProcessImpl extends Process {
                     cmd);
         }
 
+        // SapMachine 2024-07-01: process group extension
+        final long[] local_hJob = (createNewProcessGroupOnSpawn) ? new long[1] : null;
         handle = create(cmdstr, envblock, path,
-                        stdHandles, redirectErrorStream);
+                        stdHandles, redirectErrorStream, local_hJob);
+        hJob = (createNewProcessGroupOnSpawn) ? local_hJob[0] : 0;
+
         // Register a cleaning function to close the handle
         final long local_handle = handle;    // local to prevent capture of this
-        CleanerFactory.cleaner().register(this, () -> closeHandle(local_handle));
+        // SapMachine 2024-07-01: process group extension
+        CleanerFactory.cleaner().register(this, createNewProcessGroupOnSpawn ?
+                () -> closeHandle(local_handle) :
+                () -> {closeHandle(local_handle); closeHandle(local_hJob[0]);});
 
         processHandle = ProcessHandleImpl.getInternal(getProcessId0(handle));
 
@@ -622,6 +637,17 @@ final class ProcessImpl extends Process {
 
     private static native void terminateProcess(long handle);
 
+    // SapMachine 2024-07-01: process group extension
+    private static native void terminateProcessGroup(long hJob);
+
+    void terminateProcessGroup(boolean force) {
+        if (hJob == 0) {
+            destroy();
+        } else {
+            terminateProcessGroup(hJob);
+        }
+    }
+
     @Override
     public long pid() {
         return processHandle.pid();
@@ -675,7 +701,9 @@ final class ProcessImpl extends Process {
                                       String envblock,
                                       String dir,
                                       long[] stdHandles,
-                                      boolean redirectErrorStream)
+                                      boolean redirectErrorStream,
+                                      // SapMachine 2024-07-01: process group extension
+                                      long[] processGroup)
         throws IOException;
 
     /**

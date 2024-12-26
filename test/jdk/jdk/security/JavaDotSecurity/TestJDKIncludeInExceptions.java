@@ -34,11 +34,14 @@ import java.security.Security;
  */
 public class TestJDKIncludeInExceptions {
 
+    // SapMachine 2018-11-23: SapMachine has a different default for jdk.includeInExceptions
+    private static final String EXPECTED = "hostInfo,jar";
+
     public static void main(String args[]) throws Exception {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
-        if (incInExc != null) {
+        if (!EXPECTED.equals(incInExc)) {
             throw new RuntimeException("Test failed: default value of " +
-                "jdk.includeInExceptions security property is not null: " +
+                "jdk.includeInExceptions security property is not " + EXPECTED + ": " +
                 incInExc);
         }
     }
