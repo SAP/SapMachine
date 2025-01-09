@@ -45,7 +45,7 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
- * Adds tools that are SAPMachine specific tools
+ * Adds tools that are SapMachine specific tools
  */
 public class AddSapMachineTools extends AbstractPlugin implements PostProcessor {
 
