@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, SAP SE. All rights reserved.
+ * Copyright (c) 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,21 @@
 
 package jdk.tools.jlink.internal.plugins;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Locale.Category;
-import java.util.Map;
-import java.util.function.Function;
-import java.io.IOException;
 
 import jdk.tools.jlink.internal.ExecutableImage;
-import jdk.tools.jlink.internal.PostProcessor;
 import jdk.tools.jlink.internal.Platform;
+import jdk.tools.jlink.internal.PostProcessor;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
-import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
- * Adds tools that are SapMachine specific tools
+ * Adds tools that are SapMachine specific
  */
 public class AddSapMachineTools extends AbstractPlugin implements PostProcessor {
 
@@ -68,9 +62,15 @@ public class AddSapMachineTools extends AbstractPlugin implements PostProcessor 
         return false;
     }
 
-    private final String tools = "lib/" + System.mapLibraryName("asyncProfiler") + " bin/asprof lib/async-profiler.jar lib/converter.jar legal/async/CHANGELOG.md legal/async/LICENSE legal/async/README.md";
-
-    private Path javaHomeFolder;
+    private final String[] tools = {
+            "bin/asprof",
+            "lib/" + System.mapLibraryName("asyncProfiler"),
+            "lib/async-profiler.jar",
+            "lib/converter.jar",
+            "legal/async/CHANGELOG.md",
+            "legal/async/LICENSE",
+            "legal/async/README.md"
+    };
 
     @Override
     public List<String> process(ExecutableImage image) {
@@ -86,26 +86,24 @@ public class AddSapMachineTools extends AbstractPlugin implements PostProcessor 
         var sourceJavaHome = Path.of(System.getProperty("java.home"));
         var targetJavaHome = image.getHome();
 
-        for (String tool : tools.split(" ")) {
+        for (String tool : tools) {
             var path = sourceJavaHome.resolve(tool);
             var target = targetJavaHome.resolve(tool);
             if (Files.exists(path)) {
                 try {
                     Files.createDirectories(target.getParent());
-                    Files.createFile(target);
-                    Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING);
+                    Files.copy(path, target);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
             }
         }
 
-        return List.of();
+        return null;
     }
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         return in;
     }
-
 }

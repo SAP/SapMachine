@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, SAP SE. All rights reserved.
+ * Copyright (c) 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,62 +21,73 @@
  * questions.
  */
 
-import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
-import jdk.test.lib.process.*;
-import jdk.test.whitebox.WhiteBox;
+import org.testng.annotations.Test;
 
-import tests.Helper;
+import jdk.test.lib.Platform;
 
 import jtreg.SkippedException;
 
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
+import tests.Helper;
+
 /* @test
- * @bug 8264322
  * @summary Test the --add-sapmachine-tools plugin
- * @requires os.family == "linux" | os.family == "mac"
  * @library ../../lib
  * @library /test/lib
  * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
- *          jdk.compiler
- * @build tests.*
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CDSPluginTest
+ * @run testng AddSapMachineToolsTest
  */
 
 public class AddSapMachineToolsTest {
-    public static void main(String[] args) throws Throwable {
+
+    private final String[] sapMachineTools = {
+            "bin/asprof",
+            "lib/" + System.mapLibraryName("asyncProfiler"),
+            "lib/async-profiler.jar",
+            "lib/converter.jar",
+            "legal/async/CHANGELOG.md",
+            "legal/async/LICENSE",
+            "legal/async/README.md"
+    };
+
+    @Test
+    public void testSapMachineTools() throws IOException {
+        boolean shouldHaveAsync = Platform.isOSX() ||
+                (Platform.isLinux() && (Platform.isAArch64() || Platform.isPPC() || Platform.isX64()) && !Platform.isMusl());
+
+        Path sourceJavaHome = Path.of(System.getProperty("java.home"));
+
+        if (!shouldHaveAsync) {
+            for (String tool : sapMachineTools) {
+                assertFalse(Files.exists(sourceJavaHome.resolve(tool)), tool + " should not exist.");
+            }
+            System.out.println("No SapMachine tools files found, as expected.");
+            return;
+        }
 
         Helper helper = Helper.newHelper();
         if (helper == null) {
-            System.err.println("Test not run");
-            return;
+            throw new SkippedException("JDK image is not suitable for this test.");
         }
 
-        var sourceJavaHome = Path.of(System.getProperty("java.home"));
-
-        if (!Files.exists(sourceJavaHome.resolve("lib/async-profiler.jar"))) {
-            System.err.println("Test not run, async-profiler not configured");
-            return;
+        for (String tool : sapMachineTools) {
+            assertTrue(Files.exists(sourceJavaHome.resolve(tool)), tool + " must exist.");
         }
+        System.out.println("All SapMachine tools files found, as expected.");
 
         var module = "sapmachine.tools";
         helper.generateDefaultJModule(module);
-        var image = helper.generateDefaultImage(new String[] { "--add-sapmachine-tools" },
-                                                module)
-            .assertSuccess();
+        var image = helper
+                .generateDefaultImage(new String[] { "--add-sapmachine-tools" }, module)
+                .assertSuccess();
 
-        String subDir = "lib/server/";
-
-        helper.checkImage(image, module, null, null,
-                      new String[] { "lib/async-profiler.jar", "lib/converter.jar",
-                                     "lib/" + System.mapLibraryName("asyncProfiler")});
+        helper.checkImage(image, module, null, null, sapMachineTools);
     }
 }
