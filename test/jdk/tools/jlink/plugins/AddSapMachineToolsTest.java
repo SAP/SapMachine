@@ -25,11 +25,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import jdk.test.lib.Platform;
-
-import jtreg.SkippedException;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -44,7 +43,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @run testng AddSapMachineToolsTest
  */
-
+@Test
 public class AddSapMachineToolsTest {
 
     private final String[] sapMachineTools = {
@@ -59,11 +58,16 @@ public class AddSapMachineToolsTest {
 
     @Test
     public void testSapMachineTools() throws IOException {
-        // async profiler is only available on restricted set of platforms and not in Github Actions builds
-        String gha = System.getenv("GITHUB_ACTIONS");
-        boolean shouldHaveAsync = (gha == null || !gha.contains("true")) &&
-                (Platform.isOSX() ||
-                 (Platform.isLinux() && (Platform.isAArch64() || Platform.isPPC() || Platform.isX64()) && !Platform.isMusl()));
+        // async profiler is not pulled in GHA builds, so skip the test there.
+        // checking whether we are in a GHA environment is hacky because jtreg removes environment variables,
+        // so we guess by checking for a user name containing the String "runner"
+        if (System.getProperty("user.name", "n/a").contains("runner")) {
+            throw new SkipException("Detected a Github Actions environment. No tools get added to SapMachine here, so skip test.");
+        }
+
+        // async profiler is only available on a subset of platforms
+        boolean shouldHaveAsync = Platform.isOSX() ||
+                (Platform.isLinux() && (Platform.isAArch64() || Platform.isPPC() || Platform.isX64()) && !Platform.isMusl());
 
         Path sourceJavaHome = Path.of(System.getProperty("java.home"));
 
@@ -77,7 +81,7 @@ public class AddSapMachineToolsTest {
 
         Helper helper = Helper.newHelper();
         if (helper == null) {
-            throw new SkippedException("JDK image is not suitable for this test.");
+            throw new SkipException("JDK image is not suitable for this test.");
         }
 
         for (String tool : sapMachineTools) {
