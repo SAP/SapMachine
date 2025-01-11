@@ -65,29 +65,28 @@ public class AddSapMachineToolsTest {
             throw new SkipException("Detected a Github Actions environment. No tools get added to SapMachine here, so skip test.");
         }
 
+        Helper helper = Helper.newHelper();
+        if (helper == null) {
+            throw new SkipException("JDK image is not suitable for this test.");
+        }
+
         // async profiler is only available on a subset of platforms
         boolean shouldHaveAsync = Platform.isOSX() ||
                 (Platform.isLinux() && (Platform.isAArch64() || Platform.isPPC() || Platform.isX64()) && !Platform.isMusl());
 
         Path sourceJavaHome = Path.of(System.getProperty("java.home"));
 
-        if (!shouldHaveAsync) {
+        if (shouldHaveAsync) {
+            for (String tool : sapMachineTools) {
+                assertTrue(Files.exists(sourceJavaHome.resolve(tool)), tool + " must exist.");
+            }
+            System.out.println("All SapMachine tools files found, as expected.");
+        } else {
             for (String tool : sapMachineTools) {
                 assertFalse(Files.exists(sourceJavaHome.resolve(tool)), tool + " should not exist.");
             }
             System.out.println("No SapMachine tools files found, as expected.");
-            return;
         }
-
-        Helper helper = Helper.newHelper();
-        if (helper == null) {
-            throw new SkipException("JDK image is not suitable for this test.");
-        }
-
-        for (String tool : sapMachineTools) {
-            assertTrue(Files.exists(sourceJavaHome.resolve(tool)), tool + " must exist.");
-        }
-        System.out.println("All SapMachine tools files found, as expected.");
 
         var module = "sapmachine.tools";
         helper.generateDefaultJModule(module);
@@ -95,6 +94,10 @@ public class AddSapMachineToolsTest {
                 .generateDefaultImage(new String[] { "--add-sapmachine-tools" }, module)
                 .assertSuccess();
 
-        helper.checkImage(image, module, null, null, sapMachineTools);
+        if (shouldHaveAsync) {
+            helper.checkImage(image, module, null, null, sapMachineTools);
+        } else {
+            helper.checkImage(image, module, null, sapMachineTools, null);
+        }
     }
 }
