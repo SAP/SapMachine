@@ -59,8 +59,11 @@ public class AddSapMachineToolsTest {
 
     @Test
     public void testSapMachineTools() throws IOException {
-        boolean shouldHaveAsync = Platform.isOSX() ||
-                (Platform.isLinux() && (Platform.isAArch64() || Platform.isPPC() || Platform.isX64()) && !Platform.isMusl());
+        // async profiler is only available on restricted set of platforms and not in Github Actions builds
+        String gha = System.getenv("GITHUB_ACTIONS");
+        boolean shouldHaveAsync = (gha == null || !gha.contains("true")) &&
+                (Platform.isOSX() ||
+                 (Platform.isLinux() && (Platform.isAArch64() || Platform.isPPC() || Platform.isX64()) && !Platform.isMusl()));
 
         Path sourceJavaHome = Path.of(System.getProperty("java.home"));
 
