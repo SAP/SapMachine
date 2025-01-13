@@ -39,6 +39,7 @@ import tests.Helper;
  * @summary Test the --add-sapmachine-tools plugin
  * @library ../../lib
  * @library /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jimage
  * @run testng AddSapMachineToolsTest
