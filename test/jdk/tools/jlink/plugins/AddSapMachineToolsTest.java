@@ -40,6 +40,7 @@ import tests.Helper;
  * @library ../../lib
  * @library /test/lib
  * @modules java.base/jdk.internal.jimage
+ *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jimage
  * @run testng AddSapMachineToolsTest
  */
