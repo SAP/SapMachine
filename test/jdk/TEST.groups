@@ -37,9 +37,7 @@ jdk_all = \
 #
 
 # When adding tests to tier1, make sure they end up in one of the tier1_partX groups
-# SapMachine 2019-01-24: Add tests where SAPMachine has different behavior to tier1
 tier1 = \
-    :tier1_sapmachine \
     :tier1_part1 \
     :tier1_part2 \
     :tier1_part3
@@ -50,7 +48,9 @@ tier1_part1 = \
 tier1_part2 = \
     :jdk_util
 
+# SapMachine 2019-01-24: Add tests where SAPMachine has different behavior to tier1
 tier1_part3 = \
+    :tier1_sapmachine \
     :jdk_math \
     :jdk_svc_sanity \
     :jdk_foreign \
@@ -67,6 +67,7 @@ tier1_sapmachine = \
     jdk/security/JavaDotSecurity/TestJDKIncludeInExceptions.java \
     sun/net/www/http/KeepAliveCache/TestConnectionIDFeature.java \
     sun/security/lib/cacerts/VerifyCACerts.java \
+    tools/jlink/plugins/AddSapMachineToolsTest.java \
     tools/launcher/HelpFlagsTest.java \
     tools/launcher/VersionCheck.java
 
