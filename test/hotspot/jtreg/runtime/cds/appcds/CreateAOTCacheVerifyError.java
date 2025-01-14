@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,24 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package jdk.jpackage.internal.util.function;
 
-import java.util.function.Function;
+/*
+ * @test
+ * @bug 8346457
+ * @summary VM should not crash during AOT cache creation when encountering a
+ *          class with VerifyError.
+ * @requires vm.cds
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @compile test-classes/BadLookupSwitch.jcod
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar badlookupswitch.jar BadLookupSwitch
+ * @run driver CreateAOTCacheVerifyError
+ */
 
-@FunctionalInterface
-public interface ThrowingFunction<T, R> {
+import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
 
-    R apply(T t) throws Throwable;
+public class CreateAOTCacheVerifyError {
 
-    public static <T, R> Function<T, R> toFunction(ThrowingFunction<T, R> v) {
-        return t -> {
-            try {
-                return v.apply(t);
-            } catch (Throwable ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
-            }
-        };
+    public static void main(String[] args) throws Exception {
+        String appJar = ClassFileInstaller.getJarPath("badlookupswitch.jar");
+        String classList[] = { BadLookupSwitch.class.getName() };
+        OutputAnalyzer out = TestCommon.testDump(appJar, classList);
+        out.shouldContain("Preload Warning: Verification failed for BadLookupSwitch");
+        out.shouldHaveExitValue(0);
     }
-
 }
