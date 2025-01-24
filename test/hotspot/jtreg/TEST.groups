@@ -361,7 +361,10 @@ hotspot_gc_shenandoah = \
   :tier2_gc_shenandoah \
   :tier3_gc_shenandoah
 
+# SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
+#  or which tests downstream-only features.
 tier1_runtime = \
+  :tier1_sapmachine \
   runtime/ \
  -runtime/6626217/bug_21227.java \
  -runtime/7100935 \
@@ -614,6 +617,12 @@ tier1_serviceability = \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
+
+# SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
+#  or which tests downstream-only features.
+tier1_sapmachine = \
+  runtime/Vitals \
+  runtime/malloctrace
 
 tier1 = \
   :tier1_common \

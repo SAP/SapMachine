@@ -223,6 +223,21 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(COPYRIGHT_YEAR)
 
+  # SapMachine 2024-09-13: import async profiler binaries
+  AC_ARG_WITH(async-profiler-import-path, [AS_HELP_STRING([--with-async-profiler-import-path],
+      [Set import path for downloaded async profiler binaries])])
+  if test "x$with_async_profiler_import_path" != x; then
+    ASYNC_PROFILER_IMPORT_PATH="$with_async_profiler_import_path"
+    if test -f "$ASYNC_PROFILER_IMPORT_PATH/bin/asprof"; then
+      ASYNC_PROFILER_IMPORT_ENABLED=true
+      AC_MSG_NOTICE([asprof exists, enabling async-profiler import])
+    else
+      AC_MSG_ERROR([async-profiler import path was set, but asprof was not found])
+    fi
+  fi
+  AC_SUBST(ASYNC_PROFILER_IMPORT_PATH)
+  AC_SUBST(ASYNC_PROFILER_IMPORT_ENABLED)
+
   # Override default library path
   AC_ARG_WITH([jni-libpath], [AS_HELP_STRING([--with-jni-libpath],
       [override default JNI library search path])])
