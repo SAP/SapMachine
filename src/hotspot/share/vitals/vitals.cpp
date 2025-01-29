@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 SAP SE. All rights reserved.
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #include "jvm_io.h"
 
@@ -480,8 +477,7 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
   int l = 0;
   if (scale == 1) {
     // scale = 1 - print exact bytes
-    l = printf_helper(st, SIZE_FORMAT, byte_size);
-
+    l = printf_helper(st, "%zu", byte_size);
   } else {
     const float display_value = (float) byte_size / scale;
     if (dynamic_mode) {

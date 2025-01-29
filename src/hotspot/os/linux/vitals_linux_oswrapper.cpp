@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "jvm_io.h"
 #include "osContainer_linux.hpp"
 #include "vitals_linux_oswrapper.hpp"
@@ -37,7 +34,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-
 
 
 #define LOG_HERE_F(msg, ...)  { printf("[%d] ", (int)::getpid()); ::printf(msg, __VA_ARGS__); printf("\n"); fflush(stdout); }

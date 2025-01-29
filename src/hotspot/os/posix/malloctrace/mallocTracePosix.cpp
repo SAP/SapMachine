@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  */
 
 #if defined(LINUX) || defined(__APPLE__)
-
-#include "precompiled.hpp"
 
 #include "jvm_io.h"
 #include "mallochooks.h"
@@ -2636,4 +2634,3 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
 } // namespace sap
 
 #endif // defined(LINUX) || defined(__APPLE__)
-

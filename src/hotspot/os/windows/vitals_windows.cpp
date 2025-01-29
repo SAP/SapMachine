@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -66,7 +63,6 @@ static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
 }
 
 void sample_platform_values(Sample* sample) {
-
   MEMORYSTATUSEX mse;
   mse.dwLength = sizeof(mse);
   if (::GlobalMemoryStatusEx(&mse)) {
@@ -80,7 +76,6 @@ void sample_platform_values(Sample* sample) {
     set_value_in_sample(g_col_process_working_set_size, sample, cnt.WorkingSetSize);
     set_value_in_sample(g_col_process_commit_charge, sample, cnt.PagefileUsage);
   }
-
 }
 
 } // namespace sapmachine_vitals

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"

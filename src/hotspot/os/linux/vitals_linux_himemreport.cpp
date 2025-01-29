@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #include "jvm_io.h"
 #include "vitals_linux_himemreport.hpp"
@@ -707,7 +704,7 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
   g_num_alerts ++;
 
   stringStream reason;
-  reason.print("rss+swap (" SIZE_FORMAT " K) larger than %d%% of %s (" SIZE_FORMAT " K).",
+  reason.print("rss+swap (%zu K) larger than %d%% of %s (%zu K).",
                triggering_size / K, percentage, describe_maximum_by_compare_type(g_compare_what),
                g_alert_state->maximum() / K);
   const char* message = reason.base();
@@ -772,7 +769,7 @@ void pulse_himem_report() {
 
     if (new_alvl > old_alvl) {
       const int new_percentage = g_alert_state->current_alert_level_percentage();
-      stderr_stream.print_cr("HiMemoryReport: rss+swap=" SIZE_FORMAT " K - alert level increased to %d (>=%d%%).",
+      stderr_stream.print_cr("HiMemoryReport: rss+swap=%zu K - alert level increased to %d (>=%d%%).",
                               rss_swap / K, new_alvl, new_percentage);
       int skipped = 0;
       for (int i = old_alvl + 1; i < new_alvl; i ++) {
@@ -794,7 +791,7 @@ void pulse_himem_report() {
 #endif // INCLUDE_NMT
     } else if (old_alvl > 0 && new_alvl == 0){
       // Memory usage recovered, and we hit the decay time, and now all is well again.
-      stderr_stream.print_cr("HiMemoryReport: rss+swap=" SIZE_FORMAT " K - seems we recovered. Resetting alert level.",
+      stderr_stream.print_cr("HiMemoryReport: rss+swap=%zu K - seems we recovered. Resetting alert level.",
                              rss_swap / K);
 #if INCLUDE_NMT
       NMTStuff::reset();
@@ -870,19 +867,19 @@ extern void initialize_himem_report_facility() {
   if (HiMemReportMax != 0) {
     g_compare_what = compare_type::compare_rss_vs_manual_limit;
     limit = HiMemReportMax;
-    log_info(vitals)("Vitals HiMemReport: Setting limit to HiMemReportMax (" SIZE_FORMAT " K).", limit / K);
+    log_info(vitals)("Vitals HiMemReport: Setting limit to HiMemReportMax (%zu K).", limit / K);
   } else {
     OSWrapper::update_if_needed();
     if (OSWrapper::syst_cgro_lim() != INVALID_VALUE) {
       // limit against cgroup limit
       g_compare_what = compare_type::compare_rss_vs_cgroup_limit;
       limit = (size_t)OSWrapper::syst_cgro_lim();
-      log_info(vitals)("Vitals HiMemReport: Setting limit to cgroup memory limit (" SIZE_FORMAT " K).", limit / K);
+      log_info(vitals)("Vitals HiMemReport: Setting limit to cgroup memory limit (%zu K).", limit / K);
     } else if (OSWrapper::syst_phys() != INVALID_VALUE) {
       // limit against total physical memory
       g_compare_what = compare_type::compare_rss_vs_phys;
       limit = (size_t)OSWrapper::syst_phys() / 2;
-      log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", limit / K);
+      log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (%zu K).", limit / K);
     }
   }
 
@@ -919,7 +916,7 @@ extern void initialize_himem_report_facility() {
 
 extern void print_himemreport_state(outputStream* st) {
   if (g_alert_state != NULL) {
-    st->print("HiMemReport: monitoring rss+swap vs %s (" SIZE_FORMAT " K)",
+    st->print("HiMemReport: monitoring rss+swap vs %s (%zu K)",
               describe_maximum_by_compare_type(g_compare_what),
               g_alert_state->maximum() / K);
     if (g_alert_state->current_alert_level() == 0) {
@@ -938,4 +935,3 @@ extern void print_himemreport_state(outputStream* st) {
 extern const Thread* himem_reporter_thread() { return g_reporter_thread; }
 
 } // namespace sapmachine_vitals
-
