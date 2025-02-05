@@ -141,9 +141,11 @@ define SetupBuildLauncherBody
     ifeq ($(STATIC_BUILD), true)
       $1_LDFLAGS += -exported_symbols_list \
               $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
+      # SapMachine 2018-01-18: Add dt_filesocket implementation
       $1_LIBS += \
           $$(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
           $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
+          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_filesocket.a \
           $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
           $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) \
           -framework CoreFoundation \

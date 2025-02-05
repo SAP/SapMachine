@@ -319,6 +319,14 @@ childProcess(void *arg)
     const ChildStuff* p = (const ChildStuff*) arg;
     int fail_pipe_fd = p->fail[1];
 
+    /* SapMachine 2018-11-19 */
+    if (p->createNewProcessGroupOnSpawn) {
+        /* Make this process leader of its own process group (see setpgid(2)). */
+        if (setpgid(0, 0) != 0) {
+            goto WhyCantJohnnyExec;
+        }
+    }
+
     if (p->sendAlivePing) {
         /* Child shall signal aliveness to parent at the very first
          * moment. */
