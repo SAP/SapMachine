@@ -480,8 +480,8 @@ UNSAFE_LEAF (void, Unsafe_WriteBackPostSync0(JNIEnv *env, jobject unsafe)) {
 
 // SapMachine 2025-02-05: Report error for DirectByteBufferOom to exit the VM
 UNSAFE_LEAF (void, Unsafe_ReportJavaOutOfMemory0(JNIEnv *env, jobject unsafe,jstring message)) {
-        char *utf_message = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(message));
-        report_java_out_of_memory(utf_message);
+  char *utf_message = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(message));
+  report_java_out_of_memory(utf_message);
 } UNSAFE_END
 
 ////// Random queries
