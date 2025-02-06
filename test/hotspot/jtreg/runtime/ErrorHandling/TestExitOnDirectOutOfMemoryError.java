@@ -43,7 +43,7 @@ public class TestExitOnDirectOutOfMemoryError {
             // This should guarantee to throw:
             // java.lang.OutOfMemoryError: Cannot reserve 2147483647 bytes of direct buffer memory (allocated: 0, limit: 20971520)
             try {
-               ByteBuffer byteBuffer = ByteBuffer.allocateDirect(Integer.MAX_VALUE);
+                ByteBuffer byteBuffer = ByteBuffer.allocateDirect(Integer.MAX_VALUE);
             } catch (OutOfMemoryError err) {
                 throw new Error("OOME didn't terminate JVM!");
             }
