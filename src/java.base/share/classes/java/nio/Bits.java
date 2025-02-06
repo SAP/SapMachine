@@ -68,6 +68,12 @@ class Bits {                            // package-private
     // -- Processor and memory-system properties --
 
     private static int PAGE_SIZE = -1;
+    // SapMachine 2025-02-05: Report error for DirectByteBufferOom to exit the VM
+    private static boolean reportErrorOnDirectMemoryOom = false;
+
+    static {
+        reportErrorOnDirectMemoryOom = Boolean.getBoolean("jdk.nio.reportErrorOnDirectMemoryOom");
+    }
 
     static int pageSize() {
         if (PAGE_SIZE == -1)
@@ -171,11 +177,16 @@ class Bits {                            // package-private
                 }
             }
 
+            // SapMachine 2025-02-05: Report error for DirectByteBufferOom to exit the VM
+            OutOfMemoryError error = new OutOfMemoryError
+                    ("Cannot reserve "
+                            + size + " bytes of direct buffer memory (allocated: "
+                            + RESERVED_MEMORY.get() + ", limit: " + MAX_MEMORY + ")");
+            if (reportErrorOnDirectMemoryOom) {
+                UNSAFE.reportJavaOutOfMemory0(error.getMessage());
+            }
             // no luck
-            throw new OutOfMemoryError
-                ("Cannot reserve "
-                 + size + " bytes of direct buffer memory (allocated: "
-                 + RESERVED_MEMORY.get() + ", limit: " + MAX_MEMORY +")");
+            throw error;
 
         } finally {
             if (interrupted) {
