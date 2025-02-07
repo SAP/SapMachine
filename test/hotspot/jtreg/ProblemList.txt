@@ -115,13 +115,13 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
-serviceability/sa/ClhsdbCDSCore.java  8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#id1  8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#id3  8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPmap.java#id1  8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPstack.java#id1  8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCore.java  8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java  8294316,8267433 macosx-x64
+serviceability/sa/ClhsdbCDSCore.java  8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#id1  8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#id3  8267433 macosx-x64
+serviceability/sa/ClhsdbPmap.java#id1  8267433 macosx-x64
+serviceability/sa/ClhsdbPstack.java#id1  8267433 macosx-x64
+serviceability/sa/TestJmapCore.java  8267433 macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java  8267433 macosx-x64
 
 #############################################################################
 
@@ -161,6 +161,7 @@ vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 ge
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8325905 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
