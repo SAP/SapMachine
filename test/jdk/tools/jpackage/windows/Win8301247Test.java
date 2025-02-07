@@ -45,11 +45,10 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test case for JDK-8301247
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @build Win8301247Test
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=Win8301247Test
  */
@@ -93,13 +92,13 @@ public class Win8301247Test {
 
     private static Optional<Long> findMainAppLauncherPID(JPackageCommand cmd,
             int expectedCount) {
-        // Get the list of PIDs and PPIDs of app launcher processes.
+        // Get the list of PIDs and PPIDs of app launcher processes. Run setWinRunWithEnglishOutput(true) for JDK-8344275.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
         List<String> output = Executor.of("wmic", "process", "where", "(name",
                 "=",
                 "\"" + cmd.appLauncherPath().getFileName().toString() + "\"",
                 ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).
-                saveOutput().executeAndGetOutput();
+                saveOutput().setWinRunWithEnglishOutput(true).executeAndGetOutput();
 
         if (expectedCount == 0) {
             TKit.assertEquals("No Instance(s) Available.", output.getFirst().
