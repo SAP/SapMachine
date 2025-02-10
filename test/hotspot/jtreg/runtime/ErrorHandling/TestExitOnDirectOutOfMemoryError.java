@@ -29,7 +29,6 @@
  * @library /test/lib
  * @requires vm.flagless
  * @run driver TestExitOnDirectOutOfMemoryError
- * @bug 8138745
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -41,7 +40,7 @@ public class TestExitOnDirectOutOfMemoryError {
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
             // This should guarantee to throw:
-            // java.lang.OutOfMemoryError: Cannot reserve 2147483647 bytes of direct buffer memory (allocated: 0, limit: 20971520)
+            // java.lang.OutOfMemoryError: Cannot reserve 2147483647 bytes of direct buffer memory (allocated: 0, limit: 10485760)
             try {
                 ByteBuffer byteBuffer = ByteBuffer.allocateDirect(Integer.MAX_VALUE);
             } catch (OutOfMemoryError err) {
@@ -51,17 +50,17 @@ public class TestExitOnDirectOutOfMemoryError {
 
         // else this is the main test
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+ExitOnOutOfMemoryError",
-                "-Xmx20m","-Djdk.nio.reportErrorOnDirectMemoryOom=true", TestExitOnDirectOutOfMemoryError.class.getName(), "throwOOME");
+                "-Xmx20m","-XX:MaxDirectMemorySize=10m","-Djdk.nio.reportErrorOnDirectMemoryOom=true", TestExitOnDirectOutOfMemoryError.class.getName(), "throwOOME");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         /*
          * Actual output should look like this:
-         * Terminating due to java.lang.OutOfMemoryError: Cannot reserve 2147483647 bytes of direct buffer memory (allocated: 0, limit: 20971520)
+         * Terminating due to java.lang.OutOfMemoryError: Cannot reserve 2147483647 bytes of direct buffer memory (allocated: 0, limit: 10485760)
          */
         output.shouldHaveExitValue(3);
         output.stdoutShouldNotBeEmpty();
         output.shouldContain("Terminating due to java.lang.OutOfMemoryError: Cannot reserve 2147483647 bytes of direct" +
-                " buffer memory (allocated: 0, limit: 20971520)");
+                " buffer memory (allocated: 0, limit: 10485760)");
         System.out.println("PASSED");
     }
 }
