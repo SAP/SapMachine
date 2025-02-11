@@ -31,10 +31,10 @@
  * @run driver TestExitOnDirectOutOfMemoryError
  */
 
+import java.nio.ByteBuffer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import java.nio.ByteBuffer;
 public class TestExitOnDirectOutOfMemoryError {
 
     public static void main(String[] args) throws Exception {
@@ -50,7 +50,8 @@ public class TestExitOnDirectOutOfMemoryError {
 
         // else this is the main test
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+ExitOnOutOfMemoryError",
-                "-Xmx20m","-XX:MaxDirectMemorySize=10m","-Djdk.nio.reportErrorOnDirectMemoryOom=true", TestExitOnDirectOutOfMemoryError.class.getName(), "throwOOME");
+                "-Xmx20m", "-XX:MaxDirectMemorySize=10m", "-Djdk.nio.reportErrorOnDirectMemoryOom=true",
+                TestExitOnDirectOutOfMemoryError.class.getName(), "throwOOME");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         /*
