@@ -206,3 +206,18 @@ ifeq ($(call isTargetOs, aix), true)
   TARGETS += $(BUILD_LIBJLI_STATIC)
 
 endif
+
+# SapMachine 2023-11-28: build libmallochooks
+
+ifeq ($(call isTargetOs, linux macosx), true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBMALLOCHOOKS, \
+      NAME := mallochooks, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS := -ldl, \
+  ))
+
+  TARGETS += $(BUILD_LIBMALLOCHOOKS)
+endif
