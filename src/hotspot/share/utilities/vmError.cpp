@@ -2179,7 +2179,7 @@ VMErrorCallbackMark::~VMErrorCallbackMark() {
 void VMError::print_stack(outputStream* st) {
   Thread* t = Thread::current_or_null_safe();
   char buf[1024];
-  if (t != NULL && t->is_Java_thread()) {
+  if (t != nullptr && t->is_Java_thread()) {
     VMError::print_stack_trace(st, (JavaThread*) t, buf, sizeof(buf), false);
   }
 }

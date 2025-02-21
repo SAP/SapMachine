@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -60,8 +60,8 @@ namespace sapmachine_vitals {
 
   void default_settings(print_info_t* out);
 
-  // Print report to stream. Leave print_info NULL for default settings.
-  void print_report(outputStream* st, const print_info_t* print_info = NULL);
+  // Print report to stream. Leave print_info nullptr for default settings.
+  void print_report(outputStream* st, const print_info_t* print_info = nullptr);
 
   // Dump both textual and csv style reports to two files, "vitals_<pid>.txt" and "vitals_<pid>.csv".
   // If these files exist, they are overwritten.

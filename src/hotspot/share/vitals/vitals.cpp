@@ -185,7 +185,7 @@ int printf_helper(outputStream* st, const char *fmt, ...) {
     jio_snprintf(buf, sizeof(buf), "!ERR!");
     len = (int)::strlen(buf);
   }
-  if (st != NULL) {
+  if (st != nullptr) {
     st->print_raw(buf);
   }
   return len;
@@ -220,7 +220,7 @@ public:
     // Allocate array; initialize with the minimum required column widths (which is the
     // size required to print the column header fully)
     const Column* c = ColumnList::the_list()->first();
-    while (c != NULL) {
+    while (c != nullptr) {
       _widths[c->index()] = (int)::strlen(c->name());
       c = c->next();
     }
@@ -230,12 +230,12 @@ public:
   //   update widths to accommodate sample values (uses dry-printing)
   void update_from_sample(const Sample* sample, const Sample* last_sample, const print_info_t* pi, int add_width = 0) {
     const Column* c = ColumnList::the_list()->first();
-    while (c != NULL) {
+    while (c != nullptr) {
       const int idx = c->index();
       const value_t v = sample->value(idx);
       value_t v2 = INVALID_VALUE;
       int age = -1;
-      if (last_sample != NULL) {
+      if (last_sample != nullptr) {
         v2 = last_sample->value(idx);
         age = sample->timestamp() - last_sample->timestamp();
       }
@@ -255,23 +255,23 @@ public:
 
 ////// Legend ///////////////////////////////////////////////
 
-Legend* Legend::_the_legend = NULL;
+Legend* Legend::_the_legend = nullptr;
 
 bool Legend::initialize() {
   _the_legend = new Legend();
-  return _the_legend != NULL;
+  return _the_legend != nullptr;
 }
 
 stringStream _legend;
 stringStream _footnote;
 static Legend* _the_legend;
 
-Legend::Legend() : _last_added_cat(NULL), _nr_of_columns(0) {}
+Legend::Legend() : _last_added_cat(nullptr), _nr_of_columns(0) {}
 
 void Legend::add_column_info(const char* const category, const char* const header,
                        const char* const name, const char* const description) {
   // Print category label if this column opens a new category
-  if ((_last_added_cat == NULL) || (::strcmp(_last_added_cat, category) != 0)) {
+  if ((_last_added_cat == nullptr) || (::strcmp(_last_added_cat, category) != 0)) {
     print_text_with_dashes(&_legend, category, 30);
     _legend.cr();
   }
@@ -280,7 +280,7 @@ void Legend::add_column_info(const char* const category, const char* const heade
   // print column name and description
   const int min_width_column_label = 16;
   char buf[32];
-  if (header != NULL) {
+  if (header != nullptr) {
     jio_snprintf(buf, sizeof(buf), "%s-%s", header, name);
   } else {
     jio_snprintf(buf, sizeof(buf), "%s", name);
@@ -301,17 +301,17 @@ void Legend::print_on(outputStream* st) const {
 
 ////// ColumnList: a singleton class holding all information about all columns
 
-ColumnList* ColumnList::_the_list = NULL;
+ColumnList* ColumnList::_the_list = nullptr;
 
 bool ColumnList::initialize() {
   _the_list = new ColumnList();
-  return _the_list != NULL;
+  return _the_list != nullptr;
 }
 
 void ColumnList::add_column(Column* c) {
   assert(c->index() == -1, "Do not add twice.");
   Column* c_last = _last;
-  if (_last != NULL) {
+  if (_last != nullptr) {
     _last->_next = c;
     _last = c;
   } else {
@@ -319,12 +319,12 @@ void ColumnList::add_column(Column* c) {
   }
   // fix indices (describe position of column within table/category/header
   c->_idx = c->_idx_cat = c->_idx_hdr = 0;
-  if (c_last != NULL) {
+  if (c_last != nullptr) {
     c->_idx = c_last->_idx + 1;
     if (::strcmp(c->category(), c_last->category()) == 0) { // same category as last column?
       c->_idx_cat = c_last->_idx_cat + 1;
     }
-    if (c->header() != NULL && c_last->header() != NULL &&
+    if (c->header() != nullptr && c_last->header() != nullptr &&
         ::strcmp(c_last->header(), c->header()) == 0) { // have header and same as last column?
       c->_idx_hdr = c_last->_idx_hdr + 1;
     }
@@ -340,11 +340,11 @@ static void print_category_line(outputStream* st, const ColumnWidths* widths, co
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
 
   const Column* c = ColumnList::the_list()->first();
-  assert(c != NULL, "no columns?");
-  const char* last_category_text = NULL;
+  assert(c != nullptr, "no columns?");
+  const char* last_category_text = nullptr;
   int width = 0;
 
-  while(c != NULL) {
+  while(c != nullptr) {
     if (c->index_within_category_section() == 0) {
       if (width > 0) {
         // Print category label centered over the last n columns, surrounded by dashes.
@@ -368,14 +368,14 @@ static void print_header_line(outputStream* st, const ColumnWidths* widths, cons
   ostream_put_n(st, ' ', TIMESTAMP_LEN + TIMESTAMP_DIVIDER_LEN);
 
   const Column* c = ColumnList::the_list()->first();
-  assert(c != NULL, "no columns?");
-  const char* last_header_text = NULL;
+  assert(c != nullptr, "no columns?");
+  const char* last_header_text = nullptr;
   int width = 0;
 
-  while(c != NULL) {
+  while(c != nullptr) {
     if (c->index_within_header_section() == 0) { // First in header section
       if (width > 0) {
-        if (last_header_text != NULL) {
+        if (last_header_text != nullptr) {
           // Print header label centered over the last n columns, surrounded by dashes.
           print_text_with_dashes(st, last_header_text, width - 1);
           st->put(' '); // divider
@@ -391,7 +391,7 @@ static void print_header_line(outputStream* st, const ColumnWidths* widths, cons
     last_header_text = c->header();
     c = c->next();
   }
-  if (width > 0 && last_header_text != NULL) {
+  if (width > 0 && last_header_text != nullptr) {
     print_text_with_dashes(st, last_header_text, width - 1);
   }
   st->cr();
@@ -407,17 +407,17 @@ static void print_column_names(outputStream* st, const ColumnWidths* widths, con
   }
 
   const Column* c = ColumnList::the_list()->first();
-  const Column* previous = NULL;
-  while (c != NULL) {
+  const Column* previous = nullptr;
+  while (c != nullptr) {
     if (pi->csv == false) {
       st->print("%-*s ", widths->at(c->index()), c->name());
     } else { // csv mode
       // csv: use comma as delimiter, don't pad, and precede name with category/header
       //  (limited to 4 chars).
-      if (c->category() != NULL) {
+      if (c->category() != nullptr) {
         st->print("%.4s-", c->category());
       }
-      if (c->header() != NULL) {
+      if (c->header() != nullptr) {
         st->print("%.4s-", c->header());
       }
       st->print("%s,", c->name());
@@ -505,11 +505,11 @@ static int print_memory_size(outputStream* st, size_t byte_size, size_t scale)  
 
 Column::Column(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
   : _category(category),
-    _header(header), // may be NULL
+    _header(header), // may be nullptr
     _name(name),
     _description(description),
     _extremum(extremum),
-    _next(NULL), _idx(-1),
+    _next(nullptr), _idx(-1),
     _idx_cat(-1), _idx_hdr(-1)
 {}
 
@@ -536,14 +536,14 @@ void Column::print_value(outputStream* st, value_t value, value_t last_value,
 // Returns the number of characters this value needs to be printed.
 int Column::calc_print_size(value_t value, value_t last_value,
     int last_value_age, const print_info_t* pi) const {
-  return do_print(NULL, value, last_value, last_value_age, pi);
+  return do_print(nullptr, value, last_value, last_value_age, pi);
 }
 
 int Column::do_print(outputStream* st, value_t value, value_t last_value,
                      int last_value_age, const print_info_t* pi) const {
   if (value == INVALID_VALUE) {
     if (pi->raw) {
-      if (st != NULL) {
+      if (st != nullptr) {
         return printf_helper(st, "%s", "?");
       }
       return 1;
@@ -596,7 +596,7 @@ int DeltaMemorySizeColumn::do_print0(outputStream* st, value_t value,
 
 // Print one sample.
 static void print_one_sample(outputStream* st, const Sample* sample,
-    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi, int marked_index = -1, char const* mark = NULL) {
+    const Sample* last_sample, const ColumnWidths* widths, const print_info_t* pi, int marked_index = -1, char const* mark = nullptr) {
 
   // Print timestamp and divider
   if (pi->csv) {
@@ -614,12 +614,12 @@ static void print_one_sample(outputStream* st, const Sample* sample,
   }
 
   const Column* c = ColumnList::the_list()->first();
-  while (c != NULL) {
+  while (c != nullptr) {
     const int idx = c->index();
     const value_t v = sample->value(idx);
     value_t v2 = INVALID_VALUE;
     int age = -1;
-    if (last_sample != NULL) {
+    if (last_sample != nullptr) {
       v2 = last_sample->value(idx);
       age = sample->timestamp() - last_sample->timestamp();
     }
@@ -644,7 +644,7 @@ class SampleTable : public CHeapObj<mtInternal> {
 
 #ifdef ASSERT
   void verify() const {
-    assert(_samples != NULL, "sanity");
+    assert(_samples != nullptr, "sanity");
     assert(_head >= 0 && _head < _num_entries, "sanity");
   }
 #endif
@@ -660,7 +660,7 @@ public:
     : _num_entries(num_entries),
       _head(-1),
       _did_wrap(false),
-      _samples(NULL)
+      _samples(nullptr)
   {
     _samples = (Sample*) NEW_C_HEAP_ARRAY(char, Sample::size_in_bytes() * _num_entries, mtInternal);
 #ifdef ASSERT
@@ -709,7 +709,7 @@ public:
   void call_closure_for_sample_at(Closure* closure, int idx) const {
     const Sample* sample = sample_at(idx);
     int idx2 = get_previous_index(idx);
-    const Sample* previous_sample = idx2 == -1 ? NULL : sample_at(idx2);
+    const Sample* previous_sample = idx2 == -1 ? nullptr : sample_at(idx2);
     closure->do_sample(sample, previous_sample);
   }
 
@@ -847,9 +847,9 @@ public:
 
     // Update exetremum samples if needed.
     if (StoreVitalsExtremas) {
-      static Sample* last_sample = NULL;
+      static Sample* last_sample = nullptr;
 
-      if (last_sample == NULL) {
+      if (last_sample == nullptr) {
         // Nothing to do yet. We need at least two samples, since some types need the
         // previous sample to print. Just allocate the space for the last sample as a marker
         // for seeing the first sample.
@@ -864,7 +864,7 @@ public:
         }
       } else {
         // Iterate columns and update if needed.
-        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+        for (Column const* column = ColumnList::the_list()->first(); column != nullptr; column = column->next()) {
           if (column->extremum() != NONE) {
             int idx = column->index();
             Sample* extremum_sample = _extremum_samples.sample_at(idx);
@@ -893,13 +893,13 @@ public:
     { // lock start
       AutoLock autolock(&g_vitals_lock);
 
-      if (sample_now != NULL) {
+      if (sample_now != nullptr) {
         ColumnWidths widths;
         MeasureColumnWidthsClosure mcwclos(pi, &widths);
-        widths.update_from_sample(sample_now, NULL, pi);
+        widths.update_from_sample(sample_now, nullptr, pi);
         st->print_cr("Now:");
         print_headers(st, &widths, pi);
-        print_one_sample(st, sample_now, NULL, &widths, pi);
+        print_one_sample(st, sample_now, nullptr, &widths, pi);
         st->cr();
       }
 
@@ -932,7 +932,7 @@ public:
         ColumnWidths widths;
         MeasureColumnWidthsClosure mcwclos(pi, &widths);
 
-        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+        for (Column const* column = ColumnList::the_list()->first(); column != nullptr; column = column->next()) {
           if (column->extremum() != NONE) {
             Sample* extremum_sample = _extremum_samples.sample_at(column->index());
             Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
@@ -942,7 +942,7 @@ public:
 
         print_headers(st, &widths, pi); // Need more space for the mark to display.
 
-        for (Column const* column = ColumnList::the_list()->first(); column != NULL; column = column->next()) {
+        for (Column const* column = ColumnList::the_list()->first(); column != nullptr; column = column->next()) {
           if (column->extremum() != NONE) {
             Sample* extremum_sample = _extremum_samples.sample_at(column->index());
             Sample* last_extremum_sample = _last_extremum_samples.sample_at(column->index());
@@ -958,7 +958,7 @@ public:
   }
 };
 
-static SampleTables* g_all_tables = NULL;
+static SampleTables* g_all_tables = nullptr;
 
 /////////////// SAMPLING //////////////////////
 
@@ -995,7 +995,7 @@ public:
 
   SamplerThread()
     : NamedThread(),
-      _sample(NULL),
+      _sample(nullptr),
       _stop(false),
       _samples_taken(0),
       _jump_cooldown(0)
@@ -1021,11 +1021,11 @@ public:
 
 };
 
-static SamplerThread* g_sampler_thread = NULL;
+static SamplerThread* g_sampler_thread = nullptr;
 
 static bool initialize_sampler_thread() {
   g_sampler_thread = new SamplerThread();
-  if (g_sampler_thread != NULL) {
+  if (g_sampler_thread != nullptr) {
     if (os::create_thread(g_sampler_thread, os::os_thread)) {
       os::start_thread(g_sampler_thread);
     }
@@ -1038,41 +1038,41 @@ static bool initialize_sampler_thread() {
 ///////////////////////////////////////
 /////// JVM-specific columns //////////
 
-static Column* g_col_heap_committed = NULL;
-static Column* g_col_heap_used = NULL;
+static Column* g_col_heap_committed = nullptr;
+static Column* g_col_heap_used = nullptr;
 
-static Column* g_col_metaspace_committed = NULL;
-static Column* g_col_metaspace_used = NULL;
+static Column* g_col_metaspace_committed = nullptr;
+static Column* g_col_metaspace_used = nullptr;
 
 static bool g_show_classspace_columns = false;
-static Column* g_col_classspace_committed = NULL;
-static Column* g_col_classspace_used = NULL;
+static Column* g_col_classspace_committed = nullptr;
+static Column* g_col_classspace_used = nullptr;
 
-static Column* g_col_metaspace_cap_until_gc = NULL;
+static Column* g_col_metaspace_cap_until_gc = nullptr;
 
-static Column* g_col_codecache_committed = NULL;
+static Column* g_col_codecache_committed = nullptr;
 
 static bool g_show_nmt_columns = false;
-static Column* g_col_nmt_malloc = NULL;
-static Column* g_col_nmt_mmap = NULL;
-static Column* g_col_nmt_gc_overhead = NULL;
-static Column* g_col_nmt_other = NULL;
-static Column* g_col_nmt_overhead = NULL;
+static Column* g_col_nmt_malloc = nullptr;
+static Column* g_col_nmt_mmap = nullptr;
+static Column* g_col_nmt_gc_overhead = nullptr;
+static Column* g_col_nmt_other = nullptr;
+static Column* g_col_nmt_overhead = nullptr;
 
-static Column* g_col_number_of_java_threads = NULL;
-static Column* g_col_number_of_java_threads_non_demon = NULL;
+static Column* g_col_number_of_java_threads = nullptr;
+static Column* g_col_number_of_java_threads_non_demon = nullptr;
 
 static bool g_show_size_thread_stacks_col = false;
-static Column* g_col_size_thread_stacks = NULL;
+static Column* g_col_size_thread_stacks = nullptr;
 
-static Column* g_col_number_of_java_threads_created = NULL;
+static Column* g_col_number_of_java_threads_created = nullptr;
 
-static Column* g_col_number_of_clds = NULL;
-static Column* g_col_number_of_anon_clds = NULL;
+static Column* g_col_number_of_clds = nullptr;
+static Column* g_col_number_of_anon_clds = nullptr;
 
-static Column* g_col_number_of_classes = NULL;
-static Column* g_col_number_of_class_loads = NULL;
-static Column* g_col_number_of_class_unloads = NULL;
+static Column* g_col_number_of_classes = nullptr;
+static Column* g_col_number_of_class_loads = nullptr;
+static Column* g_col_number_of_class_unloads = nullptr;
 
 static bool is_nmt_enabled() {
 #if INCLUDE_NMT
@@ -1118,7 +1118,7 @@ static bool add_jvm_columns() {
       define_column<MemorySizeColumn>(jvm_cat, "meta", "gctr", "GC threshold", true);
 
   g_col_codecache_committed =
-      define_column<MemorySizeColumn>(jvm_cat, NULL, "code", "Code cache, committed", true);
+      define_column<MemorySizeColumn>(jvm_cat, nullptr, "code", "Code cache, committed", true);
 
   // NMT columns only shown if NMT is at least at summary level
   g_show_nmt_columns = is_nmt_enabled();
@@ -1168,7 +1168,7 @@ static bool add_jvm_columns() {
 
 template <typename T>
 static void set_value_in_sample(const Column* col, Sample* sample, T t) {
-  if (col != NULL) {
+  if (col != nullptr) {
     int idx = col->index();
     assert(ColumnList::the_list()->is_valid_column_index(idx), "Invalid column index");
     sample->set_value(idx, (value_t)t);
@@ -1243,7 +1243,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
     size_t heap_cap = 0;
     size_t heap_used = 0;
     const CollectedHeap* const heap = Universe::heap();
-    if (heap != NULL) {
+    if (heap != nullptr) {
       MutexLocker hl(Heap_lock);
       heap_cap = Universe::heap()->capacity();
       heap_used = Universe::heap()->used();
@@ -1319,7 +1319,7 @@ bool initialize() {
   // -- Now the number of columns is known (and fixed). --
 
   g_all_tables = new SampleTables();
-  success = success && (g_all_tables != NULL);
+  success = success && (g_all_tables != nullptr);
 
   success = success && initialize_sampler_thread();
 
@@ -1335,7 +1335,7 @@ bool initialize() {
 }
 
 void cleanup() {
-  if (g_sampler_thread != NULL) {
+  if (g_sampler_thread != nullptr) {
     g_sampler_thread->stop();
   }
 }
@@ -1351,13 +1351,13 @@ void default_settings(print_info_t* out) {
 
 void print_report(outputStream* st, const print_info_t* pinfo) {
 
-  if (ColumnList::the_list() == NULL) {
+  if (ColumnList::the_list() == nullptr) {
     st->print_cr(" (unavailable)");
     return;
   }
 
   print_info_t info;
-  if (pinfo != NULL) {
+  if (pinfo != nullptr) {
     info = *pinfo;
   } else {
     default_settings(&info);
@@ -1371,7 +1371,7 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
   if (info.no_legend == false && info.csv == false) {
     Legend::the_legend()->print_on(st);
     if (info.scale != 0) {
-      const char* display_unit = NULL;
+      const char* display_unit = nullptr;
       switch (info.scale) {
         case 1: display_unit = "bytes"; break;
         case K: display_unit = "KB"; break;
@@ -1386,7 +1386,7 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
 
   // If we are to sample the current values at print time, do that and print them too.
   // Note: we omit the "Now" sample for csv output.
-  Sample* sample_now = NULL;
+  Sample* sample_now = nullptr;
   if (info.sample_now && !info.csv) {
     sample_now = Sample::allocate();
     sample_values(sample_now, true /* never lock for now sample - be safe */ );
@@ -1404,7 +1404,7 @@ void dump_reports() {
   static const char* file_prefix = "sapmachine_vitals_";
   char vitals_file_name[1024];
 
-  if (VitalsFile != NULL) {
+  if (VitalsFile != nullptr) {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s.txt", VitalsFile);
   } else {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
@@ -1426,7 +1426,7 @@ void dump_reports() {
     print_report(&fs, &settings);
   }
 
-  if (VitalsFile != NULL) {
+  if (VitalsFile != nullptr) {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s.csv", VitalsFile);
   } else {
     os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());

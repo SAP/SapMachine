@@ -543,7 +543,7 @@ const int ObjectAlignmentInBytes = 8;
           "If enabled we store the samples for extremum values of "         \
           "selected types.")                                                \
                                                                             \
-  product(ccstr, VitalsFile, NULL,                                          \
+  product(ccstr, VitalsFile, nullptr,                                       \
           "When DumpVitalsAtExit is set, the file name prefix for the "     \
           "output files (default is sapmachine_vitals_<pid>).")             \
                                                                             \

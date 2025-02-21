@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -71,7 +71,7 @@ namespace sapmachine_vitals {
     friend class ColumnList;
 
     const char* const _category;
-    const char* const _header; // optional. May be NULL.
+    const char* const _header; // optional. May be nullptr.
     const char* const _name;
     const char* const _description;
     const Extremum    _extremum;
@@ -90,7 +90,7 @@ namespace sapmachine_vitals {
     Column(const char* category, const char* header, const char* name, const char* description, Extremum extremum);
 
     // Child classes implement this.
-    // output stream can be NULL; in that case, method shall return number of characters it would have printed.
+    // output stream can be nullptr; in that case, method shall return number of characters it would have printed.
     virtual int do_print0(outputStream* os, value_t value,
         value_t last_value, int last_value_age, const print_info_t* pi) const = 0;
 
@@ -203,7 +203,7 @@ namespace sapmachine_vitals {
   public:
 
     ColumnList()
-      : _first(NULL), _last(NULL), _num_columns(0)
+      : _first(nullptr), _last(nullptr), _num_columns(0)
     {}
 
     const Column* first() const { return _first; }
@@ -232,7 +232,7 @@ namespace sapmachine_vitals {
       const char* const name, const char* const description,
       bool is_active, Extremum extremum = ColumnType::extremum_default())
   {
-    Column* c = NULL;
+    Column* c = nullptr;
     if (is_active) {
       c = new ColumnType(category, header, name, description, extremum);
       ColumnList::the_list()->add_column(c);

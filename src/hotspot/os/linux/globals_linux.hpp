@@ -75,10 +75,10 @@
          "<sapmachine_himemalert>_pid<pid>_<timestamp>.log\".")         \
   product(size_t, HiMemReportMax, 0,                                    \
          "Overrides the maximum reference size for HiMemReport.")       \
-  product(ccstr, HiMemReportDir, NULL,                                  \
+  product(ccstr, HiMemReportDir, nullptr,                               \
          "Specifies a directory into which reports are written. Gets "  \
          "created (one level only) if it does not exist.")              \
-  product(ccstr, HiMemReportExec, NULL,                                 \
+  product(ccstr, HiMemReportExec, nullptr,                              \
          "Specifies one or more jcmds to be executed after a high "     \
          "memory report has been written. Multiple commands are "       \
          "separated by ';'. Command output is written to stderr. If "   \

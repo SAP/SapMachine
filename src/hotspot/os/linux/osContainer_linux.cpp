@@ -43,16 +43,16 @@ CgroupSubsystem* cgroup_subsystem;
 // that and read the data ourselves (since OsContainer omits certain data and does things I don't
 // want to happen in the Vitals sampler thread).
 extern const char* sapmachine_get_memory_controller_path() {
-  if (cgroup_subsystem != NULL) {
+  if (cgroup_subsystem != nullptr) {
     CachingCgroupController<CgroupMemoryController>* cc = cgroup_subsystem->memory_controller();
-    if (cc != NULL) {
+    if (cc != nullptr) {
       CgroupMemoryController* c = cc->controller();
-      if (c != NULL) {
+      if (c != nullptr) {
         return c->subsystem_path();
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /* init
