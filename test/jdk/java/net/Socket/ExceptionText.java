@@ -21,6 +21,9 @@
  * questions.
  */
 
+// SapMachine 2018-11-23: SapMachine sets "hostInfo" in jdk.includeInExceptions
+//                        by default. Therefore expect according output!
+
 /*
  * @test
  * @library /test/lib
@@ -29,7 +32,7 @@
  * @summary Add configurable option for enhanced socket IOException messages
  * @run main/othervm
  *       ExceptionText
- *       WITHOUT_Enhanced_Text
+ *       expectEnhancedText
  * @run main/othervm
  *       -Djdk.includeInExceptions=
  *       ExceptionText
