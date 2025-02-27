@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,19 +24,18 @@
 # questions.
 #
 
-# Versions and download locations for dependencies used by GitHub Actions (GHA)
-
-GTEST_VERSION=1.8.1
-JTREG_VERSION=7.3.1+1
-
-LINUX_X64_BOOT_JDK_EXT=tar.gz
-LINUX_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.26/sapmachine-jdk-11.0.26_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=3b7a16cf0088af6e5584c3d651390ec731fd8f077a376d52d8dd2d693f6a0082
-
-MACOS_X64_BOOT_JDK_EXT=tar.gz
-MACOS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25/sapmachine-jdk-11.0.25_macos-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=f35dfcd983371dd6ad007ae7ba8f4aca9c9df9b3b030f2d79f4199fa071a7339
-
-WINDOWS_X64_BOOT_JDK_EXT=zip
-WINDOWS_X64_BOOT_JDK_URL=https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.25/sapmachine-jdk-11.0.25_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_SHA256=4b37d630f38b4ed375403882e1f27b205ef382ecc401e7bd614758e503a283b7
+function truncate_summary() {
+  # With large hs_errs, the summary can easily exceed 1024 kB, the limit set by Github
+  # Trim it down if so.
+  summary_size=$(wc -c < $GITHUB_STEP_SUMMARY)
+  if [[ $summary_size -gt 1000000 ]]; then
+    # Trim to below 1024 kB, and cut off after the last detail group
+    head -c 1000000 $GITHUB_STEP_SUMMARY | tac | sed -n -e '/<\/details>/,$ p' | tac > $GITHUB_STEP_SUMMARY.tmp
+    mv $GITHUB_STEP_SUMMARY.tmp $GITHUB_STEP_SUMMARY
+    (
+      echo ''
+      echo ':x: **WARNING: Summary is too large and has been truncated.**'
+      echo ''
+    )  >> $GITHUB_STEP_SUMMARY
+  fi
+}
