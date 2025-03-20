@@ -1206,19 +1206,19 @@ static bool get_nmt_values(nmt_values_t* out) {
     out->malloced_total = mlc_snapshot->total();
     out->mapped_total = vm_snapshot.total_committed();
     out->thread_stacks_committed =
-        vm_snapshot.by_type(mtThreadStack)->committed();
+        vm_snapshot.by_tag(mtThreadStack)->committed();
     out->thread_stacks_committed =
-        vm_snapshot.by_type(MemTag::mtThreadStack)->committed() +
-        mlc_snapshot->by_type(MemTag::mtThreadStack)->malloc_size();
+        vm_snapshot.by_tag(MemTag::mtThreadStack)->committed() +
+        mlc_snapshot->by_tag(MemTag::mtThreadStack)->malloc_size();
     out->gc_overhead =
-        vm_snapshot.by_type(MemTag::mtGC)->committed() +
-        mlc_snapshot->by_type(MemTag::mtGC)->malloc_size();
+        vm_snapshot.by_tag(MemTag::mtGC)->committed() +
+        mlc_snapshot->by_tag(MemTag::mtGC)->malloc_size();
     out->other_memory =
-        vm_snapshot.by_type(MemTag::mtOther)->committed() +
-        mlc_snapshot->by_type(MemTag::mtOther)->malloc_size();
+        vm_snapshot.by_tag(MemTag::mtOther)->committed() +
+        mlc_snapshot->by_tag(MemTag::mtOther)->malloc_size();
     out->overhead =
-        vm_snapshot.by_type(MemTag::mtNMT)->committed() +
-        mlc_snapshot->by_type(MemTag::mtNMT)->malloc_size() +
+        vm_snapshot.by_tag(MemTag::mtNMT)->committed() +
+        mlc_snapshot->by_tag(MemTag::mtNMT)->malloc_size() +
         mlc_snapshot->malloc_overhead();
     out->malloced_num =
         mlc_snapshot->total_count();
