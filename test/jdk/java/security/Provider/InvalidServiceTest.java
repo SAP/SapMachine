@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_RISCV_CODEBUFFER_RISCV_HPP
-#define CPU_RISCV_CODEBUFFER_RISCV_HPP
+/*
+ * @test
+ * @bug 8344361
+ * @summary Restore null return for invalid services
+ */
 
-private:
-  void pd_initialize() {}
-  bool pd_finalize_stubs();
+import java.security.Provider;
 
-public:
-  void flush_bundle(bool start_new_bundle) {}
-  static bool supports_shared_stubs() { return true; }
+public class InvalidServiceTest {
 
-#endif // CPU_RISCV_CODEBUFFER_RISCV_HPP
+    public static void main(String[] args) throws Exception {
+        Provider p1 = new LProvider("LegacyFormat");
+        // this returns a service with null class name. Helps exercise the code path
+        Provider.Service s1 = p1.getService("MessageDigest", "SHA-1");
+        if (s1 != null)
+            throw new RuntimeException("expecting null service");
+    }
+
+    private static class LProvider extends Provider {
+        LProvider(String name) {
+            super(name, "1.0", null);
+            put("Signature.MD5withRSA", "com.foo.Sig");
+            put("MessageDigest.SHA-1 ImplementedIn", "Software");
+        }
+    }
+}
