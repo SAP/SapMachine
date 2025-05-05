@@ -839,8 +839,15 @@ class MallocTraceExpectedStatistic {
 
             for (int j = 0; j < actual.nrOfStacks(); ++j) {
                 Stack stack = actual.getStack(j);
+                String expected;
 
-                if (stack.getFunction(0).startsWith(funcs[i] + (Platform.isOSX() ? "_interpose " : " "))) {
+                if (Platform.isOSX()) {
+                    expected = funcs[i] + "_interpose";
+                } else {
+                    expected = "sap::mallocStatImpl::MallocStatisticImpl::" + funcs[i] + "_hook";
+                }
+
+                if (stack.getFunction(0).startsWith(expected)) {
                     assertFalse(found, "Found entry for " + funcs[i] + " more than once");
                     long expected_bytes = bytes[i] / nth;
                     long expected_count = counts[i] / nth;
