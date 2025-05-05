@@ -839,13 +839,7 @@ class MallocTraceExpectedStatistic {
 
             for (int j = 0; j < actual.nrOfStacks(); ++j) {
                 Stack stack = actual.getStack(j);
-                String expected;
-
-                if (Platform.isOSX()) {
-                    expected = funcs[i] + "_interpose";
-                } else {
-                    expected = "sap::mallocStatImpl::MallocStatisticImpl::" + funcs[i] + "_hook";
-                }
+                String expected = "sap::mallocStatImpl::MallocStatisticImpl::" + funcs[i] + "_hook";
 
                 if (stack.getFunction(0).startsWith(expected)) {
                     assertFalse(found, "Found entry for " + funcs[i] + " more than once");
