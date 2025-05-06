@@ -470,7 +470,7 @@ else
    # range-loop-analysis  -> clang on Xcode12
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing \
-        array-bounds parentheses
+        array-bounds parentheses dangling-pointer
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
    # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
    # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
@@ -773,7 +773,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           maybe-uninitialized shift-negative-value implicit-fallthrough \
           unused-function, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare \
-          deprecated-declarations null-pointer-subtraction deprecated-non-prototype $(LIBZ_DISABLED_WARNINGS_CLANG), \
+          deprecated-declarations null-pointer-subtraction deprecated-non-prototype unused-function $(LIBZ_DISABLED_WARNINGS_CLANG), \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \

@@ -107,6 +107,14 @@ public final class OutputAnalyzer {
     }
 
     /**
+     * Delegate waitFor to the OutputBuffer. This ensures that
+     * the progress and timestamps are logged correctly.
+     */
+    public void waitFor() {
+        buffer.waitFor();
+    }
+
+    /**
      * Verify that the stdout contents of output buffer is empty
      *
      * @throws RuntimeException
@@ -205,6 +213,13 @@ public final class OutputAnalyzer {
             throw new RuntimeException("stderr was empty");
         }
         return this;
+    }
+
+    /**
+     * Returns true if stdout contains the given string
+     */
+    public boolean stdoutContains(String expectedString) {
+        return getStdout().contains(expectedString);
     }
 
     /**
