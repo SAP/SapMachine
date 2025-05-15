@@ -73,7 +73,7 @@ public class AddSapMachineToolsTest {
 
         // async profiler is only available on a subset of platforms
         boolean shouldHaveAsync = Platform.isOSX() ||
-                (Platform.isLinux() && (Platform.isAArch64() || Platform.isPPC() || Platform.isX64()) && !Platform.isMusl());
+                (Platform.isLinux() && (Platform.isAArch64() || Platform.isX64()) && !Platform.isMusl());
 
         Path sourceJavaHome = Path.of(System.getProperty("java.home"));
 
