@@ -446,7 +446,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, LogEvents, true, DIAGNOSTIC,                                \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  product(uintx, LogEventsBufferEntries, 20, DIAGNOSTIC,                    \
+  /* SapMachine 2019-05-28: more events */                                  \
+  product(uintx, LogEventsBufferEntries, 75, DIAGNOSTIC,                    \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
@@ -509,6 +510,147 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
+  /* SapMachine 2019-02-20 : vitals */                                      \
+  product(bool, EnableVitals, true,                                         \
+          "Enable sampling of vitals: memory, cpu utilization and various " \
+          "VM core statistics; display via jcmd \"VM.vitals\".")            \
+                                                                            \
+  product(uintx, VitalsSampleInterval, 10,                                  \
+          "Vitals sample rate interval in seconds (default 10)")            \
+          range(1, 24 * 3600)                                               \
+                                                                            \
+  product(uintx, VitalsShortTermTableHours, 1,                              \
+          "The size of the short term vitals table in hours")               \
+          range(1, 365 * 24)                                                \
+                                                                            \
+  product(uintx, VitalsLongTermSampleIntervalMinutes, 60,                   \
+          "Vitals sample rate interval in minutes for the long term table " \
+          "(default 60)")                                                   \
+          range(1, 365 * 24 * 60)                                           \
+                                                                            \
+  product(uintx, VitalsLongTermTableDays, 14,                               \
+          "The size of the long term vitals table in days")                 \
+          range(1, 10 * 365)                                                \
+                                                                            \
+  product(bool, VitalsLockFreeSampling, false, DIAGNOSTIC,                  \
+          "When sampling vitals, omit any actions which require locking.")  \
+                                                                            \
+  product(bool, DumpVitalsAtExit, false,                                    \
+          "Dump vitals at VM exit into two files, by default called "       \
+          "sapmachine_vitals_<pid>.txt and sapmachine_vitals_<pid>.csv. "   \
+          "Use -XX:VitalsFile option to change the file names.")            \
+                                                                            \
+  product(bool, PrintVitalsAtExit, false,                                   \
+          "Prints vitals at VM exit to tty.")                               \
+                                                                            \
+  product(bool, StoreVitalsExtremas, true,                                  \
+          "If enabled we store the samples for extremum values of "         \
+          "selected types.")                                                \
+                                                                            \
+  product(ccstr, VitalsFile, NULL,                                          \
+          "When DumpVitalsAtExit is set, the file name prefix for the "     \
+          "output files (default is sapmachine_vitals_<pid>).")             \
+                                                                            \
+  /* SapMachine 2023-09-18: malloc trace */                                 \
+  product(bool, UseMallocHooks, false,                                      \
+          "Preloads the malloc hooks library needed for the malloc trace. " \
+          "This flag only works when using a JDK launcher. Otherwise the "  \
+          "library has to be preloaded by hand.")                           \
+                                                                            \
+  product(bool, MallocTraceAtStartup, false,                                \
+          "If set the malloc trace is enabled at startup.")                 \
+                                                                            \
+  product(bool, MallocTraceExitIfFail, true,                                \
+          "If set and enabling the malloc trace at startup fails, we "      \
+          "print an error message and exit. Otherwise the error is "        \
+          "silently ignored.")                                              \
+                                                                            \
+  product(bool, MallocTraceTrackFree, true,                                 \
+          "If set the malloc trace also tracks deallocation of memory "     \
+          "if enabled at startup.")                                         \
+                                                                            \
+  product(ccstr, MallocTraceEnableDelay, "0s",                              \
+          "If > 0 seconds and MallocTraceAtStartup is enabled, we delay "   \
+          "the startup of tracking by the given amount of time. Can use "   \
+          "s, m, h or d to specify the delay.")                             \
+                                                                            \
+  product(uintx, MallocTraceStackDepth, 12,                                 \
+          "The maximum depth of stack traces for the malloc trace if "      \
+          "enabled at startup.")                                            \
+                                                                            \
+  product(uintx, MallocTraceOnlyNth, 1,                                     \
+          "if > 1 we only track about every n'th allocation for the "       \
+          "malloc trace if enabled at startup.")                            \
+          range(1, 1000)                                                    \
+                                                                            \
+  product(bool, MallocTraceUseBacktrace, PPC_ONLY(false) NOT_PPC(true),     \
+          "If set we use the backtrace() call to sample the stacks of "     \
+          "the malloc trace if enabled at startup. Note that while this "   \
+          "creates better stack traces, it is also slower and not "         \
+          "supported on every system. If not supported, this option is "    \
+          "silently ignored.")                                              \
+                                                                            \
+  product(ccstr, MallocTraceUnwindLibName, "libunwind.so.8",                \
+          "The path of the libunwind to load if it should be used to "      \
+          "create the stack traces and the backtrace() function cannot "    \
+          "be found. If libunwind is not on the library path, an "          \
+          "absolute path should be used.")                                  \
+                                                                            \
+  product(bool, MallocTraceDetailedStats, false,                            \
+          "If enabled we collect more detailed statistics for the malloc "  \
+          "trace if enabled at startup. This costs some performance.")      \
+                                                                            \
+  product(bool, MallocTraceDumpOnError, false,                              \
+          "If enabled and the malloc trace is enabled too we do an "        \
+          "emergency dump on native out-of-memory errors.")                 \
+                                                                            \
+  product(uintx, MallocTraceRainyDayFund, 1* M,                             \
+          "The size of the rainy day fund to use when doing an emergency "  \
+          "dump.")                                                          \
+                                                                            \
+  product(ccstr, MallocTraceDumpFilter, "",                                 \
+          "If set, we only print stacks which contains functions which "    \
+          "match the given string.")                                        \
+                                                                            \
+  product(bool, MallocTraceDumpInternalStats, false,                        \
+          "If enabled we include internal statistics in the dump. ")        \
+                                                                            \
+  product(uintx, MallocTraceDumpCount, 0,                                   \
+          "The number of dumps to perform.")                                \
+                                                                            \
+  product(ccstr, MallocTraceDumpDelay, "1h",                                \
+          "The delay after the trace was enabled at which to start the "    \
+          "regular dumps. The format supports seconds, minutes, hours "     \
+          "and days, e.g. '1s 2m 3h 4d' or '20s'.")                         \
+                                                                            \
+  product(ccstr, MallocTraceDumpInterval, "1h",                             \
+          "The interval for the dump for the dumps. The format supports "   \
+          "seconds, minutes, hours and days, e.g. '1s 2m 3h 4d' or '20s'.") \
+                                                                            \
+  product(bool, MallocTraceDumpSortByCount, false,                          \
+          "If given we sort the output by allocation count instead of "     \
+          "allocation size.")                                               \
+                                                                            \
+  product(uintx, MallocTraceDumpMaxEntries, 10,                             \
+          "If > 0 it limits the number of entries printed. If no sort "     \
+          "is specified via -XX:MallocTraceDumpSort, we sort by "           \
+          "size.")                                                          \
+                                                                            \
+  product(uintx, MallocTraceDumpPercentage, 0,                              \
+          "If > 0 we dump the given percentage of allocated bytes "         \
+          "(or allocated objects if sorted by count). In that case the "    \
+          "-XX:MallocTraceDumpMaxEntries option is ignored.")               \
+                                                                            \
+  product(bool, MallocTraceDumpHideDumpAllocs, true,                        \
+          "If enabled we don't track the allocation done for the dump.")    \
+                                                                            \
+  product(ccstr, MallocTraceDumpOutput, "stderr",                           \
+          "If set the dump is appended to the given file. 'stderr' and "    \
+          "'stdout' can be used for dumping to stderr or stdout. "          \
+          "Otherwise the dump is written to the given file name ( "         \
+          "the first occurrance of '@pid' is replaced by the pid of the "   \
+          "process).")                                                      \
+                                                                            \
   develop(bool, PrintMiscellaneous, false,                                  \
           "Print uncategorized debugging information (requires +Verbose)")  \
                                                                             \
@@ -554,10 +696,12 @@ const int ObjectAlignmentInBytes = 8;
           "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
           "from JVM")                                                       \
                                                                             \
+  /* SapMachine 2024-05-10: HeapDumpPath for jcmd */                        \
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \
-          "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
-          "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
-          "in the working directory)")                                      \
+          "When HeapDumpOnOutOfMemoryError is on, or a heap dump is "       \
+          "triggered by jcmd GC.heap_dump without specifying a path, "      \
+          "the path (filename or directory) of the dump file. "             \
+          "(defaults to java_pid<pid>.hprof in the working directory)")     \
                                                                             \
   product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
           "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
@@ -581,7 +725,8 @@ const int ObjectAlignmentInBytes = 8;
           "Repeat compilation without installing code (number of times)")   \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, PrintExtendedThreadInfo, false,                             \
+  /* SapMachine 2018-08-29: Enable this per default */                      \
+  product(bool, PrintExtendedThreadInfo, true,                              \
           "Print more information in thread dump")                          \
                                                                             \
   product(intx, ScavengeRootsInCode, 2, DIAGNOSTIC,                         \
@@ -837,9 +982,18 @@ const int ObjectAlignmentInBytes = 8;
           "JVM exits on the first occurrence of an out-of-memory error "    \
           "thrown from JVM")                                                \
                                                                             \
+  /* SapMachine 2021-05-21: Changed comment (we do not core on OOM) */      \
   product(bool, CrashOnOutOfMemoryError, false,                             \
-          "JVM aborts, producing an error log and core/mini dump, on the "  \
-          "first occurrence of an out-of-memory error thrown from JVM")     \
+          "JVM aborts on the first occurrence of an out-of-memory error "   \
+          "thrown from JVM. A thread stack is dumped to stdout and an "     \
+          "error log produced. No core file will be produced unless "       \
+          "-XX:+CreateCoredumpOnCrash is explicitly specified on the "      \
+          "command line.")                                                  \
+                                                                            \
+  /* SapMachine 2021-05-21: Support ExitVMOnOutOfMemory to keep */          \
+  /*  command line parity with SAPJVM */                                    \
+  product(bool, ExitVMOnOutOfMemoryError, false,                            \
+          "Alias for CrashOnOutOfMemoryError")                              \
                                                                             \
   /* tracing */                                                             \
                                                                             \
@@ -1044,8 +1198,9 @@ const int ObjectAlignmentInBytes = 8;
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
+  /* SapMachine 2018-12-18 Enable this per default. */                      \
   product(bool, ExtensiveErrorReports,                                      \
-          PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
+          PRODUCT_ONLY(true) NOT_PRODUCT(true),                             \
           "Error reports are more extensive.")                              \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \
