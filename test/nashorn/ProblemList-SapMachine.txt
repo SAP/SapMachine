@@ -1,0 +1,46 @@
+###############################################################################
+#
+# This is the additional jtreg exclude list for SapMachine nashorn tests.
+#
+# List of tests that should not be run by test/Makefile, for various reasons:
+#   1. Does not run with jtreg -samevm mode
+#   2. Causes problems in jtreg -samevm mode for jtreg or tests that follow it
+#   3. The test is too slow or consumes too many system resources
+#   4. The test fails when run on any official build systems
+#
+# Tests marked @ignore are not run by test/Makefile, but harmless to be listed.
+#
+# List items are testnames followed by labels, all MUST BE commented
+#   as to why they are here and use a label:
+#     generic-all   Problems on all platforms
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc
+#     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
+#     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
+#     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
+#
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces!
+# If there are several lines, the last one is used.
+#
+# SAP/SapMachine usage notes:
+#
+# This exclude list should be a vehicle only for temporary exclusions of tests
+# or exclusions that are caused by infrastrucure specifics.
+#
+# Our first goal should be to fix test issues upstream or at least open
+# upstream bugs and get the test excluded via the upstream exclusion lists.
+#
+# We have both internal exclude lists and exclude lists in the SapMachine
+# repository. The internal lists are the master and the public lists in the
+# SapMachine repository will be refreshed regularly, removing comments
+# which reveal internal URLs, names or hostnames.
+#
+# The public SapMachine exclusion lists might contain additional test
+# exclusions, specific to the SapMachine build and test infrastructure. That
+# section needs to be placed at the end of the file.
+#
+###############################################################################
+
+###############################################################################
+# Tests known to be failing in SapMachine due to SapMachine specific setup.
