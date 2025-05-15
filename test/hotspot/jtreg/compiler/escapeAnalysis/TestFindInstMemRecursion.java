@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,29 @@
  * questions.
  */
 
-package nsk.share;
-
-
 /**
- * This class is a simple example of finalizable object, that
- * implements interface <code>Finalizable</code>.
+ * @test
+ * @bug 8324345
+ * @summary Ensure that ConnectionGraph::find_inst_mem does not cause a stack
+ *          overflow.
  *
- * @see Finalizable
- * @see Finalizer
+ * @run main/othervm -Xcomp -XX:CompileThreshold=10 -XX:-TieredCompilation
+ *                   -XX:CompileCommand=CompileOnly,javax.swing.plaf.basic.BasicLookAndFeel::initComponentDefaults
+ *                   -XX:CompileCommand=MemLimit,*.*,0
+ *                   compiler.escapeAnalysis.TestFindInstMemRecursion
+ *
  */
-public class FinalizableObject implements Finalizable {
-    /**
-     * Subclasses should override this method to provide the specific
-     * cleanup actions that they need.
-     */
-    public void cleanup() {}
+
+package compiler.escapeAnalysis;
+
+import javax.swing.*;
+import javax.swing.plaf.metal.*;
+
+public class TestFindInstMemRecursion {
+    public static void main(String[] args) throws Exception {
+        LookAndFeel lookAndFeel = new MetalLookAndFeel();
+        for (int i = 0; i < 20; ++i) {
+            UIManager.setLookAndFeel(lookAndFeel);
+        }
+    }
 }
