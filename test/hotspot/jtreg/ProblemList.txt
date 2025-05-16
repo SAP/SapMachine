@@ -107,10 +107,9 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 
 # :hotspot_runtime
 
-runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 # SapMachine 2022-12-16 Exclude a failing test
 runtime/jni/daemonDestroy/TestDaemonDestroy.java windows-all
-runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
+runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
