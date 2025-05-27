@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#ifndef NSK_JVMTI_AGENT_COMMON_DEFINED
-#define NSK_JVMTI_AGENT_COMMON_DEFINED
+
+#ifndef MLVMJVMTIUTILS_HPP_
+#define MLVMJVMTIUTILS_HPP_
 
 #include "jvmti.h"
-#include "../jvmti_tools.h"
 
 extern "C" {
 
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved);
+void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst);
 
-JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved);
+struct MethodName {
+    char methodName[256];
+    char classSig[256];
+} MethodNameStruct;
 
-jint Agent_Initialize(JavaVM *vm, char *options, void *reserved);
+struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method);
 
+char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation location);
+
+void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate);
 }
 
-#endif
+#endif /* MLVMJVMTIUTILS_HPP_ */
