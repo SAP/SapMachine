@@ -26,6 +26,7 @@
  * @test
  * @summary Test functionality of the malloc hooks library.
  * @library /test/lib
+ * @requires !jdk.static
  *
  * @run main/othervm/native/timeout=600 MallocHooksTest
  */
