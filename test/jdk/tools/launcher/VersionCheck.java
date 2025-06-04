@@ -21,6 +21,7 @@
  * questions.
  */
 
+// SapMachine 2025-06-04: Don't run with a static jdk, since jar is missing.
 /**
  * @test
  * @bug 6545058 6611182 8016209 8139986 8162746 8278967
@@ -29,6 +30,7 @@
  * @modules jdk.compiler
  *          jdk.zipfs
  * @compile VersionCheck.java
+ * @requires !jdk.static
  * @run main VersionCheck
  */
 
