@@ -28,9 +28,9 @@
  *          sanity checks if a tool can be launched.
  * @modules jdk.compiler
  *          jdk.zipfs
- * @compile VersionCheck.java
- * SapMachine 2025-06-04: Don't run with a static jdk, since jar is missing.
+ * @comment SapMachine 2025-06-04: Don't run with a static jdk, since jar is missing.
  * @requires !jdk.static
+ * @compile VersionCheck.java
  * @run main VersionCheck
  */
 
