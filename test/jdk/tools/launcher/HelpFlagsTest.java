@@ -22,6 +22,7 @@
  * questions.
  */
 
+// SapMachine 2025-06-04: Don't run with a static jdk, since jar is missing.
 /**
  * @test
  * @summary Validate and test -?, -h and --help flags. All tools in the jdk
@@ -36,6 +37,7 @@
  *          return code as called with an invalid flag, and does not
  *          print anything containing '-help' in that case.
  * @compile HelpFlagsTest.java
+ * @requires !jdk.static
  * @run main HelpFlagsTest
  */
 
