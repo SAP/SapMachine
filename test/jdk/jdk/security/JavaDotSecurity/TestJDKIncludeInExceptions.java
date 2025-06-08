@@ -28,20 +28,20 @@ import java.security.Security;
  * @bug 8207846 8208691
  * @summary Test the default setting of the jdk.net.includeInExceptions
  *          security property
- * @comment In OpenJDK, this property is empty by default and on purpose.
+ * @comment In OpenJDK, this property has value "hostInfoExclSocket" by default
  *          This test assures the default is not changed.
  * @run main TestJDKIncludeInExceptions
  */
 public class TestJDKIncludeInExceptions {
 
-    // SapMachine 2018-11-23: SapMachine has a different default for jdk.includeInExceptions
     private static final String EXPECTED = "hostInfo,jar";
 
     public static void main(String args[]) throws Exception {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
-        if (!EXPECTED.equals(incInExc)) {
+        // SapMachine 2018-11-23: SapMachine has a different default for jdk.includeInExceptions
+        if (incInExc == null || !incInExc.equals("hostInfo,jar")) {
             throw new RuntimeException("Test failed: default value of " +
-                "jdk.includeInExceptions security property is not " + EXPECTED + ": " +
+                "jdk.includeInExceptions security property does not have expected value: " +
                 incInExc);
         }
     }
