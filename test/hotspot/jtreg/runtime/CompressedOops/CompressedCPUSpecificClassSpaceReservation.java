@@ -120,8 +120,10 @@ public class CompressedCPUSpecificClassSpaceReservation {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Test with CDS");
-        do_test(true);
+        // SapMachine 2025-06-11: -Xshare:on does not work with -XX:-UseCompactObjectHeaders
+        // because of the reduced number of jsa cds archives
+        //System.out.println("Test with CDS");
+        //do_test(true);
         System.out.println("Test without CDS");
         do_test(false);
     }

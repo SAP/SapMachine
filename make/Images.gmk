@@ -194,21 +194,23 @@ define CreateCDSArchive
 endef
 
 ifeq ($(BUILD_CDS_ARCHIVE), true)
-  $(foreach v, $(JVM_VARIANTS), \
-    $(eval $(call CreateCDSArchive,$v,)) \
-  )
+  # SapMachine 2025-06-11: reduce number of cds/jsa archives
+  #$(foreach v, $(JVM_VARIANTS), \
+  #  $(eval $(call CreateCDSArchive,$v,)) \
+  #)
 
+  # SapMachine 2025-06-11: reduce number of cds/jsa archives
   ifeq ($(call isTargetCpuBits, 64), true)
-    $(foreach v, $(JVM_VARIANTS), \
-      $(eval $(call CreateCDSArchive,$v,_nocoops)) \
-    )
+    #$(foreach v, $(JVM_VARIANTS), \
+    #  $(eval $(call CreateCDSArchive,$v,_nocoops)) \
+    #)
     ifeq ($(BUILD_CDS_ARCHIVE_COH), true)
       $(foreach v, $(JVM_VARIANTS), \
         $(eval $(call CreateCDSArchive,$v,_coh)) \
       )
-      $(foreach v, $(JVM_VARIANTS), \
-        $(eval $(call CreateCDSArchive,$v,_nocoops_coh)) \
-      )
+      # $(foreach v, $(JVM_VARIANTS), \
+      #   $(eval $(call CreateCDSArchive,$v,_nocoops_coh)) \
+      # )
     endif
   endif
 endif

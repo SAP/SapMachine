@@ -22,41 +22,9 @@
  * questions.
  */
 
-/**
- * @test id=nocoops_nocoh
- * @summary Test Loading of default archives in all configurations
- * @requires vm.cds
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.bits == 64
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver TestDefaultArchiveLoading nocoops_nocoh
- */
-
-/**
- * @test id=nocoops_coh
- * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
- * @requires vm.cds
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.bits == 64
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver TestDefaultArchiveLoading nocoops_coh
- */
-
-/**
- * @test id=coops_nocoh
- * @summary Test Loading of default archives in all configurations
- * @requires vm.cds
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.bits == 64
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver TestDefaultArchiveLoading coops_nocoh
- */
+// SapMachine 2025-06-11: reduce number of cds/jsa archives
+// this means some sub tests like nocoops do not work any more because the archive
+// is removed
 
 /**
  * @test id=coops_coh
