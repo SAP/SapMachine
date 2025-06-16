@@ -56,6 +56,23 @@
 // this means that the zgc/nocoops subtest does not work any more because the archive
 // is removed
 
+/**
+ * test id=custom-cl-zgc
+ * requires vm.cds.custom.loaders
+ * requires vm.gc.Z
+ * summary Test dumptime_table entries are removed with zgc eager class unloading
+ * bug 8274935
+ * library /test/lib
+ *          /test/hotspot/jtreg/runtime/cds/appcds
+ *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
+ * modules java.base/jdk.internal.misc
+ *          jdk.httpserver
+ * build jdk.test.whitebox.WhiteBox
+ * run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * run main/othervm/timeout=180 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom-zgc
+ */
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import jdk.test.lib.Asserts;
