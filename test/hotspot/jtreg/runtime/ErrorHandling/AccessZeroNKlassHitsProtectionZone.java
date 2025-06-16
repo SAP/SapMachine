@@ -22,30 +22,32 @@
  * questions.
  */
 
+// SapMachine 2025-06-11: reduce number of cds/jsa archives makes some subtests fail, omit them
+
 /*
- * @test id=no_coh_no_cds
- * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
- * @library /test/lib
- * @requires vm.bits == 64 & vm.debug == true & vm.flagless
- * @requires os.family != "aix"
- * @modules java.base/jdk.internal.misc
+ * test id=no_coh_no_cds
+ * summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
+ * library /test/lib
+ * requires vm.bits == 64 & vm.debug == true & vm.flagless
+ * requires os.family != "aix"
+ * modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver AccessZeroNKlassHitsProtectionZone no_coh_no_cds
+ * build jdk.test.whitebox.WhiteBox
+ * run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * run driver AccessZeroNKlassHitsProtectionZone no_coh_no_cds
  */
 
 /*
- * @test id=no_coh_cds
- * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
- * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
- * @requires os.family != "aix"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
+ * test id=no_coh_cds
+ * summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
+ * requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
+ * requires os.family != "aix"
+ * library /test/lib
+ * modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver AccessZeroNKlassHitsProtectionZone no_coh_cds
+ * build jdk.test.whitebox.WhiteBox
+ * run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * run driver AccessZeroNKlassHitsProtectionZone no_coh_cds
  */
 
 /*

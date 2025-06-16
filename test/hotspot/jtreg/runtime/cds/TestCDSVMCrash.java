@@ -20,16 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+ 
+// SapMachine 2025-06-11: reduce number of cds/jsa archives makes some (sub)tests fail, omit them
 
 /*
- * @test TestCDSVMCrash
- * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
- * @requires vm.cds
- * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver TestCDSVMCrash
- * @bug 8306583
+ * test TestCDSVMCrash
+ * summary Verify that an exception is thrown when the VM crashes during executeAndLog
+ * requires vm.cds
+ * requires vm.flagless
+ * modules java.base/jdk.internal.misc
+ * library /test/lib
+ * run driver TestCDSVMCrash
+ * bug 8306583
  */
 
 import jdk.test.lib.cds.CDSTestUtils;
