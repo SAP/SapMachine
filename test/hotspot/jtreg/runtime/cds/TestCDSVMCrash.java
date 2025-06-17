@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
- 
+
 /*
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
