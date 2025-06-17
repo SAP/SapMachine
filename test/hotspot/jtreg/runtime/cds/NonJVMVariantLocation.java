@@ -22,19 +22,19 @@
  *
  */
 
-// SapMachine 2025-06-11: reduce number of cds/jsa archives makes some (sub)tests fail, omit them
-
 /*
- * test
- * summary Test that CDS archive can be loaded if the archive is in a non-JVM variant directory.
- * bug 8353504
- * requires vm.cds
- * requires vm.flagless
- * requires vm.flavor == "server"
- * comment This test doesn't work on Windows because it depends on symlinks
- * requires os.family != "windows"
- * library /test/lib appcds
- * run driver NonJVMVariantLocation
+ * @test
+ * @summary Test that CDS archive can be loaded if the archive is in a non-JVM variant directory.
+ * @bug 8353504
+ * @requires vm.cds
+ * @requires vm.flagless
+ * @requires vm.flavor == "server"
+ * @comment This test doesn't work on Windows because it depends on symlinks
+ * @requires os.family != "windows"
+ * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
+ * @requires vm.vendor != "SAP SE"
+ * @library /test/lib appcds
+ * @run driver NonJVMVariantLocation
  */
 
 import java.io.File;

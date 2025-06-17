@@ -32,8 +32,7 @@
  * @library /test/lib
  * @run main RedefineClassHelper
  * @run driver RedefineSharedClass xshare-off
- *
- * SapMachine 2025-06-11: reduce number of cds/jsa archives makes some (sub)tests fail, omit them
+ * SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
  * run driver RedefineSharedClass xshare-on
  */
 import java.io.InputStream;
