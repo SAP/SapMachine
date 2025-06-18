@@ -39,8 +39,6 @@
 /**
  * @test id=nocoops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
- * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
- * @requires vm.vendor != "SAP SE"
  * @requires vm.cds
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64

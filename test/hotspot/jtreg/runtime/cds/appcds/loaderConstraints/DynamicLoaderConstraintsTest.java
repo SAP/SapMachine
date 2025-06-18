@@ -56,8 +56,6 @@
  * @test id=custom-cl-zgc
  * @requires vm.cds.custom.loaders
  * @requires vm.gc.Z
- * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
- * @requires vm.vendor != "SAP SE"
  * @summary Test dumptime_table entries are removed with zgc eager class unloading
  * @bug 8274935
  * @library /test/lib
