@@ -77,6 +77,8 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVMBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
+        // SapMachine 2025-01-09: SapMachine tools plugin
+        jdk.tools.jlink.internal.plugins.AddSapMachineTools,
         jdk.tools.jlink.internal.plugins.CDSPlugin;
 
 }
