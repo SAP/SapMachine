@@ -193,22 +193,23 @@ define CreateCDSArchive
   JRE_TARGETS += $$($1_$2_gen_cds_archive_jre)
 endef
 
+# SapMachine 2025-06-11: reduce number of cds/jsa archives
 ifeq ($(BUILD_CDS_ARCHIVE), true)
-  $(foreach v, $(JVM_VARIANTS), \
-    $(eval $(call CreateCDSArchive,$v,)) \
-  )
+  #$(foreach v, $(JVM_VARIANTS), \
+  #  $(eval $(call CreateCDSArchive,$v,)) \
+  #)
 
   ifeq ($(call isTargetCpuBits, 64), true)
-    $(foreach v, $(JVM_VARIANTS), \
-      $(eval $(call CreateCDSArchive,$v,_nocoops)) \
-    )
+    #$(foreach v, $(JVM_VARIANTS), \
+    #  $(eval $(call CreateCDSArchive,$v,_nocoops)) \
+    #)
     ifeq ($(BUILD_CDS_ARCHIVE_COH), true)
       $(foreach v, $(JVM_VARIANTS), \
         $(eval $(call CreateCDSArchive,$v,_coh)) \
       )
-      $(foreach v, $(JVM_VARIANTS), \
-        $(eval $(call CreateCDSArchive,$v,_nocoops_coh)) \
-      )
+      # $(foreach v, $(JVM_VARIANTS), \
+      #   $(eval $(call CreateCDSArchive,$v,_nocoops_coh)) \
+      # )
     endif
   endif
 endif
