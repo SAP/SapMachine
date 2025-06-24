@@ -62,7 +62,7 @@ BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
       libExplicitAttach.c libImplicitAttach.c \
-      exelauncher.c
+      exelauncher.c libFDLeaker.c exeFDLeakTester.c
 
   #SapMachine 2024-06-12: Exclude libCreateNewProcessGroupOnSpawnTest.c from native compilation on Windows
   BUILD_JDK_JTREG_EXCLUDE += libCreateNewProcessGroupOnSpawnTest.c
