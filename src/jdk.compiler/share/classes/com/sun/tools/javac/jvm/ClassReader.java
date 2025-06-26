@@ -2345,11 +2345,10 @@ public class ClassReader {
                 System.out.println("       toString: " + s.toString());
                 if (s.owner != null) System.out.println("       owner.toString: " + s.owner.toString());
             }
-            {
-                for (Symbol.VarSymbol param : s.params) {
-                    param.type = addTypeAnnotations(param.type, methodFormalParameter(i++));
-                    argtypes.add(param.type);
-                }
+
+            for (Symbol.VarSymbol param : s.params) {
+                param.type = addTypeAnnotations(param.type, methodFormalParameter(i++));
+                argtypes.add(param.type);
             }
             mt.argtypes = argtypes.toList();
             ListBuffer<Type> thrown = new ListBuffer<>();
