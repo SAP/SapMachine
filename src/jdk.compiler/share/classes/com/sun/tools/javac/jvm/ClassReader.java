@@ -299,7 +299,7 @@ public class ClassReader {
 
         lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
-        addTypeAnnotationsToSymbol = options.getBoolean("addTypeAnnotationsToSymbol", false);
+        addTypeAnnotationsToSymbol = true; //options.getBoolean("addTypeAnnotationsToSymbol", false);
 
         initAttributeReaders();
     }
@@ -2344,11 +2344,11 @@ public class ClassReader {
                 if (s.owner != null) System.out.println("       owner: " + s.owner.name);
                 System.out.println("       toString: " + s.toString());
                 if (s.owner != null) System.out.println("       owner.toString: " + s.owner.toString());
-            } else {
-                for (Symbol.VarSymbol param : s.params) {
-                    param.type = addTypeAnnotations(param.type, methodFormalParameter(i++));
-                    argtypes.add(param.type);
-                }
+            }
+
+            for (Symbol.VarSymbol param : s.params) {
+                param.type = addTypeAnnotations(param.type, methodFormalParameter(i++));
+                argtypes.add(param.type);
             }
             mt.argtypes = argtypes.toList();
             ListBuffer<Type> thrown = new ListBuffer<>();
@@ -2368,7 +2368,7 @@ public class ClassReader {
             }
 
             // SapMachine 2025-06-17: Analysis output for JDK-8359336
-            if (s.params == null) {
+            if (s.params == null && false) {
                 System.out.println("Method type name:");
                 System.out.println("            toString: " + mt.toString());
                 System.out.println("            recvtype: " + (mt.recvtype == null ? "null" : mt.recvtype.toString()));
@@ -2659,7 +2659,18 @@ public class ClassReader {
             currentOwner = prevOwner;
         }
         validateMethodType(name, m.type);
-        setParameters(m, type);
+        // SapMachine 2025-06-25: Analysis output for JDK-8359336
+        try {
+            setParameters(m, type);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            System.out.println("Analyse JDK-8359336 (2)");
+            System.out.println("Symbol name: " + m.name);
+            if (m.owner != null) System.out.println("       owner: " + m.owner.name);
+            System.out.println("       toString: " + m.toString());
+            if (m.owner != null) System.out.println("       owner.toString: " + m.owner.toString());
+            throw e;
+        }
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
             throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "method", m);
