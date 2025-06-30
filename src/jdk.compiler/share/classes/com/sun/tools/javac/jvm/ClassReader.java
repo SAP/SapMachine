@@ -299,7 +299,7 @@ public class ClassReader {
 
         lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
-        addTypeAnnotationsToSymbol = true; //options.getBoolean("addTypeAnnotationsToSymbol", false);
+        addTypeAnnotationsToSymbol = options.getBoolean("addTypeAnnotationsToSymbol", false);
 
         initAttributeReaders();
     }
@@ -2336,16 +2336,6 @@ public class ClassReader {
             MethodType mt = (MethodType) t;
             ListBuffer<Type> argtypes = new ListBuffer<>();
             int i = 0;
-
-            // SapMachine 2025-06-17: Analysis output for JDK-8359336
-            if (s.params == null) {
-                System.out.println("Analyse JDK-8359336");
-                System.out.println("Symbol name: " + s.name);
-                if (s.owner != null) System.out.println("       owner: " + s.owner.name);
-                System.out.println("       toString: " + s.toString());
-                if (s.owner != null) System.out.println("       owner.toString: " + s.owner.toString());
-            }
-
             for (Symbol.VarSymbol param : s.params) {
                 param.type = addTypeAnnotations(param.type, methodFormalParameter(i++));
                 argtypes.add(param.type);
@@ -2366,19 +2356,6 @@ public class ClassReader {
             if (mt.recvtype != null) {
                 mt.recvtype = addTypeAnnotations(mt.recvtype, TargetType.METHOD_RECEIVER);
             }
-
-            // SapMachine 2025-06-17: Analysis output for JDK-8359336
-            if (s.params == null && false) {
-                System.out.println("Method type name:");
-                System.out.println("            toString: " + mt.toString());
-                System.out.println("            recvtype: " + (mt.recvtype == null ? "null" : mt.recvtype.toString()));
-
-                // Cause original crash
-                for (Symbol.VarSymbol param : s.params) {
-                    System.out.println(param);
-                }
-            }
-
             return null;
         }
 
@@ -2659,18 +2636,7 @@ public class ClassReader {
             currentOwner = prevOwner;
         }
         validateMethodType(name, m.type);
-        // SapMachine 2025-06-25: Analysis output for JDK-8359336
-        try {
-            setParameters(m, type);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            System.out.println("Analyse JDK-8359336 (2)");
-            System.out.println("Symbol name: " + m.name);
-            if (m.owner != null) System.out.println("       owner: " + m.owner.name);
-            System.out.println("       toString: " + m.toString());
-            if (m.owner != null) System.out.println("       owner.toString: " + m.owner.toString());
-            throw e;
-        }
+        setParameters(m, type);
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
             throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "method", m);
