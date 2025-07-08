@@ -177,6 +177,11 @@ void LIR_Assembler::osr_entry() {
       // Restore.
       __ sub_const_optimized(OSR_buf, OSR_buf, locals_space);
     }
+
+    if (use_OSR_bias) {
+      // Restore.
+      __ sub_const_optimized(OSR_buf, OSR_buf, locals_space);
+    }
   }
 }
 

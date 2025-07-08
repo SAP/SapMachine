@@ -140,10 +140,34 @@ ifeq ($(call isTargetOs, macosx), true)
 	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
 	fi
   endef
+
+  # SapMachine 2024-09-13: import async profiler binaries
+  ifeq ($(MACOSX_CODESIGN_MODE), disabled)
+    define install-file-and-sign
+	  $(install-file)
+	  $(ECHO) No Async profiler codesigning, codesign mode is $(MACOSX_CODESIGN_MODE)
+    endef
+  else
+    ifeq ($(MACOSX_CODESIGN_MODE), hardened)
+      CODESIGN_APOPTS="$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime
+    else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+      CODESIGN_APOPTS=-
+      PLIST_APOPT=-debug
+    endif
+    define install-file-and-sign
+	  $(install-file)
+	  $(CODESIGN) --remove-signature '$(call DecodeSpace, $@)'
+	  $(CODESIGN) -f -s $(CODESIGN_APOPTS) --entitlements $(TOPDIR)/make/data/macosxsigning/default$(PLIST_APOPT).plist '$(call DecodeSpace, $@)'
+    endef
+  endif
 else
   define install-file
 	$(call MakeTargetDir)
 	$(CP) -fP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
+  endef
+  # SapMachine 2024-09-13: import async profiler binaries
+  define install-file-and-sign
+	$(install-file)
   endef
 endif
 

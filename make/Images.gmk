@@ -47,8 +47,9 @@ ALL_MODULES := $(call FindAllModules) $(EXTRA_MODULES)
 
 $(eval $(call ReadImportMetaData))
 
+# SapMachine 2021-09-24: add jcmd to JRE
 JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
-    $(PLATFORM_MODULES) jdk.jdwp.agent)
+    $(PLATFORM_MODULES) jdk.jdwp.agent jdk.jcmd)
 JDK_MODULES += $(ALL_MODULES)
 
 JRE_MODULES_LIST := $(call CommaList, $(JRE_MODULES))
@@ -263,6 +264,41 @@ ifeq ($(GCOV_ENABLED), true)
 
   SYMBOLS_TARGETS += $(COPY_GCOV_GCNO)
 
+endif
+
+################################################################################
+# SapMachine 2024-09-13: Async profiler import
+
+ifeq ($(call isTargetOs, linux macosx)+$(ASYNC_PROFILER_IMPORT_ENABLED), true+true)
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JDK, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JDK_IMAGE_DIR), \
+      FILES := bin/asprof lib/libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+      MACRO := install-file-and-sign, \
+  ))
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_BIN_TO_JRE, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JRE_IMAGE_DIR), \
+      FILES := bin/asprof lib/libasyncProfiler$(SHARED_LIBRARY_SUFFIX), \
+      MACRO := install-file-and-sign, \
+  ))
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_TO_JDK, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JDK_IMAGE_DIR), \
+      FILES := lib/async-profiler.jar lib/converter.jar legal/async/CHANGELOG.md legal/async/LICENSE legal/async/README.md, \
+  ))
+
+  $(eval $(call SetupCopyFiles, COPY_ASYNC_PROFILER_TO_JRE, \
+      SRC := $(ASYNC_PROFILER_IMPORT_PATH), \
+      DEST := $(JRE_IMAGE_DIR), \
+      FILES := lib/async-profiler.jar lib/converter.jar legal/async/CHANGELOG.md legal/async/LICENSE legal/async/README.md, \
+  ))
+
+  JDK_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JDK) $(COPY_ASYNC_PROFILER_TO_JDK)
+  JRE_TARGETS += $(COPY_ASYNC_PROFILER_BIN_TO_JRE) $(COPY_ASYNC_PROFILER_TO_JRE)
 endif
 
 ################################################################################

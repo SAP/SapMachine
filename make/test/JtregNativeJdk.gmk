@@ -71,6 +71,9 @@ ifeq ($(call isTargetOs, windows), true)
       libExplicitAttach.c libImplicitAttach.c \
       exelauncher.c
 
+  #SapMachine 2024-06-12: Exclude libCreateNewProcessGroupOnSpawnTest.c from native compilation on Windows
+  BUILD_JDK_JTREG_EXCLUDE += libCreateNewProcessGroupOnSpawnTest.c
+
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeNullCallerTest := /EHsc
