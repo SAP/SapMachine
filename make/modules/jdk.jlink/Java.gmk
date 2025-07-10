@@ -1,12 +1,12 @@
-#!/bin/sh
-
 #
-# Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,44 +23,10 @@
 # questions.
 #
 
+################################################################################
 
-# @test
-# @bug 4944382
-# @summary make sure we do not deadlock loading signed JAR with getInstance()
-# @author Andreas Sterbenz
-# @build Deadlock
-# @run shell/timeout=30 Deadlock.sh
+# Instruct SetupJavaCompilation for the jdk.jlink module to include
+# upgrade_files_<module-name>.conf files
+COPY += .conf
 
-# set platform-dependent variables
-OS=`uname -s`
-case "$OS" in
-  Linux )
-    PATHSEP=":"
-    FILESEP="/"
-    ;;
-  Darwin )
-    PATHSEP=":"
-    FILESEP="/"
-    ;;
-  AIX )
-    PATHSEP=":"
-    FILESEP="/"
-    ;;
-  CYGWIN* )
-    PATHSEP=";"
-    FILESEP="/"
-    ;;
-  Windows* )
-    PATHSEP=";"
-    FILESEP="\\"
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
-    ;;
-esac
-
-JAVA="${TESTJAVA}${FILESEP}bin${FILESEP}java"
-
-${JAVA} ${TESTVMOPTS} ${TESTJAVAOPTS} -cp "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" Deadlock
-
+################################################################################
