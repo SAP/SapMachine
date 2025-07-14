@@ -562,8 +562,6 @@ javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 l
 
 # jdk_net
 
-java/net/DatagramSocket/DatagramSocketExample.java              8308807 aix-ppc64
-java/net/DatagramSocket/DatagramSocketMulticasting.java         8308807 aix-ppc64
 
 java/net/MulticastSocket/B6427403.java                          8308807 aix-ppc64
 java/net/MulticastSocket/IPMulticastIF.java                     8308807 aix-ppc64
@@ -819,3 +817,13 @@ java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
+
+# Mechanically added:
+jdk/internal/platform/docker/TestDockerMemoryMetricsSubgroup.java 8352926 linux-x64
+jdk/jfr/api/consumer/streaming/TestJVMExit.java 8344671 macosx-aarch64
+jdk/jfr/api/consumer/streaming/TestJVMCrash.java 8344671 macosx-aarch64
+jdk/jfr/api/consumer/streaming/TestOutOfProcessMigration.java 8344671 macosx-aarch64
+javax/sound/midi/Sequencer/MetaCallback.java 8299218 macosx-aarch64
+java/net/DatagramSocket/DatagramSocketExample.java 8144003,8308807 aix-ppc64,macosx-aarch64
+java/net/DatagramSocket/DatagramSocketMulticasting.java 8144003,8308807 aix-ppc64,macosx-aarch64
+javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8334549 linux-aarch64,linux-x64

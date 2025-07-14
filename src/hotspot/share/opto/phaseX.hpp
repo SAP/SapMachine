@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -626,6 +626,8 @@ class PhaseCCP : public PhaseIterGVN {
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
+  void push_bool_with_cmpu_and_mask(Unique_Node_List& worklist, const Node* use) const;
+  void push_bool_matching_case1b(Unique_Node_List& worklist, const Node* cmpu) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
