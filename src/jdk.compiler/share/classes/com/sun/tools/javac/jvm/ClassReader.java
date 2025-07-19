@@ -305,7 +305,7 @@ public class ClassReader {
 
         lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
-        addTypeAnnotationsToSymbol = options.getBoolean("addTypeAnnotationsToSymbol", false);
+        addTypeAnnotationsToSymbol = true; //options.getBoolean("addTypeAnnotationsToSymbol", false);
 
         initAttributeReaders();
     }
