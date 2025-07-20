@@ -370,7 +370,7 @@ void JVMTIJmcAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   if (agent_line == NULL) {
     output()->print_cr("JVMTI JMC agent attach failed: "
-      "Could not allocate " SIZE_FORMAT " bytes for argument.",
+      "Could not allocate " SIZE_FORMAT_X_0 " bytes for argument.",
       len);
      return;
   }
