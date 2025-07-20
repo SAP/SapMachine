@@ -336,55 +336,57 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int  argc         = *pargc;
     char **argv       = *pargv;
 
-    /* Find out where the JDK is that we will be using. */
-    if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE) ) {
-        JLI_ReportErrorMessage(LAUNCHER_ERROR1);
-        exit(2);
-    }
-    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-                 jdkroot, FILESEP, FILESEP);
+    if (!JLI_IsStaticallyLinked()) {
+        /* Find out where the JDK is that we will be using. */
+        if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE) ) {
+            JLI_ReportErrorMessage(LAUNCHER_ERROR1);
+            exit(2);
+        }
+        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+                     jdkroot, FILESEP, FILESEP);
 
-    /* SapMachine 2023-09-18: New malloc trace */
-    if (ShouldPreloadLibMallocHooks(*pargc, *pargv)) {
-        char const* env_name = "DYLD_INSERT_LIBRARIES";
-        char const* libpath = "/lib/libmallochooks.dylib";
-        char const* old_env = getenv(env_name);
-        char* env_entry;
+        /* SapMachine 2023-09-18: New malloc trace */
+        if (ShouldPreloadLibMallocHooks(*pargc, *pargv)) {
+            char const* env_name = "DYLD_INSERT_LIBRARIES";
+            char const* libpath = "/lib/libmallochooks.dylib";
+            char const* old_env = getenv(env_name);
+            char* env_entry;
 
-        if ((old_env == NULL) || (old_env[0] == '0')) {
-            size_t size = JLI_StrLen(jdkroot) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
-            env_entry = JLI_MemAlloc(size);
+            if ((old_env == NULL) || (old_env[0] == '0')) {
+                size_t size = JLI_StrLen(jdkroot) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
+                env_entry = JLI_MemAlloc(size);
 
-            snprintf(env_entry, size, "%s=%s%s", env_name, jdkroot, libpath);
-        } else {
-            size_t size = JLI_StrLen(jdkroot) + JLI_StrLen(libpath) + JLI_StrLen(env_name) +
-                          3 + JLI_StrLen(old_env);
-            env_entry = JLI_MemAlloc(size);
+                snprintf(env_entry, size, "%s=%s%s", env_name, jdkroot, libpath);
+            } else {
+                size_t size = JLI_StrLen(jdkroot) + JLI_StrLen(libpath) + JLI_StrLen(env_name) +
+                              3 + JLI_StrLen(old_env);
+                env_entry = JLI_MemAlloc(size);
 
-            snprintf(env_entry, size, "%s=%s%s:%s", env_name, jdkroot, libpath, old_env);
+                snprintf(env_entry, size, "%s=%s%s:%s", env_name, jdkroot, libpath, old_env);
+            }
+
+            if (putenv(env_entry) == 0) {
+                execv(execname, argv);
+            }
         }
 
-        if (putenv(env_entry) == 0) {
-            execv(execname, argv);
+        /* Find the specified JVM type */
+        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+            JLI_ReportErrorMessage(CFG_ERROR7);
+            exit(1);
         }
-    }
 
-    /* Find the specified JVM type */
-    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-        JLI_ReportErrorMessage(CFG_ERROR7);
-        exit(1);
-    }
+        jvmpath[0] = '\0';
+        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+            JLI_ReportErrorMessage(CFG_ERROR9);
+            exit(4);
+        }
 
-    jvmpath[0] = '\0';
-    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-        JLI_ReportErrorMessage(CFG_ERROR9);
-        exit(4);
-    }
-
-    if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
-        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-        exit(4);
+        if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
+            JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+            exit(4);
+        }
     }
 
     /*

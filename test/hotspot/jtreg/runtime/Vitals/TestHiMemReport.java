@@ -39,6 +39,7 @@
  * @test TestHiMemReport-dump-with-exec-to-reportdir
  * @library /test/lib
  * @requires os.family == "linux"
+ * @requires !jdk.static
  * @run driver TestHiMemReport dump-with-exec-to-reportdir
  */
 
@@ -46,6 +47,7 @@
  * @test TestHiMemReport-dump-with-exec-to-stderr
  * @library /test/lib
  * @requires os.family == "linux"
+ * @requires !jdk.static
  * @run driver TestHiMemReport dump-with-exec-to-stderr
  */
 

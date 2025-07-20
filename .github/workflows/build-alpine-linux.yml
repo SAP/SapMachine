@@ -51,6 +51,10 @@ on:
       make-arguments:
         required: false
         type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-linux:
@@ -83,6 +87,7 @@ jobs:
         with:
           platform: alpine-linux-x64
 
+      # SapMachine 2025-06-11: reduce number of cds/jsa archives
       - name: 'Configure'
         run: >
           bash configure
@@ -92,6 +97,7 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
+          --with-vendor-name="SAP SE"
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
@@ -104,9 +110,11 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}
 
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
+        if: ${{ inputs.dry-run == false }}

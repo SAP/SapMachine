@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "osContainer_linux.hpp"
 #include "vitals_linux_oswrapper.hpp"
@@ -75,7 +73,7 @@ class CPUTimeColumn: public Column {
 
         char buf[32];
         l = jio_snprintf(buf, sizeof(buf), "%.0f", percentage);
-        if (st != NULL) {
+        if (st != nullptr) {
           st->print_raw(buf);
         }
       }
@@ -94,53 +92,53 @@ public:
 };
 
 static bool g_show_system_memavail = false;
-static Column* g_col_system_memavail = NULL;
-static Column* g_col_system_memcommitted = NULL;
-static Column* g_col_system_memcommitted_ratio = NULL;
-static Column* g_col_system_swap = NULL;
+static Column* g_col_system_memavail = nullptr;
+static Column* g_col_system_memcommitted = nullptr;
+static Column* g_col_system_memcommitted_ratio = nullptr;
+static Column* g_col_system_swap = nullptr;
 
-static Column* g_col_system_pages_swapped_in = NULL;
-static Column* g_col_system_pages_swapped_out = NULL;
+static Column* g_col_system_pages_swapped_in = nullptr;
+static Column* g_col_system_pages_swapped_out = nullptr;
 
-static Column* g_col_system_num_procs = NULL;
-static Column* g_col_system_num_threads = NULL;
+static Column* g_col_system_num_procs = nullptr;
+static Column* g_col_system_num_threads = nullptr;
 
-static Column* g_col_system_num_procs_running = NULL;
-static Column* g_col_system_num_procs_blocked = NULL;
+static Column* g_col_system_num_procs_running = nullptr;
+static Column* g_col_system_num_procs_blocked = nullptr;
 
 static bool g_show_cgroup_info = false;
-static Column* g_col_system_cgrp_limit_in_bytes = NULL;
-static Column* g_col_system_cgrp_soft_limit_in_bytes = NULL;
-static Column* g_col_system_cgrp_usage_in_bytes = NULL;
-static Column* g_col_system_cgrp_kmem_usage_in_bytes = NULL;
+static Column* g_col_system_cgrp_limit_in_bytes = nullptr;
+static Column* g_col_system_cgrp_soft_limit_in_bytes = nullptr;
+static Column* g_col_system_cgrp_usage_in_bytes = nullptr;
+static Column* g_col_system_cgrp_kmem_usage_in_bytes = nullptr;
 
-static Column* g_col_system_cpu_user = NULL;
-static Column* g_col_system_cpu_system = NULL;
-static Column* g_col_system_cpu_idle = NULL;
-static Column* g_col_system_cpu_steal = NULL;
-static Column* g_col_system_cpu_guest = NULL;
+static Column* g_col_system_cpu_user = nullptr;
+static Column* g_col_system_cpu_system = nullptr;
+static Column* g_col_system_cpu_idle = nullptr;
+static Column* g_col_system_cpu_steal = nullptr;
+static Column* g_col_system_cpu_guest = nullptr;
 
-static Column* g_col_process_virt = NULL;
+static Column* g_col_process_virt = nullptr;
 
 static bool g_show_rss_detail_info = false;
-static Column* g_col_process_rss = NULL;
-static Column* g_col_process_rssanon = NULL;
-static Column* g_col_process_rssfile = NULL;
-static Column* g_col_process_rssshmem = NULL;
+static Column* g_col_process_rss = nullptr;
+static Column* g_col_process_rssanon = nullptr;
+static Column* g_col_process_rssfile = nullptr;
+static Column* g_col_process_rssshmem = nullptr;
 
-static Column* g_col_process_swapped_out = NULL;
+static Column* g_col_process_swapped_out = nullptr;
 
-static Column* g_col_process_chp_used = NULL;
-static Column* g_col_process_chp_free = NULL;
+static Column* g_col_process_chp_used = nullptr;
+static Column* g_col_process_chp_free = nullptr;
 
-static Column* g_col_process_cpu_user = NULL;
-static Column* g_col_process_cpu_system = NULL;
+static Column* g_col_process_cpu_user = nullptr;
+static Column* g_col_process_cpu_system = nullptr;
 
-static Column* g_col_process_num_of = NULL;
-static Column* g_col_process_io_bytes_read = NULL;
-static Column* g_col_process_io_bytes_written = NULL;
+static Column* g_col_process_num_of = nullptr;
+static Column* g_col_process_io_bytes_read = nullptr;
+static Column* g_col_process_io_bytes_written = nullptr;
 
-static Column* g_col_process_num_threads = NULL;
+static Column* g_col_process_num_threads = nullptr;
 
 bool platform_columns_initialize() {
 
@@ -159,28 +157,28 @@ bool platform_columns_initialize() {
   // syst-avail depends on kernel version.
   g_show_system_memavail = OSWrapper::syst_avail() != INVALID_VALUE;
   g_col_system_memavail =
-      define_column<MemorySizeColumn>(system_cat, NULL, "avail", "Memory available without swapping [host] [krn]", g_show_system_memavail, MIN);
+      define_column<MemorySizeColumn>(system_cat, nullptr, "avail", "Memory available without swapping [host] [krn]", g_show_system_memavail, MIN);
   g_col_system_memcommitted =
-      define_column<MemorySizeColumn>(system_cat, NULL, "comm", "Committed memory [host]", true);
+      define_column<MemorySizeColumn>(system_cat, nullptr, "comm", "Committed memory [host]", true);
   g_col_system_memcommitted_ratio =
-      define_column<PlainValueColumn>(system_cat, NULL, "crt", "Committed-to-Commit-Limit ratio (percent) [host]", true);
+      define_column<PlainValueColumn>(system_cat, nullptr, "crt", "Committed-to-Commit-Limit ratio (percent) [host]", true);
   g_col_system_swap =
-      define_column<MemorySizeColumn>(system_cat, NULL, "swap", "Swap space used [host]", true);
+      define_column<MemorySizeColumn>(system_cat, nullptr, "swap", "Swap space used [host]", true);
 
   g_col_system_pages_swapped_in =
-      define_column<DeltaValueColumn>(system_cat, NULL, "si", "Number of pages swapped in [host] [delta]", true);
+      define_column<DeltaValueColumn>(system_cat, nullptr, "si", "Number of pages swapped in [host] [delta]", true);
   g_col_system_pages_swapped_out =
-      define_column<DeltaValueColumn>(system_cat, NULL, "so", "Number of pages pages swapped out [host] [delta]", true);
+      define_column<DeltaValueColumn>(system_cat, nullptr, "so", "Number of pages pages swapped out [host] [delta]", true);
 
   g_col_system_num_procs =
-      define_column<PlainValueColumn>(system_cat, NULL, "p", "Number of processes", true);
+      define_column<PlainValueColumn>(system_cat, nullptr, "p", "Number of processes", true);
   g_col_system_num_threads =
-      define_column<PlainValueColumn>(system_cat, NULL, "t", "Number of threads", true);
+      define_column<PlainValueColumn>(system_cat, nullptr, "t", "Number of threads", true);
 
   g_col_system_num_procs_running =
-      define_column<PlainValueColumn>(system_cat, NULL, "tr", "Number of threads running", true);
+      define_column<PlainValueColumn>(system_cat, nullptr, "tr", "Number of threads running", true);
   g_col_system_num_procs_blocked =
-      define_column<PlainValueColumn>(system_cat, NULL, "tb", "Number of threads blocked on disk IO", true);
+      define_column<PlainValueColumn>(system_cat, nullptr, "tb", "Number of threads blocked on disk IO", true);
 
   g_col_system_cpu_user =
       define_column<CPUTimeColumn>(system_cat, "cpu", "us", "CPU user time [host]", true);
@@ -208,7 +206,7 @@ bool platform_columns_initialize() {
   // Process
 
   g_col_process_virt =
-    define_column<MemorySizeColumn>(process_cat, NULL, "virt", "Virtual size", true);
+    define_column<MemorySizeColumn>(process_cat, nullptr, "virt", "Virtual size", true);
 
   // RSS detail needs kernel >= 4.5
   g_show_rss_detail_info = OSWrapper::proc_rss_anon() != INVALID_VALUE;
@@ -222,7 +220,7 @@ bool platform_columns_initialize() {
       define_column<MemorySizeColumn>(process_cat, "rss", "shm", "Resident set size, shared memory [krn]", g_show_rss_detail_info);
 
   g_col_process_swapped_out =
-      define_column<MemorySizeColumn>(process_cat, NULL, "swdo", "Memory swapped out", true);
+      define_column<MemorySizeColumn>(process_cat, nullptr, "swdo", "Memory swapped out", true);
 
   // glibc heap info depends on, obviously, glibc.
 #ifdef __GLIBC__
@@ -251,13 +249,13 @@ bool platform_columns_initialize() {
       define_column<DeltaMemorySizeColumn>(process_cat, "io", "wr", "IO bytes written", true);
 
   g_col_process_num_threads =
-      define_column<PlainValueColumn>(process_cat, NULL, "thr", "Number of native threads", true);
+      define_column<PlainValueColumn>(process_cat, nullptr, "thr", "Number of native threads", true);
 
   return true;
 }
 
 static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
-  if (col != NULL) {
+  if (col != nullptr) {
     int index = col->index();
     sample->set_value(index, val);
   }

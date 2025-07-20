@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -35,38 +32,37 @@
 
 namespace sapmachine_vitals {
 
-static Column* g_col_system_memoryload = NULL;
-static Column* g_col_system_avail_phys = NULL;
-static Column* g_col_process_working_set_size = NULL;
-static Column* g_col_process_commit_charge = NULL;
+static Column* g_col_system_memoryload = nullptr;
+static Column* g_col_system_avail_phys = nullptr;
+static Column* g_col_process_working_set_size = nullptr;
+static Column* g_col_process_commit_charge = nullptr;
 
 bool platform_columns_initialize() {
   g_col_system_memoryload =
-      define_column<PlainValueColumn>("system", NULL, "mload", "Approximate percentage of physical memory that is in use.", true, MAX);
+      define_column<PlainValueColumn>("system", nullptr, "mload", "Approximate percentage of physical memory that is in use.", true, MAX);
 
   // MEMORYSTATUSEX ullAvailPhys
   g_col_system_avail_phys =
-      define_column<MemorySizeColumn>("system", NULL, "avail-phys", "Amount of physical memory currently available.", true, MIN);
+      define_column<MemorySizeColumn>("system", nullptr, "avail-phys", "Amount of physical memory currently available.", true, MIN);
   // PROCESS_MEMORY_COUNTERS_EX WorkingSetSize
   g_col_process_working_set_size =
-      define_column<MemorySizeColumn>("system", NULL, "wset", "Working set size", true);
+      define_column<MemorySizeColumn>("system", nullptr, "wset", "Working set size", true);
 
   // PROCESS_MEMORY_COUNTERS_EX PrivateUsage
   g_col_process_commit_charge =
-      define_column<MemorySizeColumn>("system", NULL, "comch", "Commit charge", true);
+      define_column<MemorySizeColumn>("system", nullptr, "comch", "Commit charge", true);
 
   return true;
 }
 
 static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
-  if (col != NULL) {
+  if (col != nullptr) {
     int index = col->index();
     sample->set_value(index, val);
   }
 }
 
 void sample_platform_values(Sample* sample) {
-
   MEMORYSTATUSEX mse;
   mse.dwLength = sizeof(mse);
   if (::GlobalMemoryStatusEx(&mse)) {
@@ -80,7 +76,6 @@ void sample_platform_values(Sample* sample) {
     set_value_in_sample(g_col_process_working_set_size, sample, cnt.WorkingSetSize);
     set_value_in_sample(g_col_process_commit_charge, sample, cnt.PagefileUsage);
   }
-
 }
 
 } // namespace sapmachine_vitals

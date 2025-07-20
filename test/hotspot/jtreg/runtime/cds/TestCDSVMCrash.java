@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
  * @requires vm.cds
  * @requires vm.flagless
+ * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
+ * @requires vm.vendor != "SAP SE"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestCDSVMCrash

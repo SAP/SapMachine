@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -43,17 +41,17 @@ TEST_VM(vitals, report_with_explicit_default_settings) {
   sapmachine_vitals::print_report(&ss, &info);
   LOG(tmp);
   if (EnableVitals) {
-    ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)NULL);
+    ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)nullptr);
   }
 }
 
 TEST_VM(vitals, report_with_implicit_default_settings) {
   char tmp[64*K];
   stringStream ss(tmp, sizeof(tmp));
-  sapmachine_vitals::print_report(&ss, NULL);
+  sapmachine_vitals::print_report(&ss, nullptr);
   LOG(tmp);
   if (EnableVitals) {
-    ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)NULL);
+    ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)nullptr);
   }
 }
 
@@ -66,9 +64,9 @@ TEST_VM(vitals, report_with_nownow) {
   info.sample_now = true;
   for (int i = 0; i < 100; i ++) {
     ss.reset();
-    sapmachine_vitals::print_report(&ss, NULL);
+    sapmachine_vitals::print_report(&ss, nullptr);
     if (EnableVitals) {
-      ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)NULL);
+      ASSERT_NE(::strstr(tmp, "--jvm--"), (char*)nullptr);
     }
   }
 }

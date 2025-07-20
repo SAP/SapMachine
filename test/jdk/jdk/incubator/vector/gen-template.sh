@@ -42,6 +42,8 @@ ternary_double_broadcast_masked="Ternary-Double-Broadcast-Masked-op"
 ternary_scalar="Ternary-Scalar-op"
 binary="Binary-op"
 binary_masked="Binary-Masked-op"
+binary_memop="Binary-mem-op"
+binary_masked_memop="Binary-Masked-mem-op"
 saturating_binary="SaturatingBinary-op"
 saturating_binary_masked="SaturatingBinary-Masked-op"
 binary_broadcast="Binary-Broadcast-op"
@@ -255,6 +257,12 @@ function gen_binary_alu_op {
   gen_op_tmpl $binary_masked "$@"
 }
 
+function gen_binary_alu_mem_op {
+  echo "Generating binary op $1 ($2)..."
+  gen_op_tmpl $binary_memop "$@"
+  gen_op_tmpl $binary_masked_memop "$@"
+}
+
 function gen_binary_alu_bcst_op {
   echo "Generating binary broadcast op $1 ($2)..."
   gen_op_tmpl $binary_broadcast "$@"
@@ -464,6 +472,10 @@ gen_shift_cst_op  "ASHR" "(a >> CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
+# Binary operation with one memory operand
+gen_binary_alu_mem_op "MIN+min+withMask", "Math.min(a, b)"
+gen_binary_alu_mem_op "MAX+max+withMask", "Math.max(a, b)"
+
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_op_no_masked "MAX+max" "Math.max(a, b)"
@@ -484,6 +496,8 @@ gen_reduction_op "ADD" "+" "" "0"
 gen_reduction_op "MUL" "*" "" "1"
 gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
 gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
+gen_reduction_op_func "UMIN" "(\$type\$) VectorMath.minUnsigned" "BITWISE" "\$Wideboxtype\$.\$MaxValue\$"
+gen_reduction_op_func "UMAX" "(\$type\$) VectorMath.maxUnsigned" "BITWISE" "\$Wideboxtype\$.\$MinValue\$"
 gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 
 # Boolean reductions.

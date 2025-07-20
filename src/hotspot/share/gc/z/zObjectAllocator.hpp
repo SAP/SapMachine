@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ class ZObjectAllocator {
 private:
   ZPageAge           _age;
   const bool         _use_per_cpu_shared_small_pages;
-  ZPerCPU<size_t>    _used;
-  ZPerCPU<size_t>    _undone;
   ZPerCPU<ZPage*>    _shared_small_page;
   ZContended<ZPage*> _shared_medium_page;
   ZLock              _medium_page_alloc_lock;
@@ -80,7 +78,6 @@ public:
 
   ZPageAge age() const;
 
-  size_t used() const;
   size_t remaining() const;
 
   void retire_pages();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
@@ -57,6 +56,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,12 +72,10 @@ import jdk.internal.net.http.common.DebugLogger.LoggerConfig;
 import jdk.internal.net.http.HttpRequestImpl;
 
 import sun.net.NetProperties;
-import sun.net.util.IPAddressUtil;
 import sun.net.www.HeaderParser;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.util.stream.Collectors.joining;
 import static java.net.Authenticator.RequestorType.PROXY;
 import static java.net.Authenticator.RequestorType.SERVER;
 
@@ -486,39 +484,6 @@ public final class Utils {
         return !token.isEmpty();
     }
 
-    public record ServerName (String name, boolean isLiteral) {
-    }
-
-    /**
-     * Analyse the given address and determine if it is literal or not,
-     * returning the address in String form.
-     */
-    public static ServerName getServerName(InetSocketAddress addr) {
-        String host = addr.getHostString();
-        byte[] literal = IPAddressUtil.textToNumericFormatV4(host);
-        if (literal == null) {
-            // not IPv4 literal. Check IPv6
-            literal = IPAddressUtil.textToNumericFormatV6(host);
-            return new ServerName(host, literal != null);
-        } else {
-            return new ServerName(host, true);
-        }
-    }
-
-    private static boolean isLoopbackLiteral(byte[] bytes) {
-        if (bytes.length == 4) {
-            return bytes[0] == 127;
-        } else if (bytes.length == 16) {
-            for (int i=0; i<14; i++)
-                if (bytes[i] != 0)
-                    return false;
-            if (bytes[15] != 1)
-                return false;
-            return true;
-        } else
-            throw new InternalError();
-    }
-
     /*
      * Validates an RFC 7230 field-value.
      *
@@ -895,33 +860,6 @@ public final class Utils {
     }
 
     /**
-     * Return the host string from a HttpRequestImpl
-     *
-     * @param request
-     * @return
-     */
-    public static String hostString(HttpRequestImpl request) {
-        URI uri = request.uri();
-        int port = uri.getPort();
-        String host = uri.getHost();
-
-        boolean defaultPort;
-        if (port == -1) {
-            defaultPort = true;
-        } else if (uri.getScheme().equalsIgnoreCase("https")) {
-            defaultPort = port == 443;
-        } else {
-            defaultPort = port == 80;
-        }
-
-        if (defaultPort) {
-            return host;
-        } else {
-            return host + ":" + port;
-        }
-    }
-
-    /**
      * Get a logger for debug HPACK traces.The logger should only be used
      * with levels whose severity is {@code <= DEBUG}.
      *
@@ -1132,5 +1070,32 @@ public final class Utils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * {@return the exception the given {@code cf} was completed with,
+     * or a {@link CancellationException} if the given {@code cf} was
+     * cancelled}
+     *
+     * @param cf a {@code CompletableFuture} exceptionally completed
+     * @throws IllegalArgumentException if the given cf was not
+     *    {@linkplain CompletableFuture#isCompletedExceptionally()
+     *    completed exceptionally}
+     */
+    public static Throwable exceptionNow(CompletableFuture<?> cf) {
+        if (cf.isCompletedExceptionally()) {
+            if (cf.isCancelled()) {
+                try {
+                    cf.join();
+                } catch (CancellationException x) {
+                    return x;
+                } catch (CompletionException x) {
+                    return x.getCause();
+                }
+            } else {
+                return cf.exceptionNow();
+            }
+        }
+        throw new IllegalArgumentException("cf is not completed exceptionally");
     }
 }

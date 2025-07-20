@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022, 2025, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -911,7 +910,8 @@ void StubGenerator::poly1305_process_blocks_avx512(
 // and accumulator will point to the current accumulator value
 address StubGenerator::generate_poly1305_processBlocks() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
+  StubId stub_id = StubId::stubgen_poly1305_processBlocks_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();
 
