@@ -365,18 +365,18 @@ void JVMTIJmcAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
   char const* java_home = Arguments::get_java_home();
   char const* agent_jar = "agent.jar";
   char const* option = _option.value();
-  size_t len = strlen(java_home) + strlen(agent_jar) + (option == NULL ? 0 : 1 + strlen(option)) + 7;
+  size_t len = strlen(java_home) + strlen(agent_jar) + (option == nullptr ? 0 : 1 + strlen(option)) + 7;
   char* agent_line = (char*)os::malloc(len, mtInternal);
 
-  if (agent_line == NULL) {
+  if (agent_line == nullptr) {
     output()->print_cr("JVMTI JMC agent attach failed: "
       "Could not allocate " SIZE_FORMAT_X_0 " bytes for argument.",
       len);
      return;
   }
 
-  jio_snprintf(agent_line, len, "%s/lib/%s%s%s", java_home, agent_jar, option == NULL ? "" : "=",
-    option == NULL ? "" : option);
+  jio_snprintf(agent_line, len, "%s/lib/%s%s%s", java_home, agent_jar, option == nullptr ? "" : "=",
+    option == nullptr ? "" : option);
   JvmtiAgentList::load_agent("instrument", false, agent_line, output());
 
   os::free(agent_line);

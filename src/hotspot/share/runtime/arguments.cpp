@@ -2346,7 +2346,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
 #error "Must have JVMTI enabled with SAP JVM agent"
 #endif
       char const* agent_jar = "agent.jar";
-      if (tail != NULL) {
+      if (tail != nullptr) {
         size_t length = strlen(tail) + strlen(_java_home->value()) + strlen(agent_jar) + 7;
         char* options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s/lib/%s=%s", _java_home->value(), agent_jar, tail);
