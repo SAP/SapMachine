@@ -17,6 +17,12 @@ import java.util.ArrayList;
 public class TestJmcAgentIntegration {
 
     public static void main(String[] args) throws Exception {
+        File jar = new File(System.getenv("TEST_IMAGE_DIR") + "/jars/agent-tests.jar");
+
+        if (!jar.exists()) {
+            return; // Feature was not enabled.
+        }
+
         // Don't run tests if the ASM version we are using cannot handle the class file spec of this VM.
         int spec = Integer.getInteger("java.vm.specification.version", 99999);
         String javaHome = System.getProperty("java.home");
@@ -30,10 +36,6 @@ public class TestJmcAgentIntegration {
             return;
         }
 
-        File jar = new File(System.getenv("TEST_IMAGE_DIR") + "/jars/agent-tests.jar");
-        if (!jar.exists()) {
-            return; // Feature was not enabled.
-        }
         URL url = jar.toURI().toURL();
         String classPath = System.getProperty("java.class.path", ".");
 
@@ -43,7 +45,7 @@ public class TestJmcAgentIntegration {
 
         URLClassLoader cl = new URLClassLoader(new URL[] {url}, TestJmcAgentIntegration.class.getClassLoader());
         Class<?> testClass = Class.forName("org.openjdk.jmc.agent.sap.test.TestRunner", true, cl);
-        Method mainMethod = testClass.getDeclaredMethod("main", String[].class);
-        mainMethod.invoke(null, new Object[] {new String[] {"-dump"}});
+        Method mainMethod = testClass.getDeclaredMethod("main", String[].class, String[].class);
+        mainMethod.invoke(null, new Object[] {new String[] {"-dump"}, new String[]{"-XX:+EnableDynamicAgentLoading"}});
     }
 }
