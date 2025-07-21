@@ -166,6 +166,7 @@ jobs:
           sudo rm -rf sysroot/
         if: steps.create-sysroot.outcome != 'success' && steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
+      # SapMachine 2025-06-11: reduce number of cds/jsa archives
       - name: 'Configure'
         run: >
           bash configure
@@ -179,6 +180,7 @@ jobs:
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
           --with-sysroot=sysroot
           --with-jmod-compress=zip-1
+          --with-vendor-name="SAP SE"
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
