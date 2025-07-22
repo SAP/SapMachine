@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,35 +21,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_RECORDER_SERVICE_JFRRECORDERTHREAD_HPP
-#define SHARE_JFR_RECORDER_SERVICE_JFRRECORDERTHREAD_HPP
+package sun.net.util;
 
-#include "memory/allStatic.hpp"
-#include "runtime/javaThread.hpp"
-#include "utilities/debug.hpp"
+import sun.net.ApplicationProxy;
 
-class JfrCheckpointManager;
-class JfrPostBox;
-class Thread;
+import java.net.Proxy;
 
-class JfrRecorderThreadEntry : AllStatic {
- private:
-  static JfrPostBox* _post_box;
+public final class ProxyUtil {
 
- public:
-  static JfrPostBox& post_box();
-  static bool start(JfrCheckpointManager* cp_manager, JfrPostBox* post_box, TRAPS);
-};
+    private ProxyUtil() {}
 
-class JfrRecorderThread : public JavaThread {
- public:
-  JfrRecorderThread(ThreadFunction entry_point) : JavaThread(entry_point) {}
-  virtual ~JfrRecorderThread() {}
+    /**
+     * Creates a new {@link Proxy} instance for the given proxy iff it is
+     * neither null, {@link Proxy#NO_PROXY Proxy.NO_PROXY}, an
+     * {@link ApplicationProxy} instance, nor already a {@code Proxy} instance.
+     */
+    public static Proxy copyProxy(Proxy proxy) {
+        return proxy == null
+                || proxy.getClass() == Proxy.class
+                || proxy instanceof ApplicationProxy
+                ? proxy
+                : new Proxy(proxy.type(), proxy.address());
+    }
 
-  virtual bool is_JfrRecorder_thread() const { return true; }
-};
-
-#endif // SHARE_JFR_RECORDER_SERVICE_JFRRECORDERTHREAD_HPP
+}
