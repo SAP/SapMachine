@@ -2,7 +2,7 @@
  * @test
  * @summary Runs the test for the jcm agent integration.
  *
- * @run main/othervm -Dcp=agent-1.0.1-SNAPSHOT-sap-tests.jar JmcAgentIntegrationTest
+ * @run main/othervm JmcAgentIntegrationTest
  */
 
 import java.lang.reflect.Method;
