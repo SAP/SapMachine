@@ -26,11 +26,11 @@ public class JmcAgentIntegrationTest {
         ArrayList<String> testOptions = new ArrayList<>();
         testOptions.add("-dump");
 
-        // Don't run tests if the ASM version we are using cannot handle the class file spec of this VM.
+        // Only run VM-agnostic tests if the ASM version we are using cannot handle the class file spec of this VM.
         int spec = Integer.getInteger("java.vm.specification.version", 99999);
         String javaHome = System.getProperty("java.home");
         File agentJar = new File(javaHome + "/lib/agent.jar");
-		ClassLoader parentLoader = JmcAgentIntegrationTest.class.getClassLoader();
+        ClassLoader parentLoader = JmcAgentIntegrationTest.class.getClassLoader();
         URLClassLoader agentLoader = new URLClassLoader(new URL[] {agentJar.toURI().toURL()}, parentLoader);
         try {
              Class.forName("org.openjdk.jmc.internal.org.objectweb.asm.Opcodes", true, agentLoader).getDeclaredField("V" + spec);
