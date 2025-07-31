@@ -172,11 +172,6 @@ public:
     return "Load the JCM agent.";
   }
   static const char* impact() { return "Low"; }
-  static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission",
-                         "control", NULL };
-    return p;
-  }
   virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // WITH_SAP_JMC_AGENT
