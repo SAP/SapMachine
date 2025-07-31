@@ -62,6 +62,8 @@ public class FileSocketTransportTest {
         }
         ByteBuffer in = ByteBuffer.wrap(reply);
         int result = channel.read(in);
+        // When we are connected and have received at least one byte, the file should be deleted.
+        checkSocketDeleted(path);
         channel.close();
 
         return result;
@@ -138,7 +140,6 @@ public class FileSocketTransportTest {
                 Thread.sleep(3000);
                 checkSocketPresent(socketName);
                 read = handshake(socketName, handshake, received);
-                checkSocketDeleted(socketName);
                 assertEquals(new String(handshake, "UTF-8"),
                              new String(received, "UTF-8"));
                 assertEquals(read, received.length);
