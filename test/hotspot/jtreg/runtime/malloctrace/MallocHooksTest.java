@@ -26,6 +26,7 @@
  * @test
  * @summary Test functionality of the malloc hooks library.
  * @library /test/lib
+ * @requires !jdk.static
  *
  * @run main/othervm/native/timeout=600 MallocHooksTest
  */
@@ -839,8 +840,9 @@ class MallocTraceExpectedStatistic {
 
             for (int j = 0; j < actual.nrOfStacks(); ++j) {
                 Stack stack = actual.getStack(j);
+                String expected = "sap::mallocStatImpl::MallocStatisticImpl::" + funcs[i] + "_hook";
 
-                if (stack.getFunction(0).startsWith(funcs[i] + (Platform.isOSX() ? "_interpose " : " "))) {
+                if (stack.getFunction(0).startsWith(expected)) {
                     assertFalse(found, "Found entry for " + funcs[i] + " more than once");
                     long expected_bytes = bytes[i] / nth;
                     long expected_count = counts[i] / nth;

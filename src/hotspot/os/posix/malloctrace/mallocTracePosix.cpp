@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #if defined(LINUX) || defined(__APPLE__)
 
-#include "precompiled.hpp"
-
 #include "jvm_io.h"
 #include "mallochooks.h"
 #include "malloctrace/mallocTracePosix.hpp"
@@ -41,10 +39,6 @@
 
 #include <pthread.h>
 #include <stdlib.h>
-
-#if !defined(__APPLE__)
-#include <malloc.h>
-#endif
 
 // To test in jtreg tests use
 // JTREG="JAVA_OPTIONS=-XX:+UseMallocHooks -XX:+MallocTraceAtStartup -XX:MallocTraceDumpCount=10 -XX:MallocTraceDumpInterval=10s -XX:MallocTraceDumpDelay=10s -XX:MallocTraceDumpOutput=`pwd`/mtrace_@pid.txt -XX:ErrorFile=`pwd`/hs_err%p.log"
@@ -974,7 +968,7 @@ void* MallocStatisticImpl::malloc_hook(size_t size, void* caller_address) {
 
   if ((result != nullptr) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, (address) malloc, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) malloc_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -992,7 +986,7 @@ void* MallocStatisticImpl::calloc_hook(size_t elems, size_t size, void* caller_a
 
   if ((result != nullptr) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, (address) calloc, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) calloc_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1030,7 +1024,7 @@ void* MallocStatisticImpl::realloc_hook(void* ptr, size_t size, void* caller_add
 
   if ((result != nullptr) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, (address) realloc, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) realloc_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1063,7 +1057,7 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
 
   if ((result == 0) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, (address) posix_memalign, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) posix_memalign_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(*ptr, hash, nr_of_frames, frames);
@@ -1080,15 +1074,10 @@ int MallocStatisticImpl::posix_memalign_hook(void** ptr, size_t align, size_t si
 void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller_address) {
   void* result = real_malloc_funcs->memalign(align, size);
   uint64_t hash = ptr_hash(result);
-#if !defined(__APPLE__)
-  address real_func = (address) memalign;
-#else
-  address real_func = (address) memalign_hook;
-#endif
 
   if ((result != nullptr) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) memalign_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1105,15 +1094,10 @@ void* MallocStatisticImpl::memalign_hook(size_t align, size_t size, void* caller
 void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* caller_address) {
   void* result = real_malloc_funcs->aligned_alloc(align, size);
   uint64_t hash = ptr_hash(result);
-#if !defined(__APPLE__)
-  address real_func = (address) aligned_alloc;
-#else
-  address real_func = (address) aligned_alloc_hook;
-#endif
 
   if ((result != nullptr) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) aligned_alloc_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1130,15 +1114,10 @@ void* MallocStatisticImpl::aligned_alloc_hook(size_t align, size_t size, void* c
 void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
   void* result = real_malloc_funcs->valloc(size);
   uint64_t hash = ptr_hash(result);
-#if defined(__GLIBC__) || defined(__APPLE__)
-  address real_func = (address) valloc;
-#else
-  address real_func = (address) valloc_hook;
-#endif
 
   if ((result != nullptr) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) valloc_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -1155,15 +1134,10 @@ void* MallocStatisticImpl::valloc_hook(size_t size, void* caller_address) {
 void* MallocStatisticImpl::pvalloc_hook(size_t size, void* caller_address) {
   void* result = real_malloc_funcs->pvalloc(size);
   uint64_t hash = ptr_hash(result);
-#if defined(__GLIBC__)
-  address real_func = (address) pvalloc;
-#else
-  address real_func = (address) pvalloc_hook;
-#endif
 
   if ((result != nullptr) && should_track(hash) && !malloc_suspended()) {
     address frames[MAX_FRAMES + FRAMES_TO_SKIP];
-    int nr_of_frames = capture_stack(frames, real_func, (address) caller_address);
+    int nr_of_frames = capture_stack(frames, (address) pvalloc_hook, (address) caller_address);
 
     if (_track_free) {
       record_allocation(result, hash, nr_of_frames, frames);
@@ -2344,7 +2318,7 @@ static void dump_from_flags(bool on_error) {
         size_t len = strlen(file);
         size_t first = pid_tag - file;
         char buf[32768];
-        jio_snprintf(buf, sizeof(buf), "%.*s" UINTX_FORMAT "%s",
+        jio_snprintf(buf, sizeof(buf), "%.*s%zu%s",
                     first, file, os::current_process_id(), pid_tag + 4);
         fileStream fs(buf, "a");
         mallocStatImpl::MallocStatisticImpl::dump(&fs, &fs, spec);
@@ -2636,4 +2610,3 @@ void MallocTraceDumpDCmd::execute(DCmdSource source, TRAPS) {
 } // namespace sap
 
 #endif // defined(LINUX) || defined(__APPLE__)
-

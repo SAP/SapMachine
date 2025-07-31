@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ class MemoryPool;
 class PSAdaptiveSizePolicy;
 class PSCardTable;
 class PSHeapSummary;
+class ReservedSpace;
 
 // ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.
 //
@@ -94,8 +95,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void update_parallel_worker_threads_cpu_time();
 
-  void collect_at_safepoint(bool full);
-
   bool must_clear_all_soft_refs();
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
@@ -111,6 +110,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
   void do_full_collection(bool clear_all_soft_refs) override;
+
+  void print_tracing_info() const override;
+  void stop() override {};
 
 public:
   ParallelScavengeHeap() :
@@ -159,11 +161,6 @@ public:
   size_t capacity() const override;
   size_t used() const override;
 
-  // Return "true" if all generations have reached the
-  // maximal committed limit that they can reach, without a garbage
-  // collection.
-  bool is_maximal_no_gc() const override;
-
   void register_nmethod(nmethod* nm) override;
   void unregister_nmethod(nmethod* nm) override;
   void verify_nmethod(nmethod* nm) override;
@@ -197,7 +194,7 @@ public:
   // Support for System.gc()
   void collect(GCCause::Cause cause) override;
 
-  void try_collect_at_safepoint(bool full);
+  void collect_at_safepoint(bool full);
 
   void ensure_parsability(bool retire_tlabs) override;
   void resize_all_tlabs() override;
@@ -215,10 +212,9 @@ public:
 
   void prepare_for_verify() override;
   PSHeapSummary create_ps_heap_summary();
-  void print_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
-  void print_tracing_info() const override;
 
   WorkerThreads* safepoint_workers() override { return &_workers; }
 

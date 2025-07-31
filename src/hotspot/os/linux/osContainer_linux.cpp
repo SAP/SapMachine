@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,16 +43,16 @@ CgroupSubsystem* cgroup_subsystem;
 // that and read the data ourselves (since OsContainer omits certain data and does things I don't
 // want to happen in the Vitals sampler thread).
 extern const char* sapmachine_get_memory_controller_path() {
-  if (cgroup_subsystem != NULL) {
+  if (cgroup_subsystem != nullptr) {
     CachingCgroupController<CgroupMemoryController>* cc = cgroup_subsystem->memory_controller();
-    if (cc != NULL) {
+    if (cc != nullptr) {
       CgroupMemoryController* c = cc->controller();
-      if (c != NULL) {
+      if (c != nullptr) {
         return c->subsystem_path();
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /* init
@@ -140,6 +140,11 @@ jlong OSContainer::memory_soft_limit_in_bytes() {
   return cgroup_subsystem->memory_soft_limit_in_bytes();
 }
 
+jlong OSContainer::memory_throttle_limit_in_bytes() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->memory_throttle_limit_in_bytes();
+}
+
 jlong OSContainer::memory_usage_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->memory_usage_in_bytes();
@@ -193,6 +198,11 @@ int OSContainer::cpu_period() {
 int OSContainer::cpu_shares() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->cpu_shares();
+}
+
+jlong OSContainer::cpu_usage_in_micros() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->cpu_usage_in_micros();
 }
 
 jlong OSContainer::pids_max() {

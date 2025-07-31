@@ -123,7 +123,7 @@ public class TestConnectionIDFeature {
             try {
                 URL url = URIBuilder.newBuilder()
                     .scheme("http")
-                    .host(InetAddress.getLocalHost())
+                    .host(InetAddress.getLoopbackAddress())
                     .port(server.getAddress().getPort())
                     .path("/" + connectionId)
                     .toURL();
@@ -154,7 +154,7 @@ public class TestConnectionIDFeature {
             try {
                 URL url = URIBuilder.newBuilder()
                     .scheme("http")
-                    .host(InetAddress.getLocalHost())
+                    .host(InetAddress.getLoopbackAddress())
                     .port(server.getAddress().getPort())
                     .path("/" + connectionId)
                     .toURL();
@@ -173,7 +173,7 @@ public class TestConnectionIDFeature {
     public static void initialize() {
         // start server
         try {
-            server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 10, "/", new TestConnectionIDFeature.TestHttpHandler());
+            server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 10, "/", new TestConnectionIDFeature.TestHttpHandler());
         } catch (IOException e) {
             throw new RuntimeException("Could not create server", e);
         }
@@ -200,7 +200,7 @@ public class TestConnectionIDFeature {
         // run second batch of requests where we expect that connections be reused
         clientFutures.clear();
         while (connectionIds.peek() != null) {
-            clientFutures.add(CompletableFuture.supplyAsync(new InitialRequest(connectionIds.pop()), executor));
+            clientFutures.add(CompletableFuture.supplyAsync(new SecondRequest(connectionIds.pop()), executor));
         }
         for (var future : clientFutures) {
             connectionIds.push(future.join());

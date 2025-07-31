@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "jvm_io.h"
 #include "osContainer_linux.hpp"
 #include "vitals_linux_oswrapper.hpp"
@@ -37,7 +34,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-
 
 
 #define LOG_HERE_F(msg, ...)  { printf("[%d] ", (int)::getpid()); ::printf(msg, __VA_ARGS__); printf("\n"); fflush(stdout); }
@@ -68,7 +64,7 @@ class ProcFile {
 
 public:
 
-  ProcFile() : _buf(NULL) {
+  ProcFile() : _buf(nullptr) {
     _buf = (char*)os::malloc(bufsize, mtInternal);
   }
 
@@ -79,7 +75,7 @@ public:
   bool read(const char* filename) {
 
     FILE* f = ::fopen(filename, "r");
-    if (f == NULL) {
+    if (f == nullptr) {
       log_debug(vitals)("Failed to fopen %s (%d)", filename, errno);
       return false;
     }
@@ -98,7 +94,7 @@ public:
   static value_t as_value(const char* text, size_t scale = 1) {
     value_t value;
     errno = 0;
-    char* endptr = NULL;
+    char* endptr = nullptr;
     value = (value_t)::strtoll(text, &endptr, 10);
     if (endptr == text || errno != 0) {
       value = INVALID_VALUE;
@@ -121,7 +117,7 @@ public:
   value_t parsed_prefixed_value(const char* prefix, size_t scale = 1) const {
     value_t value = INVALID_VALUE;
     const char* const s = get_prefixed_line(prefix);
-    if (s != NULL) {
+    if (s != nullptr) {
       errno = 0;
       const char* p = s + ::strlen(prefix);
       return as_value(p, scale);
@@ -204,8 +200,8 @@ struct glibc_mallinfo2 {
 typedef struct glibc_mallinfo   (*mallinfo_func_t)(void);
 typedef struct glibc_mallinfo2  (*mallinfo2_func_t)(void);
 
-static mallinfo_func_t  g_mallinfo = NULL;
-static mallinfo2_func_t g_mallinfo2 = NULL;
+static mallinfo_func_t  g_mallinfo = nullptr;
+static mallinfo2_func_t g_mallinfo2 = nullptr;
 
 static void mallinfo_init() {
   g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
@@ -254,8 +250,8 @@ public:
     log_debug(vitals)("Vitals cgroup initialization: containerized = %d", _containerized);
 
     const char* controller_path = sapmachine_get_memory_controller_path();
-    if (controller_path == NULL) {
-      log_debug(vitals)("Vitals cgroup initialization: controller path NULL");
+    if (controller_path == nullptr) {
+      log_debug(vitals)("Vitals cgroup initialization: controller path nullptr");
       return false;
     }
     size_t pathlen = ::strlen(controller_path);
@@ -312,7 +308,7 @@ public:
 #undef STORE_PATH
 
 #define LOG_PATH(variable) \
-		log_debug(vitals)("Vitals: %s=%s", #variable, variable == NULL ? "<null>" : variable);
+		log_debug(vitals)("Vitals: %s=%s", #variable, variable == nullptr ? "<null>" : variable);
     LOG_PATH(_file_usg)
     LOG_PATH(_file_usgsw)
     LOG_PATH(_file_kusg)
@@ -340,7 +336,7 @@ public:
 #define GET_VALUE(var) \
   { \
     const char* what = _file_ ## var; \
-    if (what != NULL && pf.read(what)) { \
+    if (what != nullptr && pf.read(what)) { \
       v-> var = pf.as_value(1); \
     } \
   }
@@ -365,12 +361,12 @@ public:
 }; // end: CGroups
 
 bool CGroups::_containerized = false;
-const char* CGroups::_file_usg = NULL;
-const char* CGroups::_file_usgsw = NULL;
-const char* CGroups::_file_lim = NULL;
-const char* CGroups::_file_limsw = NULL;
-const char* CGroups::_file_slim = NULL;
-const char* CGroups::_file_kusg = NULL;
+const char* CGroups::_file_usg = nullptr;
+const char* CGroups::_file_usgsw = nullptr;
+const char* CGroups::_file_lim = nullptr;
+const char* CGroups::_file_limsw = nullptr;
+const char* CGroups::_file_slim = nullptr;
+const char* CGroups::_file_kusg = nullptr;
 
 void OSWrapper::update_if_needed() {
 
@@ -472,15 +468,15 @@ ALL_VALUES_DO(RESETVAL)
   // Number of open files: iterate over /proc/self/fd and count.
   {
     DIR* d = ::opendir("/proc/self/fd");
-    if (d != NULL) {
+    if (d != nullptr) {
       value_t v = 0;
-      struct dirent* en = NULL;
+      struct dirent* en = nullptr;
       do {
         en = ::readdir(d);
-        if (en != NULL) {
+        if (en != nullptr) {
           v ++;
         }
-      } while(en != NULL);
+      } while(en != nullptr);
       ::closedir(d);
       assert(v >= 2, "should have read at least '.' and '..'");
       v -= 2; // We discount . and ..
@@ -492,13 +488,13 @@ ALL_VALUES_DO(RESETVAL)
   // Number of threads: read "num_threads" from /proc/<pid>/stat
   {
     DIR* d = ::opendir("/proc");
-    if (d != NULL) {
+    if (d != nullptr) {
       value_t v_p = 0;
       value_t v_t = 0;
-      struct dirent* en = NULL;
+      struct dirent* en = nullptr;
       do {
         en = ::readdir(d);
-        if (en != NULL) {
+        if (en != nullptr) {
           if (is_numerical_id(en->d_name)) {
             v_p ++;
             char tmp[128];
@@ -513,7 +509,7 @@ ALL_VALUES_DO(RESETVAL)
             }
           }
         }
-      } while(en != NULL);
+      } while(en != nullptr);
       ::closedir(d);
       _syst_p = v_p;
       _syst_t = v_t;
@@ -540,11 +536,11 @@ ALL_VALUES_DO(RESETVAL)
 #ifdef __GLIBC__
   // Note "glibc heap used", from experiments and glibc source code reading, would be aprox. the sum
   //  of mmaped data area size (contains large allocations) and the small block sizes.
-  if (g_mallinfo2 != NULL) {
+  if (g_mallinfo2 != nullptr) {
     glibc_mallinfo2 mi = g_mallinfo2();
     _proc_chea_usd = mi.uordblks + mi.hblkhd;
     _proc_chea_free = mi.fordblks;
-  } else if (g_mallinfo != NULL) {
+  } else if (g_mallinfo != nullptr) {
     // disregard output from old style mallinfo if rss > 4g, since we cannot
     // know whether we wrapped. For rss < 4g, we know values in mallinfo cannot
     // have wrapped.

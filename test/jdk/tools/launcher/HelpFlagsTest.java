@@ -35,6 +35,8 @@
  *          in future. I.e., check that the tool returns with the same
  *          return code as called with an invalid flag, and does not
  *          print anything containing '-help' in that case.
+ * @comment SapMachine 2025-06-04: Don't run with a static jdk, since jar is missing.
+ * @requires !jdk.static
  * @compile HelpFlagsTest.java
  * @run main HelpFlagsTest
  */

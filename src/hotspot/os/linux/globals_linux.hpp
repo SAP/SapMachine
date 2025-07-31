@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,6 @@
                          product_pd,                                    \
                          range,                                         \
                          constraint)                                    \
-                                                                        \
-  product(bool, UseOprofile, false,                                     \
-        "enable support for Oprofile profiler")                         \
-                                                                        \
-  product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
-          "(Deprecated) enable fast Linux Posix clocks where available") \
                                                                         \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \
@@ -78,10 +72,10 @@
          "<sapmachine_himemalert>_pid<pid>_<timestamp>.log\".")         \
   product(size_t, HiMemReportMax, 0,                                    \
          "Overrides the maximum reference size for HiMemReport.")       \
-  product(ccstr, HiMemReportDir, NULL,                                  \
+  product(ccstr, HiMemReportDir, nullptr,                               \
          "Specifies a directory into which reports are written. Gets "  \
          "created (one level only) if it does not exist.")              \
-  product(ccstr, HiMemReportExec, NULL,                                 \
+  product(ccstr, HiMemReportExec, nullptr,                              \
          "Specifies one or more jcmds to be executed after a high "     \
          "memory report has been written. Multiple commands are "       \
          "separated by ';'. Command output is written to stderr. If "   \

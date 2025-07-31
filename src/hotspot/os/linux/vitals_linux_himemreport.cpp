@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #include "jvm_io.h"
 #include "vitals_linux_himemreport.hpp"
@@ -75,7 +72,7 @@ static const int HiMemReportDecaySeconds = 60 * 5;
 #define STRFTIME_FROM_TIME_T(st, fmt, t)                    \
   char buf[32];                                             \
   struct tm timeinfo;                                       \
-  if (::localtime_r(&t, &timeinfo) != NULL &&               \
+  if (::localtime_r(&t, &timeinfo) != nullptr &&               \
       ::strftime(buf, sizeof(buf), fmt, &timeinfo) != 0) {  \
     st->print_raw(buf);                                     \
   } else {                                                  \
@@ -193,7 +190,7 @@ public:
 
 const int AlertState::_alvl_perc[5] = { 0, 66, 75, 90, -1 };
 
-static AlertState* g_alert_state = NULL;
+static AlertState* g_alert_state = nullptr;
 
 // What do we test?
 enum class compare_type {
@@ -322,7 +319,7 @@ public:
 
   bool initialize(const char* d) {
 
-    assert(d != NULL && strlen(d) > 0, "sanity");
+    assert(d != nullptr && strlen(d) > 0, "sanity");
     assert(_dir.size() == 0, "Only initialize once");
 
     // Set _dir from d. Resolve relative path if d is relative, and ensure it always
@@ -330,7 +327,7 @@ public:
     if (d[0] != '/') {
       char path[PATH_MAX];
       const char* cwd = os::get_current_directory(path, sizeof(path));
-      if (cwd == NULL) {
+      if (cwd == nullptr) {
         log_warning(vitals)("HiMemReportDir: Failed to resolve current directory (%d)", errno);
         return false;
       }
@@ -373,14 +370,14 @@ public:
   }
 };
 
-static ReportDir* g_report_dir = NULL;
+static ReportDir* g_report_dir = nullptr;
 
 static void print_high_memory_report_header(outputStream* st, const char* message, int pid, time_t t) {
   char tmp[255];
   st->print_cr("############");
   st->print_cr("#");
   st->print_cr("# High Memory Report:");
-  st->print_cr("# pid: %d thread id: " INTX_FORMAT, pid, os::current_thread_id());
+  st->print_cr("# pid: %d thread id: %zd", pid, os::current_thread_id());
   st->print_cr("# %s", message);
   st->print_raw("# "); print_date_and_time(st, t); st->cr();
   st->print_cr("# Spike number: %d", g_alert_state->current_spike_no());
@@ -437,9 +434,9 @@ static void print_high_memory_report(outputStream* st) {
 }
 
 // Create a file name into the report directory: <reportdir or cwd>/<name>.<pid>_<spike>_<percentage>.<suffix>
-// (leave dir NULL to just get a file name)
+// (leave dir nullptr to just get a file name)
 static void print_file_name(stringStream* ss, const char* name, int pid, time_t timestamp, const char* suffix) {
-  assert(g_report_dir != NULL, "must be");
+  assert(g_report_dir != nullptr, "must be");
   const char* dir = g_report_dir->path();
   // Should already have been made absolute, and should end with / (see ReportDir::initialize()).
   assert(dir[0] == '/' && dir[::strlen(dir) - 1] == '/',
@@ -492,9 +489,9 @@ public:
   bool is_valid() const {
     static const char* valid_prefixes[] = { "Compiler", "GC", "JFR", "JVMTI",
                                             "Management", "System", "Thread",
-                                            "VM",  "help", NULL };
+                                            "VM",  "help", nullptr };
     if (_name.size() > 0) {
-      for (const char** p = valid_prefixes; (*p) != NULL; p ++) {
+      for (const char** p = valid_prefixes; (*p) != nullptr; p ++) {
         if (::strncasecmp(_name.base(), *p, ::strlen(*p)) == 0) {
           return true;
         }
@@ -535,8 +532,8 @@ static bool spawn_command(const char** argv, const char* outFile, const char* er
 
   bool rc = fa.ok && atr.ok;
 
-  if (outFile != NULL) { // Redirect stdout, stderr to files
-        assert(errFile != NULL, "Require both");
+  if (outFile != nullptr) { // Redirect stdout, stderr to files
+        assert(errFile != nullptr, "Require both");
     rc = rc && (::posix_spawn_file_actions_addopen(&fa.v, 1, outFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0) &&
                (::posix_spawn_file_actions_addopen(&fa.v, 2, errFile, O_WRONLY | O_CREAT | O_TRUNC, 0664) == 0);
   } else { // Dup stdout to stderr
@@ -579,10 +576,10 @@ static bool spawn_command(const char** argv, const char* outFile, const char* er
 static void call_single_jcmd(const ParsedCommand* cmd, int pid, time_t t) {
 
   // if report dir is given, calc .out and .err file names
-  const char* out_file = NULL;
-  const char* err_file = NULL;
+  const char* out_file = nullptr;
+  const char* err_file = nullptr;
   stringStream out_file_ss, err_file_ss;
-  if (g_report_dir != NULL) {
+  if (g_report_dir != nullptr) {
     // output files are named <command name>_pid<pid>_<timestamp>.(out|err), e.g. "VM.info_4711_2022_08_01_07_52_22.out".
     print_file_name(&out_file_ss, cmd->name(), pid, t, ".out");
     out_file = out_file_ss.base();
@@ -614,7 +611,7 @@ static void call_single_jcmd(const ParsedCommand* cmd, int pid, time_t t) {
   argv[0] = jcmd_executable.base();
   argv[1] = target_pid.base();
   argv[2] = jcmd_command.base();
-  argv[3] = NULL;
+  argv[3] = nullptr;
 
   stringStream err_msg;
   const jlong t1 = os::javaTimeNanos();
@@ -622,7 +619,7 @@ static void call_single_jcmd(const ParsedCommand* cmd, int pid, time_t t) {
     const jlong t2 = os::javaTimeNanos();
     const int command_time_ms = (t2 - t1) / (1000 * 1000);
     stderr_stream.print("HiMemReport: Successfully executed \"%s\" (%d ms)", jcmd_command.base(), command_time_ms);
-    if (out_file != NULL) {
+    if (out_file != nullptr) {
       stderr_stream.print(", output redirected to report dir");
     }
     stderr_stream.cr();
@@ -649,9 +646,9 @@ struct JcmdClosure {
 
 static bool iterate_exec_string(const char* exec_string, JcmdClosure* closure) {
   char* exec_copy = os::strdup(exec_string);
-  char* save = NULL;
+  char* save = nullptr;
   for (char* tok = strtok_r(exec_copy, ";", &save);
-       tok != NULL; tok = ::strtok_r(NULL, ";", &save)) {
+       tok != nullptr; tok = ::strtok_r(nullptr, ";", &save)) {
     const char* p = trim_string(tok);
     if (::strlen(p) > 0 && !closure->do_it(p)) {
       os::free(exec_copy);
@@ -707,7 +704,7 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
   g_num_alerts ++;
 
   stringStream reason;
-  reason.print("rss+swap (" SIZE_FORMAT " K) larger than %d%% of %s (" SIZE_FORMAT " K).",
+  reason.print("rss+swap (%zu K) larger than %d%% of %s (%zu K).",
                triggering_size / K, percentage, describe_maximum_by_compare_type(g_compare_what),
                g_alert_state->maximum() / K);
   const char* message = reason.base();
@@ -720,7 +717,7 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
 
   print_high_memory_report_header(&stderr_stream, message, pid, t);
 
-  if (g_report_dir != NULL) {
+  if (g_report_dir != nullptr) {
     // Dump to file in report dir
     stringStream ss;
     print_file_name(&ss, "sapmachine_himemalert", pid, t, ".log");
@@ -746,7 +743,7 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
   stderr_stream.cr();
   stderr_stream.flush();
 
-  if (HiMemReportExec != NULL) {
+  if (HiMemReportExec != nullptr) {
     CallJCmdClosure closure(pid, t);
     iterate_exec_string(HiMemReportExec, &closure);
   }
@@ -757,7 +754,7 @@ static void trigger_high_memory_report(int alvl, int spikeno, int percentage, si
 
 void pulse_himem_report() {
   assert(HiMemReport, "only call for +HiMemReport");
-  assert(g_compare_what != compare_type::compare_none && g_alert_state != NULL, "Not initialized");
+  assert(g_compare_what != compare_type::compare_none && g_alert_state != nullptr, "Not initialized");
 
   OSWrapper::update_if_needed();
 
@@ -772,7 +769,7 @@ void pulse_himem_report() {
 
     if (new_alvl > old_alvl) {
       const int new_percentage = g_alert_state->current_alert_level_percentage();
-      stderr_stream.print_cr("HiMemoryReport: rss+swap=" SIZE_FORMAT " K - alert level increased to %d (>=%d%%).",
+      stderr_stream.print_cr("HiMemoryReport: rss+swap=%zu K - alert level increased to %d (>=%d%%).",
                               rss_swap / K, new_alvl, new_percentage);
       int skipped = 0;
       for (int i = old_alvl + 1; i < new_alvl; i ++) {
@@ -794,7 +791,7 @@ void pulse_himem_report() {
 #endif // INCLUDE_NMT
     } else if (old_alvl > 0 && new_alvl == 0){
       // Memory usage recovered, and we hit the decay time, and now all is well again.
-      stderr_stream.print_cr("HiMemoryReport: rss+swap=" SIZE_FORMAT " K - seems we recovered. Resetting alert level.",
+      stderr_stream.print_cr("HiMemoryReport: rss+swap=%zu K - seems we recovered. Resetting alert level.",
                              rss_swap / K);
 #if INCLUDE_NMT
       NMTStuff::reset();
@@ -823,11 +820,11 @@ public:
 
 };
 
-static HiMemReportThread* g_reporter_thread = NULL;
+static HiMemReportThread* g_reporter_thread = nullptr;
 
 static bool initialize_reporter_thread() {
   g_reporter_thread = new HiMemReportThread();
-  if (g_reporter_thread != NULL) {
+  if (g_reporter_thread != nullptr) {
     if (os::create_thread(g_reporter_thread, os::os_thread)) {
       os::start_thread(g_reporter_thread);
     }
@@ -852,11 +849,11 @@ extern void initialize_himem_report_facility() {
 
   assert(HiMemReport, "only call for +HiMemReport");
 
-  assert(g_compare_what == compare_type::compare_none && g_alert_state == NULL, "Only initialize once");
+  assert(g_compare_what == compare_type::compare_none && g_alert_state == nullptr, "Only initialize once");
 
   // Verify the exec string
   VerifyJCmdClosure closure;
-  if (HiMemReportExec != NULL && iterate_exec_string(HiMemReportExec, &closure) == false) {
+  if (HiMemReportExec != nullptr && iterate_exec_string(HiMemReportExec, &closure) == false) {
     vm_exit_during_initialization("Vitals HiMemReportExec: One or more Exec commands were invalid");
   }
 
@@ -870,19 +867,19 @@ extern void initialize_himem_report_facility() {
   if (HiMemReportMax != 0) {
     g_compare_what = compare_type::compare_rss_vs_manual_limit;
     limit = HiMemReportMax;
-    log_info(vitals)("Vitals HiMemReport: Setting limit to HiMemReportMax (" SIZE_FORMAT " K).", limit / K);
+    log_info(vitals)("Vitals HiMemReport: Setting limit to HiMemReportMax (%zu K).", limit / K);
   } else {
     OSWrapper::update_if_needed();
     if (OSWrapper::syst_cgro_lim() != INVALID_VALUE) {
       // limit against cgroup limit
       g_compare_what = compare_type::compare_rss_vs_cgroup_limit;
       limit = (size_t)OSWrapper::syst_cgro_lim();
-      log_info(vitals)("Vitals HiMemReport: Setting limit to cgroup memory limit (" SIZE_FORMAT " K).", limit / K);
+      log_info(vitals)("Vitals HiMemReport: Setting limit to cgroup memory limit (%zu K).", limit / K);
     } else if (OSWrapper::syst_phys() != INVALID_VALUE) {
       // limit against total physical memory
       g_compare_what = compare_type::compare_rss_vs_phys;
       limit = (size_t)OSWrapper::syst_phys() / 2;
-      log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (" SIZE_FORMAT " K).", limit / K);
+      log_info(vitals)("Vitals HiMemReport: Setting limit to half of total physical memory (%zu K).", limit / K);
     }
   }
 
@@ -896,7 +893,7 @@ extern void initialize_himem_report_facility() {
   // HiMemReportDir:
   // We fix up the report directory when VM starts, so if its relative, it refers to the initial current directory.
   // If it cannot be established, we treat it as predictable argument error and exit the VM.
-  if (HiMemReportDir != NULL && ::strlen(HiMemReportDir) > 0) {
+  if (HiMemReportDir != nullptr && ::strlen(HiMemReportDir) > 0) {
     g_report_dir = new ReportDir();
     if (!g_report_dir->initialize(HiMemReportDir)) {
       log_warning(vitals)("Vitals: Cannot access HiMemReportDir %s.", g_report_dir->path());
@@ -918,8 +915,8 @@ extern void initialize_himem_report_facility() {
 }
 
 extern void print_himemreport_state(outputStream* st) {
-  if (g_alert_state != NULL) {
-    st->print("HiMemReport: monitoring rss+swap vs %s (" SIZE_FORMAT " K)",
+  if (g_alert_state != nullptr) {
+    st->print("HiMemReport: monitoring rss+swap vs %s (%zu K)",
               describe_maximum_by_compare_type(g_compare_what),
               g_alert_state->maximum() / K);
     if (g_alert_state->current_alert_level() == 0) {
@@ -938,4 +935,3 @@ extern void print_himemreport_state(outputStream* st) {
 extern const Thread* himem_reporter_thread() { return g_reporter_thread; }
 
 } // namespace sapmachine_vitals
-

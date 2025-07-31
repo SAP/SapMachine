@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
@@ -65,14 +64,23 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj->klass()), obj->klass()->external_name());
+  Klass* obj_klass = ShenandoahForwarding::klass(obj);
+
+  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj_klass), obj_klass->external_name());
   msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
   msg.append("    %3s after update watermark\n",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
   msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
+  if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+    msg.append("  age: %d\n", obj->age());
+  }
   msg.append("  mark:%s\n", mw_ss.freeze());
   msg.append("  region: %s", ss.freeze());
+  if (obj_klass == vmClasses::Class_klass()) {
+    msg.append("  mirrored klass:       " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::klass_offset())));
+    msg.append("  mirrored array klass: " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::array_klass_offset())));
+  }
 }
 
 void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
@@ -264,20 +272,22 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   }
 
   // Do additional checks for special objects: their fields can hold metadata as well.
-  // We want to check class loading/unloading did not corrupt them.
+  // We want to check class loading/unloading did not corrupt them. We can only reasonably
+  // trust the forwarded objects, as the from-space object can have the klasses effectively
+  // dead.
 
   if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
-    Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+    const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
     if (klass != nullptr && !Metaspace::contains(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Instance class mirror should point to Metaspace",
+                    "Mirrored instance class should point to Metaspace",
                     file, line);
     }
 
-    Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+    const Metadata* array_klass = fwd->metadata_field(java_lang_Class::array_klass_offset());
     if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Array class mirror should point to Metaspace",
+                    "Mirrored array class should point to Metaspace",
                     file, line);
     }
   }
@@ -424,7 +434,7 @@ void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const
     return;
   }
 
-  ShenandoahMessageBuffer msg("Must ba at a Shenandoah safepoint or held %s lock", lock->name());
+  ShenandoahMessageBuffer msg("Must be at a Shenandoah safepoint or held %s lock", lock->name());
   report_vm_error(file, line, msg.buffer());
 }
 
@@ -457,10 +467,55 @@ void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int lin
     return;
   }
 
-  if (ShenandoahSafepoint::is_at_shenandoah_safepoint() && Thread::current()->is_VM_thread()) {
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     return;
   }
 
   ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_generational(const char* file, int line) {
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Must be in generational mode");
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(bool at_safepoint, const char* file, int line) {
+  Thread* thr = Thread::current();
+  if (thr == ShenandoahHeap::heap()->control_thread()) {
+    return;
+  }
+  if (thr->is_VM_thread()) {
+    if (!at_safepoint) {
+      return;
+    } else if (SafepointSynchronize::is_at_safepoint()) {
+      return;
+    }
+  }
+
+  ShenandoahMessageBuffer msg("Must be either control thread, or vm thread");
+  if (at_safepoint) {
+    msg.append(" at a safepoint");
+  }
+  report_vm_error(file, line, msg.buffer());
+}
+
+void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line) {
+  if (!SafepointSynchronize::is_at_safepoint()) {
+    return;
+  }
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGeneration* ggen = heap->gc_generation();
+  ShenandoahGeneration* agen = heap->active_generation();
+  if (agen == ggen) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Active(%d) & GC(%d) Generations aren't reconciled", agen->type(), ggen->type());
   report_vm_error(file, line, msg.buffer());
 }
