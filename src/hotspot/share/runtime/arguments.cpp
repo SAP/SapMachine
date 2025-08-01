@@ -2357,7 +2357,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
           return JNI_ENOMEM;
         }
       }
-#endif // !WITH_SAP_JMC_AGENT    // --enable_preview
+#endif // !WITH_SAP_JMC_AGENT
     // --enable_preview
     } else if (match_option(option, "--enable-preview")) {
       set_enable_preview();
