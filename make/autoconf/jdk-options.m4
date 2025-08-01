@@ -365,9 +365,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_SAP_JMC_AGENT],
     SAP_JMC_AGENT_PATH="$with_sap_jmc_agent"
 	UTIL_FIXUP_PATH(SAP_JMC_AGENT_PATH)
     if test -f "$SAP_JMC_AGENT_PATH"/agent-*-boot.jar; then
-      SAP_JMC_AGENT_VERSION=`echo "$SAP_JMC_AGENT_PATH"/agent-*-boot.jar | sed -r 's!.*/agent-(.+)-boot.jar!\1!'`
+      SAP_JMC_AGENT_VERSION=$(basename "$SAP_JMC_AGENT_PATH"/agent-*-boot.jar | $SED 's/^agent-//' | $SED 's/-boot.jar$//')
       SAP_JMC_AGENT_ENABLED=true
-	  JVM_CFLAGS="$JVM_CFLAGS -DWITH_SAP_JMC_AGENT=1"
+      JVM_CFLAGS="$JVM_CFLAGS -DWITH_SAP_JMC_AGENT=1"
       AC_MSG_NOTICE([SAP JMC agent found at $SAP_JMC_AGENT_PATH, version $SAP_JMC_AGENT_VERSION])
     else
       AC_MSG_ERROR([SAP JMC agent was set, but the agent jars were not found])

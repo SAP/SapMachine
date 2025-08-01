@@ -169,7 +169,7 @@ public:
   static int num_arguments() { return 1; }
   static const char* name() { return "JVMTI.jmc_agent_load"; }
   static const char* description() {
-    return "Load the JCM agent.";
+    return "Load the SAP jmc agent.";
   }
   static const char* impact() { return "Low"; }
   virtual void execute(DCmdSource source, TRAPS);

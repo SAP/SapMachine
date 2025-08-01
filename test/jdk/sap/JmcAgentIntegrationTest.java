@@ -1,6 +1,6 @@
 /**
  * @test
- * @summary Runs the test for the jcm agent integration.
+ * @summary Runs the test for the jmc agent integration.
  *
  * @run main/othervm JmcAgentIntegrationTest
  */
