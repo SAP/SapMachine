@@ -171,7 +171,9 @@ public:
   static const char* description() {
     return "Load the SAP jmc agent.";
   }
-  static const char* impact() { return "Low"; }
+  static const char* impact() {
+    return "Medium: Depends on the command or trace";
+  }
   virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // WITH_SAP_JMC_AGENT
