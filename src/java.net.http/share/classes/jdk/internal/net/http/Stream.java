@@ -32,6 +32,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.ProtocolException;
 import java.net.URI;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.ResponseInfo;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -182,12 +184,11 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (subscriber == null) {
                     // can't process anything yet
                     return;
-                } else {
-                    if (debug.on()) debug.log("subscribing user subscriber");
-                    subscriber.onSubscribe(userSubscription);
                 }
+                if (debug.on()) debug.log("subscribing user subscriber");
+                subscriber.onSubscribe(userSubscription);
             }
-            while (!inputQ.isEmpty()) {
+            while (!inputQ.isEmpty() && errorRef.get() == null) {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame) {
                     inputQ.remove();
@@ -281,6 +282,7 @@ class Stream<T> extends ExchangeImpl<T> {
         if (debug.on()) debug.log("nullBody: streamid=%d", streamid);
         // We should have an END_STREAM data frame waiting in the inputQ.
         // We need a subscriber to force the scheduler to process it.
+        assert pendingResponseSubscriber == null;
         pendingResponseSubscriber = HttpResponse.BodySubscribers.replacing(null);
         sched.runOrSchedule();
     }
@@ -308,6 +310,16 @@ class Stream<T> extends ExchangeImpl<T> {
         return endStream;
     }
 
+    @Override
+    void expectContinueFailed(int rcode) {
+        // Have to mark request as sent, due to no request body being sent in the
+        // event of a 417 Expectation Failed or some other non 100 response code
+        requestSent();
+    }
+
+    // This method is called by Http2Connection::decrementStreamCount in order
+    // to make sure that the stream count is decremented only once for
+    // a given stream.
     boolean deRegister() {
         return DEREGISTERED.compareAndSet(this, false, true);
     }
@@ -320,7 +332,8 @@ class Stream<T> extends ExchangeImpl<T> {
         try {
             Log.logTrace("Reading body on stream {0}", streamid);
             debug.log("Getting BodySubscriber for: " + response);
-            BodySubscriber<T> bodySubscriber = handler.apply(new ResponseInfoImpl(response));
+            Http2StreamResponseSubscriber<T> bodySubscriber =
+                    createResponseSubscriber(handler, new ResponseInfoImpl(response));
             CompletableFuture<T> cf = receiveData(bodySubscriber, executor);
 
             PushGroup<?> pg = exchange.getPushGroup();
@@ -334,6 +347,24 @@ class Stream<T> extends ExchangeImpl<T> {
             cancelImpl(t);
             return MinimalFuture.failedFuture(t);
         }
+    }
+
+    @Override
+    Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
+        Http2StreamResponseSubscriber<T> subscriber =
+                new Http2StreamResponseSubscriber<>(handler.apply(response));
+        return subscriber;
+    }
+
+    // The Http2StreamResponseSubscriber is registered with the HttpClient
+    // to ensure that it gets completed if the SelectorManager aborts due
+    // to unexpected exceptions.
+    private boolean registerResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        return client().registerSubscriber(subscriber);
+    }
+
+    private boolean unregisterResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        return client().unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -385,6 +416,10 @@ class Stream<T> extends ExchangeImpl<T> {
     // pushes entire response body into response subscriber
     // blocking when required by local or remote flow control
     CompletableFuture<T> receiveData(BodySubscriber<T> bodySubscriber, Executor executor) {
+        // ensure that the body subscriber will be subscribed and onError() is
+        // invoked
+        pendingResponseSubscriber = bodySubscriber;
+
         // We want to allow the subscriber's getBody() method to block so it
         // can work with InputStreams. So, we offload execution.
         responseBodyCF = ResponseSubscribers.getBodyAsync(executor, bodySubscriber,
@@ -393,10 +428,10 @@ class Stream<T> extends ExchangeImpl<T> {
         if (isCanceled()) {
             Throwable t = getCancelCause();
             responseBodyCF.completeExceptionally(t);
-        } else {
-            pendingResponseSubscriber = bodySubscriber;
-            sched.runOrSchedule(); // in case data waiting already to be processed
         }
+
+        sched.runOrSchedule(); // in case data waiting already to be processed, or error
+
         return responseBodyCF;
     }
 
@@ -448,8 +483,14 @@ class Stream<T> extends ExchangeImpl<T> {
                 receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
             }
         } else if (frame instanceof DataFrame) {
-            if (cancelled) connection.dropDataFrame((DataFrame) frame);
-            else receiveDataFrame((DataFrame) frame);
+            if (cancelled) {
+                if (debug.on()) {
+                    debug.log("request cancelled or stream closed: dropping data frame");
+                }
+                connection.dropDataFrame((DataFrame) frame);
+            } else {
+                receiveDataFrame((DataFrame) frame);
+            }
         } else {
             if (!cancelled) otherFrame(frame);
         }
@@ -566,9 +607,9 @@ class Stream<T> extends ExchangeImpl<T> {
             Flow.Subscriber<?> subscriber =
                     responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
             if (response == null && subscriber == null) {
-                // we haven't receive the headers yet, and won't receive any!
+                // we haven't received the headers yet, and won't receive any!
                 // handle reset now.
-                handleReset(frame, subscriber);
+                handleReset(frame, null);
             } else {
                 // put it in the input queue in order to read all
                 // pending data frames first. Indeed, a server may send
@@ -1311,10 +1352,24 @@ class Stream<T> extends ExchangeImpl<T> {
                 }
             }
         }
+
         if (closing) { // true if the stream has not been closed yet
-            if (responseSubscriber != null || pendingResponseSubscriber != null)
+            if (responseSubscriber != null || pendingResponseSubscriber != null) {
+                if (debug.on())
+                    debug.log("stream %s closing due to %s", streamid, (Object)errorRef.get());
                 sched.runOrSchedule();
+            } else {
+                if (debug.on())
+                    debug.log("stream %s closing due to %s before subscriber registered",
+                        streamid, (Object)errorRef.get());
+            }
+        } else {
+            if (debug.on()) {
+                debug.log("stream %s already closed due to %s",
+                        streamid, (Object)errorRef.get());
+            }
         }
+
         completeResponseExceptionally(e);
         if (!requestBodyCF.isDone()) {
             requestBodyCF.completeExceptionally(errorRef.get()); // we may be sending the body..
@@ -1358,6 +1413,20 @@ class Stream<T> extends ExchangeImpl<T> {
         if (debug.on()) debug.log("close stream %d", streamid);
         Log.logTrace("Closing stream {0}", streamid);
         connection.closeStream(streamid);
+        var s = responseSubscriber == null
+                ? pendingResponseSubscriber
+                : responseSubscriber;
+        if (debug.on()) debug.log("subscriber is %s", s);
+        if (s instanceof Http2StreamResponseSubscriber<?> sw) {
+            if (debug.on()) debug.log("closing response subscriber stream %s", streamid);
+            // if the subscriber has already completed,
+            // there is nothing to do...
+            if (!sw.completed()) {
+                // otherwise make sure it will be completed
+                var cause = errorRef.get();
+                sw.complete(cause == null ? new IOException("stream closed") : cause);
+            }
+        }
         Log.logTrace("Stream {0} closed", streamid);
     }
 
@@ -1623,6 +1692,23 @@ class Stream<T> extends ExchangeImpl<T> {
                 reset();
             }
         }
+    }
+
+    final class Http2StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
+        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber) {
+            super(subscriber);
+        }
+
+        @Override
+        protected void register() {
+            registerResponseSubscriber(this);
+        }
+
+        @Override
+        protected void unregister() {
+            unregisterResponseSubscriber(this);
+        }
+
     }
 
     private static final VarHandle STREAM_STATE;
