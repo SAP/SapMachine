@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ public class FileSocketTransportTest {
         }
         ByteBuffer in = ByteBuffer.wrap(reply);
         int result = channel.read(in);
+        // When we are connected and have received at least one byte, the file should be deleted.
+        checkSocketDeleted(path);
         channel.close();
 
         return result;
@@ -138,7 +140,6 @@ public class FileSocketTransportTest {
                 Thread.sleep(3000);
                 checkSocketPresent(socketName);
                 read = handshake(socketName, handshake, received);
-                checkSocketDeleted(socketName);
                 assertEquals(new String(handshake, "UTF-8"),
                              new String(received, "UTF-8"));
                 assertEquals(read, received.length);
