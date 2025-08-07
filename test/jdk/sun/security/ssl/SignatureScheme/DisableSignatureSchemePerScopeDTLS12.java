@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,32 +20,39 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.awt.Color;
-import javax.swing.JApplet;
-import javax.swing.JPanel;
-import javax.swing.JSplitPane;
-import javax.swing.SwingUtilities;
 
-/* @test
- * @bug 8132123
- * @summary MultiResolutionCachedImage unnecessarily creates base image
- *           to get its size
- * @author Alexander Scherbatiy
- * @run applet/manual=yesno bug8132123.html
+/*
+ * @test
+ * @bug 8349583
+ * @summary Add mechanism to disable signature schemes based on their TLS scope.
+ *          This test only covers DTLS 1.2.
+ * @library /javax/net/ssl/templates
+ *          /test/lib
+ * @run main/othervm DisableSignatureSchemePerScopeDTLS12
  */
-public class bug8132123 extends JApplet {
+
+import java.security.Security;
+
+public class DisableSignatureSchemePerScopeDTLS12
+        extends DisableSignatureSchemePerScopeTLS12 {
+
+    protected DisableSignatureSchemePerScopeDTLS12() throws Exception {
+        super();
+    }
+
+    public static void main(String[] args) throws Exception {
+        Security.setProperty(
+                "jdk.tls.disabledAlgorithms", DISABLED_CONSTRAINTS);
+        new DisableSignatureSchemePerScopeDTLS12().run();
+    }
 
     @Override
-    public void init() {
-        SwingUtilities.invokeLater(() -> {
-            JPanel left = new JPanel();
-            left.setBackground(Color.GRAY);
-            JPanel right = new JPanel();
-            right.setBackground(Color.GRAY);
-            JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                    left, right);
-            splitPane.setOneTouchExpandable(true);
-            getContentPane().add(splitPane);
-        });
+    protected String getProtocol() {
+        return "DTLSv1.2";
+    }
+
+    // No CertificateRequest in DTLS server flight.
+    @Override
+    protected void checkCertificateRequest() {
     }
 }
