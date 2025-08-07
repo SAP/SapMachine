@@ -190,9 +190,9 @@ class Stream<T> extends ExchangeImpl<T> {
             }
             while (!inputQ.isEmpty() && errorRef.get() == null) {
                 Http2Frame frame = inputQ.peek();
-                if (frame instanceof ResetFrame) {
+                if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
-                    handleReset((ResetFrame)frame, subscriber);
+                    handleReset(rf, subscriber);
                     return;
                 }
                 DataFrame df = (DataFrame)frame;
@@ -472,24 +472,23 @@ class Stream<T> extends ExchangeImpl<T> {
     void incoming(Http2Frame frame) throws IOException {
         if (debug.on()) debug.log("incoming: %s", frame);
         var cancelled = checkRequestCancelled() || closed;
-        if ((frame instanceof HeaderFrame)) {
-            HeaderFrame hframe = (HeaderFrame) frame;
-            if (hframe.endHeaders()) {
+        if ((frame instanceof HeaderFrame hf)) {
+            if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse();
             }
-            if (hframe.getFlag(HeaderFrame.END_STREAM)) {
+            if (hf.getFlag(HeaderFrame.END_STREAM)) {
                 if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
                 receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
             }
-        } else if (frame instanceof DataFrame) {
+        } else if (frame instanceof DataFrame df) {
             if (cancelled) {
                 if (debug.on()) {
                     debug.log("request cancelled or stream closed: dropping data frame");
                 }
-                connection.dropDataFrame((DataFrame) frame);
+                connection.dropDataFrame(df);
             } else {
-                receiveDataFrame((DataFrame) frame);
+                receiveDataFrame(df);
             }
         } else {
             if (!cancelled) otherFrame(frame);
@@ -606,6 +605,16 @@ class Stream<T> extends ExchangeImpl<T> {
         } else {
             Flow.Subscriber<?> subscriber =
                     responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
+            if (!requestBodyCF.isDone()) {
+                // If a RST_STREAM is received, complete the requestBody. This will allow the
+                // response to be read before the Reset is handled in the case where the client's
+                // input stream is partially consumed or not consumed at all by the server.
+                if (frame.getErrorCode() != ResetFrame.NO_ERROR) {
+                    requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
+                } else {
+                    requestBodyCF.complete(null);
+                }
+            }
             if (response == null && subscriber == null) {
                 // we haven't received the headers yet, and won't receive any!
                 // handle reset now.
@@ -636,20 +645,39 @@ class Stream<T> extends ExchangeImpl<T> {
                 closed = true;
             }
             try {
-                int error = frame.getErrorCode();
-                IOException e = new IOException("Received RST_STREAM: "
-                        + ErrorFrame.stringForCode(error));
-                if (errorRef.compareAndSet(null, e)) {
-                    if (subscriber != null) {
-                        subscriber.onError(e);
+                final int error = frame.getErrorCode();
+                // A REFUSED_STREAM error code implies that the stream wasn't processed by the
+                // peer and the client is free to retry the request afresh.
+                if (error == ErrorFrame.REFUSED_STREAM) {
+                    // Here we arrange for the request to be retried. Note that we don't call
+                    // closeAsUnprocessed() method here because the "closed" state is already set
+                    // to true a few lines above and calling close() from within
+                    // closeAsUnprocessed() will end up being a no-op. We instead do the additional
+                    // bookkeeping here.
+                    markUnprocessedByPeer();
+                    errorRef.compareAndSet(null, new IOException("request not processed by peer"));
+                    if (debug.on()) {
+                        debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
+                    }
+                } else {
+                    final String reason = ErrorFrame.stringForCode(error);
+                    final IOException failureCause = new IOException("Received RST_STREAM: " + reason);
+                    if (debug.on()) {
+                        debug.log(streamid + " received RST_STREAM with code: " + reason);
+                    }
+                    if (errorRef.compareAndSet(null, failureCause)) {
+                        if (subscriber != null) {
+                            subscriber.onError(failureCause);
+                        }
                     }
                 }
-                completeResponseExceptionally(e);
+                final Throwable failureCause = errorRef.get();
+                completeResponseExceptionally(failureCause);
                 if (!requestBodyCF.isDone()) {
-                    requestBodyCF.completeExceptionally(errorRef.get()); // we may be sending the body..
+                    requestBodyCF.completeExceptionally(failureCause); // we may be sending the body..
                 }
                 if (responseBodyCF != null) {
-                    responseBodyCF.completeExceptionally(errorRef.get());
+                    responseBodyCF.completeExceptionally(failureCause);
                 }
             } finally {
                 connection.decrementStreamsCount(streamid);
@@ -823,9 +851,14 @@ class Stream<T> extends ExchangeImpl<T> {
         hdrs.setHeader(":method", method);
         URI uri = request.uri();
         hdrs.setHeader(":scheme", uri.getScheme());
-        // TODO: userinfo deprecated. Needs to be removed
-        hdrs.setHeader(":authority", uri.getAuthority());
-        // TODO: ensure header names beginning with : not in user headers
+        String host = uri.getHost();
+        int port = uri.getPort();
+        assert host != null;
+        if (port != -1) {
+            hdrs.setHeader(":authority", host + ":" + port);
+        } else {
+            hdrs.setHeader(":authority", host);
+        }
         String query = uri.getRawQuery();
         String path = uri.getRawPath();
         if (path == null || path.isEmpty()) {
@@ -1632,7 +1665,35 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     final String dbgString() {
-        return connection.dbgString() + "/Stream("+streamid+")";
+        final int id = streamid;
+        final String sid = id == 0 ? "?" : String.valueOf(id);
+        return connection.dbgString() + "/Stream(" + sid + ")";
+    }
+
+    /**
+     * An unprocessed exchange is one that hasn't been processed by a peer. The local end of the
+     * connection would be notified about such exchanges when it receives a GOAWAY frame with
+     * a stream id that tells which exchanges have been unprocessed.
+     * This method is called on such unprocessed exchanges and the implementation of this method
+     * will arrange for the request, corresponding to this exchange, to be retried afresh on a
+     * new connection.
+     */
+    void closeAsUnprocessed() {
+        try {
+            // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
+            markUnprocessedByPeer();
+            this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
+            if (debug.on()) {
+                debug.log("closing " + this.request + " as unprocessed by peer");
+            }
+            // close the exchange and complete the response CF exceptionally
+            close();
+            completeResponseExceptionally(this.errorRef.get());
+        } finally {
+            // decrementStreamsCount isn't really needed but we do it to make sure
+            // the log messages, where these counts/states get reported, show the accurate state.
+            connection.decrementStreamsCount(streamid);
+        }
     }
 
     private class HeadersConsumer extends ValidatingHeadersConsumer implements DecodingCallback {
