@@ -355,7 +355,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_SUBST(SHIP_DEBUG_SYMBOLS)
 ])
 
-# SapMachine 2024-12-05: import JMC agent jars
+# SapMachine 2025-08-11: import JMC agent jars
 AC_DEFUN_ONCE([JDKOPT_SETUP_SAP_JMC_AGENT],
 [
   AC_ARG_WITH(sap-jmc-agent, [AS_HELP_STRING([--with-sap-jmc-agent],

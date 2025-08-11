@@ -131,7 +131,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<EventLogDCmd>(full_export, true, false));
 #if INCLUDE_JVMTI // Both JVMTI and SERVICES have to be enabled to have this dcmd
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
-  // SapMachine 2024-12-05: Add support for SAP JMC agent if requested.
+  // SapMachine 2025-08-11: Add support for SAP JMC agent if requested.
 #if defined(WITH_SAP_JMC_AGENT)
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIJmcAgentLoadDCmd>(full_export, true, false));
 #endif
@@ -354,7 +354,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-// SapMachine 2024-12-05
+// SapMachine 2025-08-11
 #if defined(WITH_SAP_JMC_AGENT)
 JVMTIJmcAgentLoadDCmd::JVMTIJmcAgentLoadDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),

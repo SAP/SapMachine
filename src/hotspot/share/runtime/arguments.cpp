@@ -2352,7 +2352,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
       }
 #endif // !INCLUDE_JVMTI
-    // SapMachine 2024-12-05: Handle jmc agent if requested.
+    // SapMachine 2025-08-11: Handle jmc agent if requested.
     } else if (match_option(option, "-jmcagent:", &tail)) {
 #if !defined(WITH_SAP_JMC_AGENT)
       jio_fprintf(defaultStream::error_stream(),
