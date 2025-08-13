@@ -69,7 +69,8 @@ tier1_sapmachine = \
     sun/security/lib/cacerts/VerifyCACerts.java \
     tools/jlink/plugins/AddSapMachineToolsTest.java \
     tools/launcher/HelpFlagsTest.java \
-    tools/launcher/VersionCheck.java
+    tools/launcher/VersionCheck.java \
+    sap
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \
