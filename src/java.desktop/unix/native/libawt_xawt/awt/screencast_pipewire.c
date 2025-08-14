@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include <dlfcn.h>
 #include "jni_util.h"
 #include "awt.h"
+
+#ifndef _AIX
 #include "screencast_pipewire.h"
 #include "fp_pipewire.h"
 #include <stdio.h>
@@ -49,6 +51,7 @@ static GString *activeSessionToken;
 
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
+volatile bool isGtkMainThread = FALSE;
 
 jclass tokenStorageClass = NULL;
 jmethodID storeTokenMethodID = NULL;
@@ -130,10 +133,6 @@ static void doCleanup() {
         free(screenSpace.screens);
         screenSpace.screens = NULL;
         screenSpace.screenCount = 0;
-    }
-
-    if (!sessionClosed) {
-        fp_pw_deinit();
     }
 
     gtk->g_string_set_size(activeSessionToken, 0);
@@ -582,6 +581,13 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
 
         if (!pw.loop) {
+            // in case someone called the pw_deinit before
+            DEBUG_SCREENCAST("pw_init\n", NULL);
+            fp_pw_init(NULL, NULL);
+            pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
+        }
+
+        if (!pw.loop) {
             DEBUG_SCREENCAST("!!! Could not create a loop\n", NULL);
             doCleanup();
             return FALSE;
@@ -712,7 +718,6 @@ static gboolean loadSymbols() {
     LOAD_SYMBOL(fp_pw_stream_disconnect, "pw_stream_disconnect");
     LOAD_SYMBOL(fp_pw_stream_destroy, "pw_stream_destroy");
     LOAD_SYMBOL(fp_pw_init, "pw_init");
-    LOAD_SYMBOL(fp_pw_deinit, "pw_deinit");
     LOAD_SYMBOL(fp_pw_context_connect_fd, "pw_context_connect_fd");
     LOAD_SYMBOL(fp_pw_core_disconnect, "pw_core_disconnect");
     LOAD_SYMBOL(fp_pw_context_new, "pw_context_new");
@@ -946,9 +951,10 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
 
+    isGtkMainThread = gtk->g_main_context_is_owner(gtk->g_main_context_default());
     DEBUG_SCREENCAST(
-            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i with token |%s|\n",
-            jx, jy, jwidth, jheight, token
+            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i\n\twith token |%s| isGtkMainThread %d\n",
+            jx, jy, jwidth, jheight, token, isGtkMainThread
     );
 
     int attemptResult = makeScreencast(
@@ -1036,3 +1042,28 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     releaseToken(env, jtoken, token);
     return 0;
 }
+#else
+JNIEXPORT void JNICALL
+Java_sun_awt_screencast_ScreencastHelper_closeSession(JNIEnv *env, jclass cls) {
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl(
+        JNIEnv *env,
+        jclass cls,
+        jint jx,
+        jint jy,
+        jint jwidth,
+        jint jheight,
+        jintArray pixelArray,
+        jintArray affectedScreensBoundsArray,
+        jstring jtoken
+) {
+    return -1; /* RESULT_ERROR */
+}
+
+JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire(
+        JNIEnv *env, jclass cls, jboolean screencastDebug
+) {
+    return JNI_FALSE;
+}
+#endif
