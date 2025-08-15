@@ -359,6 +359,29 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_SUBST(SHIP_DEBUG_SYMBOLS)
 ])
 
+# SapMachine 2025-08-11: import JMC agent jars
+AC_DEFUN_ONCE([JDKOPT_SETUP_SAP_JMC_AGENT],
+[
+  AC_ARG_WITH(sap-jmc-agent, [AS_HELP_STRING([--with-sap-jmc-agent],
+      [Set import path for the SAP JMC agent jars])])
+  SAP_JMC_AGENT_ENABLED=false
+  if test "x$with_sap_jmc_agent" != x; then
+    SAP_JMC_AGENT_PATH="$with_sap_jmc_agent"
+	UTIL_FIXUP_PATH(SAP_JMC_AGENT_PATH)
+    if test -f "$SAP_JMC_AGENT_PATH"/agent-*-boot.jar; then
+      SAP_JMC_AGENT_VERSION=$($BASENAME "$SAP_JMC_AGENT_PATH"/agent-*-boot.jar | $SED -e 's/^agent-//' -e 's/-boot.jar$//')
+      SAP_JMC_AGENT_ENABLED=true
+      JVM_CFLAGS="$JVM_CFLAGS -DWITH_SAP_JMC_AGENT=1"
+      AC_MSG_NOTICE([SAP JMC agent found at $SAP_JMC_AGENT_PATH, version $SAP_JMC_AGENT_VERSION])
+    else
+      AC_MSG_ERROR([SAP JMC agent was set, but the agent jars were not found])
+    fi
+  fi
+  AC_SUBST(SAP_JMC_AGENT_PATH)
+  AC_SUBST(SAP_JMC_AGENT_VERSION)
+  AC_SUBST(SAP_JMC_AGENT_ENABLED)
+])
+
 ################################################################################
 #
 # Native and Java code coverage
