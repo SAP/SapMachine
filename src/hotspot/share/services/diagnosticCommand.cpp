@@ -122,6 +122,10 @@ void DCmdRegistrant::register_dcmds(){
 #endif // INCLUDE_SERVICES
 #if INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
+  // SapMachine 2025-08-11: Add support for SAP JMC agent if requested.
+#if defined(WITH_SAP_JMC_AGENT)
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIJmcAgentLoadDCmd>(full_export, true, false));
+#endif // WITH_SAP_JMC_AGENT
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -353,6 +357,36 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
                                     _option.value(), output());
   }
 }
+
+// SapMachine 2025-08-11: Add support for SAP JMC agent if requested.
+#if defined(WITH_SAP_JMC_AGENT)
+JVMTIJmcAgentLoadDCmd::JVMTIJmcAgentLoadDCmd(outputStream* output, bool heap) :
+  DCmdWithParser(output, heap),
+  _option("agent option", "Option string to pass the JMC agent.", "STRING", false) {
+  _dcmdparser.add_dcmd_argument(&_option);
+}
+
+void JVMTIJmcAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
+  char const* java_home = Arguments::get_java_home();
+  char const* agent_jar = "agent.jar";
+  char const* option = _option.value();
+  size_t len = strlen(java_home) + strlen(agent_jar) + (option == nullptr ? 0 : 1 + strlen(option)) + 7;
+  char* agent_line = (char*)os::malloc(len, mtInternal);
+
+  if (agent_line == nullptr) {
+    output()->print_cr("JVMTI JMC agent attach failed: "
+      "Could not allocate " SIZE_FORMAT " bytes for argument.",
+      len);
+     return;
+  }
+
+  jio_snprintf(agent_line, len, "%s/lib/%s%s%s", java_home, agent_jar, option == nullptr ? "" : "=",
+    option == nullptr ? "" : option);
+  JvmtiExport::load_agent_library("instrument", "false", agent_line, output());
+
+  os::free(agent_line);
+}
+#endif // WITH_SAP_JMC_AGENT
 
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
