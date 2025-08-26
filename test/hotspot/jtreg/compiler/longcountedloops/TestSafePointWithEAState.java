@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,43 @@
  * questions.
  */
 
-/* @test
- * @bug 8148984
- * @summary Chinese Comma cannot be entered using Pinyin Input Method on OS X
- * @author Dmitry Markov
- * @run applet/manual=yesno bug8148984.html
+/**
+ * @test
+ * @bug 8336702
+ * @summary C2 compilation fails with "all memory state should have been processed" assert
+ *
+ * @run main/othervm TestSafePointWithEAState
+ *
  */
 
-import javax.swing.*;
+public class TestSafePointWithEAState {
+    int[] b = new int[400];
 
-public class bug8148984 extends JApplet {
-    @Override
-    public void init() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("Text field:"));
-                panel.add(new JTextField(20));
-                add(panel);
+    void c() {
+        int e;
+        float f;
+        for (long d = 0; d < 5000; d++) {
+            e = 1;
+            while ((e += 3) < 200) {
+                if (d < b.length) {
+                    for (int g = 0; g < 10000; ++g) ;
+                }
             }
-        });
+            synchronized (TestSafePointWithEAState.class) {
+                f = new h(e).n;
+            }
+        }
+    }
+
+    public static void main(String[] m) {
+        TestSafePointWithEAState o = new TestSafePointWithEAState();
+        o.c();
     }
 }
 
+class h {
+    float n;
+    h(float n) {
+        this.n = n;
+    }
+}
