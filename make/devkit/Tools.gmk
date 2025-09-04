@@ -123,6 +123,23 @@ else ifeq ($(GCC_VER), 9.2.0)
   gmp_ver := gmp-6.1.2
   mpc_ver := mpc-1.0.3
   gdb_ver := gdb-8.3
+#SapMachine 23-01-22 Some tweaks to building devkits
+else ifeq ($(GCC_VER), 8.5.0)
+  gcc_ver := gcc-8.5.0
+  binutils_ver := binutils-2.32
+  ccache_ver := ccache-3.7.3
+  mpfr_ver := mpfr-3.1.5
+  gmp_ver := gmp-6.1.2
+  mpc_ver := mpc-1.0.3
+  gdb_ver := gdb-8.3
+else ifeq ($(GCC_VER), 8.4.0)
+  gcc_ver := gcc-8.4.0
+  binutils_ver := binutils-2.32
+  ccache_ver := ccache-3.7.3
+  mpfr_ver := mpfr-3.1.5
+  gmp_ver := gmp-6.1.2
+  mpc_ver := mpc-1.0.3
+  gdb_ver := gdb-8.3
 else ifeq ($(GCC_VER), 8.3.0)
   gcc_ver := gcc-8.3.0
   binutils_ver := binutils-2.32
@@ -416,6 +433,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(
 
 # Makefile creation. Simply run configure in build dir.
 # Setting CFLAGS to -O2 generates a much faster ld.
+#SapMachine 23-01-22 Some tweaks to building devkits
 $(bfdmakes) \
 $(BUILDDIR)/$(binutils_ver)/Makefile \
     : $(BINUTILS_CFG)
@@ -430,7 +448,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \
 	      --enable-multilib \
-	      --enable-gold=default \
+	      --enable-gold \
 	      --enable-threads \
 	      --enable-plugins \
 	) > $(@D)/log.config 2>&1

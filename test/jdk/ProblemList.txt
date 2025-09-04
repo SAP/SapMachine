@@ -522,6 +522,9 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
+# SapMachine 2023-08-31
+# Seems we're running into timeouts on our macosx-x64 CI machine from time to time
+java/foreign/StdLibTest.java macosx-x64
 java/foreign/TestMismatch.java 8249684 macosx-all
 
 ############################################################################
