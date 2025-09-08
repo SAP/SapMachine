@@ -261,3 +261,16 @@ $(eval $(call SetupTextFileProcessing, CREATE_CLASSFILE_CONSTANTS_H, \
 TARGETS += $(CREATE_CLASSFILE_CONSTANTS_H)
 
 ################################################################################
+# SapMachine 2023-11-28: Copy mallochook.h
+
+ifeq ($(call isTargetOs, linux macosx), true)
+
+  $(eval $(call SetupCopyFiles, CREATE_MALLOC_HOOKS_H, \
+      FILES := $(TOPDIR)/src/java.base/unix/native/libmallochooks/mallochooks.h, \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_include/java.base/, \
+  ))
+
+  TARGETS += $(CREATE_MALLOC_HOOKS_H)
+endif
+
+################################################################################
