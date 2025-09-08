@@ -24,8 +24,8 @@
  */
 
 #include "memory/resourceArea.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "vitals/vitals.hpp"
 #include "vitals/vitalsDCmd.hpp"
 
