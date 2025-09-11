@@ -23,9 +23,9 @@
  *
  */
 
-#include "vitals/vitalsLocker.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "vitals/vitalsLocker.hpp"
 
 #ifndef _WIN32
 #include <errno.h>

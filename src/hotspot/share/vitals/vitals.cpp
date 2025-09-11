@@ -23,11 +23,10 @@
  *
  */
 
-#include "jvm_io.h"
-
-#include "gc/shared/collectedHeap.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -36,9 +35,9 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/os.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
@@ -1405,9 +1404,9 @@ void dump_reports() {
   char vitals_file_name[1024];
 
   if (VitalsFile != nullptr) {
-    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s.txt", VitalsFile);
+    os::snprintf_checked(vitals_file_name, sizeof(vitals_file_name), "%s.txt", VitalsFile);
   } else {
-    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
+    os::snprintf_checked(vitals_file_name, sizeof(vitals_file_name), "%s%d.txt", file_prefix, os::current_process_id());
   }
 
   // Note: we print two reports, both in reverse order (oldest to youngest). One in text form, one as csv.
@@ -1427,9 +1426,9 @@ void dump_reports() {
   }
 
   if (VitalsFile != nullptr) {
-    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s.csv", VitalsFile);
+    os::snprintf_checked(vitals_file_name, sizeof(vitals_file_name), "%s.csv", VitalsFile);
   } else {
-    os::snprintf(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
+    os::snprintf_checked(vitals_file_name, sizeof(vitals_file_name), "%s%d.csv", file_prefix, os::current_process_id());
   }
   ::printf("Dumping Vitals csv to %s\n", vitals_file_name);
   {
