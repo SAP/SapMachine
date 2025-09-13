@@ -24,11 +24,10 @@
 
 #if defined(LINUX) || defined(__APPLE__)
 
+#include "code/codeCache.hpp"
 #include "jvm_io.h"
 #include "mallochooks.h"
 #include "malloctrace/mallocTracePosix.hpp"
-
-#include "code/codeCache.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

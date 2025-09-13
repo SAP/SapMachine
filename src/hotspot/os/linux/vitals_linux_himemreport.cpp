@@ -24,8 +24,6 @@
  */
 
 #include "jvm_io.h"
-#include "vitals_linux_himemreport.hpp"
-#include "vitals_linux_oswrapper.hpp"
 #include "logging/log.hpp"
 #include "memory/allStatic.hpp"
 #include "nmt/memBaseline.hpp"
@@ -41,11 +39,13 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "vitals/vitals_internals.hpp"
+#include "vitals_linux_himemreport.hpp"
+#include "vitals_linux_oswrapper.hpp"
 
-#include <unistd.h>
 #include <spawn.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 // Newer JDKS: NMT is always on and this macro does not exist
 // Older JDKs: NMT can be off at compile time; in that case INCLUDE_NMT

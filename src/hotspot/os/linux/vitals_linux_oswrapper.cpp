@@ -24,16 +24,16 @@
  */
 
 #include "jvm_io.h"
-#include "osContainer_linux.hpp"
-#include "vitals_linux_oswrapper.hpp"
 #include "logging/log.hpp"
+#include "osContainer_linux.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "vitals/vitals_internals.hpp"
+#include "vitals_linux_oswrapper.hpp"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <errno.h>
 
 
 #define LOG_HERE_F(msg, ...)  { printf("[%d] ", (int)::getpid()); ::printf(msg, __VA_ARGS__); printf("\n"); fflush(stdout); }
