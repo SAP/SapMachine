@@ -28,6 +28,7 @@
  * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
  * @requires vm.vendor != "SAP SE"
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
@@ -40,6 +41,7 @@
  * @test id=nocoops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
@@ -54,6 +56,7 @@
  * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
  * @requires vm.vendor != "SAP SE"
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
@@ -66,6 +69,7 @@
  * @test id=coops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
