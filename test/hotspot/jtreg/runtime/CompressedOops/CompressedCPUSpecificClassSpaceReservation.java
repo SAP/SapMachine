@@ -121,8 +121,10 @@ public class CompressedCPUSpecificClassSpaceReservation {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Test with CDS");
-        do_test(true);
+        // SapMachine 2025-06-11: reduce number of cds/jsa archives
+        // -Xshare:on can only be used for a configuration for which we have a jsa cds archive.
+        //System.out.println("Test with CDS");
+        //do_test(true);
         System.out.println("Test without CDS");
         do_test(false);
     }

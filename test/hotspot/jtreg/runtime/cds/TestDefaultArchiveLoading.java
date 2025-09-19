@@ -25,6 +25,8 @@
 /**
  * @test id=nocoops_nocoh
  * @summary Test Loading of default archives in all configurations
+ * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
+ * @requires vm.vendor != "SAP SE"
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
@@ -51,6 +53,8 @@
 /**
  * @test id=coops_nocoh
  * @summary Test Loading of default archives in all configurations
+ * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
+ * @requires vm.vendor != "SAP SE"
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.cds.write.archived.java.heap
