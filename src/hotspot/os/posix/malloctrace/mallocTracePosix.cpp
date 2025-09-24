@@ -29,7 +29,7 @@
 #include "mallochooks.h"
 #include "malloctrace/mallocTracePosix.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/ostream.hpp"
@@ -868,8 +868,8 @@ ALWAYSINLINE int MallocStatisticImpl::capture_stack(address* frames, address rea
   }
 
   if (_detailed_stats) {
-    Atomic::add(&_stack_walk_time, Ticks::now().nanoseconds() - ticks);
-    Atomic::add(&_stack_walk_count, (uint64_t) 1);
+    AtomicAccess::add(&_stack_walk_time, Ticks::now().nanoseconds() - ticks);
+    AtomicAccess::add(&_stack_walk_count, (uint64_t) 1);
   }
 
   return nr_of_frames;
@@ -943,9 +943,9 @@ uint64_t MallocStatisticImpl::ptr_hash(void* ptr) {
 bool MallocStatisticImpl::should_track(uint64_t hash) {
   if (_detailed_stats) {
     if ((hash & _to_track_mask) < _to_track_limit) {
-      Atomic::add(&_tracked_ptrs, (uint64_t) 1);
+      AtomicAccess::add(&_tracked_ptrs, (uint64_t) 1);
     } else {
-      Atomic::add(&_not_tracked_ptrs, (uint64_t) 1);
+      AtomicAccess::add(&_not_tracked_ptrs, (uint64_t) 1);
     }
   }
 
@@ -1448,7 +1448,7 @@ StatEntry* MallocStatisticImpl::record_free(void* ptr, uint64_t hash, size_t siz
   // trace after the allocation itself (or it might be a bug in the progam,
   // but we can't be sure).
   if (_detailed_stats) {
-    Atomic::add(&_failed_frees, (uint64_t) 1);
+    AtomicAccess::add(&_failed_frees, (uint64_t) 1);
   }
 
   return nullptr;
@@ -1963,7 +1963,7 @@ bool MallocStatisticImpl::dump(outputStream* msg_stream, outputStream* dump_stre
   if (spec._on_error) {
     if (_initialized) {
       // Make sure all other threads don't allocate memory anymore
-      if (Atomic::cmpxchg(&_rainy_day_fund_used, false, true) == true) {
+      if (AtomicAccess::cmpxchg(&_rainy_day_fund_used, false, true) == true) {
         // Only can be done once.
         return false;
       }

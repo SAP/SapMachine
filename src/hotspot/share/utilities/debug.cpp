@@ -39,7 +39,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 // SapMachine 2021-05-21
@@ -281,7 +281,7 @@ void report_java_out_of_memory(const char* message) {
   // same time. To avoid dumping the heap or executing the data collection
   // commands multiple times we just do it once when the first threads reports
   // the error.
-  if (Atomic::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
+  if (AtomicAccess::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
 
     // SapMachine 2021-05-21: If any one of the xxxOnOutOfMemoryError is specified,
     //  print stack to stdout. Do this before any subsequent handling - this is the
@@ -816,7 +816,7 @@ bool handle_assert_poison_fault(const void* ucVoid) {
   if (ucVoid != nullptr) {
     // Save context.
     const intx my_tid = os::current_thread_id();
-    if (Atomic::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
+    if (AtomicAccess::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
       os::save_assert_context(ucVoid);
     }
   }

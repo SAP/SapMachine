@@ -71,29 +71,29 @@ static volatile size_t g_classes_unloaded = 0;
 static volatile size_t g_threads_created = 0;
 
 void inc_cld_count(bool is_anon_cld) {
-  Atomic::inc(&g_number_of_clds);
+  AtomicAccess::inc(&g_number_of_clds);
   if (is_anon_cld) {
-    Atomic::inc(&g_number_of_anon_clds);
+    AtomicAccess::inc(&g_number_of_anon_clds);
   }
 }
 
 void dec_cld_count(bool is_anon_cld) {
-  Atomic::dec(&g_number_of_clds);
+  AtomicAccess::dec(&g_number_of_clds);
   if (is_anon_cld) {
-    Atomic::dec(&g_number_of_anon_clds);
+    AtomicAccess::dec(&g_number_of_anon_clds);
   }
 }
 
 void inc_classes_loaded(size_t count) {
-  Atomic::add(&g_classes_loaded, count);
+  AtomicAccess::add(&g_classes_loaded, count);
 }
 
 void inc_classes_unloaded(size_t count) {
-  Atomic::add(&g_classes_unloaded, count);
+  AtomicAccess::add(&g_classes_unloaded, count);
 }
 
 void inc_threads_created(size_t count) {
-  Atomic::add(&g_threads_created, count);
+  AtomicAccess::add(&g_threads_created, count);
 }
 
 } // namespace counters
@@ -1201,7 +1201,10 @@ static bool get_nmt_values(nmt_values_t* out) {
     baseline.baseline(true);
     MallocMemorySnapshot* mlc_snapshot = baseline.malloc_memory_snapshot();
     VirtualMemorySnapshot vm_snapshot;
-    VirtualMemorySummary::snapshot(&vm_snapshot);
+    {
+      MemTracker::NmtVirtualMemoryLocker nvml;
+      VirtualMemorySummary::snapshot(&vm_snapshot);
+    }
     out->malloced_total = mlc_snapshot->total();
     out->mapped_total = vm_snapshot.total_committed();
     out->thread_stacks_committed =
