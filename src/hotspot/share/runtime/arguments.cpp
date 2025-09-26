@@ -2343,7 +2343,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
       }
 #endif // !INCLUDE_JVMTI
-    // SapMachine 2025-08-11: Handle jmc agent if requested.
+    // SapMachine 2025-08-11: Handle JMC agent if requested.
     } else if (match_option(option, "-jmcagent:", &tail)) {
 #if !defined(WITH_SAP_JMC_AGENT)
       jio_fprintf(defaultStream::error_stream(),
@@ -2351,7 +2351,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       return JNI_ERR;
 #else
 #if !INCLUDE_JVMTI
-#error "Must have JVMTI enabled with SAP JVM agent"
+#error "Must have JVMTI enabled with SAP JMC agent"
 #endif
       char const* agent_jar = "agent.jar";
       if (tail != nullptr) {

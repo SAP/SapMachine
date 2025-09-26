@@ -353,7 +353,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
-// SapMachine 2025-08-11
+// SapMachine 2025-08-11: Add support for SAP JMC agent if requested.
 #if defined(WITH_SAP_JMC_AGENT)
 JVMTIJmcAgentLoadDCmd::JVMTIJmcAgentLoadDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),

@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @summary Runs the test for the jmc agent integration.
+ * @summary Runs the test for the SAP JMC agent integration.
  *
  * @run main/othervm JmcAgentIntegrationTest
  */
