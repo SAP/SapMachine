@@ -159,7 +159,7 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-// SapMachine 2025-08-11
+// SapMachine 2025-08-11: Add support for SAP JMC agent if requested.
 #if defined(WITH_SAP_JMC_AGENT)
 class JVMTIJmcAgentLoadDCmd : public DCmdWithParser {
 protected:
@@ -169,7 +169,7 @@ public:
   static int num_arguments() { return 1; }
   static const char* name() { return "JVMTI.jmc_agent_load"; }
   static const char* description() {
-    return "Load the SAP jmc agent.";
+    return "Load the SAP JMC agent.";
   }
   static const char* impact() {
     return "Medium: Depends on the command or trace";
