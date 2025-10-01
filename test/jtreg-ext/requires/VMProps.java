@@ -100,6 +100,8 @@ public class VMProps implements Callable<Map<String, String>> {
         log("Entering call()");
         SafeMap map = new SafeMap();
         map.put("vm.flavor", this::vmFlavor);
+        // SapMachine 2025-06-11: reduce number of cds/jsa archives
+        map.put("vm.vendor", this::vmVendor);
         map.put("vm.compMode", this::vmCompMode);
         map.put("vm.bits", this::vmBits);
         map.put("vm.flightRecorder", this::vmFlightRecorder);
@@ -138,6 +140,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("container.support", this::containerSupport);
         map.put("systemd.support", this::systemdSupport);
         map.put("vm.musl", this::isMusl);
+        map.put("vm.asan", this::isAsanEnabled);
+        map.put("vm.ubsan", this::isUbsanEnabled);
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
@@ -196,6 +200,14 @@ public class VMProps implements Callable<Map<String, String>> {
             return m.group(1).toLowerCase();
         }
         return errorWithMessage("Can't get VM flavor from 'java.vm.name'");
+    }
+
+    // SapMachine 2025-06-11: reduce number of cds/jsa archives
+    /**
+     * @return VM vendor through the "java.vm.vendor" property.
+     */
+    protected String vmVendor() {
+        return System.getProperty("java.vm.vendor");
     }
 
     /**
@@ -726,6 +738,15 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String isMusl() {
         return Boolean.toString(WB.getLibcName().contains("musl"));
+    }
+
+    // Sanitizer support
+    protected String isAsanEnabled() {
+        return "" + WB.isAsanEnabled();
+    }
+
+    protected String isUbsanEnabled() {
+        return "" + WB.isUbsanEnabled();
     }
 
     private String implementor() {
