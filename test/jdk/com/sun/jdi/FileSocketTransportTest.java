@@ -153,7 +153,7 @@ public class FileSocketTransportTest {
         }
     }
 
-    private static void checkSocketPresent(String name) throws Throwable{
+    private static void checkSocketPresent(String name) throws InterruptedException {
         if (!Platform.isWindows()) {
             for (int i = 0; i < 10; ++i) {
                 if (!new File(name).exists()) {
