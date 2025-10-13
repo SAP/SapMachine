@@ -99,8 +99,7 @@ public class FileSocketTransportTest {
             try (SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
                 // Just see if we can create a unix domain socket on Windows.
             } catch (UnsupportedOperationException e) {
-                System.out.println("Windows version is too old to support unix domain sockets.");
-                return;
+                throw new jtreg.SkippedException("Windows version is too old to support unix domain sockets.");
             }
         }
 
@@ -137,7 +136,7 @@ public class FileSocketTransportTest {
             for (int i = 0; i < 3; ++i) {
                 System.out.println("Run " + i);
                 // Wait a bit to let the debugging be set up properly.
-                Thread.sleep(3000);
+                Thread.sleep(1000);
                 checkSocketPresent(socketName);
                 read = handshake(socketName, handshake, received);
                 assertEquals(new String(handshake, "UTF-8"),
@@ -154,8 +153,16 @@ public class FileSocketTransportTest {
         }
     }
 
-    private static void checkSocketPresent(String name) {
+    private static void checkSocketPresent(String name) throws InterruptedException {
         if (!Platform.isWindows()) {
+            for (int i = 0; i < 10; ++i) {
+                if (!new File(name).exists()) {
+                    Thread.sleep(1000);
+                } else {
+                    break;
+                }
+            }
+
             assertTrue(new File(name).exists(), "Socket " + name + " missing");
         }
     }
