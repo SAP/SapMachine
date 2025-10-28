@@ -120,6 +120,7 @@ jobs:
           sudo apt-get install gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
+      # SapMachine 2025-06-11: reduce number of cds/jsa archives
       - name: 'Configure'
         run: >
           bash configure
@@ -131,6 +132,7 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
+          --with-vendor-name="SAP SE"
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&

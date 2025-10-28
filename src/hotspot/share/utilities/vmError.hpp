@@ -227,6 +227,9 @@ public:
   static void set_safepoint_timed_out_thread(Thread* thread);
   static Thread* get_handshake_timed_out_thread();
   static Thread* get_safepoint_timed_out_thread();
+
+  // SapMachine 2021-05-21: A wrapper for VMError::print_stack_trace(..), public, for printing stacks to tty on CrashOnOutOfMemoryError
+  static void print_stack(outputStream* st);
 };
 
 class VMErrorCallback {

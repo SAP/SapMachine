@@ -531,6 +531,13 @@ java/lang/invoke/RicochetTest.java                              8251969 generic-
 
 ############################################################################
 
+# SapMachine 2025-07-04: new tests have issues on AIX, see JDK-8360401
+
+java/lang/ProcessBuilder/FDLeakTest/FDLeakTest.java#fork        8360401 aix-all
+java/lang/ProcessBuilder/FDLeakTest/FDLeakTest.java#posix_spawn 8360401 aix-all
+
+############################################################################
+
 # jdk_instrument
 
 java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all

@@ -87,6 +87,7 @@ jobs:
         with:
           platform: alpine-linux-x64
 
+      # SapMachine 2025-06-11: reduce number of cds/jsa archives
       - name: 'Configure'
         run: >
           bash configure
@@ -96,6 +97,7 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
+          --with-vendor-name="SAP SE"
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
