@@ -319,8 +319,11 @@ public class VitalsValuesSanityCheck {
                 // we should not see mlc > rss
                 if (jvm_nmt_mlc != -1) {
                     if (Platform.isDebugBuild()) {
-                        if (proc_rss_all < jvm_nmt_mlc) {
-                            throw new RuntimeException("NMT mlc higher than RSS?");
+                        // Give a little slack since not all allocated memory has to be in RSS. The R means resident,
+                        // which is not guaranteed for committed memory. On the other hand, if the system is not totally
+                        // under water it should not be much smaller, so we allow 20% to be not resident.
+                        if (proc_rss_all < jvm_nmt_mlc * 0.8) {
+                            throw new RuntimeException("NMT mlc more than 25 percent higher than RSS?");
                         }
                     }
                 }
