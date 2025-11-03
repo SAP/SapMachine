@@ -323,7 +323,7 @@ public class VitalsValuesSanityCheck {
                         // - Not all allocated memory has to be in RSS, since some could be swapped out.
                         // - The peak RSS and peak malloc size are not taken at the exactly same time.
                         // Both should not lead to a large difference, so we allow a 25 percent deviation.
-                        if (proc_rss_all < jvm_nmt_mlc * 0.8) {
+                        if (proc_rss_all * 1.25 <= jvm_nmt_mlc) {
                             throw new RuntimeException("NMT mlc more than 25 percent higher than RSS?");
                         }
                     }
