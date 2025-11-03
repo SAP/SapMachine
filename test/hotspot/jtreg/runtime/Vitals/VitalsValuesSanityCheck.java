@@ -319,7 +319,7 @@ public class VitalsValuesSanityCheck {
                 // we should not see mlc > rss
                 if (jvm_nmt_mlc != -1) {
                     if (Platform.isDebugBuild()) {
-                        // Give a little slack for two reasones:
+                        // Give a little slack for two reasons:
                         // - Not all allocated memory has to be in RSS, since some could be swapped out.
                         // - The peak RSS and peak malloc size are not taken at the exactly same time.
                         // Both should not lead to a large difference, so we allow a 25 percent deviation.
