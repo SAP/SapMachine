@@ -319,9 +319,10 @@ public class VitalsValuesSanityCheck {
                 // we should not see mlc > rss
                 if (jvm_nmt_mlc != -1) {
                     if (Platform.isDebugBuild()) {
-                        // Give a little slack since not all allocated memory has to be in RSS. The R means resident,
-                        // which is not guaranteed for committed memory. On the other hand, if the system is not totally
-                        // under water it should not be much smaller, so we allow 20% to be not resident.
+                        // Give a little slack for two reasones:
+                        // - Not all allocated memory has to be in RSS, since some could be swapped out.
+                        // - The peak RSS and peak malloc size are not taken at the exactly same time.
+                        // Both should not lead to a large difference, so we allow a 25 percent deviation.
                         if (proc_rss_all < jvm_nmt_mlc * 0.8) {
                             throw new RuntimeException("NMT mlc more than 25 percent higher than RSS?");
                         }
