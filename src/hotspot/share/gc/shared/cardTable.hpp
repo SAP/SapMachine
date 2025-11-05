@@ -32,6 +32,14 @@
 
 class CardTable: public CHeapObj<mtGC> {
   friend class VMStructs;
+public:
+  typedef jbyte CardValue;
+
+  // All code generators assume that the size of a card table entry is one byte.
+  // They need to be updated to reflect any change to this.
+  // This code can typically be found by searching for the byte_map_base() method.
+  STATIC_ASSERT(sizeof(CardValue) == 1);
+
 protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.

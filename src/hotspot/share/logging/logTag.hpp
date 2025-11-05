@@ -166,6 +166,7 @@
   LOG_TAG(mirror) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
+  LOG_TAG(vitals) /* SapMachine 2022-06-01: Vitals */ \
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \

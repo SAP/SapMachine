@@ -871,6 +871,71 @@ SetJvmEnvironment(int argc, char **argv) {
     }
 }
 
+// SapMachine 2023-09-18: new malloc trace
+jboolean ShouldPreloadLibMallocHooks(int argc, char **argv) {
+#if defined(__APPLE__) || defined(LINUX)
+    jboolean uses_new_trace = JNI_FALSE;
+    jboolean uses_old_trace = JNI_FALSE;
+#if defined(__APPLE__)
+    char const* env_name = "DYLD_INSERT_LIBRARIES";
+    char const* libpath = "libmallochooks.dylib";
+#else
+    char const* env_name = "LD_PRELOAD";
+    char const* libpath = "libmallochooks.so";
+#endif
+
+    char const* old_env = getenv(env_name);
+
+    /* Check if we have already preloaded the lib. We don't catch
+       all possble ways in which it could have been added (e.g. symlinks),
+       but this should be no problem. */
+    if (old_env != NULL) {
+        size_t len = JLI_StrLen(libpath);
+        char const* pos = old_env;
+
+        while ((pos = JLI_StrStr(pos, libpath)) != NULL) {
+            if ((pos[len] == ':') || (pos[len] == '\0')) {
+                if ((pos == old_env) || (pos[-1] == '/') || (pos[-1] == ':')) {
+                    // Already preloaded, so we don't have to.
+                    return JNI_FALSE;
+                }
+            }
+        }
+    }
+
+    for (int i = 1; i < argc; i++) {
+        char const* arg = argv[i];
+
+        if ((JLI_StrCmp("-XX:+UseMallocHooks", arg) == 0) ||
+            (JLI_StrCmp("-J-XX:+UseMallocHooks", arg) == 0)) {
+            uses_new_trace = JNI_TRUE;
+            continue;
+        }
+
+        if ((JLI_StrCmp("-XX:+EnableMallocTrace", arg) == 0) ||
+            (JLI_StrCmp("-J-XX:+EnableMallocTrace", arg) == 0)) {
+            uses_old_trace = JNI_TRUE;
+            continue;
+        }
+
+        if (!IsJavaArgs()) {
+            if (IsWhiteSpaceOption(arg)) {
+                i += 1;
+                continue;
+            }
+
+            if (arg[0] != '-') {
+                break;
+            }
+        }
+    }
+
+    return (uses_new_trace && !uses_old_trace) ? JNI_TRUE : JNI_FALSE;
+#endif
+
+    return JNI_FALSE;
+}
+
 /* copied from HotSpot function "atomll()" */
 static int
 parse_size(const char *s, jlong *result) {

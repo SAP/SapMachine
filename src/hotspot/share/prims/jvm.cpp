@@ -37,6 +37,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/bytecode.hpp"
+#include "interpreter/bytecodeUtils.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/heapShared.hpp"
@@ -517,13 +518,37 @@ JVM_END
 
 // java.lang.Throwable //////////////////////////////////////////////////////
 
-
 JVM_ENTRY(void, JVM_FillInStackTrace(JNIEnv *env, jobject receiver))
   JVMWrapper("JVM_FillInStackTrace");
   Handle exception(thread, JNIHandles::resolve_non_null(receiver));
   java_lang_Throwable::fill_in_stack_trace(exception);
 JVM_END
 
+// java.lang.NullPointerException ///////////////////////////////////////////
+
+JVM_ENTRY(jstring, JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable))
+  if (!ShowCodeDetailsInExceptionMessages) return NULL;
+
+  oop exc = JNIHandles::resolve_non_null(throwable);
+
+  Method* method;
+  int bci;
+  if (!java_lang_Throwable::get_top_method_and_bci(exc, &method, &bci)) {
+    return NULL;
+  }
+  if (method->is_native()) {
+    return NULL;
+  }
+
+  stringStream ss;
+  bool ok = BytecodeUtils::get_NPE_message_at(&ss, method, bci);
+  if (ok) {
+    oop result = java_lang_String::create_oop_from_str(ss.base(), CHECK_0);
+    return (jstring) JNIHandles::make_local(env, result);
+  } else {
+    return NULL;
+  }
+JVM_END
 
 // java.lang.StackTraceElement //////////////////////////////////////////////
 
@@ -2918,6 +2943,11 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
                             JavaThread::name_for(JNIHandles::resolve_non_null(jthread)));
     // No one should hold a reference to the 'native_thread'.
     native_thread->smr_delete();
+
+    // SapMachine 2021-05-21: All ...OnOutOfMemoryError switches should work for
+    //  thread creation failures too.
+    report_java_out_of_memory(os::native_thread_creation_failed_msg());
+
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_THREADS,

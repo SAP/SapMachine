@@ -458,6 +458,11 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" />
   </Event>
 
+  <Event name="JITRestart" category="Java Virtual Machine, Compiler" label="JIT Restart" stackTrace="false" startTime="false" thread="true">
+    <Field type="int" contentType="bytes" name="freedMemory" label="Freed Memory" />
+    <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
+  </Event>
+
   <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation" thread="true">
     <Field type="Method" name="method" label="Java Method" />
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
@@ -511,6 +516,7 @@
     <Field type="int" name="adaptorCount" label="Adaptors" />
     <Field type="ulong" contentType="bytes" name="unallocatedCapacity" label="Unallocated" />
     <Field type="int" name="fullCount" label="Full Count" />
+    <Field type="ulong" contentType="bytes" name="codeCacheMaxCapacity" label="Code Cache Maximum Capacity" />
   </Event>
 
   <Event name="SafepointBegin" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Begin" description="Safepointing begin" thread="true">
