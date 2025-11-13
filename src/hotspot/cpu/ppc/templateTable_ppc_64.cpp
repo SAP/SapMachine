@@ -146,7 +146,9 @@ void TemplateTable::patch_bytecode(Bytecodes::Code new_bc, Register Rnew_bc, Reg
     __ bind(L_fast_patch);
   }
 
-  // Patch bytecode.
+  // Patch bytecode with release store to coordinate with ConstantPoolCacheEntry
+  // loads in fast bytecode codelets.
+  __ release();
   __ stb(Rnew_bc, 0, R14_bcp);
 
   __ bind(L_patch_done);
@@ -237,7 +239,7 @@ void TemplateTable::sipush() {
   __ get_2_byte_integer_at_bcp(1, R17_tos, InterpreterMacroAssembler::Signed);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   Register Rscratch1 = R11_scratch1,
            Rscratch2 = R12_scratch2,
            Rcpool    = R3_ARG1;
@@ -246,7 +248,7 @@ void TemplateTable::ldc(bool wide) {
   Label notInt, notFloat, notClass, exit;
 
   __ get_cpool_and_tags(Rcpool, Rscratch2); // Set Rscratch2 = &tags.
-  if (wide) { // Read index.
+  if (is_ldc_wide(type)) { // Read index.
     __ get_2_byte_integer_at_bcp(1, Rscratch1, InterpreterMacroAssembler::Unsigned);
   } else {
     __ lbz(Rscratch1, 1, R14_bcp);
@@ -268,7 +270,7 @@ void TemplateTable::ldc(bool wide) {
   __ crnor(CCR0, Assembler::equal, CCR1, Assembler::equal); // Neither resolved class nor unresolved case from above?
   __ beq(CCR0, notClass);
 
-  __ li(R4, wide ? 1 : 0);
+  __ li(R4, is_ldc_wide(type) ? 1 : 0);
   call_VM(R17_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), R4);
   __ push(atos);
   __ b(exit);
@@ -301,15 +303,16 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
   Label is_null;
 
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.)
   __ get_cache_index_at_bcp(R31, 1, index_size);  // Load index.
+  // Only rewritten during link time. So, no need for memory barriers for accessing resolved info.
   __ load_resolved_reference_at_index(R17_tos, R31, R11_scratch1, R12_scratch2, &is_null);
 
   // Convert null sentinel to NULL
@@ -2309,7 +2312,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
   if (is_invokevfinal) {
     assert(Ritable_index == noreg, "register not used");
     // Already resolved.
-    __ get_cache_and_index_at_bcp(Rcache, 1);
+    __ get_cache_and_index_at_bcp(Rcache, 1, sizeof(u2), /* for_fast_bytecode */ true);
   } else {
     resolve_cache_and_index(byte_no, Rcache, /* temp */ Rmethod, is_invokedynamic ? sizeof(u4) : sizeof(u2));
   }
@@ -3016,7 +3019,7 @@ void TemplateTable::fast_storefield(TosState state) {
   const ConditionRegister CR_is_vol = CCR2; // Non-volatile condition register (survives runtime call in do_oop_store).
 
   // Constant pool already resolved => Load flags and offset of field.
-  __ get_cache_and_index_at_bcp(Rcache, 1);
+  __ get_cache_and_index_at_bcp(Rcache, 1, sizeof(u2), /* for_fast_bytecode */ true);
   jvmti_post_field_mod(Rcache, Rscratch, false /* not static */);
   load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
@@ -3097,7 +3100,7 @@ void TemplateTable::fast_accessfield(TosState state) {
                  // R12_scratch2 used by load_field_cp_cache_entry
 
   // Constant pool already resolved. Get the field offset.
-  __ get_cache_and_index_at_bcp(Rcache, 1);
+  __ get_cache_and_index_at_bcp(Rcache, 1, sizeof(u2), /* for_fast_bytecode */ true);
   load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support
@@ -3236,7 +3239,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ ld(Rclass_or_obj, 0, R18_locals);
 
   // Constant pool already resolved. Get the field offset.
-  __ get_cache_and_index_at_bcp(Rcache, 2);
+  __ get_cache_and_index_at_bcp(Rcache, 2, sizeof(u2), /* for_fast_bytecode */ true);
   load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support not needed, since we switch back to single bytecode as soon as debugger attaches.

@@ -45,11 +45,10 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test case for JDK-8301247
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @build Win8301247Test
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=Win8301247Test
  */
@@ -106,7 +105,7 @@ public class Win8301247Test {
                 + cmd.appLauncherPath().getFileName().toString()
                 + "'\\\" | select ProcessID,ParentProcessID";
         List<String> output = Executor.of("powershell", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command)
-                .dumpOutput(true).saveOutput().executeAndGetOutput();
+                .dumpOutput(true).saveOutput().setWinRunWithEnglishOutput(true).executeAndGetOutput();
 
         if (expectedCount == 0) {
             if (output.size() < 1) {

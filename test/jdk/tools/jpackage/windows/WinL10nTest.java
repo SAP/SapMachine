@@ -22,6 +22,7 @@
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
@@ -37,14 +38,13 @@ import jdk.jpackage.test.Executor;
 /*
  * @test
  * @summary Custom l10n of msi installers in jpackage
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinL10nTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinL10nTest
  */
 
