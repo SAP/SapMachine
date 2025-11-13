@@ -51,7 +51,6 @@ public class AddSapMachineToolsTest {
             "bin/asprof",
             "lib/" + System.mapLibraryName("asyncProfiler"),
             "lib/async-profiler.jar",
-            "lib/converter.jar",
             "legal/async/CHANGELOG.md",
             "legal/async/LICENSE",
             "legal/async/README.md"
