@@ -506,7 +506,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                                        jbyteArray envBlock, jint envc,
                                        jbyteArray dir,
                                        jintArray std_fds,
-                                       jboolean redirectErrorStream)
+                                       jboolean redirectErrorStream,
+                                       /* SapMachine 2018-11-19 */
+                                       jboolean createNewProcessGroupOnSpawn)
 {
     int errnum;
     int resultPid = -1;
@@ -587,6 +589,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
      * Note that we could do this additional handshake in all modes but for
      * prudence only do it when it is needed (in posix_spawn mode). */
     c->sendAlivePing = (mode == MODE_POSIX_SPAWN) ? 1 : 0;
+
+    /* SapMachine 2018-11-19 */
+    c->createNewProcessGroupOnSpawn = createNewProcessGroupOnSpawn;
 
     resultPid = startChild(env, process, c, phelperpath);
     assert(resultPid != 0);
