@@ -29,6 +29,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -71,7 +72,6 @@
 #include "malloctrace/mallocTracePosix.hpp"
 #endif
 
-#include <new>
 #include <stdarg.h>
 #include <stdio.h>
 
