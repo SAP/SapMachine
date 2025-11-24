@@ -88,6 +88,10 @@
          "omitted.\n"                                                  \
          "Example: \"-XX:HiMemReportExec=GC.class_histogram -all;GC.heap_dump\"") \
                                                                         \
+  /* SapMachine 2025-11-24: Configurable limit of malloc arenas */      \
+  product(int, GlibcMallocArenas, 1,                                    \
+          "Limit glibc malloc arenas, 0 means use OS default")          \
+                                                                        \
   product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
 																	                                      \
