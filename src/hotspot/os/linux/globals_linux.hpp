@@ -90,11 +90,12 @@
                                                                         \
   /* SapMachine 2025-11-24: Configurable limit of malloc arenas */      \
   product(int, GlibcMallocArenas, 1,                                    \
-          "Limit glibc malloc arenas, 0 means use OS default")          \
+          "Limit glibc malloc arenas, 0 means use OS default, "         \
+          "1 minimizes memory utilization (our default)")               \
                                                                         \
   product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
-																	                                      \
+                                                                        \
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
           "Write map file for Linux perf tool at exit")                 \
                                                                         \
