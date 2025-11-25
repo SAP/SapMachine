@@ -36,13 +36,12 @@ jobs:
           ref: 'main'
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./
-          destination: ./_site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          path: |
+            redirect_index.html
+            _data/
 
   # Deployment job
   deploy:
