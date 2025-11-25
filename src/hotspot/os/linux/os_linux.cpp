@@ -4550,6 +4550,21 @@ jint os::init_2(void) {
 
   Linux::fast_thread_clock_init();
 
+  // SapMachine 2025-11-24:
+  // By default, glibc allocates a new 64 (or 128) MB malloc arena for every
+  // thread (up to a certain limit which is typically 8 * processor count).
+  // This is good for few threads which perform a lot of concurrent mallocs,
+  // but it doesn't fit well to the JVM which has its own memory management
+  // and rather allocates fewer and larger chunks.
+  // Using only one arena significantly reduces virtual memory footprint and
+  // fragmentation. Saving memory seems to be more valuable for the JVM than
+  // optimizing concurrent mallocs.
+#ifdef __GLIBC__
+  if (GlibcMallocArenas > 0) {
+    mallopt(M_ARENA_MAX, GlibcMallocArenas);
+  }
+#endif
+
   if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;
   }
