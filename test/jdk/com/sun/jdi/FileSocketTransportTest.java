@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,9 +62,31 @@ public class FileSocketTransportTest {
         }
         ByteBuffer in = ByteBuffer.wrap(reply);
         int result = channel.read(in);
+        // When we are connected and have received at least one byte, the file should be deleted.
+        checkSocketDeleted(path);
         channel.close();
 
         return result;
+    }
+
+    private static void dumpHsErrorFiles() throws Exception {
+        for (File f: new File(".").listFiles()) {
+            if (!f.isDirectory() && f.getName().startsWith("hs_err")) {
+                System.out.println("Found " + f.getName() + ":");
+                String output = new String(Files.readAllBytes(f.toPath()));
+                System.out.println(output);
+                System.out.println("------- End of " + f.getName());
+                // Print the start again, since we might overflow the buffer with
+                // the whole file.
+                int startLength = 32768;
+
+                if (output.length() > startLength) {
+                    System.out.println("------- Repeating start of " + f.getName());
+                    System.out.println(output.substring(0, startLength));
+                    System.out.println("------- End of start of " + f.getName());
+                }
+            }
+        }
     }
 
     public static void main(String[] args) throws Throwable {
@@ -76,8 +99,7 @@ public class FileSocketTransportTest {
             try (SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
                 // Just see if we can create a unix domain socket on Windows.
             } catch (UnsupportedOperationException e) {
-                System.out.println("Windows version is too old to support unix domain sockets.");
-                return;
+                throw new jtreg.SkippedException("Windows version is too old to support unix domain sockets.");
             }
         }
 
@@ -96,7 +118,10 @@ public class FileSocketTransportTest {
         new Thread(() -> {
             try {
                 OutputAnalyzer output = new OutputAnalyzer(proc);
+                System.out.println("Output of debuggee:");
+                System.out.println(">>>>> START <<<<<");
                 System.out.println(output.getOutput());
+                System.out.println(">>>>> END <<<<<");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -109,16 +134,17 @@ public class FileSocketTransportTest {
             int read;
 
             for (int i = 0; i < 3; ++i) {
+                System.out.println("Run " + i);
                 // Wait a bit to let the debugging be set up properly.
-                Thread.sleep(3000);
+                Thread.sleep(1000);
                 checkSocketPresent(socketName);
                 read = handshake(socketName, handshake, received);
-                checkSocketDeleted(socketName);
                 assertEquals(new String(handshake, "UTF-8"),
                              new String(received, "UTF-8"));
                 assertEquals(read, received.length);
             }
         } finally {
+            dumpHsErrorFiles();
             Thread.sleep(2000);
             checkSocketPresent(socketName);
             proc.destroy();
@@ -127,8 +153,16 @@ public class FileSocketTransportTest {
         }
     }
 
-    private static void checkSocketPresent(String name) {
+    private static void checkSocketPresent(String name) throws InterruptedException {
         if (!Platform.isWindows()) {
+            for (int i = 0; i < 10; ++i) {
+                if (!new File(name).exists()) {
+                    Thread.sleep(1000);
+                } else {
+                    break;
+                }
+            }
+
             assertTrue(new File(name).exists(), "Socket " + name + " missing");
         }
     }
