@@ -34,15 +34,23 @@ jobs:
           token: ${{ secrets.GHE_PAT }}
           github-server-url: https://github.tools.sap
           ref: 'main'
+          sparse-checkout: |
+            redirect_index.html
+            redirect_404.html
+            assets/
+          sparse-checkout-cone-mode: true
+      - name: Prepare site folder
+        run: |
+          mkdir site
+          mv redirect_index.html site/index.html
+          mv redirect_404.html site/404.html
+          mv assets site/
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./
-          destination: ./_site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
 
   # Deployment job
   deploy:
