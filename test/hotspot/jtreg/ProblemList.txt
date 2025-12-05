@@ -100,6 +100,8 @@ gc/cslocker/TestCSLocker.java 8373025 generic-all
 
 # :hotspot_runtime
 
+# SapMachine 2022-12-16 Exclude a failing test
+runtime/jni/daemonDestroy/TestDaemonDestroy.java windows-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
@@ -153,6 +155,11 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
+# SapMachine 2023-11-20 These make trouble in AIX CI
+gtest/GTestWrapper.java aix-ppc64
+gtest/MetaspaceGtests.java#balanced-no-ccs aix-ppc64
+gtest/MetaspaceGtests.java#balanced-with-guards aix-ppc64
+gtest/MetaspaceGtests.java#default-debug aix-ppc64
 
 #############################################################################
 
