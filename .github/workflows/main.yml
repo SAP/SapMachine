@@ -29,11 +29,12 @@ name: 'SapMachine GHA Sanity Checks'
 on:
   push:
     branches-ignore:
-      - pr/*
+      # SapMachine 2020-11-04: Ignore sapmachine branch
+      - sapmachine26
   # SapMachine 2020-11-04: Trigger on pull request
   pull_request:
     branches:
-      - sapmachine
+      - sapmachine26
   workflow_dispatch:
     inputs:
       platforms:
