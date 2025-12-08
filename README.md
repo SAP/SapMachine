@@ -1,6 +1,6 @@
-[![GitHub release (latest by date)](https://img.shields.io/github/downloads/sap/sapmachine/latest/total?label=Downloads%20of%20Latest%20Release)](https://sap.github.io/SapMachine/#download) [![DockerPulls](https://img.shields.io/docker/pulls/_/sapmachine?label=Docker%20Pulls)](https://hub.docker.com/_/sapmachine)
+[![GitHub release (latest by date)](https://img.shields.io/github/downloads/sap/sapmachine/latest/total?label=Downloads%20of%20Latest%20Release)](https://sapmachine.io/#download) [![DockerPulls](https://img.shields.io/docker/pulls/_/sapmachine?label=Docker%20Pulls)](https://hub.docker.com/_/sapmachine)
 
-<img align="right" width=350 src="https://sap.github.io/SapMachine/assets/images/logo_circular.svg">
+<img align="right" width=350 src="https://sapmachine.io/assets/images/logo_circular.svg">
 
 # [](#SapMachine) SapMachine
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers and partners who wish to use OpenJDK to run their applications.
@@ -24,7 +24,7 @@ We want to stress that this is clearly a "*friendly fork*". SAP is committed to 
 
 ## Downloads
 
-Check out the [Download](https://sap.github.io/SapMachine/#download) section on [https://sapmachine.io](https://sapmachine.io).
+Check out the [Download](https://sapmachine.io/#download) section on [https://sapmachine.io](https://sapmachine.io).
 
 ## Documentation
 Check out our [FAQs](https://github.com/SAP/SapMachine/wiki/Frequently-Asked-Questions) and [wikipages](https://github.com/SAP/SapMachine/wiki) for information about:
