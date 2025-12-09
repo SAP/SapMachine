@@ -34,6 +34,9 @@ on:
   pull_request:
     branches:
       - sapmachine
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
   workflow_dispatch:
     inputs:
       platforms:
