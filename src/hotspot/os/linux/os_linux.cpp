@@ -3977,6 +3977,17 @@ void os::Linux::large_page_init() {
   // Query OS information first.
   HugePages::initialize();
 
+  // SapMachine 2025-12-10 Enable UseTransparentHugePages if supported and the huge pages
+  // are not extremely large and no other configuration is selected by flags.
+  // Some GCs have additional requirements, are optimized for ultra-low latency or
+  // have limitations regarding configuration parameters with small heap sizes.
+  if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseTransparentHugePages) &&
+      HugePages::supports_thp() && HugePages::thp_pagesize() <= 2*M &&
+      !UseZGC && !UseShenandoahGC &&
+      (FLAG_IS_DEFAULT(MaxHeapSize) || MaxHeapSize > 128*M)) {
+    _thp_requested = UseTransparentHugePages = true;
+  }
+
   // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
   // coalesce small pages in thread stacks to huge pages. That costs a lot of memory and
   // is usually unwanted for thread stacks. Therefore we attempt to prevent THP formation in
