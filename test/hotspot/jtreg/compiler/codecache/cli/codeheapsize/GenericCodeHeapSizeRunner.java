@@ -44,7 +44,8 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                 Long.toString(expectedValues.reserved),
                 String.format("%s should have value %d.",
                         BlobType.All.sizeOptionName, expectedValues.reserved),
-                testCaseDescription.getTestOptions(options));
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 BlobType.NonNMethod.sizeOptionName,
