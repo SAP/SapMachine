@@ -38,6 +38,8 @@ jobs:
             redirect_index.html
             redirect_404.html
             assets/
+            jfrevents/
+            html-include/
           sparse-checkout-cone-mode: true
       - name: Prepare site folder
         run: |
@@ -45,6 +47,8 @@ jobs:
           mv redirect_index.html site/index.html
           mv redirect_404.html site/404.html
           mv assets site/
+          mv jfrevents site/
+          mv html-include site/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
