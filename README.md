@@ -3,23 +3,21 @@
 <img align="right" width=350 src="https://sapmachine.io/assets/images/logo_circular.svg">
 
 # [](#SapMachine) SapMachine
-This project contains a downstream version of the [OpenJDK](https://openjdk.org/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers and partners who wish to use OpenJDK to run their applications.
+SapMachine is a downstream fork of the [OpenJDK](https://openjdk.org/) project. Its purpose is to build and support a binary distribution of OpenJDK for SAP customers and partners.
 
-We want to stress that this is clearly a "*friendly fork*". SAP is committed to ensuring the continued success of the Java platform. 
+While maintaining SapMachine, SAP is committed to ensuring the continued success of the Java platform and the OpenJDK project and therefore works in an OpenJDK-upstream-first model. To learn more about our engagement in the OpenJDK, visit [this site](https://sapmachine.io/docs/sap-in-openjdk).
 
-More details about the *SAP’s Engagement in the OpenJDK project*, *installation instructions*, *frequently asked questions*, *the maintenance and support statement*, and more are available in the [documentation](https://sapmachine.io/docs).
+More details about SapMachine, such as *installation instructions*, *frequently asked questions*, *the maintenance and support statement*, and more are available in the [documentation pages](https://sapmachine.io/docs).
 
 ## Have an issue?
 If it's SapMachine specific please let us know by filing a [new issue](https://github.com/SAP/SapMachine/issues/new).
 
-Please notice that the SapMachine [issue tracker](https://github.com/SAP/SapMachine/issues) is mainly used internally by the SapMachine team to organize its work (i.e. sync with upstream, downporting fixes, add SapMachine specific features, etc.).
+General JVM/JDK bugs are maintained directly in the [OpenJDK Bug System](https://bugs.openjdk.org/). You can open a SapMachine issue with a reference to an open or resolved OpenJDK bug if you want us to resolve the issue or downport the fix to a specific SapMachine version. If you find a general JVM/JDK bug in SapMachine and don't have editor access to the OpenJDK Bug System you can open an issue here and we'll take care to open a corresponding OpenJDK bug for it.
 
-General VM/JDK bugs are maintained directly in the [OpenJDK Bug System](https://bugs.openjdk.java.net/). You can open a SapMachine issue with a reference to an open or resolved OpenJDK bug if you want us to resolve the issue or downport the fix to a specific SapMachine version. If you find a general VM/JDK bug in SapMachine and don't have write access to the OpenJDK Bug System you can open an issue here and we'll take care to open a corresponding OpenJDK bug for it.
-
-Every SapMachine release contains at least all the fixes of the corresponding OpenJDK release it is based on.
+Since SapMachine tracks the OpenJDK, every SapMachine release contains all the fixes/changes of the corresponding OpenJDK release it is based on.
 
 ## Contributing
-We currently do not accept external contributions for this project. If you want to improve the code or fix a bug please consider contributing directly to the upstream [OpenJDK](http://openjdk.java.net/contribute/) project. Our repositories will be regularly synced with the upstream project so any improvements in the upstream OpenJDK project will directly become visible in our project as well.
+We currently do not accept external contributions for this project. If you want to improve the code or fix a bug please consider contributing directly to the upstream [OpenJDK](https://openjdk.org/contribute/) project. Our repositories will be regularly synced with OpenJDK, so any improvements in upstream will become effective in SapMachine as well.
 
 ## License
 This project is run under the same licensing terms as the upstream OpenJDK project. Please see the [LICENSE](LICENSE) file in the top-level directory for more information.
