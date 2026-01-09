@@ -31,7 +31,9 @@ on:
     branches-ignore:
       - pr/*
     paths-ignore:
-      - 'README.md'
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/**'
   # SapMachine 2020-11-04: Trigger on pull request
   pull_request:
     branches:
