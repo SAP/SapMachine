@@ -66,7 +66,6 @@ public class AddSapMachineTools extends AbstractPlugin implements PostProcessor 
             "bin/asprof",
             "lib/" + System.mapLibraryName("asyncProfiler"),
             "lib/async-profiler.jar",
-            "lib/converter.jar",
             "legal/async/CHANGELOG.md",
             "legal/async/LICENSE",
             "legal/async/README.md"
