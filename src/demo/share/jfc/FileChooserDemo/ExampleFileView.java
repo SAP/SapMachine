@@ -191,5 +191,3 @@ public class ExampleFileView extends FileView {
         return null;    // Use default from FileSystemView
     }
 }
-
-
