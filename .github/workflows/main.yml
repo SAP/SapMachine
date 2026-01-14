@@ -32,7 +32,7 @@ on:
       - pr/*
     paths-ignore:
       - '**/*.md'
-      - 'docs/**'
+      - 'doc/**'
   # SapMachine 2020-11-04: Trigger on pull request
   pull_request:
     branches:
