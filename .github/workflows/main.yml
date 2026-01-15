@@ -30,6 +30,9 @@ on:
   push:
     branches-ignore:
       - pr/*
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
   # SapMachine 2020-11-04: Trigger on pull request
   pull_request:
     branches:
