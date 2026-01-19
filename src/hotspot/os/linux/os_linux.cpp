@@ -2114,6 +2114,9 @@ void os::print_os_info(outputStream* st) {
 
   VM_Version::print_platform_virtualization_info(st);
 
+  // SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+  os::Linux::print_cloud_info(st);
+
   os::Linux::print_steal_info(st);
 }
 
@@ -2548,6 +2551,87 @@ bool os::Linux::print_container_info(outputStream* st) {
   }
 
   return true;
+}
+
+// SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+static int check_matching_lines_from_file(const char* filename, const char* keywords_to_match[]) {
+  char line[500];
+  FILE* fp = fopen(filename, "r");
+  if (fp == nullptr) {
+    return -1;
+  }
+
+  while (fgets(line, sizeof(line), fp) != nullptr) {
+    int i = 0;
+    while (keywords_to_match[i] != nullptr) {
+      if (strstr(line, keywords_to_match[i]) != nullptr) {
+        fclose(fp);
+        return i;
+      }
+      i++;
+    }
+  }
+  fclose(fp);
+  return -1;
+}
+
+// SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+// Add Cloud information where possible, a basic detection can be done by using dmi info
+// Google GCP: /sys/class/dmi/id/product_name contains 'Google Compute Engine' (or just 'Google')
+// Alibaba   : /sys/class/dmi/id/product_name contains 'Alibaba Cloud ECS'
+// OpenStack : /sys/class/dmi/id/product_name contains 'OpenStack' e.g. 'OpenStack Nova'
+// Azure     : /sys/class/dmi/id/chassis_asset_tag contains '7783-7084-3265-9085-8269-3286-77' (means ASCII-encoded: 'MS AZURE VM')
+// AWS KVM/Baremetal : /sys/class/dmi/id/chassis_asset_tag contains 'Amazon EC2'
+// AWS Xen           : /sys/class/dmi/id/bios_version and /sys/class/dmi/id/product_version contain amazon (plus some more info)
+//                     /sys/class/dmi/id/bios_vendor and /sys/class/dmi/id/chassis_vendor contain 'Xen'
+void os::Linux::print_cloud_info(outputStream* st) {
+  // dmidir is /sys/class/dmi/id
+  const char* filename = "/sys/class/dmi/id/product_name";
+  const char* kwcld[] = { "Google", "Google Compute Engine", "Alibaba Cloud", "OpenStack", nullptr };
+  int res = check_matching_lines_from_file(filename, kwcld);
+  if (res != -1) { // a matching Cloud identifier has been found
+    st->print("Cloud infrastructure detected:");
+    if (res == 0 || res == 1) {
+      st->print_cr("Google cloud");
+    }
+    if (res == 2) {
+      st->print_cr("Alibaba cloud");
+    }
+    if (res == 3) {
+      st->print_cr("OpenStack based cloud");
+      // output version info too, e.g. "16.1.6-16.1.6~dev5"
+      _print_ascii_file("/sys/class/dmi/id/product_version", st);
+    }
+    return;
+  }
+  // AWS KVM/Baremetal
+  const char* filename2 = "/sys/class/dmi/id/chassis_asset_tag";
+  const char* kwaws[] = { "Amazon EC2", "7783-7084-3265-9085-8269-3286-77", nullptr };
+  res = check_matching_lines_from_file(filename2, kwaws);
+  if (res != -1) {
+    st->print("Cloud infrastructure detected:");
+    if (res == 0) {
+      st->print_cr("Amazon EC2 cloud");
+    }
+    if (res == 1) {
+      st->print_cr("Microsoft Azure");
+    }
+    return;
+  }
+  // AWS Xen is a bit tricky, it might not contain a "nice" product name
+  const char* chassis_vendor_file = "/sys/class/dmi/id/chassis_vendor";
+  const char* bios_vendor_file    = "/sys/class/dmi/id/bios_vendor";
+  const char* kwxen[] = { "Xen", nullptr };
+  int res1 = check_matching_lines_from_file(chassis_vendor_file, kwxen);
+  int res2 = check_matching_lines_from_file(bios_vendor_file, kwxen);
+  if (res1 != -1 || res2 != -1) {
+    const char* pvfile = "/sys/class/dmi/id/product_version";
+    const char* kwam[] = { "amazon", nullptr };
+    res = check_matching_lines_from_file(pvfile, kwam);
+    if (res != -1) {
+      st->print_cr("Cloud infrastructure detected: Amazon Xen-based cloud");
+    }
+  }
 }
 
 void os::Linux::print_steal_info(outputStream* st) {
@@ -3883,6 +3967,17 @@ void os::Linux::large_page_init() {
   // Query OS information first.
   HugePages::initialize();
 
+  // SapMachine 2025-12-10 Enable UseTransparentHugePages if supported and the huge pages
+  // are not extremely large and no other configuration is selected by flags.
+  // Some GCs have additional requirements, are optimized for ultra-low latency or
+  // have limitations regarding configuration parameters with small heap sizes.
+  if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseTransparentHugePages) &&
+      HugePages::supports_thp() && HugePages::thp_pagesize() <= 2*M &&
+      !UseZGC && !UseShenandoahGC &&
+      (FLAG_IS_DEFAULT(MaxHeapSize) || MaxHeapSize > 128*M)) {
+    _thp_requested = UseTransparentHugePages = true;
+  }
+
   // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
   // coalesce small pages in thread stacks to huge pages. That costs a lot of memory and
   // is usually unwanted for thread stacks. Therefore we attempt to prevent THP formation in
@@ -4515,6 +4610,21 @@ jint os::init_2(void) {
   DEBUG_ONLY(os::set_mutex_init_done();)
 
   os::Posix::init_2();
+
+  // SapMachine 2025-11-24:
+  // By default, glibc allocates a new 64 (or 128) MB malloc arena for every
+  // thread (up to a certain limit which is typically 8 * processor count).
+  // This is good for few threads which perform a lot of concurrent mallocs,
+  // but it doesn't fit well to the JVM which has its own memory management
+  // and rather allocates fewer and larger chunks.
+  // Using only one arena significantly reduces virtual memory footprint and
+  // fragmentation. Saving memory seems to be more valuable for the JVM than
+  // optimizing concurrent mallocs.
+#ifdef __GLIBC__
+  if (GlibcMallocArenas > 0) {
+    mallopt(M_ARENA_MAX, GlibcMallocArenas);
+  }
+#endif
 
   if (PosixSignals::init() == JNI_ERR) {
     return JNI_ERR;

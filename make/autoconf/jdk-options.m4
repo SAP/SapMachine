@@ -223,6 +223,21 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(COPYRIGHT_YEAR)
 
+  # SapMachine 2024-09-13: import async profiler binaries
+  AC_ARG_WITH(async-profiler-import-path, [AS_HELP_STRING([--with-async-profiler-import-path],
+      [Set import path for downloaded async profiler binaries])])
+  if test "x$with_async_profiler_import_path" != x; then
+    ASYNC_PROFILER_IMPORT_PATH="$with_async_profiler_import_path"
+    if test -f "$ASYNC_PROFILER_IMPORT_PATH/bin/asprof"; then
+      ASYNC_PROFILER_IMPORT_ENABLED=true
+      AC_MSG_NOTICE([asprof exists, enabling async-profiler import])
+    else
+      AC_MSG_ERROR([async-profiler import path was set, but asprof was not found])
+    fi
+  fi
+  AC_SUBST(ASYNC_PROFILER_IMPORT_PATH)
+  AC_SUBST(ASYNC_PROFILER_IMPORT_ENABLED)
+
   # Override default library path
   AC_ARG_WITH([jni-libpath], [AS_HELP_STRING([--with-jni-libpath],
       [override default JNI library search path])])
@@ -351,6 +366,29 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   fi
 
   AC_SUBST(SHIP_DEBUG_SYMBOLS)
+])
+
+# SapMachine 2025-08-11: import JMC agent jars
+AC_DEFUN_ONCE([JDKOPT_SETUP_SAP_JMC_AGENT],
+[
+  AC_ARG_WITH(sap-jmc-agent, [AS_HELP_STRING([--with-sap-jmc-agent],
+      [Set import path for the SAP JMC agent jars])])
+  SAP_JMC_AGENT_ENABLED=false
+  if test "x$with_sap_jmc_agent" != x; then
+    SAP_JMC_AGENT_PATH="$with_sap_jmc_agent"
+	UTIL_FIXUP_PATH(SAP_JMC_AGENT_PATH)
+    if test -f "$SAP_JMC_AGENT_PATH"/agent-*-boot.jar; then
+      SAP_JMC_AGENT_VERSION=$($BASENAME "$SAP_JMC_AGENT_PATH"/agent-*-boot.jar | $SED -e 's/^agent-//' -e 's/-boot.jar$//')
+      SAP_JMC_AGENT_ENABLED=true
+      JVM_CFLAGS="$JVM_CFLAGS -DWITH_SAP_JMC_AGENT=1"
+      AC_MSG_NOTICE([SAP JMC agent found at $SAP_JMC_AGENT_PATH, version $SAP_JMC_AGENT_VERSION])
+    else
+      AC_MSG_ERROR([SAP JMC agent was set, but the agent jars were not found])
+    fi
+  fi
+  AC_SUBST(SAP_JMC_AGENT_PATH)
+  AC_SUBST(SAP_JMC_AGENT_VERSION)
+  AC_SUBST(SAP_JMC_AGENT_ENABLED)
 ])
 
 ################################################################################

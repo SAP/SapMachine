@@ -2347,6 +2347,29 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
       }
 #endif // !INCLUDE_JVMTI
+    // SapMachine 2025-08-11: Handle JMC agent if requested.
+    } else if (match_option(option, "-jmcagent:", &tail)) {
+#if !defined(WITH_SAP_JMC_AGENT)
+      jio_fprintf(defaultStream::error_stream(),
+          "SAP JMC agent is not included in this VM\n");
+      return JNI_ERR;
+#else
+#if !INCLUDE_JVMTI
+#error "Must have JVMTI enabled with SAP JMC agent"
+#endif
+      char const* agent_jar = "agent.jar";
+      if (tail != nullptr) {
+        size_t length = strlen(tail) + strlen(_java_home->value()) + strlen(agent_jar) + 7;
+        char* options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
+        jio_snprintf(options, length, "%s/lib/%s=%s", _java_home->value(), agent_jar, tail);
+        JvmtiAgentList::add("instrument", options, false);
+
+        // java agents need module java.instrument
+        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", _addmods_count++)) {
+          return JNI_ENOMEM;
+        }
+      }
+#endif // !WITH_SAP_JMC_AGENT
     // --enable_preview
     } else if (match_option(option, "--enable-preview")) {
       set_enable_preview();
@@ -2999,6 +3022,11 @@ jint Arguments::finalize_vm_init_args() {
 #ifndef CAN_SHOW_REGISTERS_ON_ASSERT
   UNSUPPORTED_OPTION(ShowRegistersOnAssert);
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+  // SapMachine 2021-05-21: Let ExitVMOnOutOfMemory be an alias for CrashOnOutOfMemoryError
+  if (ExitVMOnOutOfMemoryError && !CrashOnOutOfMemoryError) {
+    FLAG_SET_ERGO(CrashOnOutOfMemoryError, true);
+  }
 
   return JNI_OK;
 }
