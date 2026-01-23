@@ -145,6 +145,7 @@ jobs:
           --with-zlib=system
           --with-jmod-compress=zip-1
           --with-external-symbols-in-bundles=none
+          --with-native-debug-symbols-level=1
           --with-vendor-name="SAP SE"
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&

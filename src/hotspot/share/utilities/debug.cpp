@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,9 @@
 #include "utilities/nativeStackPrinter.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 // SapMachine 2023-08-15: malloc trace
 #if defined(LINUX) || defined(__APPLE__)
@@ -276,6 +279,8 @@ void report_untested(const char* file, int line, const char* message) {
 
 void report_java_out_of_memory(const char* message) {
   static int out_of_memory_reported = 0;
+
+  JFR_ONLY(Jfr::on_report_java_out_of_memory();)
 
   // A number of threads may attempt to report OutOfMemoryError at around the
   // same time. To avoid dumping the heap or executing the data collection
