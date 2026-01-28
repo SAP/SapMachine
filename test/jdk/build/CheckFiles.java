@@ -84,7 +84,9 @@ public class CheckFiles {
         allowedEndingsLibDir.add("fontconfig.bfc");
         allowedEndingsLibDir.add("fontconfig.properties.src");
         allowedEndingsLibDir.add("ct.sym");
-        allowedEndingsLibDir.add("jrt-fs.jar");
+        // SapMachine 2026-01-28 allow all jars because of our added async-profiler
+        //allowedEndingsLibDir.add("jrt-fs.jar");
+        allowedEndingsLibDir.add(".jar");
         allowedEndingsLibDir.add("jvm.cfg");
         allowedEndingsLibDir.add("modules");
         allowedEndingsLibDir.add("psfontj2d.properties");
