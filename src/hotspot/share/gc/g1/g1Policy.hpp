@@ -109,6 +109,11 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
+  // SapMachine 2026-01-20
+  // Threshold for humongous allocations since last gc for ending the current mixed phase
+  // and initiate a new marking cycle
+  size_t _max_hum_bytes_in_mixed_phase;
+
   bool should_update_surv_rate_group_predictors() {
     return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
   }
@@ -284,6 +289,9 @@ private:
 
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
+
+  // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
+  bool force_concurrent_ending_mixed_phase(bool hum_alloc);
 
 public:
 
