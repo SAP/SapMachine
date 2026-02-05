@@ -43,8 +43,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestHumongousAllocMixedPhase {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
     // fulfill alignment constraints.
-    private static final int heapSize                       = 224; // MB
-    private static final int heapRegionSize                 = 1;   // MB
+    private static final int heapSize       = 224; // MB
+    private static final int heapRegionSize = 1;   // MB
 
     public static void main(String[] args) throws Exception {
         boolean success = false;
