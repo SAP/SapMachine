@@ -291,7 +291,7 @@ private:
   void abort_time_to_mixed_tracking();
 
   // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
-  bool should_force_concurrent_ending_mixed_phase(bool hum_alloc);
+  bool should_force_concurrent_ending_mixed_phase();
 
 public:
 
