@@ -706,7 +706,7 @@ bool G1Policy::about_to_start_mixed_phase() const {
 }
 
 // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
-bool G1Policy::force_concurrent_ending_mixed_phase(bool hum_alloc) {
+bool G1Policy::should_force_concurrent_ending_mixed_phase(bool hum_alloc) {
   // Only humongous allocations are subject to the policy. It applies if a maximum > 0 is given.
   bool policy_applies =
       (_max_hum_bytes_in_mixed_phase > 0) && hum_alloc && !_g1h->concurrent_mark()->cm_thread()->in_progress();
@@ -727,7 +727,7 @@ bool G1Policy::force_concurrent_ending_mixed_phase(bool hum_alloc) {
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_size) {
   // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
-  bool should_force_cm = force_concurrent_ending_mixed_phase(_g1h->is_humongous(alloc_word_size));
+  bool should_force_cm = should_force_concurrent_ending_mixed_phase(_g1h->is_humongous(alloc_word_size));
   if (about_to_start_mixed_phase() && !should_force_cm) {
     return false;
   }
@@ -1245,7 +1245,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
                (cause == GCCause::_codecache_GC_aggressive) ||
                (cause == GCCause::_wb_breakpoint) ||
                // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
-               (force_concurrent_ending_mixed_phase(cause == GCCause::_g1_humongous_allocation))) {
+               (should_force_concurrent_ending_mixed_phase(cause == GCCause::_g1_humongous_allocation))) {
       // Initiate a concurrent start.  A concurrent start must be a young only
       // GC, so the collector state must be updated to reflect this.
       collector_state()->set_in_young_only_phase(true);
