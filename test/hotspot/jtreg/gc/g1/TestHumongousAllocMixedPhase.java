@@ -49,7 +49,7 @@ public class TestHumongousAllocMixedPhase {
     public static void main(String[] args) throws Exception {
         boolean success = false;
         int allocDelayMsMax = 500;
-        for(int allocDelayMs = 10; !success; allocDelayMs *= 4) {
+        for (int allocDelayMs = 10; !success; allocDelayMs *= 4) {
             System.out.println("Testing with allocDelayMs=" + allocDelayMs);
             success = runTest(allocDelayMs, allocDelayMs >= allocDelayMsMax /* lastTry*/);
         }

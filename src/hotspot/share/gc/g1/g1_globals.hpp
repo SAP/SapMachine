@@ -325,11 +325,11 @@
                                                                             \
   /* SapMachine 2026-01-20 */                                               \
   product(uintx, G1HumAllocPercentUntilConcurrent, 0, EXPERIMENTAL,         \
-          "Threashold for humongous allocations since last gc to initiate a"\
-          "new concurrent cycle even if the collector is not yet done with" \
-          "mixed collections. This can help in longer phases where no"      \
-          "evacuation pauses are scheduled because most allocations are"    \
-          "humongous.  The value is a percentage of the maximum heap size.")\
+          "Threshold for humongous allocations since last gc to initiate a "\
+          "new concurrent cycle even if the collector is not yet done with "\
+          "mixed collections. This can help in longer phases where no "     \
+          "evacuation pauses are scheduled because most allocations are "   \
+          "humongous. The value is a percentage of the maximum heap size.") \
           range(0, 100)                                                     \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
