@@ -324,7 +324,7 @@
           "more than that number of cards to be used.")                     \
                                                                             \
   /* SapMachine 2026-01-20 */                                               \
-  product(uintx, G1HumAllocPercentUntilConcurrent, 0, EXPERIMENTAL,         \
+  product(uintx, G1MixedGCHumongousAllocThreshold, 0, EXPERIMENTAL,         \
           "Threshold for humongous allocations since last gc to initiate a "\
           "new concurrent cycle even if the collector is not yet done with "\
           "mixed collections. This can help in longer phases where no "     \

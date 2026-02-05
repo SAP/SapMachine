@@ -63,7 +63,7 @@ public class TestHumongousAllocMixedPhase {
             "-XX:G1HeapRegionSize=" + heapRegionSize + "m",
             "-Xlog:gc*",
             "-XX:+UnlockExperimentalVMOptions",
-            "-XX:G1HumAllocPercentUntilConcurrent=30",
+            "-XX:G1MixedGCHumongousAllocThreshold=30",
             HumongousObjectAllocator.class.getName(),
             Integer.toString(allocDelayMs));
 

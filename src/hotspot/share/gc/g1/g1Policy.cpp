@@ -110,7 +110,7 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _collection_set->start_incremental_building();
 
   // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
-  _max_hum_bytes_in_mixed_phase = _g1h->reserved().byte_size() * G1HumAllocPercentUntilConcurrent / 100;
+  _max_hum_bytes_in_mixed_phase = _g1h->reserved().byte_size() * G1MixedGCHumongousAllocThreshold / 100;
 }
 
 void G1Policy::record_young_gc_pause_start() {
