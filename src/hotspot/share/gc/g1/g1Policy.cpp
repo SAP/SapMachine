@@ -1258,7 +1258,12 @@ void G1Policy::decide_on_concurrent_start_pause() {
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
       // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
-      log_debug(gc, ergo)("Initiate concurrent cycle (%s)", GCCause::to_string(cause));
+      if (cause == GCCause::_g1_humongous_allocation) {
+        log_debug(gc, ergo)("Initiate concurrent cycle (%s)", GCCause::to_string(cause));
+      } else {
+        log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
+                            (cause == GCCause::_wb_breakpoint) ? "run_to breakpoint" : "user");
+      }
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles
