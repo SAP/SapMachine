@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8013852 8031744
+ * @bug 8013852 8031744 8225377
  * @summary Annotations on types
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,6 +33,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor DPrinter BasicAnnoTests
  * @compile/process -XDaccessInternalAPI -processor BasicAnnoTests -proc:only BasicAnnoTests.java
+ * @compile/process -XDaccessInternalAPI -XDaddTypeAnnotationsToSymbol=true -processor BasicAnnoTests -proc:only BasicAnnoTests
  */
 
 import java.io.PrintWriter;
@@ -584,4 +585,8 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     @Test(posn=4, annoType = TB.class, expect = "100")
     class Inner100<T extends Inner100<@TB(100) T>> {
     }
+
+    @Test(posn=1, annoType=TA.class, expect="130")
+    @Test(posn=23, annoType=TA.class, expect="131")
+    public Map<@TA(130) String, @TA(131) String> f130;
 }

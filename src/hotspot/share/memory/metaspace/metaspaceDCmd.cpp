@@ -44,7 +44,7 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap) :
   _show_vslist("vslist", "Shows details about the underlying virtual space.", "BOOLEAN", false, "false"),
   _show_chunkfreelist("chunkfreelist", "Shows details about global chunk free lists (ChunkManager).", "BOOLEAN", false, "false"),
   _scale("scale", "Memory usage in which to scale. Valid values are: 1, KB, MB or GB (fixed scale) "
-         "or \"dynamic\" for a dynamically choosen scale.",
+         "or \"dynamic\" for a dynamically chosen scale.",
          "STRING", false, "dynamic"),
   _show_classes("show-classes", "If show-loaders is set, shows loaded classes for each loader.", "BOOLEAN", false, "false")
 {
