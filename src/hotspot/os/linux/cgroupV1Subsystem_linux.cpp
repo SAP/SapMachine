@@ -123,6 +123,12 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   }
 }
 
+jlong CgroupV1MemoryController::uses_mem_hierarchy() {
+  julong use_hierarchy;
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.use_hierarchy", "Use Hierarchy", use_hierarchy);
+  return (jlong)use_hierarchy;
+}
+
 /*
  * The common case, containers, we have _root == _cgroup_path, and thus set the
  * controller path to the _mount_point. This is where the limits are exposed in
@@ -159,13 +165,13 @@ void verbose_log(julong read_mem_limit, julong host_mem) {
 jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
   julong memlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.limit_in_bytes", "Memory Limit", memlimit);
-  if (memlimit >= phys_mem) {
-    verbose_log(memlimit, phys_mem);
-    return (jlong)-1;
-  } else {
-    verbose_log(memlimit, phys_mem);
-    return (jlong)memlimit;
+  if (memlimit >= phys_mem && uses_mem_hierarchy()) {
+    CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(reader(), "/memory.stat",
+                                               "hierarchical_memory_limit", "Hierarchical Memory Limit",
+                                               memlimit);
   }
+  verbose_log(memlimit, phys_mem);
+  return (jlong)((memlimit < phys_mem) ? memlimit : -1);
 }
 
 /* read_mem_swap
@@ -183,12 +189,13 @@ jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
 jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
   julong memswlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
-  if (memswlimit >= host_total_memsw) {
-    log_trace(os, container)("Memory and Swap Limit is: Unlimited");
-    return (jlong)-1;
-  } else {
-    return (jlong)memswlimit;
+  if (memswlimit >= host_total_memsw && uses_mem_hierarchy()) {
+    CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(reader(), "/memory.stat",
+                                               "hierarchical_memsw_limit", "Hierarchical Memory and Swap Limit",
+                                               memswlimit);
   }
+  verbose_log(memswlimit, host_total_memsw);
+  return (jlong)((memswlimit < host_total_memsw) ? memswlimit : -1);
 }
 
 jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) {
@@ -248,10 +255,16 @@ jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
   }
 }
 
+jlong CgroupV1MemoryController::memory_throttle_limit_in_bytes() {
+  // Log this string at trace level so as to make tests happy.
+  log_trace(os, container)("Memory Throttle Limit is not supported.");
+  return OSCONTAINER_ERROR; // not supported
+}
+
 // Constructor
 CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
                       CgroupV1CpuController* cpu,
-                      CgroupV1Controller* cpuacct,
+                      CgroupV1CpuacctController* cpuacct,
                       CgroupV1Controller* pids,
                       CgroupV1MemoryController* memory) :
     _cpuset(cpuset),
@@ -414,6 +427,13 @@ int CgroupV1CpuController::cpu_shares() {
   if (shares_int == 1024) return -1;
 
   return shares_int;
+}
+
+jlong CgroupV1CpuacctController::cpu_usage_in_micros() {
+  julong cpu_usage;
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/cpuacct.usage", "CPU Usage", cpu_usage);
+  // Output is in nanoseconds, convert to microseconds.
+  return (jlong)cpu_usage / 1000;
 }
 
 /* pids_max

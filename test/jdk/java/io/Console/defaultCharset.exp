@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,4 +21,12 @@
 # questions.
 #
 
-exclusiveAccess.dirs=.
+# simply invoking java under expect command
+set classpath [lrange $argv 0 0]
+set java [lrange $argv 1 1]
+set stdoutProp [lrange $argv 2 2]
+set clsname [lrange $argv 3 3]
+eval spawn $java -classpath $classpath $stdoutProp $clsname
+expect eof
+set result [wait]
+exit [lindex $result 3]

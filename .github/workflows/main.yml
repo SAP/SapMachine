@@ -65,7 +65,7 @@ jobs:
     name: 'Prepare the run'
     # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       # List of platforms to exclude by default
       EXCLUDED_PLATFORMS: 'alpine-linux-x64'
@@ -414,7 +414,7 @@ jobs:
     with:
       platform: linux-x64
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
 
@@ -428,7 +428,7 @@ jobs:
     with:
       platform: linux-x64
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       static-suffix: "-static"
 

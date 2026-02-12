@@ -213,7 +213,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 // Is vector's size (in bytes) bigger than a size saved by default?
 // riscv does not ovlerlay the floating-point registers on vector registers like aarch64.
 bool SharedRuntime::is_wide_vector(int size) {
-  return UseRVV;
+  return UseRVV && size > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -2486,7 +2486,7 @@ void SharedRuntime::generate_deopt_blob() {
 // EPILOG must remove this many slots.
 // RISCV needs two words for RA (return address) and FP (frame pointer).
 uint SharedRuntime::in_preserve_stack_slots() {
-  return 2 * VMRegImpl::slots_per_word;
+  return 2 * VMRegImpl::slots_per_word + (VerifyStackAtCalls ? 0 : 2) ;
 }
 
 uint SharedRuntime::out_preserve_stack_slots() {
