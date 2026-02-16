@@ -76,6 +76,13 @@
 
 #include <errno.h>
 #endif
+// SapMachine 2023-08-15: malloc trace2
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTracePosix.hpp"
+#endif
+
+// SapMachine 2019-02-20: Vitals
+#include "vitals/vitalsDCmd.hpp"
 
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
@@ -108,6 +115,8 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapInfoDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<FinalizerInfoDCmd>(full_export));
+  // SapMachine 2019-02-20: Vitals
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sapmachine_vitals::VitalsDCmd>(full_export));
 #if INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(DCmd_Source_Internal | DCmd_Source_AttachAPI));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export));
@@ -120,6 +129,10 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<EventLogDCmd>(full_export));
 #if INCLUDE_JVMTI // Both JVMTI and SERVICES have to be enabled to have this dcmd
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export));
+  // SapMachine 2025-08-11: Add support for SAP JMC agent if requested.
+#if defined(WITH_SAP_JMC_AGENT)
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIJmcAgentLoadDCmd>(full_export));
+#endif // WITH_SAP_JMC_AGENT
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 #if INCLUDE_JVMTI
@@ -145,6 +158,12 @@ void DCmd::register_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export));
 #endif // LINUX or WINDOWS or MacOS
+#if defined(LINUX) || defined(__APPLE__)
+  // SapMachine 2023-08-15: malloc trace2
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceEnableDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDisableDCmd>(full_export));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<sap::MallocTraceDumpDCmd>(full_export));
+#endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export));
@@ -331,6 +350,36 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 
+// SapMachine 2025-08-11: Add support for SAP JMC agent if requested.
+#if defined(WITH_SAP_JMC_AGENT)
+JVMTIJmcAgentLoadDCmd::JVMTIJmcAgentLoadDCmd(outputStream* output, bool heap) :
+  DCmdWithParser(output, heap),
+  _option("agent option", "Option string to pass the JMC agent.", "STRING", false) {
+  _dcmdparser.add_dcmd_argument(&_option);
+}
+
+void JVMTIJmcAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
+  char const* java_home = Arguments::get_java_home();
+  char const* agent_jar = "agent.jar";
+  char const* option = _option.value();
+  size_t len = strlen(java_home) + strlen(agent_jar) + (option == nullptr ? 0 : 1 + strlen(option)) + 7;
+  char* agent_line = (char*)os::malloc(len, mtInternal);
+
+  if (agent_line == nullptr) {
+    output()->print_cr("JVMTI JMC agent attach failed: "
+      "Could not allocate " SIZE_FORMAT_X_0 " bytes for argument.",
+      len);
+     return;
+  }
+
+  jio_snprintf(agent_line, len, "%s/lib/%s%s%s", java_home, agent_jar, option == nullptr ? "" : "=",
+    option == nullptr ? "" : option);
+  JvmtiAgentList::load_agent("instrument", false, agent_line, output());
+
+  os::free(agent_line);
+}
+#endif // WITH_SAP_JMC_AGENT
+
 #endif // INCLUDE_JVMTI
 #endif // INCLUDE_SERVICES
 
@@ -469,7 +518,8 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "FILE",true),
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  _filename("filename", "Name of the dump file", "FILE", false, "if no filename was specified, but -XX:HeapDumpPath=<hdp> is set, path <hdp> is taken"),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -490,6 +540,8 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
   jlong parallel = HeapDumper::default_num_of_dump_threads();
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  bool use_heapdump_path = false;
 
   if (_gzip.is_set()) {
     level = _gzip.value();
@@ -512,11 +564,27 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  if (!_filename.is_set()) {
+    if (HeapDumpPath != nullptr) {
+      // use HeapDumpPath (file or directory is possible)
+      use_heapdump_path = true;
+    } else {
+      output()->print_cr("Filename or -XX:HeapDumpPath must be set!");
+      return;
+    }
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
-  HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  if (use_heapdump_path) {
+    HeapDumper::dump_heap(!_all.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  } else {
+    HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
+    dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(), (uint)parallel);
+  }
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
