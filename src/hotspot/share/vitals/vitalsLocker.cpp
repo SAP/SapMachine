@@ -49,7 +49,10 @@ void Lock::unlock() {
 
 #else
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
 Lock::Lock(const char* name) : _name(name), _lock(PTHREAD_MUTEX_INITIALIZER) {}
+PRAGMA_DIAG_POP
 
 void Lock::lock() {
   int rc = ::pthread_mutex_lock(&_lock);
