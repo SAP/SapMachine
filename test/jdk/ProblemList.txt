@@ -546,8 +546,6 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 
 # jdk_management
 
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
@@ -562,7 +560,6 @@ sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc6
 
 # jdk_jmx
 
-javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
@@ -589,13 +586,9 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 
 java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
 
-java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc64
-
 ############################################################################
 
 # jdk_nio
-
-java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
 
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8144003,8308807 macosx-all,aix-ppc64
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
@@ -697,7 +690,6 @@ javax/swing/JFileChooser/bug6798062.java 8146446 windows-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
-javax/swing/JRadioButton/4314194/bug4314194.java 8298153 linux-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
