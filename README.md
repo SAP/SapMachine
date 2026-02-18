@@ -2,6 +2,8 @@
 
 <img align="right" width=350 src="https://sap.github.io/SapMachine/assets/images/logo_circular.svg">
 
+# Sapmachine11 has been frozen. No more commits or PRs.
+
 # [](#SapMachine) SapMachine
 This project contains a downstream version of the [OpenJDK](http://openjdk.java.net/) project. It is used to build and maintain a SAP supported version of OpenJDK for SAP customers and partners who wish to use OpenJDK to run their applications.
 
