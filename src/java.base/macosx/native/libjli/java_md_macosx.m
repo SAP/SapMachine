@@ -344,6 +344,32 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         }
         JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
                      jdkroot, FILESEP, FILESEP);
+
+        /* SapMachine 2023-09-18: New malloc trace */
+        if (ShouldPreloadLibMallocHooks(*pargc, *pargv)) {
+            char const* env_name = "DYLD_INSERT_LIBRARIES";
+            char const* libpath = "/lib/libmallochooks.dylib";
+            char const* old_env = getenv(env_name);
+            char* env_entry;
+
+            if ((old_env == NULL) || (old_env[0] == '0')) {
+                size_t size = JLI_StrLen(jdkroot) + JLI_StrLen(libpath) + JLI_StrLen(env_name) + 2;
+                env_entry = JLI_MemAlloc(size);
+
+                snprintf(env_entry, size, "%s=%s%s", env_name, jdkroot, libpath);
+            } else {
+                size_t size = JLI_StrLen(jdkroot) + JLI_StrLen(libpath) + JLI_StrLen(env_name) +
+                              3 + JLI_StrLen(old_env);
+                env_entry = JLI_MemAlloc(size);
+
+                snprintf(env_entry, size, "%s=%s%s:%s", env_name, jdkroot, libpath, old_env);
+            }
+
+            if (putenv(env_entry) == 0) {
+                execv(execname, argv);
+            }
+        }
+
         /* Find the specified JVM type */
         if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
             JLI_ReportErrorMessage(CFG_ERROR7);

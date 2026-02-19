@@ -38,6 +38,8 @@
 /*
  * @test id=no_coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
+ * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
+ * @requires vm.vendor != "SAP SE"
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
  * @library /test/lib
