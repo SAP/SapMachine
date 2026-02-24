@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,10 @@
 # questions.
 #
 
-# This file identifies the root of the test-suite hierarchy.
-# It also contains test-suite configuration information.
-
-# The list of keywords supported in this test suite
-# randomness:           test uses randomness, test cases differ from run to run
-keys=randomness
-
-# Minimum jtreg version
-requiredVersion=7.5.1+1
-
-# Path to libraries in the topmost test directory. This is needed so @library
-# does not need ../../ notation to reach them
-external.lib.roots = ../../
-
-groups=TEST.groups
+# simply invoking java under expect command
+set classpath [lrange $argv 0 0]
+set expected [lrange $argv 1 1]
+set java [lrange $argv 2 2]
+set opts [lrange $argv 3 end]
+eval spawn $java $opts -classpath $classpath ModuleSelectionTest $expected
+expect eof
