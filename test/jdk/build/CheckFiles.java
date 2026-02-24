@@ -192,15 +192,16 @@ public class CheckFiles {
                         // SapMachine 2026-02-24: different handling for async profiler subdir we ship with SapMachine
                         if (subfolder.getFileName().endsWith("async")) {
                             System.out.println("Skipping async folder from SapMachine, it contains different content from the OJDK legal dirs.");
-                        } else {
-                            for (String fileName : requiredFilesInLegalSubdirs) {
-                                Path filePath = subfolder.resolve(fileName);
-                                if (Files.exists(filePath)) {
-                                    System.out.println("  Found " + fileName);
-                                } else {
-                                    System.out.println("  Missing " + fileName);
-                                    throw new Error("legal dir scan for required files failed");
-                                }
+                            continue;
+                        }
+
+                        for (String fileName : requiredFilesInLegalSubdirs) {
+                            Path filePath = subfolder.resolve(fileName);
+                            if (Files.exists(filePath)) {
+                                System.out.println("  Found " + fileName);
+                            } else {
+                                System.out.println("  Missing " + fileName);
+                                throw new Error("legal dir scan for required files failed");
                             }
                         }
                     }
