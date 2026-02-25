@@ -189,6 +189,12 @@ public class CheckFiles {
                     if (Files.isDirectory(subfolder)) {
                         System.out.println("Checking legal dir subfolder for required files: " + subfolder.getFileName());
 
+                        // SapMachine 2026-02-24: different handling for async profiler subdir we ship with SapMachine
+                        if (subfolder.getFileName().endsWith("async")) {
+                            System.out.println("Skipping async folder from SapMachine, it contains different content from the OJDK legal dirs.");
+                            continue;
+                        }
+
                         for (String fileName : requiredFilesInLegalSubdirs) {
                             Path filePath = subfolder.resolve(fileName);
                             if (Files.exists(filePath)) {
