@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,33 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8251496
- * @summary summary
- * @run junit/othervm CreateHttpServerTest
+ * @bug 8370502
+ * @summary Do not segfault while adding node to IGVN worklist
+ *
+ * @run main/othervm -Xbatch ${test.main.class}
  */
 
-import com.sun.net.httpserver.HttpServer;
+package compiler.c2;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
-
-public class CreateHttpServerTest {
-    @Test
-    public void TestCreate() throws IOException {
-        var server = HttpServer.create();
-        assertTrue(server instanceof HttpServer);
+public class TestUnlockNodeNullMemprof {
+    public static void main(String[] args) {
+        int[] a = new int[0]; // test only valid when size is 0.
+        for (int i = 0; i < Integer.valueOf(10000); i++) // test only valid with boxed loop limit
+            try {
+                test(a);
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
     }
-    @Test
-    public void TestCreateWithParameters() throws IOException {
-        var addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        var server = HttpServer.create(addr, 123);
-        assertTrue(server instanceof HttpServer);
+
+    static void test(int[] a) {
+        for (int i = 0; i < 1;) {
+            a[i] = 0;
+            synchronized (TestUnlockNodeNullMemprof.class) {
+            }
+            for (int j = 0; Integer.valueOf(j) < 1;)
+                j = 0;
+        }
     }
 }
