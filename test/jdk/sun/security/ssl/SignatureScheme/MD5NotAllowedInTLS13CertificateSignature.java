@@ -99,7 +99,7 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
                 serverEx -> {
                     Throwable clientEx = serverEx.getSuppressed()[0];
                     assertTrue(clientEx instanceof SSLHandshakeException);
-                    assertEquals(clientEx.getMessage(), ""
+                    assertEquals(clientEx.getMessage(), "(bad_certificate) "
                             + "PKIX path validation failed: "
                             + "java.security.cert.CertPathValidatorException: "
                             + "Algorithm constraints check failed on signature"

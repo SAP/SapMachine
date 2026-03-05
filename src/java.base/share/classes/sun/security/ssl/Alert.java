@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,13 +124,13 @@ enum Alert {
 
         SSLException ssle;
         if (cause instanceof IOException) {
-            ssle = new SSLException(reason);
+            ssle = new SSLException("(" + description + ") " + reason);
         } else if ((this == UNEXPECTED_MESSAGE)) {
-            ssle = new SSLProtocolException(reason);
+            ssle = new SSLProtocolException("(" + description + ") " + reason);
         } else if (handshakeOnly) {
-            ssle = new SSLHandshakeException(reason);
+            ssle = new SSLHandshakeException("(" + description + ") " + reason);
         } else {
-            ssle = new SSLException(reason);
+            ssle = new SSLException("(" + description + ") " + reason);
         }
 
         if (cause != null) {
