@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -765,7 +765,7 @@ void MacroAssembler::align32() {
 
 void MacroAssembler::align(uint modulus) {
   // 8273459: Ensure alignment is possible with current segment alignment
-  assert(modulus <= (uintx)CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
+  assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
   align(modulus, offset());
 }
 
@@ -2656,6 +2656,17 @@ void MacroAssembler::ucomisd(XMMRegister dst, AddressLiteral src, Register rscra
   }
 }
 
+void MacroAssembler::vucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vucomxsd(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::vucomxsd(dst, Address(rscratch, 0));
+  }
+}
+
 void MacroAssembler::ucomiss(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
@@ -2664,6 +2675,17 @@ void MacroAssembler::ucomiss(XMMRegister dst, AddressLiteral src, Register rscra
   } else {
     lea(rscratch, src);
     Assembler::ucomiss(dst, Address(rscratch, 0));
+  }
+}
+
+void MacroAssembler::vucomxss(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vucomxss(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::vucomxss(dst, Address(rscratch, 0));
   }
 }
 
@@ -6086,7 +6108,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
           vpbroadcastd(xtmp, xtmp, Assembler::AVX_512bit);
 
           subptr(count, 16 << shift);
-          jccb(Assembler::less, L_check_fill_32_bytes);
+          jcc(Assembler::less, L_check_fill_32_bytes);
           align(16);
 
           BIND(L_fill_64_bytes_loop_avx3);
