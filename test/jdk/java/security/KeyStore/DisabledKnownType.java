@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,33 @@
  * questions.
  */
 
-import java.rmi.Remote;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.time.Instant;
+/**
+ * @test
+ * @bug 8373690
+ * @summary verify that the exception message indicates the keystore type
+ *         when the type is disabled instead of being unrecognized
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms=KeyStore.PKCS12 DisabledKnownType
+ */
 
-public class SelfTerminator {
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 
+public class DisabledKnownType {
     public static void main(String[] args) throws Exception {
+        String cacertsPath = System.getProperty("java.home") +
+                "/lib/security/cacerts";
         try {
-            log("main() invoked");
-            int registryPort =
-                Integer.parseInt(System.getProperty("rmi.registry.port"));
-            Registry registry =
-                LocateRegistry.getRegistry("", registryPort);
-            Remote stub = registry.lookup(LeaseCheckInterval.BINDING);
-            log("looked up binding, now terminating the process");
-            Runtime.getRuntime().halt(0);
-        } catch (Throwable t) {
-            log("failure: " + t);
-            t.printStackTrace();
-            throw t; // propagate any failures and fail the process
+            KeyStore ks = KeyStore.getInstance(new java.io.File(cacertsPath),
+                    "changeit".toCharArray());
+            throw new RuntimeException("Expected KeyStoreException not thrown");
+        } catch (KeyStoreException kse) {
+            if (kse.getMessage().contains("PKCS12")) {
+                System.out.println("Passed: expected ex thrown: " + kse);
+            } else {
+                // pass it up
+                throw kse;
+            }
         }
     }
-
-    private static void log(final String message) {
-        final Instant now = Instant.now();
-        System.err.println("[" + now + "] " + SelfTerminator.class.getName() + " - " + message);
-    }
 }
+
