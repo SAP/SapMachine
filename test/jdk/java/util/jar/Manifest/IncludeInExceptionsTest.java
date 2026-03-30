@@ -39,10 +39,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /*
+ * SapMachine 2019-01-18: In SapMachine "jdk.includeInExceptions" contains the
+ * value "jar" by default. So we need to explicitly set it to null in the second test run.
+ *
  * @test
  * @bug 8216362
  * @run junit/othervm -Djdk.includeInExceptions=jar IncludeInExceptionsTest
- * @run junit/othervm IncludeInExceptionsTest
+ * @run junit/othervm -Djdk.includeInExceptions= IncludeInExceptionsTest
  * @summary Verify that the property jdk.includeInExceptions works as expected
  * when an error occurs while reading an invalid Manifest file.
  */
@@ -53,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class IncludeInExceptionsTest {
 
-    private static final boolean includeInExceptions = System.getProperty("jdk.includeInExceptions") != null;
+    private static final boolean includeInExceptions = System.getProperty("jdk.includeInExceptions").equals("jar");
 
     static final String FILENAME = "Unique-Filename-Expected-In_Msg.jar";
 

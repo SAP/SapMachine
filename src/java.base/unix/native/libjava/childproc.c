@@ -397,6 +397,15 @@ childProcess(void *arg)
     /* error information for WhyCantJohnnyExec */
     errcode_t errcode;
 
+    /* SapMachine 2024-06-12: process group extension */
+    if (p->createNewProcessGroupOnSpawn) {
+        /* Make this process leader of its own process group (see setpgid(2)). */
+        if (setpgid(0, 0) != 0) {
+            buildErrorCode(&errcode, ESTEP_SETPGID_FAIL, 0, errno);
+            goto WhyCantJohnnyExec;
+        }
+    }
+
     /* Child shall signal aliveness to parent at the very first
      * moment. */
     if (p->sendAlivePing && !sendAlivePing(fail_pipe_fd)) {
