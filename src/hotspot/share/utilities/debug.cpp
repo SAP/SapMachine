@@ -40,7 +40,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 // SapMachine 2021-05-21
@@ -88,7 +88,7 @@
 static char g_dummy;
 char* g_assert_poison = &g_dummy;
 const char* g_assert_poison_read_only = &g_dummy;
-static intx g_asserting_thread = 0;
+static Atomic<intx> g_asserting_thread{0};
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
 int DebuggingContext::_enabled = 0; // Initially disabled.
@@ -201,7 +201,7 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
   const void* siginfo = nullptr;
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (os::current_thread_id() == g_asserting_thread) {
+  if (os::current_thread_id() == g_asserting_thread.load_relaxed()) {
     context = os::get_saved_assert_context(&siginfo);
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -228,7 +228,7 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
   const void* siginfo = nullptr;
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (os::current_thread_id() == g_asserting_thread) {
+  if (os::current_thread_id() == g_asserting_thread.load_relaxed()) {
     context = os::get_saved_assert_context(&siginfo);
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -280,15 +280,15 @@ void report_untested(const char* file, int line, const char* message) {
 }
 
 void report_java_out_of_memory(const char* message) {
-  static int out_of_memory_reported = 0;
+  static Atomic<bool> out_of_memory_reported{false};
 
   JFR_ONLY(Jfr::on_report_java_out_of_memory();)
 
   // A number of threads may attempt to report OutOfMemoryError at around the
   // same time. To avoid dumping the heap or executing the data collection
-  // commands multiple times we just do it once when the first threads reports
+  // commands multiple times we just do it once when the first thread that reports
   // the error.
-  if (AtomicAccess::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
+  if (out_of_memory_reported.compare_set(false, true)) {
 
     // SapMachine 2021-05-21: If any one of the xxxOnOutOfMemoryError is specified,
     //  print stack to stdout. Do this before any subsequent handling - this is the
@@ -844,7 +844,7 @@ bool handle_assert_poison_fault(const void* ucVoid) {
   if (ucVoid != nullptr) {
     // Save context.
     const intx my_tid = os::current_thread_id();
-    if (AtomicAccess::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
+    if (g_asserting_thread.compare_set(0, my_tid)) {
       os::save_assert_context(ucVoid);
     }
   }
