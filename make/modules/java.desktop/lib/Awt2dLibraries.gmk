@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -778,7 +778,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           unused-function, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare \
           deprecated-declarations null-pointer-subtraction deprecated-non-prototype unused-function $(LIBZ_DISABLED_WARNINGS_CLANG), \
-      DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
+      DISABLED_WARNINGS_microsoft := 4018 4146 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
