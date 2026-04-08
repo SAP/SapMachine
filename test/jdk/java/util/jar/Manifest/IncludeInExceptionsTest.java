@@ -21,9 +21,6 @@
  * questions.
  */
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -34,20 +31,23 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static sun.security.util.SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS;
 
 /*
- * SapMachine 2019-01-18: In SapMachine "jdk.includeInExceptions" contains the
- * value "jar" by default. So we need to explicitly set it to null in the second test run.
- *
  * @test
  * @bug 8216362
+ * @summary Verify that the property jdk.includeInExceptions works as expected
+ *          when an error occurs while reading an invalid Manifest file.
+ * @modules java.base/sun.security.util
  * @run junit/othervm -Djdk.includeInExceptions=jar IncludeInExceptionsTest
  * @run junit/othervm -Djdk.includeInExceptions= IncludeInExceptionsTest
- * @summary Verify that the property jdk.includeInExceptions works as expected
- * when an error occurs while reading an invalid Manifest file.
+ * @run junit/othervm IncludeInExceptionsTest
  */
 
 /*
@@ -55,8 +55,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @see Manifest#getErrorPosition
  */
 public class IncludeInExceptionsTest {
-
-    private static final boolean includeInExceptions = System.getProperty("jdk.includeInExceptions").equals("jar");
 
     static final String FILENAME = "Unique-Filename-Expected-In_Msg.jar";
 
@@ -82,9 +80,9 @@ public class IncludeInExceptionsTest {
     void testInvalidManifest(Callable<?> attempt) {
         var ioException = assertThrows(IOException.class, attempt::call);
         boolean foundFileName = ioException.getMessage().contains(FILENAME);
-        if (includeInExceptions && !foundFileName) {
+        if (INCLUDE_JAR_NAME_IN_EXCEPTIONS && !foundFileName) {
             fail("JAR file name expected but not found in error message");
-        } else if (foundFileName && !includeInExceptions) {
+        } else if (foundFileName && !INCLUDE_JAR_NAME_IN_EXCEPTIONS) {
             fail("JAR file name found but should not be in error message");
         }
     }
@@ -99,4 +97,3 @@ public class IncludeInExceptionsTest {
         );
     }
 }
-
