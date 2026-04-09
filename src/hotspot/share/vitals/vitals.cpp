@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2026 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1043,7 +1043,6 @@ static Column* g_col_heap_used = nullptr;
 static Column* g_col_metaspace_committed = nullptr;
 static Column* g_col_metaspace_used = nullptr;
 
-static bool g_show_classspace_columns = false;
 static Column* g_col_classspace_committed = nullptr;
 static Column* g_col_classspace_used = nullptr;
 
@@ -1107,11 +1106,10 @@ static bool add_jvm_columns() {
       define_column<MemorySizeColumn>(jvm_cat, "meta", "used", "Meta Space Size (class+nonclass), used", true);
 
   // Class space columns only shown if class space is active
-  g_show_classspace_columns = Metaspace::using_class_space();
   g_col_classspace_committed =
-      define_column<MemorySizeColumn>(jvm_cat, "meta", "csc", "Class Space Size, committed [cs]", g_show_classspace_columns);
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "csc", "Class Space Size, committed [cs]", INCLUDE_CLASS_SPACE == 1);
   g_col_classspace_used =
-      define_column<MemorySizeColumn>(jvm_cat, "meta", "csu", "Class Space Size, used [cs]",  g_show_classspace_columns);
+      define_column<MemorySizeColumn>(jvm_cat, "meta", "csu", "Class Space Size, used [cs]",  INCLUDE_CLASS_SPACE == 1);
 
   g_col_metaspace_cap_until_gc =
       define_column<MemorySizeColumn>(jvm_cat, "meta", "gctr", "GC threshold", true);
@@ -1258,7 +1256,7 @@ void sample_jvm_values(Sample* sample, bool avoid_locking) {
   set_value_in_sample(g_col_metaspace_committed, sample, MetaspaceUtils::committed_bytes());
   set_value_in_sample(g_col_metaspace_used, sample, MetaspaceUtils::used_bytes());
 
-  if (Metaspace::using_class_space()) {
+  if (INCLUDE_CLASS_SPACE == 1) {
     set_value_in_sample(g_col_classspace_committed, sample, MetaspaceUtils::committed_bytes(Metaspace::ClassType));
     set_value_in_sample(g_col_classspace_used, sample, MetaspaceUtils::used_bytes(Metaspace::ClassType));
   }
