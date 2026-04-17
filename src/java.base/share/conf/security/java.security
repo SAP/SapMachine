@@ -1352,7 +1352,7 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #keystore.pkcs12.macIterationCount = 10000
 
 #
-# Enhanced exception message information
+# Enhanced exception message information (see SapMachine comment below!!)
 #
 # Exception messages may include potentially sensitive information such as file
 # names, host names, or port numbers. By default, socket related exceptions
@@ -1394,7 +1394,13 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # restricted setting with all categories disabled. The following is the default
 # (out of the box) setting, meaning these categories are not restricted.
 #
-jdk.includeInExceptions=hostInfoExclSocket
+#jdk.includeInExceptions=hostInfoExclSocket
+#
+# The SapMachine distribution opens up slightly more information in Exceptions,
+# compared to default OpenJDK. For hostInfo and jar file handling the potential
+# benefit of enhanced information in exception messages outweighs the risk and
+# helps to support our use cases.
+jdk.includeInExceptions=hostInfo,jar
 
 #
 # Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
