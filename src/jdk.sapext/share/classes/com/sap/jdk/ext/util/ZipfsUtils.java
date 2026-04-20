@@ -24,10 +24,12 @@
  */
  package com.sap.jdk.ext.util;
 
- import jdk.internal.access.JdkNioZipfsAccess;
- import jdk.internal.access.SharedSecrets;
+import java.nio.file.Path;
+
+import jdk.internal.access.JdkNioZipfsAccess;
+import jdk.internal.access.SharedSecrets;
  
- public class ZipfsUtils {
+public class ZipfsUtils {
 
     // Silence warning about implicit ctor.
     private ZipfsUtils() {
@@ -40,13 +42,13 @@
      * @param path The path in the zipfs.
      * @return <code>true</code> if the path represents a symbolic link.
      */
-    public static boolean isSymbolicLink(Object path) {
+    public static boolean isSymbolicLink(Path path) {
         JdkNioZipfsAccess access = SharedSecrets.getJdkNioZipfsAccess();
 
         if (access == null) {
             return false;
-         }
+        }
 
-         return access.isSymbolicLink(path);
+        return access.isSymbolicLink(path);
     }
- }
+}

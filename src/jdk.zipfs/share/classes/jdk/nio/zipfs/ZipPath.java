@@ -64,7 +64,7 @@ final class ZipPath implements Path {
 
     // SapMachine 2026-04-14: Support for symlink detectiun.
     static class JdkNioZipfsAccessImpl implements jdk.internal.access.JdkNioZipfsAccess {
-        public boolean isSymbolicLink(Object path) {
+        public boolean isSymbolicLink(Path path) {
             if (!(path instanceof ZipPath)) {
                 return false;
             }

@@ -25,6 +25,8 @@
 
 package jdk.internal.access;
 
+import java.nio.file.Path;
+
 /**
  * SharedSecrets interface used for the access from java.text.Bidi
  */
@@ -32,5 +34,5 @@ package jdk.internal.access;
 public interface JdkNioZipfsAccess {
 
     // java.awt.font.TextAttribute constants
-    public boolean isSymbolicLink(Object path);
+    public boolean isSymbolicLink(Path path);
 }
