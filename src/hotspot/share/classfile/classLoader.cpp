@@ -742,6 +742,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
     if (zip != NULL && error_msg == NULL) {
       new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
     } else {
+      log_info(class, path)("failed: %s, err: %s", path, error_msg);
       return NULL;
     }
     log_info(class, path)("opened: %s", path);
