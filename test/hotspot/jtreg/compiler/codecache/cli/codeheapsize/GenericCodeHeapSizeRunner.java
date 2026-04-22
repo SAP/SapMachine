@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,15 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                 String.format("%s should have value %d.",
                         BlobType.MethodProfiled.sizeOptionName,
                         expectedValues.profiled),
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
+
+        CommandLineOptionTest.verifyOptionValueForSameVM(
+                BlobType.MethodHot.sizeOptionName,
+                Long.toString(expectedValues.hot),
+                String.format("%s should have value %d.",
+                        BlobType.MethodHot.sizeOptionName,
+                        expectedValues.hot),
                 // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
                 testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
     }
