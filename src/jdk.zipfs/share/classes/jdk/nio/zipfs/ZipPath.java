@@ -62,7 +62,7 @@ final class ZipPath implements Path {
     private volatile int[] offsets;
     private int hashcode = 0;  // cached hashcode (created lazily)
 
-    // SapMachine 2026-04-14: Support for symlink detectiun.
+    // SapMachine 2026-04-14: Support for symlink detection.
     static class JdkNioZipfsAccessImpl implements jdk.internal.access.JdkNioZipfsAccess {
         public boolean isSymbolicLink(Path path) {
             if (!(path instanceof ZipPath)) {

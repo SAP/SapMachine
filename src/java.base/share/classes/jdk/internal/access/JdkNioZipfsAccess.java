@@ -33,6 +33,5 @@ import java.nio.file.Path;
 
 public interface JdkNioZipfsAccess {
 
-    // java.awt.font.TextAttribute constants
     public boolean isSymbolicLink(Path path);
 }

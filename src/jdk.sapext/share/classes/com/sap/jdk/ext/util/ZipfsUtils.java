@@ -36,7 +36,7 @@ public class ZipfsUtils {
     }
 
     /**
-     * Returns <code>true</code> if the given path is a {@link jdk.nio.zipfs.ZipPath} which
+     * Returns <code>true</code> if the given path is a <code>jdk.nio.zipfs.ZipPath</code> which
      * represents a symbolic link.
      *
      * @param path The path in the zipfs.
