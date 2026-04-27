@@ -76,7 +76,7 @@ final class ZipPath implements Path {
         }
     }
 
-    // SapMachine 2026-04-14: Support for symlink detectiun.
+    // SapMachine 2026-04-14: Support for symlink detection.
     static {
         jdk.internal.access.SharedSecrets.setJdkNioZipfsAccess(new JdkNioZipfsAccessImpl());
     }
