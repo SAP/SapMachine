@@ -28,7 +28,7 @@ package jdk.internal.access;
 import java.nio.file.Path;
 
 /**
- * SharedSecrets interface used for the access from java.text.Bidi
+ * SharedSecrets interface used for the access from jdk.nio.zipfs
  */
 
 public interface JdkNioZipfsAccess {
