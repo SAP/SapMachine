@@ -94,6 +94,8 @@ public class SharedSecrets {
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
     private static JavaxSecurityAccess javaxSecurityAccess;
+	// SapMachine 2026-04-14: Support for symlink detection in zipfs.
+	private static JdkNioZipfsAccess jdkNioZipfsAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -531,5 +533,15 @@ public class SharedSecrets {
         try {
             MethodHandles.lookup().ensureInitialized(c);
         } catch (IllegalAccessException e) {}
+    }
+
+    // SapMachine 2026-04-14
+    public static void setJdkNioZipfsAccess(JdkNioZipfsAccess access) {
+        jdkNioZipfsAccess = access;
+    }
+
+    // SapMachine 2026-04-14
+    public static JdkNioZipfsAccess getJdkNioZipfsAccess() {
+        return jdkNioZipfsAccess;
     }
 }
