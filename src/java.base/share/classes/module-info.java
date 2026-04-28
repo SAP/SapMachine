@@ -158,6 +158,8 @@ module java.base {
         jdk.net,
         // SapMachine 2024-06-12: process group extension
         jdk.sapext,
+        // SapMachine 2026-04-13: symlink support for zipfs entries in sapext.
+        jdk.zipfs,
         jdk.incubator.foreign;
     exports jdk.internal.access.foreign to
         jdk.incubator.foreign;
