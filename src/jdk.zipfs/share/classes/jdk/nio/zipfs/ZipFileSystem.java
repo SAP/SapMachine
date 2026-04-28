@@ -3649,4 +3649,17 @@ class ZipFileSystem extends FileSystem {
                                  oname, 0, oname.length);
         }
     }
+
+    // SapMachine 2026-04-14: Returns true if the resolved path points to a symnbolic link.
+    boolean isSymlink(byte[] path) {
+        IndexNode inode = getInode(path);
+
+        if ((inode != null) && (inode.pos != -1)) {
+            long attrEx = ZipConstants.CENATX(cen, inode.pos);
+
+            return (attrEx & 0xF0000000L) ==  0xA0000000L;
+        }
+
+        return false;
+    }
 }
