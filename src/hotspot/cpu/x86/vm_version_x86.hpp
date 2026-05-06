@@ -949,6 +949,12 @@ public:
 
   static bool is_intel_darkmont();
 
+  static bool is_intel_modern_cpu() {
+    precond(is_intel()); // should be called only for intel CPU
+    // Efficient cores in hybrid CPU may not support hyper-threads.
+    return (supports_avx() || (supports_sse4_2() && (supports_ht() || supports_hybrid())));
+  }
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();
