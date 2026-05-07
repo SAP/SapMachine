@@ -2800,7 +2800,7 @@ void HeapDumper::set_error(char const* error) {
 void HeapDumper::dump_heap_from_oome() {
   // SapMachine 2024-05-10: HeapDumpPath for jcmd
   // SapMachine 2026-05-06: Handle HeapDumpOverwrite and HeapDumpParallelism.
-  HeapDumper::dump_heap(false, true, tty, .1, HeapDumpOverwrite, HeapDumpParallelism == 0 ?
+  HeapDumper::dump_heap(false, true, tty, -1, HeapDumpOverwrite, HeapDumpParallelism == 0 ?
                         HeapDumper::default_num_of_dump_threads(): HeapDumpParallelism);
 }
 
@@ -2812,7 +2812,7 @@ void HeapDumper::dump_heap_from_oome() {
 void HeapDumper::dump_heap() {
   // SapMachine 2024-05-10: HeapDumpPath for jcmd
   // SapMachine 2026-05-06: Handle HeapDumpOverwrite and HeapDumpParallelism.
-  HeapDumper::dump_heap(false, false, tty, .1, HeapDumpOverwrite, HeapDumpParallelism == 0 ?
+  HeapDumper::dump_heap(false, false, tty, -1, HeapDumpOverwrite, HeapDumpParallelism == 0 ?
                         HeapDumper::default_num_of_dump_threads() : HeapDumpParallelism);
 }
 
