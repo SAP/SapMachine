@@ -28,6 +28,8 @@
  *          sanity checks if a tool can be launched.
  * @modules jdk.compiler
  *          jdk.zipfs
+ * @comment SapMachine 2025-06-04: Don't run with a static jdk, since jar is missing.
+ * @requires !jdk.static
  * @compile VersionCheck.java
  * @run main VersionCheck
  */
@@ -62,7 +64,9 @@ public class VersionCheck extends TestHelper {
         "jweblauncher",
         "jpackage",
         "ssvagent",
-        "jwebserver"
+        "jwebserver",
+        // SapMachine 2024-10-07: asprof was added on some platforms but has different command line flags
+        "asprof"
     };
 
     // tools that do not accept -version
@@ -107,7 +111,9 @@ public class VersionCheck extends TestHelper {
         "rmiregistry",
         "serialver",
         "servertool",
-        "ssvagent"
+        "ssvagent",
+        // SapMachine 2024-10-07: asprof was added on some platforms but has different command line flags
+        "asprof"
     };
 
     // expected reference strings
