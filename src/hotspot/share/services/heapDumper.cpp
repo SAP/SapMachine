@@ -2642,9 +2642,9 @@ void VM_HeapDumper::dump_vthread(oop vt, AbstractDumpWriter* segment_writer) {
   // but have to end the current heap dump segment.
   if (!is_parallel_dump()) {
     segment_writer->finish_dump_segment();
+    thread_dumper.dump_stack_traces(writer(), _klass_map);
     thread_dumper.dump_thread_obj(segment_writer);
     thread_dumper.dump_stack_refs(segment_writer);
-    thread_dumper.dump_stack_traces(writer(), _klass_map);
 
     return;
   }
