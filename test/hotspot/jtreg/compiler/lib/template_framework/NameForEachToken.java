@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,21 +21,21 @@
  * questions.
  */
 
+package compiler.lib.template_framework;
 
-#include "Utilities.h"
-// Platform.java includes
-#include "com_sun_media_sound_Platform.h"
+import java.util.function.Function;
 
-/*
- * Declare library specific JNI_Onload entry if static build
+/**
+ * Represents the for-each execution of the provided function and (optional) hashtag replacement
+ * keys for name and type of each name.
  */
-DEF_STATIC_JNI_OnLoad
+record NameForEachToken<N>(
+        NameSet.Predicate predicate,
+        String name,
+        String type,
+        Function<N, ScopeToken> function) implements Token {
 
-/*
- * Class:     com_sun_media_sound_Platform
- * Method:    nIsBigEndian
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_sun_media_sound_Platform_nIsBigEndian(JNIEnv *env, jclass clss) {
-    return UTIL_IsBigEndianPlatform();
+    ScopeToken getScopeToken(Name n) {
+        return function().apply((N)n);
+    }
 }

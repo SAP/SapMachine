@@ -97,7 +97,7 @@ private:
   // regions, which are marked in the preselected_regions() indicator
   // array of the heap's collection set, which should be initialized
   // to false.
-  size_t select_aged_regions(size_t old_available);
+  size_t select_aged_regions(size_t old_promotion_reserve);
 
   size_t available(size_t capacity) const;
 
@@ -142,7 +142,7 @@ private:
   size_t soft_available() const override;
 
   size_t bytes_allocated_since_gc_start() const override;
-  void reset_bytes_allocated_since_gc_start();
+  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
   void increase_allocated(size_t bytes);
 
   // These methods change the capacity of the generation by adding or subtracting the given number of bytes from the current

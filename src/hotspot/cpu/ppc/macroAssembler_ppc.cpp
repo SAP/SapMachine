@@ -3436,23 +3436,19 @@ void MacroAssembler::store_klass_gap(Register dst_oop, Register val) {
   }
 }
 
-int MacroAssembler::instr_size_for_decode_klass_not_null() {
+int MacroAssembler::instr_size_for_load_klass() {
   static int computed_size = -1;
 
   // Not yet computed?
   if (computed_size == -1) {
 
-    if (!UseCompressedClassPointers) {
-      computed_size = 0;
-    } else {
-      // Determine by scratch emit.
-      ResourceMark rm;
-      int code_size = 8 * BytesPerInstWord;
-      CodeBuffer cb("decode_klass_not_null scratch buffer", code_size, 0);
-      MacroAssembler* a = new MacroAssembler(&cb);
-      a->decode_klass_not_null(R11_scratch1);
-      computed_size = a->offset();
-    }
+    // Determine by scratch emit.
+    ResourceMark rm;
+    int code_size = 16 * BytesPerInstWord;
+    CodeBuffer cb("load_klass scratch buffer", code_size, 0);
+    MacroAssembler* a = new MacroAssembler(&cb);
+    a->load_klass(R11_scratch1, R11_scratch1);
+    computed_size = a->offset();
   }
 
   return computed_size;
@@ -4752,7 +4748,7 @@ void MacroAssembler::push_cont_fastpath() {
   Label done;
   ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   cmpld(CR0, R1_SP, R0);
-  ble(CR0, done);
+  ble(CR0, done);          // if (SP <= _cont_fastpath) goto done;
   st_ptr(R1_SP, JavaThread::cont_fastpath_offset(), R16_thread);
   bind(done);
 }
@@ -4763,7 +4759,7 @@ void MacroAssembler::pop_cont_fastpath() {
   Label done;
   ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   cmpld(CR0, R1_SP, R0);
-  ble(CR0, done);
+  blt(CR0, done);          // if (SP < _cont_fastpath) goto done;
   li(R0, 0);
   st_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
   bind(done);
