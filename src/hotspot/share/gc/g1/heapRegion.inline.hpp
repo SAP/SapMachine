@@ -125,7 +125,7 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
   assert(!is_humongous(), "Humongous objects not handled here");
   bool obj_is_dead = is_obj_dead(obj, prev_bitmap);
 
-  if (ClassUnloading && obj_is_dead) {
+  if (obj_is_dead) {
     assert(!block_is_obj(addr), "must be");
     *size = block_size_using_bitmap(addr, prev_bitmap);
   } else {
@@ -142,25 +142,10 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
     assert(is_continues_humongous(), "This case can only happen for humongous regions");
     return (p == humongous_start_region()->bottom());
   }
-  // When class unloading is enabled it is not safe to only consider top() to conclude if the
-  // given pointer is a valid object. The situation can occur both for class unloading in a
-  // Full GC and during a concurrent cycle.
-  // During a Full GC regions can be excluded from compaction due to high live ratio, and
-  // because of this there can be stale objects for unloaded classes left in these regions.
-  // During a concurrent cycle class unloading is done after marking is complete and objects
-  // for the unloaded classes will be stale until the regions are collected.
-  if (ClassUnloading) {
-    return !g1h->is_obj_dead(cast_to_oop(p), this);
-  }
-  return p < top();
+  return !g1h->is_obj_dead(cast_to_oop(p), this);
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
-  assert(ClassUnloading,
-         "All blocks should be objects if class unloading isn't used, so this method should not be called. "
-         "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
-         "addr: " PTR_FORMAT,
-         p2i(bottom()), p2i(top()), p2i(end()), p2i(addr));
 
   // Old regions' dead objects may have dead classes
   // We need to find the next live object using the bitmap

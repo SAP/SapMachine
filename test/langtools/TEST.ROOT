@@ -15,7 +15,7 @@ keys=intermittent randomness
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=7.4+1
+requiredVersion=7.5.2+1
 
 # Use new module options
 useNewOptions=true

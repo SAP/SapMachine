@@ -52,9 +52,7 @@ public class TestGetFreeSwapSpaceSize {
                 "150M", Integer.toString(0)
             );
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 

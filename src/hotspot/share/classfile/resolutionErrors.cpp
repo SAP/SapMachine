@@ -46,7 +46,7 @@ void ResolutionErrorTable::add_entry(int index, unsigned int hash,
   entry->set_cp_index(cp_index);
   entry->set_error(error);
   entry->set_message(message);
-  entry->set_nest_host_error(NULL);
+  entry->init_nest_host_error(NULL);
   entry->set_cause(cause);
   entry->set_cause_msg(cause_msg);
 
@@ -63,7 +63,7 @@ void ResolutionErrorTable::add_entry(int index, unsigned int hash,
 
   ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<ConstantPool*, mtClass>::new_entry(hash, pool());
   entry->set_cp_index(cp_index);
-  entry->set_nest_host_error(message);
+  entry->init_nest_host_error(message);
   entry->set_error(NULL);
   entry->set_message(NULL);
   entry->set_cause(NULL);
@@ -112,6 +112,12 @@ void ResolutionErrorEntry::set_cause_msg(const char* c) {
 
 // The incoming nest host error message is already in the C-Heap.
 void ResolutionErrorEntry::set_nest_host_error(const char* message) {
+  assert(_nest_host_error == nullptr, "caller should have checked");
+  init_nest_host_error(message);
+}
+
+void ResolutionErrorEntry::init_nest_host_error(const char* message) {
+  assert_lock_strong(SystemDictionary_lock);
   _nest_host_error = message;
 }
 

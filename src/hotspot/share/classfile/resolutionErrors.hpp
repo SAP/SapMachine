@@ -122,6 +122,7 @@ class ResolutionErrorEntry : public HashtableEntry<ConstantPool*, mtClass> {
   void               set_cause_msg(const char* c);
 
   const char*        nest_host_error() const    { return _nest_host_error; }
+  void               init_nest_host_error(const char* message);
   // The incoming nest host error message is already in the C-Heap.
   void               set_nest_host_error(const char* message);
 

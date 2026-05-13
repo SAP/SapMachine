@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.Vector;
 import javax.security.auth.x500.X500Principal;
 
 import javax.net.ssl.*;
+import sun.net.util.IPAddressUtil;
 import sun.net.www.http.HttpClient;
 import sun.net.www.protocol.http.AuthenticatorKeys;
 import sun.net.www.protocol.http.HttpURLConnection;
@@ -577,7 +578,13 @@ final class HttpsClient extends HttpClient
                     SSLParameters paramaters = s.getSSLParameters();
                     paramaters.setEndpointIdentificationAlgorithm("HTTPS");
                     // host has been set previously for SSLSocketImpl
-                    if (!(s instanceof SSLSocketImpl)) {
+                    if (!(s instanceof SSLSocketImpl)&&
+                            !IPAddressUtil.isIPv4LiteralAddress(host) &&
+                            !(host.charAt(0) == '[' && host.charAt(host.length() - 1) == ']' &&
+                                IPAddressUtil.isIPv6LiteralAddress(host.substring(1, host.length() - 1))
+                            )) {
+                        // Fully qualified DNS hostname of the server, as per section 3, RFC 6066
+                        // Literal IPv4 and IPv6 addresses are not permitted in "HostName".
                         paramaters.setServerNames(List.of(new SNIHostName(host)));
                     }
                     s.setSSLParameters(paramaters);

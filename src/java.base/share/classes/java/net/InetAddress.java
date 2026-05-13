@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,8 +165,8 @@ import sun.nio.cs.UTF_8;
  * caching. Likewise, a system admin can configure a different
  * negative caching TTL value when needed.
  *
- * <p> Two Java security properties control the TTL values used for
- *  positive and negative host name resolution caching:
+ * <p> Two Java {@linkplain java.security.Security security} properties control
+ *  the TTL values used for positive and negative host name resolution caching:
  *
  * <dl style="margin-left:2em">
  * <dt><b>networkaddress.cache.ttl</b></dt>
