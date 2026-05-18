@@ -22,6 +22,8 @@
  */
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
@@ -42,16 +44,16 @@ import jdk.test.lib.hprof.parser.Reader;
 class ArrayAllocApp extends LingeredApp {
     public static int arraySize = 54321;
 
-    public static void main(String[] args) {
-        boolean[] za = new boolean[arraySize];
-        byte[] ba = new byte[arraySize];
-        short[] sa = new short[arraySize];
-        char[] ca = new char[arraySize];
-        int[] ia = new int[arraySize];
-        long[] ja = new long[arraySize];
-        float[] fa = new float[arraySize];
-        double[] da = new double[arraySize];
+    public static boolean[] za = new boolean[arraySize];
+    public static byte[] ba = new byte[arraySize];
+    public static short[] sa = new short[arraySize];
+    public static char[] ca = new char[arraySize];
+    public static int[] ia = new int[arraySize];
+    public static long[] ja = new long[arraySize];
+    public static float[] fa = new float[arraySize];
+    public static double[] da = new double[arraySize];
 
+    public static void allocArrays() {
         for (int i = 0; i < arraySize; ++i) {
             za[i] = true;
             ba[i] = (byte) 1;
@@ -62,7 +64,19 @@ class ArrayAllocApp extends LingeredApp {
             fa[i] = 1.0f;
             da[i] = 1.0;
         }
+    }
+    public static void main(String[] args) {
+        allocArrays();
         LingeredApp.main(args);
+    }
+}
+
+class ArrayAllocOOMApp extends ArrayAllocApp {
+    public static int arraySize = 54321;
+
+    public static void main(String[] args) {
+        allocArrays();
+        byte[] b = new byte[2000000000];
     }
 }
 
@@ -71,18 +85,45 @@ public class PartialArrayContentTest {
     private static int nonCharLikeLimit = 80;
 
     public static void main(String[] args) throws Exception {
-        File dumpFile = new File("partialarrays.hprof");
-        createDump(dumpFile);
-        verifyDump(dumpFile);
+        checkPartialContentWithJcmd();
+        checkPartialContentWithOOM();
     }
 
-    private static void createDump(File dumpFile) throws Exception {
-        LingeredApp theApp = null;
-        try {
-            theApp = new ArrayAllocApp();
-            LingeredApp.startApp(theApp, "-XX:+LimitPrimArrayContentInHeapDump", 
+    public static void checkPartialContentWithJcmd() throws Exception {
+        File dumpFile = new File("partialarrays_with_jcmd.hprof");
+        createDump(dumpFile, true,
+                "-Xmx500M",
+                "-XX:+LimitPrimArrayContentInHeapDump",
                 "-XX:StringLikeContentSizeLimitInHeapDump=" + charLikeLimit,
                 "-XX:ArrayContentSizeLimitInHeapDump=" + nonCharLikeLimit);
+        verifyDump(dumpFile, true);
+    }
+
+    public static void checkPartialContentWithOOM() throws Exception {
+        // Check -XX:+HeapDumpOverwrite and -XX:HeapDumpParallelism too.
+        File dumpFile = new File("partialarrays_with_oom.hprof");
+        FileOutputStream fos = new FileOutputStream(dumpFile);
+        fos.close();
+        File firstSegment = new File(dumpFile + ".p0");
+        fos = new FileOutputStream(firstSegment);
+        fos.close();
+        createDump(dumpFile, false,
+                "-Xmx500M",
+                "-XX:+HeapDumpOnOutOfMemoryError",
+                "-XX:HeapDumpPath=" + dumpFile,
+                "-XX:+HeapDumpOverwrite",
+                "-XX:HeapDumpParallelism=1");
+        verifyDump(dumpFile, false);
+        Asserts.assertTrue(firstSegment.exists(), "Segment file should not have been created (parallelism=1).");
+        Asserts.assertEquals(firstSegment.length(), 0L, "Segment should not be modified.");
+    }
+
+    private static void createDump(File dumpFile, boolean useJcmd, String... vmArgs) throws Exception {
+        LingeredApp theApp = null;
+        try {
+            theApp = useJcmd ? new ArrayAllocApp() : new ArrayAllocOOMApp();
+            LingeredApp.startApp(theApp, vmArgs);
+            Asserts.assertTrue(useJcmd, "startApp() should throw when OOM.");
 
             //jcmd <pid> GC.heap_dump <file_path>
             JDKToolLauncher launcher = JDKToolLauncher
@@ -100,12 +141,16 @@ public class PartialArrayContentTest {
             }
 
             Asserts.assertEquals(p.exitValue(), 0);
+        } catch (IOException e) {
+            Asserts.assertFalse(useJcmd, "We expect to fail when throwing OOM.");
         } finally {
-            LingeredApp.stopApp(theApp);
+            if (useJcmd) {
+                LingeredApp.stopApp(theApp);
+            }
         }
     }
 
-    private static void verifyDump(File dumpFile) throws Exception {
+    private static void verifyDump(File dumpFile, boolean isPartial) throws Exception {
         Asserts.assertTrue(dumpFile.exists(), "Heap dump file not found.");
 
         try (Snapshot snapshot = Reader.readFile(dumpFile.getPath(), true, 0)) {
@@ -165,11 +210,13 @@ public class PartialArrayContentTest {
                             break;
                     }
 
-                    for (int i = 0; i < limit; ++i) {
+                    int fullPart = isPartial ? limit : values.length;
+
+                    for (int i = 0; i < fullPart; ++i) {
                         Asserts.assertEquals(exp1, values[i].toString());
                     }
 
-                    for (int i = limit; i < ArrayAllocApp.arraySize; ++i) {
+                    for (int i = fullPart; i < ArrayAllocApp.arraySize; ++i) {
                         Asserts.assertEquals(exp2, values[i].toString());
                     }
                 }
