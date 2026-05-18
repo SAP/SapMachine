@@ -718,8 +718,8 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* SapMachine 2026-05-06: Allow to overwrite the heap dump file. */       \
   product(bool, HeapDumpOverwrite, false, MANAGEABLE,                       \
-          "If enabled, the heap dump of out of memory error can overwrite " \
-          "an already existing heap dump file.")                            \
+          "If enabled, the heap dump on out of memory error can "           \
+          "overwrite an already existing file.")                            \
                                                                             \
   /* SapMachine 2026-05-06: Sets the parallelism of the heap dump. */       \
   product(uint, HeapDumpParallelism, 0, MANAGEABLE,                         \
@@ -736,8 +736,8 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* SAPJVM 2026-05-06: Allow to skip content of large arrays in dumps.*/   \
   product(int, StringLikeContentSizeLimitInHeapDump, 120, MANAGEABLE,       \
-          "The number of entries in a primitive char and bytes arrays to "  \
-          "not skip in a heap dump when ArrayContentSizeLimitInHeapDump "   \
+          "The number of entries in primitive char and bytes arrays to "    \
+          "not skip in a heap dump when LimitPrimArrayContentInHeapDump "   \
           "is enabled.")                                                    \
           range(0, 100000)                                                  \
                                                                             \
@@ -745,7 +745,7 @@ const int ObjectAlignmentInBytes = 8;
   product(int, ArrayContentSizeLimitInHeapDump, 50, MANAGEABLE,             \
           "The number of entries in a primitive array other than char and " \
           "byte arrays to not skip in a heap dump when "                    \
-          "ArrayContentSizeLimitInHeapDump is enabled.")                    \
+          "LimitPrimArrayContentInHeapDump is enabled.")                    \
           range(0, 100000)                                                  \
                                                                             \
   product(ccstr, NativeMemoryTracking, DEBUG_ONLY("summary") NOT_DEBUG("off"), \
