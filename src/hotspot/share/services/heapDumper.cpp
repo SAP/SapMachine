@@ -1407,7 +1407,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     if (length > limit) {
       fill_with_zero = length - limit;
       length = limit;
-      length_in_bytes = length * type_size;
+      length_in_bytes = (u4) length * type_size;
     }
   }
 
@@ -1480,7 +1480,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
 
   // SAPJVM 2026-05-06: Fill with zeros, if we don't dump the whole content of the array.
   if (fill_with_zero > 0) {
-    writer->write_zero(fill_with_zero * type_size);
+    writer->write_zero((u4) fill_with_zero * type_size);
   }
 
   writer->end_sub_record();

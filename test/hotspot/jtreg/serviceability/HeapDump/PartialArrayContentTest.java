@@ -73,16 +73,20 @@ class ArrayAllocApp extends LingeredApp {
 
 class ArrayAllocOOMApp extends ArrayAllocApp {
     public static int arraySize = 54321;
+    // The size of the short array to be slightly larger than 2 GB.
+    public static int largestArraySize = Integer.MAX_VALUE / 2 + 100;
+    public static short[] largeArray;
 
     public static void main(String[] args) {
         allocArrays();
-        byte[] b = new byte[2000000000];
+        largeArray = new short[largestArraySize];
+        byte[] b = new byte[largestArraySize];
     }
 }
 
 public class PartialArrayContentTest {
     private static int charLikeLimit = 120;
-    private static int nonCharLikeLimit = 80;
+    private static int nonCharLikeLimit = 50;
 
     public static void main(String[] args) throws Exception {
         checkPartialContentWithJcmd();
@@ -116,6 +120,15 @@ public class PartialArrayContentTest {
         verifyDump(dumpFile, false);
         Asserts.assertTrue(firstSegment.exists(), "Segment file should not have been created (parallelism=1).");
         Asserts.assertEquals(firstSegment.length(), 0L, "Segment should not be modified.");
+        // Create a dump with an array > 2GB to check for integer overflows in the partial array code.
+        createDump(dumpFile, false,
+                "-Xmx2500M",  // Ensures the 2 billion entry short array is in the heap dump.
+                "-XX:+HeapDumpOnOutOfMemoryError",
+                "-XX:HeapDumpPath=" + dumpFile,
+                "-XX:+HeapDumpOverwrite",
+                "-XX:+LimitPrimArrayContentInHeapDump");
+        int largestArraySize = verifyDump(dumpFile, true);
+        Asserts.assertEquals(largestArraySize, ArrayAllocOOMApp.largestArraySize);
     }
 
     private static void createDump(File dumpFile, boolean useJcmd, String... vmArgs) throws Exception {
@@ -150,8 +163,9 @@ public class PartialArrayContentTest {
         }
     }
 
-    private static void verifyDump(File dumpFile, boolean isPartial) throws Exception {
+    private static int verifyDump(File dumpFile, boolean isPartial) throws Exception {
         Asserts.assertTrue(dumpFile.exists(), "Heap dump file not found.");
+        int largestArraySize = 0;
 
         try (Snapshot snapshot = Reader.readFile(dumpFile.getPath(), true, 0)) {
             snapshot.resolve(true);
@@ -171,6 +185,8 @@ public class PartialArrayContentTest {
 
                 if (obj instanceof JavaValueArray) {
                     JavaValueArray array = (JavaValueArray) obj;
+
+                    largestArraySize = Math.max(largestArraySize, array.getLength());
 
                     if (array.getLength() != ArrayAllocApp.arraySize) {
                         continue;
@@ -224,5 +240,7 @@ public class PartialArrayContentTest {
 
             Asserts.assertTrue(expectedTypes.isEmpty());
         }
+
+        return largestArraySize;
     }
 }
