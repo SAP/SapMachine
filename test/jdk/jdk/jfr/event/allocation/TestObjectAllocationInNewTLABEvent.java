@@ -86,7 +86,7 @@ public class TestObjectAllocationInNewTLABEvent {
         allocate();
         recording.stop();
         verifyRecording(recording);
-        int minCount = (int) floor(OBJECTS_TO_ALLOCATE * 0.80);
+        int minCount = (int) floor(OBJECTS_TO_ALLOCATE * 0.75);
         Asserts.assertGreaterThanOrEqual(countAllTlabs, minCount, "Too few tlab objects allocated");
         Asserts.assertLessThanOrEqual(countAllTlabs, OBJECTS_TO_ALLOCATE, "Too many tlab objects allocated");
 
