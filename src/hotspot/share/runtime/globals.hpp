@@ -728,15 +728,15 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* SAPJVM 2026-05-06: Allow to skip content of large arrays in dumps.*/   \
   product(bool, LimitPrimArrayContentInHeapDump, false, MANAGEABLE,         \
-          "If enabled, the content of primitive arrays in not completely "  \
+          "If enabled, the content of primitive arrays is not completely "  \
           "written to a heap dump for large arrays. Note that this only "   \
-          "really safes space, if the compression of the heap dump is "     \
+          "really saves space, if the compression of the heap dump is "     \
           "enabled too, since the skipped elements are written as "         \
           "0 or false.")                                                    \
                                                                             \
   /* SAPJVM 2026-05-06: Allow to skip content of large arrays in dumps.*/   \
   product(int, StringLikeContentSizeLimitInHeapDump, 120, MANAGEABLE,       \
-          "The number of entries in primitive char and bytes arrays to "    \
+          "The number of entries in primitive char and byte arrays to "     \
           "not skip in a heap dump when LimitPrimArrayContentInHeapDump "   \
           "is enabled.")                                                    \
           range(0, 100000)                                                  \
