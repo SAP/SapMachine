@@ -47,12 +47,14 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 111;
+    // SapMachine 2021-09-23: Additional certificate for SAP
+    private static final int COUNT = 112;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
+    // SapMachine 2021-09-23: Additional certificate for SAP
     private static final String CHECKSUM
-            = "26:75:A0:AA:6E:7C:15:8B:BC:CF:11:81:38:3E:E7:94:31:9E:36:2D:F9:A6:BC:88:E1:A5:F8:46:9A:4C:1D:D7";
+            = "46:B4:9E:42:70:3A:8A:AA:28:88:21:EE:DA:1B:4A:9B:6F:0C:C6:5F:D4:58:31:F7:A5:DB:9E:1B:5E:43:A8:9D";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -117,6 +119,8 @@ public class VerifyCACerts {
                     "B4:78:B8:12:25:0D:F8:78:63:5C:2A:A7:EC:7D:15:5E:AA:62:5E:E8:29:16:E2:CD:29:43:61:88:6C:D1:FB:D4");
             put("geotrustuniversalca [jdk]",
                     "A0:45:9B:9F:63:B2:25:59:F5:FA:5D:4C:6D:B3:F9:F7:2F:F1:93:42:03:35:78:F0:73:BF:1D:1B:46:CB:B9:12");
+            put("sapglobalrootca [jdk]",
+                    "56:53:9C:1E:7B:5E:D5:58:2B:79:68:00:61:CB:F2:14:86:A8:50:22:6B:2F:CF:30:B5:B1:52:A7:20:E1:34:DE");
             put("thawteprimaryrootca [jdk]",
                     "8D:72:2F:81:A9:C1:13:C0:79:1D:F1:36:A2:96:6D:B2:6C:95:0A:97:1D:B4:6B:41:99:F4:EA:54:B7:8B:FB:9F");
             put("thawteprimaryrootcag2 [jdk]",

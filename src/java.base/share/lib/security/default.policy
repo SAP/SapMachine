@@ -201,6 +201,12 @@ grant codeBase "jrt:/jdk.naming.dns" {
     permission java.security.AllPermission;
 };
 
+// SapMachine 2024-06-12: process group extension
+grant codeBase "jrt:/jdk.sapext" {
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.access";
+};
+
 grant codeBase "jrt:/jdk.scripting.nashorn" {
     permission java.security.AllPermission;
 };
@@ -219,6 +225,8 @@ grant codeBase "jrt:/jdk.security.jgss" {
 
 grant codeBase "jrt:/jdk.zipfs" {
     permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
+    // SapMachine 2026-04-13: symlink support for zipfs entries in sapext.
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission "fileSystemProvider";
     permission java.lang.RuntimePermission "accessUserInformation";
     permission java.util.PropertyPermission "os.name", "read";
