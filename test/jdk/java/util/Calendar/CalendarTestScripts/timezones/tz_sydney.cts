@@ -1,5 +1,0 @@
-#
-#
-#
-
-timezone Australia/Sydney

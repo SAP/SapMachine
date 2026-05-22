@@ -1,4 +1,0 @@
-/* /nodynamiccopyright/ */
-
-module m2 {
-}

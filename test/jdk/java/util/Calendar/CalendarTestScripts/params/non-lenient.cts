@@ -1,5 +1,0 @@
-#
-#
-#
-
-set non-lenient

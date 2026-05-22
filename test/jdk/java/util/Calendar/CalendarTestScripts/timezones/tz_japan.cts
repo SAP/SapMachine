@@ -1,5 +1,0 @@
-#
-#
-#
-
-timezone Asia/Tokyo

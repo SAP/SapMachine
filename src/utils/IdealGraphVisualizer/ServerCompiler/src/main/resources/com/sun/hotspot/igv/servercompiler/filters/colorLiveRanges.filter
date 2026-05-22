@@ -1,3 +1,0 @@
-// Fade out live ranges allocated to stack lots.
-
-colorizeLiveRange(matchesLiveRange("mask", "\\[rS.+\\]"), Color.LIGHT_GRAY);
