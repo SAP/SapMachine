@@ -43,6 +43,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
+// SapMachine 2021-05-21
+#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
@@ -65,6 +68,11 @@
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
+#endif
+
+// SapMachine 2023-08-15: malloc trace
+#if defined(LINUX) || defined(__APPLE__)
+#include "malloctrace/mallocTracePosix.hpp"
 #endif
 
 #include <stdarg.h>
@@ -233,6 +241,13 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
+  // SapMachine 2023-11-03: Check if we should to an emergency dump for the malloc trace.
+#if defined(LINUX) || defined(__APPLE__)
+  if ((vm_err_type == OOM_MALLOC_ERROR) || (vm_err_type == OOM_MMAP_ERROR)) {
+    sap::MallocStatistic::emergencyDump();
+  }
+#endif
+
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 
@@ -274,6 +289,22 @@ void report_java_out_of_memory(const char* message) {
   // commands multiple times we just do it once when the first thread that reports
   // the error.
   if (out_of_memory_reported.compare_set(false, true)) {
+
+    // SapMachine 2021-05-21: If any one of the xxxOnOutOfMemoryError is specified,
+    //  print stack to stdout. Do this before any subsequent handling - this is the
+    //  most important information.
+    if ((HeapDumpOnOutOfMemoryError) ||
+        (OnOutOfMemoryError && OnOutOfMemoryError[0]) ||
+        CrashOnOutOfMemoryError || ExitOnOutOfMemoryError) {
+      VMError::print_stack(tty);
+    }
+
+    // SapMachine 2021-05-21: If we crash due to CrashOnOutOfMemoryError, deactivate
+    //  cores unless they had been explicitly enabled.
+    if (CrashOnOutOfMemoryError && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+      FLAG_SET_ERGO(CreateCoredumpOnCrash, false);
+    }
+
     // create heap dump before OnOutOfMemoryError commands are executed
     if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
