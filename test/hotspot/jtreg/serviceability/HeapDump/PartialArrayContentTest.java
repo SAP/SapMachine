@@ -97,7 +97,7 @@ public class PartialArrayContentTest {
         File dumpFile = new File("partialarrays_with_jcmd.hprof");
         createDump(dumpFile, true,
                 "-Xmx500M",
-                "-XX:+LimitPrimArrayContentInHeapDump",
+                "-XX:+LimitPrimitiveArrayContentInHeapDump",
                 "-XX:StringLikeContentSizeLimitInHeapDump=" + charLikeLimit,
                 "-XX:ArrayContentSizeLimitInHeapDump=" + nonCharLikeLimit);
         verifyDump(dumpFile, true);
@@ -126,7 +126,7 @@ public class PartialArrayContentTest {
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=" + dumpFile,
                 "-XX:+HeapDumpOverwrite",
-                "-XX:+LimitPrimArrayContentInHeapDump");
+                "-XX:+LimitPrimitiveArrayContentInHeapDump");
         int largestArraySize = verifyDump(dumpFile, true);
         Asserts.assertEquals(largestArraySize, ArrayAllocOOMApp.largestArraySize);
     }

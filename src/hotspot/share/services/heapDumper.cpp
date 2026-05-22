@@ -441,7 +441,7 @@ class AbstractDumpWriter : public CHeapObj<mtInternal> {
   void write_symbolID(Symbol* o);
   void write_classID(Klass* k);
   void write_id(u4 x);
-  // SAPJVM 2026-05-06: Writes zeros to the buffer.
+  // SapMachine 2026-05-06: Writes zeros to the buffer.
   void write_zero(size_t len);
 
   // Start a new sub-record. Starts a new heap dump segment if needed.
@@ -541,7 +541,7 @@ void AbstractDumpWriter::write_id(u4 x) {
 #endif
 }
 
-// SAPJVM 2026-05-06: Writes zeros to the buffer.
+// SapMachine 2026-05-06: Writes zeros to the buffer.
 void AbstractDumpWriter::write_zero(size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
   DEBUG_ONLY(_sub_record_left -= len);
@@ -1396,8 +1396,8 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     return;
   }
 
-  // SAPJVM 2026-05-06: If enabled, we don't dump the whole content of large arrays, but just the start.
-  if (LimitPrimArrayContentInHeapDump) {
+  // SapMachine 2026-05-06: If enabled, we don't dump the whole content of large arrays, but just the start.
+  if (LimitPrimitiveArrayContentInHeapDump) {
     int limit = ArrayContentSizeLimitInHeapDump;
 
     if (type == T_BYTE || type == T_CHAR) {
@@ -1478,7 +1478,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     default : ShouldNotReachHere();
   }
 
-  // SAPJVM 2026-05-06: Fill with zeros, if we don't dump the whole content of the array.
+  // SapMachine 2026-05-06: Fill with zeros, if we don't dump the whole content of the array.
   if (fill_with_zero > 0) {
     writer->write_zero((u4) fill_with_zero * type_size);
   }
