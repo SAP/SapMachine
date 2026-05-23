@@ -27,6 +27,7 @@
 #include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/globals_extension.hpp"
@@ -129,7 +130,7 @@ void VM_Version::initialize() {
   }
 
   if (PowerArchitecturePPC64 >= 8) {
-    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVSX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
   } else {

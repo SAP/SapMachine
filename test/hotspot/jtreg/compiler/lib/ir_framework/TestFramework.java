@@ -158,6 +158,7 @@ public class TestFramework {
     private Set<Integer> scenarioIndices;
     private List<String> flags;
     private int defaultWarmup = -1;
+    private boolean testClassesOnBootClassPath;
 
     /*
      * Public interface methods
@@ -305,6 +306,15 @@ public class TestFramework {
                              "Cannot define two scenarios with the same index " + scenarioIndex);
             this.scenarios.add(scenario);
         }
+        return this;
+    }
+
+    /**
+     * Add test classes to boot classpath. This adds all classes found on path {@link jdk.test.lib.Utils#TEST_CLASSES}
+     * to the boot classpath with "-Xbootclasspath/a". This is useful when trying to run tests in a privileged mode.
+     */
+    public TestFramework addTestClassesToBootClassPath() {
+        this.testClassesOnBootClassPath = true;
         return this;
     }
 
@@ -695,7 +705,8 @@ public class TestFramework {
     }
 
     private void runTestVM(List<String> additionalFlags) {
-        TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup);
+        TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
+                                                        testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
                 new IRMatcher(testVMProcess.getHotspotPidFileName(), testVMProcess.getIrEncoding(), testClass);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,21 @@
  * questions.
  */
 
- /*
- * @test
- * @summary Running with NMT summary should not result in an error
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver CommandLineSummary
+package compiler.lib.ir_framework;
+
+/**
+ * Info optionally passed to {@link Setup} annotated methods.
+ *
+ * @see Setup
  */
+public record SetupInfo(int invocationCounter) {
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
-public class CommandLineSummary {
-
-    public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-Xlog:nmt=warning",
-            "-XX:NativeMemoryTracking=summary",
-            "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("NMT initialization failed");
-        output.shouldNotContain("Could not create the Java Virtual Machine.");
-        output.shouldHaveExitValue(0);
+    /**
+     * Get the invocation counter, which increments with every invocation of the setup method. It allows the creation
+     * of deterministically different inputs to the test method for every invocation.
+     */
+    @Override
+    public int invocationCounter() {
+        return invocationCounter;
     }
 }
