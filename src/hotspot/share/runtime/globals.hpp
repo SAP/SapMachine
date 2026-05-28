@@ -725,6 +725,7 @@ const int ObjectAlignmentInBytes = 8;
   product(uint, HeapDumpParallelism, 0, MANAGEABLE,                         \
           "Sets the parallelism of the heap dump creation. 0 means to let  "\
           "the VM decide.")                                                 \
+          range(0, 100000)                                                  \
                                                                             \
   /* SapMachine 2026-05-06: Allow to skip content of arrays in dumps.*/     \
   product(bool, LimitPrimitiveArrayContentInHeapDump, false, MANAGEABLE,    \
