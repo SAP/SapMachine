@@ -2244,12 +2244,12 @@ void DumpMerger::merge_file(const char* path) {
 #endif
 
 void DumpMerger::do_merge() {
+  TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
+
   // SapMachine 2026-05-06: No need to merge a non-parallel heap dump.
   if (_dump_seq <= 1) {
     return;
   }
-
-  TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
 
   // Since contents in segmented heap file were already zipped, we don't need to zip
   // them again during merging.
