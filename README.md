@@ -1,4 +1,13 @@
-[![GitHub release (latest by date)](https://img.shields.io/github/downloads/sap/sapmachine/latest/total?label=Downloads%20of%20Latest%20Release)](https://sapmachine.io/#download) [![DockerPulls](https://img.shields.io/docker/pulls/_/sapmachine?label=Docker%20Pulls)](https://hub.docker.com/_/sapmachine)
+<script type="module" src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"></script>
+<ms-store-badge
+	productid="9nblggh4nns1"
+	productname="App Installer"
+	window-mode="MANUAL"
+	theme="Settings"
+	size="large"
+	language="en-us"
+	animation="on">
+</ms-store-badge>
 
 <img align="right" width=350 src="https://sapmachine.io/assets/images/logo_circular.svg">
 
@@ -7,7 +16,10 @@ SapMachine is a downstream fork of the [OpenJDK](https://openjdk.org/) project, 
 
 SAP is committed to the ongoing success of the Java platform and the OpenJDK project, maintaining SapMachine in an OpenJDK-upstream-first model. Additional information regarding SAP's engagement in OpenJDK is available on the [SAP OpenJDK Engagement page](https://sapmachine.io/docs/sap-in-openjdk).
 
-Further details about SapMachine, including *installation instructions*, *frequently asked questions*, *the maintenance and support statement*, can be found on the [documentation pages](https://sapmachine.io/docs).
+
+details on App settings SapMachine, including *installation instructions*, *frequently asked questions*, *the maintenance and support statement*, can be found on the [documentation pages]
+gcloud projects add-iam-policy-binding 
+resonant-tower-497421-f0 \     --member="user:Countryiview@gmail.com" \     --role="roles/iam.serviceAccountViewer" 
 
 ## Issues
 For SapMachine-specific concerns, please file a [new issue](https://github.com/SAP/SapMachine/issues/new).
