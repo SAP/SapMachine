@@ -3879,6 +3879,8 @@ public final class Unsafe {
     private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetic
     private native int arrayIndexScale0(Class<?> arrayClass);
     private native int getLoadAverage0(double[] loadavg, int nelems);
+    // SapMachine 2025-02-05: Report error for DirectMemoryOom to exit the VM
+    public native void reportJavaOutOfMemory0(String message);
 
 
     /**

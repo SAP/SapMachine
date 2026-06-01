@@ -20,6 +20,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# SapMachine 2025-12-10 Changed description of UseTransparentHugePages which is
+# tested by us.
 
 title: 'JAVA(1) JDK @@VERSION_SHORT@@ | JDK Commands'
 date: @@COPYRIGHT_YEAR@@
@@ -1576,9 +1578,11 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
 [`-XX:+UseTransparentHugePages`]{#-XX__UseTransparentHugePages}
 :   **Linux only:** Enables the use of large pages that can dynamically grow or
-    shrink. This option is disabled by default. You may encounter performance
-    problems with transparent huge pages as the OS moves other pages around to
-    create huge pages; this option is made available for experimentation.
+    shrink. The VM may enable this option by default in some environments. You
+    may encounter performance problems with transparent huge pages as the OS
+    moves other pages around to create huge pages. You may encounter other
+    performance problems when only small pages are used as the OS needs to
+    maintain a large page table and address translations may become slow.
 
 [`-XX:+AllowUserSignalHandlers`]{#-XX__AllowUserSignalHandlers}
 :   **Non-Windows:** Enables installation of signal handlers by the application. By default,

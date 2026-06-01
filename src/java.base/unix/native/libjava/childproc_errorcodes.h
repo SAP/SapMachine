@@ -109,6 +109,9 @@ bool sendAlivePing(int fd);
 /* Failed to change signal disposition for SIGPIPE to default */
 #define ESTEP_SET_SIGPIPE                       20
 
+/* SapMachine 2024-06-12: process group extension */
+#define ESTEP_SETPGID_FAIL                      29
+
 /* Expand if needed ... */
 
 /* All modes: exec() failed */
