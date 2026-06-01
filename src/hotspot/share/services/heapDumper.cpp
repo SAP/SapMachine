@@ -1394,7 +1394,8 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     return;
   }
 
-  // SapMachine 2026-05-06: If enabled, we don't dump the whole content of large arrays, but just the start.
+  // SapMachine 2026-05-06: If enabled, we don't dump the whole content of large arrays, but just the start
+  // and fill the rest with zeroes.
   int fill_with_zero = 0;
 
   if (LimitPrimitiveArrayContentInHeapDump) {
