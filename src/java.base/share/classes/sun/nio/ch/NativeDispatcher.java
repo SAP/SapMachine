@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ abstract class NativeDispatcher {
     // that's already closed.  This is necessary on some operating systems
     // (Solaris and Linux) to prevent fd recycling.
     //
-    void preClose(FileDescriptor fd) throws IOException {
+    void preClose(FileDescriptor fd, long reader, long writer) throws IOException {
         // Do nothing by default; this is only needed on Unix
     }
 

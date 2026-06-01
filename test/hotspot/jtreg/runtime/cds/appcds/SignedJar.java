@@ -49,7 +49,7 @@ public class SignedJar {
         // instead of from the shared archive since a class from a signed
         // jar shouldn't be dumped into the archive.
         output = TestCommon.exec(signedJar, "-verbose:class", "Hello");
-        String expectedOutput = ".class,load. Hello source: file:.*signed_hello.jar";
+        String expectedOutput = ".class,load\s*. Hello source: file:.*signed_hello.jar";
 
         try {
             output.shouldMatch(expectedOutput);

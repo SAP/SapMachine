@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,11 +121,7 @@ class SourceChannelImpl
             assert state < ST_CLOSING;
             state = ST_CLOSING;
             if (!tryClose()) {
-                long th = thread;
-                if (th != 0) {
-                    nd.preClose(fd);
-                    NativeThread.signal(th);
-                }
+                nd.preClose(fd, thread, 0);
             }
         }
     }

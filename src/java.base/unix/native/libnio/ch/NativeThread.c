@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,4 +88,13 @@ Java_sun_nio_ch_NativeThread_signal(JNIEnv *env, jclass cl, jlong thread)
     if (ret != 0)
 #endif
         JNU_ThrowIOExceptionWithLastError(env, "Thread signal failed");
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_NativeThread_supportPendingSignals0(JNIEnv *env, jclass cl) {
+#if defined(_AIX)
+    return JNI_TRUE;
+#else
+    return JNI_FALSE;
+#endif
 }

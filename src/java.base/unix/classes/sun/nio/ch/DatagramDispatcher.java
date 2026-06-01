@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ class DatagramDispatcher extends NativeDispatcher {
         FileDispatcherImpl.close0(fd);
     }
 
-    void preClose(FileDescriptor fd) throws IOException {
-        FileDispatcherImpl.preClose0(fd);
+    void preClose(FileDescriptor fd, long reader, long writer) throws IOException {
+        FileDispatcherImpl.preCloseImpl(fd, reader, writer);
     }
 
     void dup(FileDescriptor fd1, FileDescriptor fd2) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -909,13 +909,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             // then the socket is pre-closed and the thread(s) signalled. The
             // last thread will close the file descriptor.
             if (!tryClose()) {
-                nd.preClose(fd);
-                long reader = readerThread;
-                if (reader != 0)
-                    NativeThread.signal(reader);
-                long writer = writerThread;
-                if (writer != 0)
-                    NativeThread.signal(writer);
+                nd.preClose(fd, readerThread, writerThread);
             }
         }
     }
