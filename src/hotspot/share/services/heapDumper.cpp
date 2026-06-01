@@ -1379,8 +1379,6 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
 
   int length = calculate_array_max_length(writer, array, header_size);
   int type_size = type2aelembytes(type);
-  // SapMachine 2026-05-06
-  int fill_with_zero = 0;
   u4 length_in_bytes = (u4)length * type_size;
   u4 size = header_size + length_in_bytes;
 
@@ -1397,6 +1395,8 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
   }
 
   // SapMachine 2026-05-06: If enabled, we don't dump the whole content of large arrays, but just the start.
+  int fill_with_zero = 0;
+
   if (LimitPrimitiveArrayContentInHeapDump) {
     int limit = ArrayContentSizeLimitInHeapDump;
 

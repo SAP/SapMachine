@@ -72,7 +72,6 @@ class ArrayAllocApp extends LingeredApp {
 }
 
 class ArrayAllocOOMApp extends ArrayAllocApp {
-    public static int arraySize = 54321;
     // The size of the short array to be slightly larger than 2 GB.
     public static int largestArraySize = Integer.MAX_VALUE / 2 + 100;
     public static short[] largeArray;
