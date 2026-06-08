@@ -26,7 +26,9 @@
 package java.io;
 
 import java.util.*;
+import java.lang.annotation.Native;
 import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.StreamDecoder;
@@ -309,6 +311,51 @@ public final class Console implements Flushable
     *          or {@code null} if an end of stream has been reached.
     */
     public char[] readPassword(String fmt, Object ... args) {
+        return readPassword0(false, fmt, args);
+    }
+
+    // These two methods are intended for sun.security.util.Password, so tools like keytool can
+    // use Console even when standard output is redirected. The Password class should first
+    // check if `System.console()` returns a Console instance and use it if available. Otherwise,
+    // it should call this method to obtain a Console. This ensures only one Console
+    // instance exists in the Java runtime.
+    private static final AtomicReference<Optional<Console>> INSTANCE = new AtomicReference<>();
+    private static Optional<Console> passwordConsole() {
+         Optional<Console> result = INSTANCE.get();
+         if (result != null) {
+             return result;
+         }
+
+         synchronized (Console.class) {
+             result = INSTANCE.get();
+             if (result != null) {
+                 return result;
+             }
+
+            // If there's already a proper console, throw an exception
+            if (System.console() != null) {
+                throw new IllegalStateException("Can't create a dedicated password " +
+                    "console since a real console already exists");
+            }
+
+            // If stdin is NOT redirected, return an Optional containing a Console
+            // instance, otherwise an empty Optional.
+            result = isStdinTty() ?
+                Optional.of(
+                    new Console()) :
+                Optional.empty();
+
+            INSTANCE.set(result);
+            return result;
+        }
+    }
+
+    // Dedicated entry for sun.security.util.Password when stdout is redirected.
+    private char[] readPasswordNoNewLine() {
+        return readPassword0(true, "");
+    }
+
+    private char[] readPassword0(boolean noNewLine, String fmt, Object ... args) {
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {
@@ -347,7 +394,9 @@ public final class Console implements Flushable
                         throw ioe;
                     }
                 }
-                pw.println();
+                if (!noNewLine) {
+                    pw.println();
+                }
             }
         }
         return passwd;
@@ -587,6 +636,12 @@ public final class Console implements Flushable
         }
     }
 
+    @Native static final int TTY_STDIN_MASK = 0x00000001;
+    @Native static final int TTY_STDOUT_MASK = 0x00000002;
+    @Native static final int TTY_STDERR_MASK = 0x00000004;
+    // ttyStatus() returns bit patterns above, a bit is set if the corresponding file
+    // descriptor is a character device
+    private static final int ttyStatus = ttyStatus();
     private static final Charset CHARSET;
     static {
         String csname = encoding();
@@ -604,7 +659,7 @@ public final class Console implements Flushable
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                if (istty()) {
+                if (isStdinTty() && isStdoutTty()) {
                     if (cons == null)
                         cons = new Console();
                     return cons;
@@ -615,10 +670,15 @@ public final class Console implements Flushable
             public Charset charset() {
                 return CHARSET;
             }
+            public Optional<Console> passwordConsole() {
+                return Console.passwordConsole();
+            }
+            public char[] readPasswordNoNewLine(Console c) {
+                return c.readPasswordNoNewLine();
+            }
         });
     }
     private static Console cons;
-    private static native boolean istty();
     private Console() {
         readLock = new Object();
         writeLock = new Object();
@@ -634,4 +694,14 @@ public final class Console implements Flushable
                      CHARSET));
         rcb = new char[1024];
     }
+    private static boolean isStdinTty() {
+        return (ttyStatus & TTY_STDIN_MASK) != 0;
+    }
+    private static boolean isStdoutTty() {
+        return (ttyStatus & TTY_STDOUT_MASK) != 0;
+    }
+    private static boolean isStderrTty() {
+        return (ttyStatus & TTY_STDERR_MASK) != 0;
+    }
+    private static native int ttyStatus();
 }
