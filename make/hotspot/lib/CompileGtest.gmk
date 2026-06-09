@@ -1,0 +1,181 @@
+#
+# Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
+GTEST_TEST_SRC += $(TOPDIR)/test/hotspot/gtest
+
+ifeq ($(ASAN_ENABLED), true)
+  GTEST_LAUNCHER_EXTRA_FILES += $(TOPDIR)/make/data/asan/asan_default_options.cpp
+endif
+
+ifeq ($(LSAN_ENABLED), true)
+  GTEST_LAUNCHER_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.cpp
+endif
+
+# On Windows, there are no internal debug symbols so must set copying to true
+# to get any at all.
+ifeq ($(call isTargetOs, windows), true)
+  GTEST_COPY_DEBUG_SYMBOLS := true
+else
+  GTEST_COPY_DEBUG_SYMBOLS := false
+endif
+
+GTEST_LIBJVM_CFLAGS := $(JVM_CFLAGS)
+# Decoder does not work with debuginfo of the gtest libjvm when sections are used,
+# so we get wrong file names. That's why we filter out the section flags.
+ifeq ($(ENABLE_LINKTIME_GC), true)
+  ifeq ($(TOOLCHAIN_TYPE), gcc)
+    GTEST_LIBJVM_CFLAGS := $(filter-out -ffunction-sections -fdata-sections, $(JVM_CFLAGS))
+  endif
+endif
+
+################################################################################
+## Build libgtest
+################################################################################
+
+$(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
+    NAME := gtest, \
+    TYPE := STATIC_LIBRARY, \
+    LINK_TYPE := C++, \
+    OUTPUT_DIR := $(JVM_OUTPUTDIR)/libgtest, \
+    OBJECT_DIR := $(JVM_OUTPUTDIR)/libgtest/objs, \
+    SRC := \
+        $(GTEST_FRAMEWORK_SRC)/googletest/src \
+        $(GTEST_FRAMEWORK_SRC)/googlemock/src, \
+    INCLUDE_FILES := gtest-all.cc gmock-all.cc, \
+    DISABLED_WARNINGS_gcc := format-nonliteral maybe-uninitialized undef \
+        unused-result zero-as-null-pointer-constant, \
+    DISABLED_WARNINGS_clang := format-nonliteral undef unused-result \
+        zero-as-null-pointer-constant, \
+    $(comment Disable deprecated-declarations warnings to workaround) \
+    $(comment clang18+glibc12 bug https://github.com/llvm/llvm-project/issues/76515) \
+    $(comment until the clang bug has been fixed) \
+    DISABLED_WARNINGS_clang_gtest-all.cc := deprecated-declarations, \
+    DISABLED_WARNINGS_microsoft := 4530, \
+    DEFAULT_CFLAGS := false, \
+    CFLAGS := $(JVM_CFLAGS) \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
+    CFLAGS_macosx := -DGTEST_OS_MAC=1, \
+    OPTIMIZATION := $(JVM_OPTIMIZATION), \
+    COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
+    ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
+    STRIP_SYMBOLS := false, \
+))
+
+TARGETS += $(BUILD_GTEST_LIBGTEST)
+
+################################################################################
+## Build libjvm (for gtest)
+################################################################################
+
+# Additional disabled warnings are due to code in the test source.
+$(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
+    NAME := jvm, \
+    LINK_TYPE := C++, \
+    OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
+    OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/objs, \
+    SRC := $(GTEST_TEST_SRC), \
+    EXCLUDES := $(JVM_EXCLUDES), \
+    EXCLUDE_FILES := gtestLauncher.cpp, \
+    EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
+    EXTRA_OBJECT_FILES := $(BUILD_LIBJVM_ALL_OBJS), \
+    DEFAULT_CFLAGS := false, \
+    CFLAGS := $(GTEST_LIBJVM_CFLAGS) \
+        -DHOTSPOT_GTEST \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock/include \
+        $(addprefix -I, $(GTEST_TEST_SRC)), \
+    CFLAGS_macosx := -DGTEST_OS_MAC=1, \
+    DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \
+        undef stringop-overflow, \
+    DISABLED_WARNINGS_gcc_test_metaspace_misc.cpp := unused-const-variable, \
+    DISABLED_WARNINGS_gcc_test_threadCpuLoad.cpp := address, \
+    DISABLED_WARNINGS_gcc_test_tribool.cpp := uninitialized, \
+    DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
+        undef switch format-nonliteral tautological-undefined-compare \
+        self-assign-overloaded, \
+    DISABLED_WARNINGS_clang_test_g1ServiceThread.cpp := delete-abstract-non-virtual-dtor, \
+    DISABLED_WARNINGS_clang_test_logDecorations.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft) 4530, \
+    LD_SET_ORIGIN := false, \
+    DEFAULT_LDFLAGS := false, \
+    LDFLAGS := $(JVM_LDFLAGS), \
+    JDK_LIBS := gtest:libgtest, \
+    LIBS := $(JVM_LIBS), \
+    OPTIMIZATION := $(JVM_OPTIMIZATION), \
+    COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
+    ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
+    STRIP_SYMBOLS := false, \
+    PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
+    PRECOMPILED_HEADER_EXCLUDE := gtestMain.cpp, \
+))
+
+$(BUILD_GTEST_LIBJVM) : $(BUILD_GTEST_LIBGTEST)
+
+ifeq ($(call isTargetOs, windows), true)
+  $(BUILD_GTEST_LIBJVM_TARGET): $(WIN_EXPORT_FILE)
+endif
+
+
+TARGETS += $(BUILD_GTEST_LIBJVM)
+
+################################################################################
+## Build gtestLauncher
+################################################################################
+
+$(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
+    NAME := gtestLauncher, \
+    TYPE := EXECUTABLE, \
+    LINK_TYPE := C++, \
+    OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
+    SRC := $(TOPDIR)/test/hotspot/gtest, \
+    INCLUDE_FILES := gtestLauncher.cpp, \
+    EXTRA_FILES := $(GTEST_LAUNCHER_EXTRA_FILES), \
+    OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \
+    DEFAULT_CFLAGS := false, \
+    CFLAGS := $(JVM_CFLAGS) \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest \
+        -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock \
+        -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
+    LD_SET_ORIGIN := false, \
+    LDFLAGS_unix := $(call SetSharedLibraryOrigin), \
+    JDK_LIBS := gtest:libjvm, \
+    COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
+    ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
+))
+
+TARGETS += $(BUILD_GTEST_LAUNCHER)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

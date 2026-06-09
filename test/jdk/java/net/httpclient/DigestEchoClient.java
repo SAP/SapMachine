@@ -1,0 +1,836 @@
+/*
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.math.BigInteger;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpOption.Http3DiscoveryMode;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.net.ssl.SSLContext;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.Utils;
+import jdk.test.lib.net.SimpleSSLContext;
+import sun.net.NetProperties;
+import sun.net.www.HeaderParser;
+
+import static java.lang.System.out;
+import static java.lang.System.err;
+import static java.lang.String.format;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+
+/*
+ * @test
+ * @summary this test verifies that a client may provides authorization
+ *          headers directly when connecting with a server.
+ * @bug 8087112 8336655 8338569
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DigestEchoServer ReferenceTracker DigestEchoClient
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=
+ *                   -Djdk.http.auth.tunneling.disabledSchemes=
+ *                   ${test.main.class}
+ */
+
+public class DigestEchoClient {
+
+    static final String data[] = {
+        "Lorem ipsum",
+        "dolor sit amet",
+        "consectetur adipiscing elit, sed do eiusmod tempor",
+        "quis nostrud exercitation ullamco",
+        "laboris nisi",
+        "ut",
+        "aliquip ex ea commodo consequat." +
+        "Duis aute irure dolor in reprehenderit in voluptate velit esse" +
+        "cillum dolore eu fugiat nulla pariatur.",
+        "Excepteur sint occaecat cupidatat non proident."
+    };
+
+    static final AtomicLong serverCount = new AtomicLong();
+    static final class EchoServers {
+        final DigestEchoServer.HttpAuthType authType;
+        final DigestEchoServer.HttpAuthSchemeType authScheme;
+        final String protocolScheme;
+        final String key;
+        final DigestEchoServer server;
+        final Version serverVersion;
+
+        private EchoServers(DigestEchoServer server,
+                    Version version,
+                    String protocolScheme,
+                    DigestEchoServer.HttpAuthType authType,
+                    DigestEchoServer.HttpAuthSchemeType authScheme) {
+            this.authType = authType;
+            this.authScheme = authScheme;
+            this.protocolScheme = protocolScheme;
+            this.key = key(version, protocolScheme, authType, authScheme);
+            this.server = server;
+            this.serverVersion = version;
+        }
+
+        static String key(Version version,
+                          String protocolScheme,
+                          DigestEchoServer.HttpAuthType authType,
+                          DigestEchoServer.HttpAuthSchemeType authScheme) {
+            return String.format("%s:%s:%s:%s", version, protocolScheme, authType, authScheme);
+        }
+
+        private static EchoServers create(Version version,
+                                   String protocolScheme,
+                                   DigestEchoServer.HttpAuthType authType,
+                                   DigestEchoServer.HttpAuthSchemeType authScheme) {
+            try {
+                serverCount.incrementAndGet();
+                DigestEchoServer server =
+                    DigestEchoServer.create(version, protocolScheme, authType, authScheme);
+                return new EchoServers(server, version, protocolScheme, authType, authScheme);
+            } catch (IOException x) {
+                throw new UncheckedIOException(x);
+            }
+        }
+
+        public static DigestEchoServer of(Version version,
+                                    String protocolScheme,
+                                    DigestEchoServer.HttpAuthType authType,
+                                    DigestEchoServer.HttpAuthSchemeType authScheme) {
+            String key = key(version, protocolScheme, authType, authScheme);
+            return servers.computeIfAbsent(key, (k) ->
+                    create(version, protocolScheme, authType, authScheme)).server;
+        }
+
+        public static void stop() {
+            for (EchoServers s : servers.values()) {
+                s.server.stop();
+            }
+        }
+
+        private static final ConcurrentMap<String, EchoServers> servers = new ConcurrentHashMap<>();
+    }
+
+    final static String PROXY_DISABLED = NetProperties.get("jdk.http.auth.proxying.disabledSchemes");
+    final static String TUNNEL_DISABLED = NetProperties.get("jdk.http.auth.tunneling.disabledSchemes");
+    static {
+        System.out.println("jdk.http.auth.proxying.disabledSchemes=" + PROXY_DISABLED);
+        System.out.println("jdk.http.auth.tunneling.disabledSchemes=" + TUNNEL_DISABLED);
+    }
+
+
+
+    static final AtomicInteger NC = new AtomicInteger();
+    static final Random random = new Random();
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
+    static {
+        SSLContext.setDefault(context);
+    }
+    static final List<Boolean> BOOLEANS = List.of(true, false);
+
+    final boolean useSSL;
+    final DigestEchoServer.HttpAuthSchemeType authScheme;
+    final DigestEchoServer.HttpAuthType authType;
+    DigestEchoClient(boolean useSSL,
+                     DigestEchoServer.HttpAuthSchemeType authScheme,
+                     DigestEchoServer.HttpAuthType authType)
+            throws IOException {
+        this.useSSL = useSSL;
+        this.authScheme = authScheme;
+        this.authType = authType;
+    }
+
+    static final AtomicLong clientCount = new AtomicLong();
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    public HttpClient newHttpClient(DigestEchoServer server) {
+        clientCount.incrementAndGet();
+        HttpClient.Builder builder = switch (server.version()) {
+            case HTTP_3 -> HttpServerAdapters.createClientBuilderForH3()
+                    .version(Version.HTTP_3);
+            default -> HttpClient.newBuilder();
+        };
+        builder = builder.proxy(ProxySelector.of(null));
+        if (useSSL) {
+            builder.sslContext(context);
+        }
+        switch (authScheme) {
+            case BASIC:
+                builder = builder.authenticator(DigestEchoServer.AUTHENTICATOR);
+                break;
+            case BASICSERVER:
+                // don't set the authenticator: we will handle the header ourselves.
+                // builder = builder.authenticator(DigestEchoServer.AUTHENTICATOR);
+                break;
+            default:
+                break;
+        }
+        switch (authType) {
+            case PROXY:
+                builder = builder.proxy(ProxySelector.of(server.getProxyAddress()));
+                break;
+            case PROXY305:
+                builder = builder.proxy(ProxySelector.of(server.getProxyAddress()));
+                builder = builder.followRedirects(HttpClient.Redirect.NORMAL);
+                break;
+            case SERVER307:
+                builder = builder.followRedirects(HttpClient.Redirect.NORMAL);
+                break;
+            default:
+                break;
+        }
+        return TRACKER.track(builder.build());
+    }
+
+    public static List<Version> serverVersions(Version clientVersion) {
+        return switch (clientVersion) {
+            case HTTP_1_1 -> List.of(clientVersion);
+            case HTTP_2 -> List.of(Version.HTTP_1_1, Version.HTTP_2);
+            case HTTP_3 -> List.of(Version.HTTP_2, Version.HTTP_3);
+        };
+    }
+
+    public static List<Version> clientVersions() {
+        return List.of(Version.values());
+    }
+
+    public static List<Boolean> expectContinue(Version serverVersion) {
+        if (serverVersion == Version.HTTP_1_1) {
+            return BOOLEANS;
+        } else {
+            // our test HTTP/2 server does not support Expect: 100-Continue
+            return List.of(Boolean.FALSE);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        HttpServerAdapters.enableServerLogging();
+        boolean useSSL = false;
+        EnumSet<DigestEchoServer.HttpAuthType> types =
+                EnumSet.complementOf(EnumSet.of(DigestEchoServer.HttpAuthType.PROXY305));
+        Throwable failed = null;
+        if (args != null && args.length >= 1) {
+            useSSL = "SSL".equals(args[0]);
+            if (args.length > 1) {
+                List<DigestEchoServer.HttpAuthType> httpAuthTypes =
+                        Stream.of(Arrays.copyOfRange(args, 1, args.length))
+                                .map(DigestEchoServer.HttpAuthType::valueOf)
+                                .collect(Collectors.toList());
+                types = EnumSet.copyOf(httpAuthTypes);
+            }
+        }
+        try {
+            for (DigestEchoServer.HttpAuthType authType : types) {
+                // The test server does not support PROXY305 or SERVER307 properly
+                if (authType == DigestEchoServer.HttpAuthType.PROXY305 ||
+                    authType == DigestEchoServer.HttpAuthType.SERVER307) continue;
+                EnumSet<DigestEchoServer.HttpAuthSchemeType> basics =
+                        EnumSet.of(DigestEchoServer.HttpAuthSchemeType.BASICSERVER,
+                                DigestEchoServer.HttpAuthSchemeType.BASIC);
+                for (DigestEchoServer.HttpAuthSchemeType authScheme : basics) {
+                    DigestEchoClient dec = new DigestEchoClient(useSSL,
+                            authScheme,
+                            authType);
+                    for (Version clientVersion : clientVersions()) {
+                        for (Version serverVersion : serverVersions(clientVersion)) {
+                            if (serverVersion == Version.HTTP_3) {
+                                if (!useSSL) continue;
+                                switch (authType) {
+                                    case PROXY, PROXY305: continue;
+                                    default: break;
+                                }
+                            }
+                            for (boolean expectContinue : expectContinue(serverVersion)) {
+                                for (boolean async : BOOLEANS) {
+                                    for (boolean preemptive : BOOLEANS) {
+                                        dec.testBasic(clientVersion,
+                                                serverVersion, async,
+                                                expectContinue, preemptive);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                EnumSet<DigestEchoServer.HttpAuthSchemeType> digests =
+                        EnumSet.of(DigestEchoServer.HttpAuthSchemeType.DIGEST);
+                for (DigestEchoServer.HttpAuthSchemeType authScheme : digests) {
+                    DigestEchoClient dec = new DigestEchoClient(useSSL,
+                            authScheme,
+                            authType);
+                    for (Version clientVersion : clientVersions()) {
+                        for (Version serverVersion : serverVersions(clientVersion)) {
+                            if (serverVersion == Version.HTTP_3) {
+                                if (!useSSL) continue;
+                                switch (authType) {
+                                    case PROXY, PROXY305: continue;
+                                    default: break;
+                                }
+                            }
+                            for (boolean expectContinue : expectContinue(serverVersion)) {
+                                for (boolean async : BOOLEANS) {
+                                    dec.testDigest(clientVersion, serverVersion,
+                                            async, expectContinue);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch(Throwable t) {
+            out.println(DigestEchoServer.now()
+                    + ": Unexpected exception: " + t);
+            t.printStackTrace(System.out);
+            err.println(DigestEchoServer.now()
+                    + ": Unexpected exception: " + t);
+            t.printStackTrace();
+            failed = t;
+            throw t;
+        } finally {
+            Thread.sleep(100);
+            AssertionError trackFailed = TRACKER.check(Utils.adjustTimeout(1000));
+            EchoServers.stop();
+            System.out.println(" ---------------------------------------------------------- ");
+            System.out.println(String.format("DigestEchoClient %s %s", useSSL ? "SSL" : "CLEAR", types));
+            System.out.println(String.format("Created %d clients and %d servers",
+                    clientCount.get(), serverCount.get()));
+            System.out.println(String.format("basics:  %d requests sent, %d ns / req",
+                    basicCount.get(), basics.get()));
+            System.out.println(String.format("digests: %d requests sent, %d ns / req",
+                    digestCount.get(), digests.get()));
+            System.out.println(" ---------------------------------------------------------- ");
+            if (trackFailed != null) {
+                if (failed != null) {
+                    failed.addSuppressed(trackFailed);
+                    if (failed instanceof Error) throw (Error) failed;
+                    if (failed instanceof Exception) throw (Exception) failed;
+                }
+                throw trackFailed;
+            }
+        }
+    }
+
+    boolean isSchemeDisabled() {
+        String disabledSchemes;
+        if (isProxy(authType)) {
+            disabledSchemes = useSSL
+                    ? TUNNEL_DISABLED
+                    : PROXY_DISABLED;
+        } else return false;
+        if (disabledSchemes == null
+                || disabledSchemes.isEmpty()) {
+            return false;
+        }
+        String scheme;
+        switch (authScheme) {
+            case DIGEST:
+                scheme = "Digest";
+                break;
+            case BASIC:
+                scheme = "Basic";
+                break;
+            case BASICSERVER:
+                scheme = "Basic";
+                break;
+            case NONE:
+                return false;
+            default:
+                throw new InternalError("Unknown auth scheme: " + authScheme);
+        }
+        return Stream.of(disabledSchemes.split(","))
+                .map(String::trim)
+                .filter(scheme::equalsIgnoreCase)
+                .findAny()
+                .isPresent();
+    }
+
+    static Http3DiscoveryMode serverConfig(int step, DigestEchoServer server) {
+        var config = server.serverConfig();
+        return switch (config) {
+            case HTTP_3_URI_ONLY -> config;
+            default -> Http3DiscoveryMode.ALT_SVC;
+        };
+    }
+
+    final static AtomicLong basics = new AtomicLong();
+    final static AtomicLong basicCount = new AtomicLong();
+    // @Test
+    void testBasic(Version clientVersion, Version serverVersion, boolean async,
+                   boolean expectContinue, boolean preemptive)
+        throws Exception
+    {
+        final boolean addHeaders = authScheme == DigestEchoServer.HttpAuthSchemeType.BASICSERVER;
+        // !preemptive has no meaning if we don't handle the authorization
+        // headers ourselves
+        if (!preemptive && !addHeaders) return;
+
+        out.println(format("*** testBasic: client: %s, server: %s, async: %s, useSSL: %s, " +
+                        "authScheme: %s, authType: %s, expectContinue: %s preemptive: %s***",
+                clientVersion, serverVersion, async, useSSL, authScheme, authType,
+                expectContinue, preemptive));
+
+        DigestEchoServer server = EchoServers.of(serverVersion,
+                useSSL ? "https" : "http", authType, authScheme);
+        URI uri = DigestEchoServer.uri(useSSL ? "https" : "http",
+                server.getServerAddress(), "/foo/");
+
+        HttpClient client = newHttpClient(server);
+        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
+        HttpResponse<String> r;
+        CompletableFuture<HttpResponse<String>> cf1;
+        String auth = null;
+        Throwable failed = null;
+        URI reqURI = null;
+
+        try {
+            for (int i = 0; i < data.length; i++) {
+                out.println(DigestEchoServer.now() + " ----- iteration " + i + " -----");
+                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i + 1));
+                assert lines.size() == i + 1;
+                String body = lines.stream().collect(Collectors.joining("\r\n"));
+                BodyPublisher reqBody = BodyPublishers.ofString(body);
+                URI baseReq = URI.create(uri + "?iteration=" + i + ",async=" + async
+                        + ",addHeaders=" + addHeaders + ",preemptive=" + preemptive
+                        + ",expectContinue=" + expectContinue + ",version=" + clientVersion);
+                reqURI = URI.create(baseReq + ",basicCount=" + basicCount.get());
+                HttpRequest.Builder builder = HttpRequest.newBuilder(reqURI).version(clientVersion)
+                        .setOption(H3_DISCOVERY, serverConfig(i, server))
+                        .POST(reqBody).expectContinue(expectContinue);
+                boolean isTunnel = isProxy(authType) && useSSL;
+                if (addHeaders) {
+                    // handle authentication ourselves
+                    assert !client.authenticator().isPresent();
+                    if (auth == null) auth = "Basic " + getBasicAuth("arthur");
+                    try {
+                        if ((i > 0 || preemptive)
+                                && (!isTunnel || i == 0 || isSchemeDisabled())) {
+                            // In case of a SSL tunnel through proxy then only the
+                            // first request should require proxy authorization
+                            // Though this might be invalidated if the server decides
+                            // to close the connection...
+                            out.println(String.format("%s adding %s: %s",
+                                    DigestEchoServer.now(),
+                                    authorizationKey(authType),
+                                    auth));
+                            builder = builder.header(authorizationKey(authType), auth);
+                        }
+                    } catch (IllegalArgumentException x) {
+                        throw x;
+                    }
+                } else {
+                    // let the stack do the authentication
+                    assert client.authenticator().isPresent();
+                }
+                long start = System.nanoTime();
+                HttpRequest request = builder.build();
+                HttpResponse<Stream<String>> resp;
+                try {
+                    if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
+                        resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
+                    } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
+                        resp = client.send(request, BodyHandlers.ofLines());
+                    }
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
+                    }
+                } catch (Throwable t) {
+                    long stop = System.nanoTime();
+                    synchronized (basicCount) {
+                        long n = basicCount.getAndIncrement();
+                        basics.set((basics.get() * n + (stop - start)) / (n + 1));
+                    }
+                    throw t;
+                }
+
+                if (addHeaders && !preemptive && (i == 0 || isSchemeDisabled())) {
+                    assert resp.statusCode() == 401 || resp.statusCode() == 407;
+                    Stream<String> respBody = resp.body();
+                    if (respBody != null) {
+                        System.out.printf("Response body (%s):\n", resp.statusCode());
+                        respBody.forEach(System.out::println);
+                    }
+                    System.out.println(String.format("%s received: adding header %s: %s",
+                            resp.statusCode(), authorizationKey(authType), auth));
+                    reqURI = URI.create(baseReq + ",withAuthorization="
+                            + authType + ",basicCount=" + basicCount.get());
+                    request = HttpRequest.newBuilder(reqURI).version(clientVersion)
+                            .setOption(H3_DISCOVERY, server.serverConfig())
+                            .POST(reqBody).header(authorizationKey(authType), auth).build();
+                    if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
+                        resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
+                    } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
+                        resp = client.send(request, BodyHandlers.ofLines());
+                    }
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
+                    }
+                }
+                final List<String> respLines;
+                try {
+                    if (isSchemeDisabled()) {
+                        if (resp.statusCode() != 407) {
+                            throw new RuntimeException("expected 407 not received");
+                        }
+                        System.out.println("Scheme disabled for [" + authType
+                                + ", " + authScheme
+                                + ", " + (useSSL ? "HTTP" : "HTTPS")
+                                + "]: Received expected " + resp.statusCode());
+                        continue;
+                    } else {
+                        System.out.println("Scheme enabled for [" + authType
+                                + ", " + authScheme
+                                + ", " + (useSSL ? "HTTPS" : "HTTP")
+                                + "]: Expecting 200, response is: " + resp);
+                        assert resp.statusCode() == 200 : "200 expected, received " + resp;
+                        respLines = resp.body().collect(Collectors.toList());
+                    }
+                } finally {
+                    long stop = System.nanoTime();
+                    synchronized (basicCount) {
+                        long n = basicCount.getAndIncrement();
+                        basics.set((basics.get() * n + (stop - start)) / (n + 1));
+                    }
+                }
+                if (!lines.equals(respLines)) {
+                    throw new RuntimeException("Unexpected response: " + respLines);
+                }
+            }
+        } catch (Throwable t) {
+            if (reqURI == null) {
+                failed = t;
+                throw t;
+            }
+            String decoration = "%s Unexpected exception %s for %s".formatted(DigestEchoServer.now(), t, reqURI);
+            RuntimeException decorated = new RuntimeException(decoration, t);
+            failed = decorated;
+            throw decorated;
+        } finally {
+            if (client != null) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                while (!ref.refersTo(null)) {
+                    System.gc();
+                    if (queue.remove(100) == ref) break;
+                }
+                var error = TRACKER.checkShutdown(tracker, Utils.adjustTimeout(900), false);
+                if (error != null) {
+                    if (failed != null) error.addSuppressed(failed);
+                    throw error;
+                }
+            }
+        }
+        System.out.println("OK");
+    }
+
+    String getBasicAuth(String username) {
+        StringBuilder builder = new StringBuilder(username);
+        builder.append(':');
+        for (char c : DigestEchoServer.AUTHENTICATOR.getPassword(username)) {
+            builder.append(c);
+        }
+        return Base64.getEncoder().encodeToString(builder.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    final static AtomicLong digests = new AtomicLong();
+    final static AtomicLong digestCount = new AtomicLong();
+    // @Test
+    void testDigest(Version clientVersion, Version serverVersion,
+                    boolean async, boolean expectContinue)
+            throws Exception
+    {
+        String test = format("testDigest: client: %s, server: %s, async: %s, useSSL: %s, " +
+                             "authScheme: %s, authType: %s, expectContinue: %s",
+                              clientVersion, serverVersion, async, useSSL,
+                              authScheme, authType, expectContinue);
+        out.println("*** " + test + " ***");
+        DigestEchoServer server = EchoServers.of(serverVersion,
+                useSSL ? "https" : "http", authType, authScheme);
+
+        URI uri = DigestEchoServer.uri(useSSL ? "https" : "http",
+                server.getServerAddress(), "/foo/");
+
+        HttpClient client = newHttpClient(server);
+        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
+        HttpResponse<String> r;
+        CompletableFuture<HttpResponse<String>> cf1;
+        byte[] cnonce = new byte[16];
+        String cnonceStr = null;
+        DigestEchoServer.DigestResponse challenge = null;
+        URI reqURI = null;
+        Throwable failed = null;
+        try {
+            for (int i = 0; i < data.length; i++) {
+                out.println(DigestEchoServer.now() + "----- iteration " + i + " -----");
+                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i + 1));
+                assert lines.size() == i + 1;
+                String body = lines.stream().collect(Collectors.joining("\r\n"));
+                HttpRequest.BodyPublisher reqBody = HttpRequest.BodyPublishers.ofString(body);
+                URI baseReq = URI.create(uri + "?iteration=" + i + ",async=" + async
+                        + ",expectContinue=" + expectContinue + ",version=" + clientVersion);
+                reqURI = URI.create(baseReq + ",digestCount=" + digestCount.get());
+                HttpRequest.Builder reqBuilder = HttpRequest
+                        .newBuilder(reqURI).version(clientVersion).POST(reqBody)
+                        .setOption(H3_DISCOVERY, serverConfig(i, server))
+                        .expectContinue(expectContinue);
+
+                boolean isTunnel = isProxy(authType) && useSSL;
+                String digestMethod = isTunnel ? "CONNECT" : "POST";
+
+                // In case of a tunnel connection only the first request
+                // which establishes the tunnel needs to authenticate with
+                // the proxy.
+                if (challenge != null && (!isTunnel || isSchemeDisabled())) {
+                    assert cnonceStr != null;
+                    String auth = digestResponse(uri, digestMethod, challenge, cnonceStr);
+                    try {
+                        reqBuilder = reqBuilder.header(authorizationKey(authType), auth);
+                    } catch (IllegalArgumentException x) {
+                        throw x;
+                    }
+                }
+
+                long start = System.nanoTime();
+                HttpRequest request = reqBuilder.build();
+                HttpResponse<Stream<String>> resp;
+                if (async) {
+                    out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
+                    resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
+                } else {
+                    out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
+                    resp = client.send(request, BodyHandlers.ofLines());
+                }
+                if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                    out.println("Response version [" + i + "]: " + resp.version());
+                    int required = isRedirecting(authType) ? 1 : 0;
+                    if (i > required) {
+                        if (resp.version() != serverVersion) {
+                            throw new AssertionError("Expected HTTP/3, but got: "
+                                    + resp.version());
+                        }
+                    }
+                }
+                System.out.println(resp);
+                assert challenge != null || resp.statusCode() == 401 || resp.statusCode() == 407
+                        : "challenge=" + challenge + ", resp=" + resp + ", test=[" + test + "]";
+                if (resp.statusCode() == 401 || resp.statusCode() == 407) {
+                    // This assert may need to be relaxed if our server happened to
+                    // decide to close the tunnel connection, in which case we would
+                    // receive 407 again...
+                    assert challenge == null || !isTunnel || isSchemeDisabled()
+                            : "No proxy auth should be required after establishing an SSL tunnel";
+
+                    System.out.println("Received " + resp.statusCode() + " answering challenge...");
+                    random.nextBytes(cnonce);
+                    cnonceStr = new BigInteger(1, cnonce).toString(16);
+                    System.out.println("Response headers: " + resp.headers());
+                    Optional<String> authenticateOpt = resp.headers().firstValue(authenticateKey(authType));
+                    String authenticate = authenticateOpt.orElseThrow(
+                            () -> new RuntimeException(authenticateKey(authType) + ": not found"));
+                    assert authenticate.startsWith("Digest ");
+                    HeaderParser hp = new HeaderParser(authenticate.substring("Digest ".length()));
+                    String qop = hp.findValue("qop");
+                    String nonce = hp.findValue("nonce");
+                    if (qop == null && nonce == null) {
+                        throw new RuntimeException("QOP and NONCE not found");
+                    }
+                    challenge = DigestEchoServer.DigestResponse
+                            .create(authenticate.substring("Digest ".length()));
+                    String auth = digestResponse(uri, digestMethod, challenge, cnonceStr);
+                    reqURI = URI.create(baseReq + ",withAuth=" + authType + ",digestCount=" + digestCount.get());
+                    try {
+                        request = HttpRequest.newBuilder(reqURI).version(clientVersion)
+                                .setOption(H3_DISCOVERY, serverConfig(i, server))
+                                .POST(reqBody).header(authorizationKey(authType), auth).build();
+                    } catch (IllegalArgumentException x) {
+                        throw x;
+                    }
+                    if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
+                        resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
+                    } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
+                        resp = client.send(request, BodyHandlers.ofLines());
+                    }
+                    System.out.println(resp);
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
+                    }
+                }
+                final List<String> respLines;
+                try {
+                    if (isSchemeDisabled()) {
+                        if (resp.statusCode() != 407) {
+                            throw new RuntimeException("expected 407 not received");
+                        }
+                        System.out.println("Scheme disabled for [" + authType
+                                + ", " + authScheme +
+                                ", " + (useSSL ? "HTTP" : "HTTPS")
+                                + "]: Received expected " + resp.statusCode());
+                        continue;
+                    } else {
+                        assert resp.statusCode() == 200;
+                        respLines = resp.body().collect(Collectors.toList());
+                    }
+                } finally {
+                    long stop = System.nanoTime();
+                    synchronized (digestCount) {
+                        long n = digestCount.getAndIncrement();
+                        digests.set((digests.get() * n + (stop - start)) / (n + 1));
+                    }
+                }
+                if (!lines.equals(respLines)) {
+                    throw new RuntimeException("Unexpected response: " + respLines);
+                }
+            }
+        } catch (Throwable t) {
+            if (reqURI == null) {
+                failed = t;
+                throw t;
+            }
+            String decoration = "%s Unexpected exception %s for %s".formatted(DigestEchoServer.now(), t, reqURI);
+            RuntimeException decorated = new RuntimeException(decoration, t);
+            failed = decorated;
+            throw decorated;
+        } finally {
+            if (client != null) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                while (!ref.refersTo(null)) {
+                    System.gc();
+                    if (queue.remove(100) == ref) break;
+                }
+                var error = TRACKER.checkShutdown(tracker, Utils.adjustTimeout(900), false);
+                if (error != null) {
+                    if (failed != null) {
+                        error.addSuppressed(failed);
+                    }
+                    throw error;
+                }
+            }
+        }
+        System.out.println("OK");
+    }
+
+    // WARNING: This is not a full-fledged implementation of DIGEST.
+    // It does contain bugs and inaccuracy.
+    static String digestResponse(URI uri, String method, DigestEchoServer.DigestResponse challenge, String cnonce)
+            throws NoSuchAlgorithmException {
+        int nc = NC.incrementAndGet();
+        DigestEchoServer.DigestResponse response1 = new DigestEchoServer.DigestResponse("earth",
+                "arthur", challenge.nonce, cnonce, String.valueOf(nc), uri.toASCIIString(),
+                challenge.algorithm, challenge.qop, challenge.opaque, null);
+        String response = DigestEchoServer.DigestResponse.computeDigest(true, method,
+                DigestEchoServer.AUTHENTICATOR.getPassword("arthur"), response1);
+        String auth = "Digest username=\"arthur\", realm=\"earth\""
+                + ", response=\"" + response + "\", uri=\""+uri.toASCIIString()+"\""
+                + ", qop=\"" + response1.qop + "\", cnonce=\"" + response1.cnonce
+                + "\", nc=\"" + nc + "\", nonce=\"" + response1.nonce + "\"";
+        if (response1.opaque != null) {
+            auth = auth + ", opaque=\"" + response1.opaque + "\"";
+        }
+        return auth;
+    }
+
+    static String authenticateKey(DigestEchoServer.HttpAuthType authType) {
+        return switch (authType) {
+            case SERVER    -> "www-authenticate";
+            case SERVER307 -> "www-authenticate";
+            case PROXY     -> "proxy-authenticate";
+            case PROXY305  -> "proxy-authenticate";
+        };
+    }
+
+    static String authorizationKey(DigestEchoServer.HttpAuthType authType) {
+        return switch (authType) {
+            case SERVER    -> "authorization";
+            case SERVER307 -> "Authorization";
+            case PROXY     -> "Proxy-Authorization";
+            case PROXY305  -> "proxy-Authorization";
+        };
+    }
+
+    static boolean isProxy(DigestEchoServer.HttpAuthType authType) {
+        return switch (authType) {
+            case SERVER, SERVER307 -> false;
+            case PROXY,  PROXY305  -> true;
+        };
+    }
+
+    static boolean isRedirecting(DigestEchoServer.HttpAuthType authType) {
+        return switch (authType) {
+            case SERVER307, PROXY305 -> true;
+            case SERVER,    PROXY    -> false;
+        };
+    }
+}

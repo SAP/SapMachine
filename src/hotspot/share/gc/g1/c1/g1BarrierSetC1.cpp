@@ -1,0 +1,276 @@
+/*
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "gc/g1/c1/g1BarrierSetC1.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
+#include "utilities/formatBuffer.hpp"
+#include "utilities/macros.hpp"
+
+#ifdef ASSERT
+#define __ gen->lir(__FILE__, __LINE__)->
+#else
+#define __ gen->lir()->
+#endif
+
+void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
+  G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->gen_pre_barrier_stub(ce, this);
+}
+
+void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
+                                 LIR_Opr pre_val, CodeEmitInfo* info) {
+  LIRGenerator* gen = access.gen();
+  DecoratorSet decorators = access.decorators();
+
+  // First we test whether marking is in progress.
+  BasicType flag_type;
+  bool patch = (decorators & C1_NEEDS_PATCHING) != 0;
+  bool do_load = pre_val == LIR_OprFact::illegalOpr;
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    flag_type = T_INT;
+  } else {
+    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
+              "Assumption");
+    // Use unsigned type T_BOOLEAN here rather than signed T_BYTE since some platforms, eg. ARM,
+    // need to use unsigned instructions to use the large offset to load the satb_mark_queue.
+    flag_type = T_BOOLEAN;
+  }
+  LIR_Opr thrd = gen->getThreadPointer();
+  LIR_Address* mark_active_flag_addr =
+    new LIR_Address(thrd,
+                    in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()),
+                    flag_type);
+  // Read the marking-in-progress flag.
+  // Note: When loading pre_val requires patching, i.e. do_load == true &&
+  // patch == true, a safepoint can occur while patching. This makes the
+  // pre-barrier non-atomic and invalidates the marking-in-progress check.
+  // Therefore, in the presence of patching, we must repeat the same
+  // marking-in-progress checking before calling into the Runtime. For
+  // simplicity, we do this check unconditionally (regardless of the presence
+  // of patching) in the runtime stub
+  // (G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub).
+  LIR_Opr flag_val = gen->new_register(T_INT);
+  __ load(mark_active_flag_addr, flag_val);
+  __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
+
+  LIR_PatchCode pre_val_patch_code = lir_patch_none;
+
+  CodeStub* slow;
+
+  if (do_load) {
+    assert(pre_val == LIR_OprFact::illegalOpr, "sanity");
+    assert(addr_opr != LIR_OprFact::illegalOpr, "sanity");
+
+    if (patch)
+      pre_val_patch_code = lir_patch_normal;
+
+    pre_val = gen->new_register(T_OBJECT);
+
+    if (!addr_opr->is_address()) {
+      assert(addr_opr->is_register(), "must be");
+      addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, T_OBJECT));
+    }
+    slow = new G1PreBarrierStub(addr_opr, pre_val, pre_val_patch_code, info);
+  } else {
+    assert(addr_opr == LIR_OprFact::illegalOpr, "sanity");
+    assert(pre_val->is_register(), "must be");
+    assert(pre_val->type() == T_OBJECT, "must be an object");
+    assert(info == nullptr, "sanity");
+
+    slow = new G1PreBarrierStub(pre_val);
+  }
+
+  __ branch(lir_cond_notEqual, slow);
+  __ branch_destination(slow->continuation());
+}
+
+class LIR_OpG1PostBarrier : public LIR_Op {
+ friend class LIR_OpVisitState;
+
+private:
+  LIR_Opr       _addr;
+  LIR_Opr       _new_val;
+  LIR_Opr       _thread;
+  LIR_Opr       _tmp1;
+  LIR_Opr       _tmp2;
+
+public:
+  LIR_OpG1PostBarrier(LIR_Opr addr,
+                      LIR_Opr new_val,
+                      LIR_Opr thread,
+                      LIR_Opr tmp1,
+                      LIR_Opr tmp2)
+    : LIR_Op(lir_none, lir_none, nullptr),
+      _addr(addr),
+      _new_val(new_val),
+      _thread(thread),
+      _tmp1(tmp1),
+      _tmp2(tmp2)
+    {}
+
+  virtual void visit(LIR_OpVisitState* state) {
+    state->do_input(_addr);
+    state->do_input(_new_val);
+    state->do_input(_thread);
+
+    // Use temps to enforce different registers.
+    state->do_temp(_addr);
+    state->do_temp(_new_val);
+    state->do_temp(_thread);
+    state->do_temp(_tmp1);
+    state->do_temp(_tmp2);
+
+    if (_info != nullptr) {
+      state->do_info(_info);
+    }
+  }
+
+  virtual void emit_code(LIR_Assembler* ce) {
+    if (_info != nullptr) {
+      ce->add_debug_info_for_null_check_here(_info);
+    }
+
+    Register addr = _addr->as_pointer_register();
+    Register new_val = _new_val->as_pointer_register();
+    Register thread = _thread->as_pointer_register();
+    Register tmp1 = _tmp1->as_pointer_register();
+    Register tmp2 = _tmp2->as_pointer_register();
+
+    // This may happen for a store of x.a = x - we do not need a post barrier for those
+    // as the cross-region test will always exit early anyway.
+    // The post barrier implementations can assume that addr and new_val are different
+    // then.
+    if (addr == new_val) {
+      ce->masm()->block_comment(err_msg("same addr/new_val due to self-referential store with imprecise card mark %s", addr->name()));
+      return;
+    }
+
+    G1BarrierSetAssembler* bs_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
+    bs_asm->g1_write_barrier_post_c1(ce->masm(), addr, new_val, thread, tmp1, tmp2);
+  }
+
+  virtual void print_instr(outputStream* out) const {
+    _addr->print(out);     out->print(" ");
+    _new_val->print(out);  out->print(" ");
+    _thread->print(out);   out->print(" ");
+    _tmp1->print(out);     out->print(" ");
+    _tmp2->print(out);     out->print(" ");
+    out->cr();
+  }
+
+#ifndef PRODUCT
+  virtual const char* name() const  {
+    return "lir_g1_post_barrier";
+  }
+#endif // PRODUCT
+};
+
+void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {
+  LIRGenerator* gen = access.gen();
+  DecoratorSet decorators = access.decorators();
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  if (!in_heap) {
+    return;
+  }
+
+  // If the "new_val" is a constant null, no barrier is necessary.
+  if (new_val->is_constant() &&
+      new_val->as_constant_ptr()->as_jobject() == nullptr) return;
+
+  if (!new_val->is_register()) {
+    LIR_Opr new_val_reg = gen->new_register(T_OBJECT);
+    if (new_val->is_constant()) {
+      __ move(new_val, new_val_reg);
+    } else {
+      __ leal(new_val, new_val_reg);
+    }
+    new_val = new_val_reg;
+  }
+  assert(new_val->is_register(), "must be a register at this point");
+
+  if (addr->is_address()) {
+    LIR_Address* address = addr->as_address_ptr();
+    LIR_Opr ptr = gen->new_pointer_register();
+    if (!address->index()->is_valid() && address->disp() == 0) {
+      __ move(address->base(), ptr);
+    } else {
+      assert(address->disp() != max_jint, "lea doesn't support patched addresses!");
+      __ leal(addr, ptr);
+    }
+    addr = ptr;
+  }
+  assert(addr->is_register(), "must be a register at this point");
+
+  __ append(new LIR_OpG1PostBarrier(addr,
+                                    new_val,
+                                    gen->getThreadPointer() /* thread */,
+                                    gen->new_pointer_register() /* tmp1 */,
+                                    gen->new_pointer_register() /* tmp2 */));
+}
+
+void G1BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
+  DecoratorSet decorators = access.decorators();
+  bool is_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool is_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  bool is_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  LIRGenerator *gen = access.gen();
+
+  BarrierSetC1::load_at_resolved(access, result);
+
+  if (access.is_oop() && (is_weak || is_phantom || is_anonymous)) {
+    // Register the value in the referent field with the pre-barrier
+    LabelObj *Lcont_anonymous;
+    if (is_anonymous) {
+      Lcont_anonymous = new LabelObj();
+      generate_referent_check(access, Lcont_anonymous);
+    }
+    pre_barrier(access, LIR_OprFact::illegalOpr /* addr_opr */,
+                result /* pre_val */, access.patch_emit_info() /* info */);
+    if (is_anonymous) {
+      __ branch_destination(Lcont_anonymous->label());
+    }
+  }
+}
+
+class C1G1PreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
+  virtual OopMapSet* generate_code(StubAssembler* sasm) {
+    G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->generate_c1_pre_barrier_runtime_stub(sasm);
+    return nullptr;
+  }
+};
+
+bool G1BarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
+  C1G1PreBarrierCodeGenClosure pre_code_gen_cl;
+  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, StubId::NO_STUBID, "g1_pre_barrier_slow",
+                                                              false, &pre_code_gen_cl);
+  return _pre_barrier_c1_runtime_code_blob != nullptr;
+}

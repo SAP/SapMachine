@@ -1,0 +1,566 @@
+/*
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/* @test
+ * @bug 8279339 8371718
+ * @summary Exercise InputStream/OutputStream returned by Channels.newXXXStream
+ *    when channel is a SocketChannel
+ * @run junit SocketChannelStreams
+ */
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class SocketChannelStreams {
+    // Maximum size of internal temporary buffer
+    private static final int MAX_BUFFER_SIZE = 128*1024;
+
+    private static ScheduledExecutorService executor;
+
+    @BeforeAll()
+    public static void init() {
+        executor = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    @AfterAll
+    public static void finish() {
+        executor.shutdown();
+    }
+
+    /**
+     * Test read when bytes are available.
+     */
+    @Test
+    public void testRead1() throws Exception {
+        withConnection((sc, peer) -> {
+            write(peer, 99);
+            int n = Channels.newInputStream(sc).read();
+            assertEquals(99, n);
+        });
+    }
+
+    /**
+     * Test read blocking before bytes are available.
+     */
+    @Test
+    public void testRead2() throws Exception {
+        withConnection((sc, peer) -> {
+            scheduleWrite(peer, 99, 1000);
+            int n = Channels.newInputStream(sc).read();
+            assertEquals(99, n);
+        });
+    }
+
+    /**
+     * Test read after peer has closed connection.
+     */
+    @Test
+    public void testRead3() throws Exception {
+        withConnection((sc, peer) -> {
+            peer.close();
+            int n = Channels.newInputStream(sc).read();
+            assertEquals(-1, n);
+        });
+    }
+
+    /**
+     * Test read blocking before peer closes connection.
+     */
+    @Test
+    public void testRead4() throws Exception {
+        withConnection((sc, peer) -> {
+            scheduleClose(peer, 1000);
+            int n = Channels.newInputStream(sc).read();
+            assertEquals(-1, n);
+        });
+    }
+
+    /**
+     * Test async close of channel when thread blocked in read.
+     */
+    @Test
+    public void testRead5() throws Exception {
+        withConnection((sc, peer) -> {
+            scheduleClose(sc, 2000);
+            InputStream in = Channels.newInputStream(sc);
+            assertThrows(IOException.class, () -> in.read());
+        });
+    }
+
+    /**
+     * Test async close of input stream, when thread blocked in read.
+     */
+    @Test
+    public void testRead6() throws Exception {
+        withConnection((sc, peer) -> {
+            InputStream in = Channels.newInputStream(sc);
+            scheduleClose(in, 2000);
+            assertThrows(IOException.class, () -> in.read());
+        });
+    }
+
+    /**
+     * Test interrupted status set before read.
+     */
+    @Test
+    public void testRead7() throws Exception {
+        withConnection((sc, peer) -> {
+            Thread.currentThread().interrupt();
+            try {
+                InputStream in = Channels.newInputStream(sc);
+                assertThrows(IOException.class, () -> in.read());
+            } finally {
+                Thread.interrupted();  // clear interrupt
+            }
+            assertFalse(sc.isOpen());
+        });
+    }
+
+    /**
+     * Test interrupt of thread blocked in read.
+     */
+    @Test
+    public void testRead8() throws Exception {
+        withConnection((sc, peer) -> {
+            Future<?> interrupter = scheduleInterrupt(Thread.currentThread(), 2000);
+            try {
+                InputStream in = Channels.newInputStream(sc);
+                assertThrows(IOException.class, () -> in.read());
+            } finally {
+                interrupter.cancel(true);
+                Thread.interrupted();  // clear interrupt
+            }
+            assertFalse(sc.isOpen());
+        });
+    }
+
+    /**
+     * Test that read is untimed when SO_TIMEOUT is set on the Socket adaptor.
+     */
+    @Test
+    public void testRead9() throws Exception {
+        withConnection((sc, peer) -> {
+            sc.socket().setSoTimeout(100);
+            scheduleWrite(peer, 99, 2000);
+            // read should block until bytes are available
+            int b = Channels.newInputStream(sc).read();
+            assertEquals(99, b);
+        });
+    }
+
+    /**
+     * Test write.
+     */
+    @Test
+    public void testWrite1() throws Exception {
+        withConnection((sc, peer) -> {
+            OutputStream out = Channels.newOutputStream(sc);
+            out.write(99);
+            int n = read(peer);
+            assertEquals(99, n);
+        });
+    }
+
+    /**
+     * Test async close of channel when thread blocked in write.
+     */
+    @Test
+    public void testWrite2() throws Exception {
+        withConnection((sc, peer) -> {
+            scheduleClose(sc, 2000);
+            assertThrows(IOException.class, () -> {
+                OutputStream out = Channels.newOutputStream(sc);
+                byte[] data = new byte[64*1000];
+                while (true) {
+                    out.write(data);
+                }
+            });
+        });
+    }
+
+    /**
+     * Test async close of output stream when thread blocked in write.
+     */
+    @Test
+    public void testWrite3() throws Exception {
+        withConnection((sc, peer) -> {
+            OutputStream out = Channels.newOutputStream(sc);
+            scheduleClose(out, 2000);
+            assertThrows(IOException.class, () -> {
+                byte[] data = new byte[64*1000];
+                while (true) {
+                    out.write(data);
+                }
+            });
+        });
+    }
+
+    /**
+     * Test interrupted status set before write.
+     */
+    @Test
+    public void testWrite4() throws Exception {
+        withConnection((sc, peer) -> {
+            Thread.currentThread().interrupt();
+            try {
+                OutputStream out = Channels.newOutputStream(sc);
+                assertThrows(IOException.class, () -> out.write(99));
+            } finally {
+                Thread.interrupted();  // clear interrupt
+            }
+            assertFalse(sc.isOpen());
+        });
+    }
+
+    /**
+     * Test interrupt of thread blocked in write.
+     */
+    @Test
+    public void testWrite5() throws Exception {
+        withConnection((sc, peer) -> {
+            Future<?> interrupter = scheduleInterrupt(Thread.currentThread(), 2000);
+            try {
+                assertThrows(IOException.class, () -> {
+                    OutputStream out = Channels.newOutputStream(sc);
+                    byte[] data = new byte[64*1000];
+                    while (true) {
+                        out.write(data);
+                    }
+                });
+            } finally {
+                interrupter.cancel(true);
+                Thread.interrupted();  // clear interrupt
+            }
+            assertFalse(sc.isOpen());
+        });
+    }
+
+    /**
+     * Test read when another thread is blocked in write. The read should
+     * complete immediately.
+     */
+    @Test
+    public void testConcurrentReadWrite1() throws Exception {
+        withConnection((sc, peer) -> {
+            InputStream in = Channels.newInputStream(sc);
+            OutputStream out = Channels.newOutputStream(sc);
+
+            // block thread in write
+            fork(() -> {
+                var data = new byte[64*1024];
+                for (;;) {
+                    out.write(data);
+                }
+            });
+            Thread.sleep(1000); // give writer time to block
+
+            // test read, should not be blocked by writer thread
+            write(peer, 99);
+            int n = in.read();
+            assertEquals(99, n);
+        });
+    }
+
+    /**
+     * Test read when another thread is blocked in write. The read should
+     * block until bytes are available.
+     */
+    @Test
+    public void testConcurrentReadWrite2() throws Exception {
+        withConnection((sc, peer) -> {
+            InputStream in = Channels.newInputStream(sc);
+            OutputStream out = Channels.newOutputStream(sc);
+
+            // block thread in write
+            fork(() -> {
+                var data = new byte[64*1024];
+                for (;;) {
+                    out.write(data);
+                }
+            });
+            Thread.sleep(1000); // give writer time to block
+
+            // test read, should not be blocked by writer thread
+            scheduleWrite(peer, 99, 500);
+            int n = in.read();
+            assertEquals(99, n);
+        });
+    }
+
+    /**
+     * Test writing when another thread is blocked in read.
+     */
+    @Test
+    public void testConcurrentReadWrite3() throws Exception {
+        withConnection((sc, peer) -> {
+            InputStream in = Channels.newInputStream(sc);
+            OutputStream out = Channels.newOutputStream(sc);
+
+            // block thread in read
+            fork(() -> {
+                in.read();
+            });
+            Thread.sleep(100); // give reader time to block
+
+            // test write, should not be blocked by reader thread
+            out.write(99);
+            int n = read(peer);
+            assertEquals(99, n);
+        });
+    }
+
+    /**
+     * Test read/write when channel configured non-blocking.
+     */
+    @Test
+    public void testIllegalBlockingMode() throws Exception {
+        withConnection((sc, peer) -> {
+            InputStream in = Channels.newInputStream(sc);
+            OutputStream out = Channels.newOutputStream(sc);
+
+            sc.configureBlocking(false);
+            assertThrows(IllegalBlockingModeException.class, () -> in.read());
+            assertThrows(IllegalBlockingModeException.class, () -> out.write(99));
+        });
+    }
+
+    /**
+     * Test NullPointerException.
+     */
+    @Test
+    public void testNullPointerException() throws Exception {
+        withConnection((sc, peer) -> {
+            InputStream in = Channels.newInputStream(sc);
+            OutputStream out = Channels.newOutputStream(sc);
+
+            assertThrows(NullPointerException.class, () -> in.read(null));
+            assertThrows(NullPointerException.class, () -> in.read(null, 0, 0));
+
+            assertThrows(NullPointerException.class, () -> out.write(null));
+            assertThrows(NullPointerException.class, () -> out.write(null, 0, 0));
+        });
+    }
+
+    /**
+     * Test IndexOutOfBoundsException.
+     */
+    @Test
+    public void testIndexOutOfBoundsException() throws Exception {
+        withConnection((sc, peer) -> {
+            InputStream in = Channels.newInputStream(sc);
+            OutputStream out = Channels.newOutputStream(sc);
+            byte[] ba = new byte[100];
+
+            assertThrows(IndexOutOfBoundsException.class, () -> in.read(ba, -1, 1));
+            assertThrows(IndexOutOfBoundsException.class, () -> in.read(ba, 0, -1));
+            assertThrows(IndexOutOfBoundsException.class, () -> in.read(ba, 0, 1000));
+            assertThrows(IndexOutOfBoundsException.class, () -> in.read(ba, 1, 100));
+
+            assertThrows(IndexOutOfBoundsException.class, () -> out.write(ba, -1, 1));
+            assertThrows(IndexOutOfBoundsException.class, () -> out.write(ba, 0, -1));
+            assertThrows(IndexOutOfBoundsException.class, () -> out.write(ba, 0, 1000));
+            assertThrows(IndexOutOfBoundsException.class, () -> out.write(ba, 1, 100));
+        });
+    }
+
+    /**
+     * Test that internal buffers have at most MAX_BUFFER_SIZE bytes remaining.
+     */
+    @Test
+    public void testReadLimit() throws IOException {
+        InputStream in = Channels.newInputStream(new TestChannel());
+        byte[] b = new byte[3*MAX_BUFFER_SIZE];
+        int n = in.read(b, 0, b.length);
+        assertEquals(MAX_BUFFER_SIZE, n);
+    }
+
+    /**
+     * Test that internal buffers have at most MAX_BUFFER_SIZE bytes remaining.
+     */
+    @Test
+    public void testWriteLimit() throws IOException {
+        OutputStream out = Channels.newOutputStream(new TestChannel());
+        byte[] b = new byte[3*MAX_BUFFER_SIZE];
+        out.write(b, 0, b.length);
+    }
+
+    // -- test infrastructure --
+
+    private interface ThrowingTask {
+        void run() throws Exception;
+    }
+
+    private interface ThrowingBiConsumer<T, U> {
+        void accept(T t, U u) throws Exception;
+    }
+
+    /**
+     * Invokes the consumer with a connected pair of socket channels.
+     */
+    private static void withConnection(ThrowingBiConsumer<SocketChannel, SocketChannel> consumer)
+        throws Exception
+    {
+        var loopback = InetAddress.getLoopbackAddress();
+        try (ServerSocketChannel listener = ServerSocketChannel.open()) {
+            listener.bind(new InetSocketAddress(loopback, 0));
+            try (SocketChannel sc = SocketChannel.open(listener.getLocalAddress())) {
+                try (SocketChannel peer = listener.accept()) {
+                    consumer.accept(sc, peer);
+                }
+            }
+        }
+    }
+
+    /**
+     * Forks a thread to execute the given task.
+     */
+    private Future<?> fork(ThrowingTask task) {
+        ExecutorService pool = Executors.newFixedThreadPool(1);
+        try {
+            return pool.submit(() -> {
+                task.run();
+                return null;
+            });
+        } finally {
+            pool.shutdown();
+        }
+    }
+
+    /**
+     * Read a byte from the given socket channel.
+     */
+    private int read(SocketChannel sc) throws IOException {
+        return sc.socket().getInputStream().read();
+    }
+
+    /**
+     * Write a byte to the given socket channel.
+     */
+    private void write(SocketChannel sc, int b) throws IOException {
+        sc.socket().getOutputStream().write(b);
+    }
+
+    /**
+     * Writes the given data to the socket channel after a delay.
+     */
+    private Future<?> scheduleWrite(SocketChannel sc, byte[] data, long delay) {
+        return schedule(() -> {
+            try {
+                sc.socket().getOutputStream().write(data);
+            } catch (IOException ioe) { }
+        }, delay);
+    }
+
+    /**
+     * Writes a byte to the socket channel after a delay.
+     */
+    private Future<?> scheduleWrite(SocketChannel sc, int b, long delay) {
+        return scheduleWrite(sc, new byte[] { (byte)b }, delay);
+    }
+
+    /**
+     * Closes the given object after a delay.
+     */
+    private Future<?> scheduleClose(Closeable c, long delay) {
+        return schedule(() -> {
+            try {
+                c.close();
+            } catch (IOException ioe) { }
+        }, delay);
+    }
+
+    /**
+     * Interrupts the given Thread after a delay.
+     */
+    private Future<?> scheduleInterrupt(Thread t, long delay) {
+        return schedule(() -> t.interrupt(), delay);
+    }
+
+    /**
+     * Schedules the given task to run after a delay.
+     */
+    private Future<?> schedule(Runnable task, long delay) {
+        return executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * ByteChannel that throws if more than 128k bytes remain
+     * in the buffer supplied for reading or writing.
+     */
+    private static class TestChannel implements ByteChannel {
+        @Override
+        public int read(ByteBuffer bb) throws IOException {
+            int rem = bb.remaining();
+            if (rem > MAX_BUFFER_SIZE) {
+                throw new IOException("too big");
+            }
+            bb.position(bb.limit());
+            return rem;
+        }
+
+        @Override
+        public int write(ByteBuffer bb) throws IOException {
+            int rem = bb.remaining();
+            if (rem > MAX_BUFFER_SIZE) {
+                throw new IOException("too big");
+            }
+            bb.position(bb.limit());
+            return rem;
+        }
+
+        @Override
+        public boolean isOpen() {
+            return true;
+        }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException();
+        }
+    }
+}

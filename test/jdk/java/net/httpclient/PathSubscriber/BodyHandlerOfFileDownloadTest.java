@@ -1,0 +1,274 @@
+/*
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8237470
+ * @summary Confirm HttpResponse.BodySubscribers#ofFileDownload(Path)
+ *          works only with the default file system
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.Http2TestServerConnection
+ *        jdk.httpclient.test.lib.http2.Http2TestExchange
+ *        jdk.httpclient.test.lib.http2.Http2Handler
+ *        jdk.httpclient.test.lib.http2.OutgoingPushPromise
+ *        jdk.httpclient.test.lib.http2.Queue
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ * @run junit/othervm ${test.main.class}
+ */
+
+import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.util.FileUtils;
+
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import static java.lang.System.out;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class BodyHandlerOfFileDownloadTest implements HttpServerAdapters {
+    static final String MSG = "msg";
+    static final String contentDispositionValue = "attachment; filename=example.html";
+
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer httpTestServer;    // HTTP/1.1      [ 5 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
+
+    private static FileSystem zipFs;
+    private static Path defaultFsPath;
+    private static Path zipFsPath;
+
+    // Default file system
+
+    static Path defaultFsDir() throws Exception {
+        var dir = Path.of("defaultDir");
+        if (Files.notExists(dir)) {
+            Files.createDirectory(dir);
+        }
+        return dir;
+    }
+
+    public static Object[][] defaultFsData() {
+        return new Object[][]{
+                {  http3URI,   defaultFsPath,  MSG,  true   },
+                {  http3URI,   defaultFsPath,  MSG,  false  },
+                {  httpURI,    defaultFsPath,  MSG,  true   },
+                {  httpsURI,   defaultFsPath,  MSG,  true   },
+                {  http2URI,   defaultFsPath,  MSG,  true   },
+                {  https2URI,  defaultFsPath,  MSG,  true   },
+                {  httpURI,    defaultFsPath,  MSG,  false  },
+                {  httpsURI,   defaultFsPath,  MSG,  false  },
+                {  http2URI,   defaultFsPath,  MSG,  false  },
+                {  https2URI,  defaultFsPath,  MSG,  false  },
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("defaultFsData")
+    public void testDefaultFs(String uriString,
+                              Path path,
+                              String expectedMsg,
+                              boolean sameClient) throws Exception {
+        out.printf("\n\n--- testDefaultFs(%s, %s, \"%s\", %b): starting\n",
+                uriString, path, expectedMsg, sameClient);
+        receive(uriString, path, expectedMsg, sameClient);
+    }
+
+    private static final int ITERATION_COUNT = 3;
+
+    private HttpClient newHttpClient(String uri) {
+        var builder = uri.contains("/http3/")
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        return builder.proxy(NO_PROXY)
+                .sslContext(sslContext)
+                .build();
+    }
+
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
+    private void receive(String uriString,
+                      Path path,
+                      String expectedMsg,
+                      boolean sameClient) throws Exception {
+        HttpClient client = null;
+
+        for (int i = 0; i < ITERATION_COUNT; i++) {
+            if (!sameClient || client == null) {
+                client = newHttpClient(uriString);
+            }
+            var req = newRequestBuilder(URI.create(uriString))
+                .POST(BodyPublishers.noBody())
+                .build();
+            var resp = client.send(req, BodyHandlers.ofFileDownload(path, CREATE, TRUNCATE_EXISTING, WRITE));
+            String msg = Files.readString(resp.body());
+            out.printf("Resp code: %s\n", resp.statusCode());
+            out.println("Resp body Path: " + resp.body());
+            out.printf("Resp body written to file: %s\n", msg);
+            assertEquals(200, resp.statusCode());
+            assertEquals(expectedMsg, msg);
+            assertTrue(resp.headers().firstValue("Content-Disposition").isPresent());
+            assertEquals(contentDispositionValue, resp.headers().firstValue("Content-Disposition").get());
+            if (!sameClient) {
+                client.close();
+            }
+        }
+        if (sameClient && client != null) {
+            client.close();
+        }
+    }
+
+    // Zip file system
+
+    static FileSystem newZipFs() throws Exception {
+        Path zipFile = Path.of("file.zip");
+        return FileSystems.newFileSystem(zipFile, Map.of("create", "true"));
+    }
+
+    static Path zipFsDir(FileSystem fs) throws Exception {
+        var dir = fs.getPath("zipDir");
+        if (Files.notExists(dir)) {
+            Files.createDirectory(dir);
+        }
+        return dir;
+    }
+
+    @Test
+    public void testZipFs() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            out.printf("\n\n--- testZipFs(): starting\n");
+            BodyHandlers.ofFileDownload(zipFsPath, CREATE, TRUNCATE_EXISTING, WRITE);
+        });
+    }
+
+
+    @BeforeAll
+    public static void setup() throws Exception {
+        defaultFsPath = defaultFsDir();
+        zipFs = newZipFs();
+        zipFsPath = zipFsDir(zipFs);
+
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
+        httpTestServer.addHandler(new HttpEchoHandler(), "/http1/echo");
+        httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
+
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
+        httpsTestServer.addHandler(new HttpEchoHandler(), "/https1/echo");
+        httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/echo";
+
+        http2TestServer = HttpTestServer.create(HTTP_2);
+        http2TestServer.addHandler(new HttpEchoHandler(), "/http2/echo");
+        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
+
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
+        https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
+        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
+
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new HttpEchoHandler(), "/http3/echo");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
+
+        httpTestServer.start();
+        httpsTestServer.start();
+        http2TestServer.start();
+        https2TestServer.start();
+        http3TestServer.start();
+    }
+
+    @AfterAll
+    public static void teardown() throws Exception {
+        if (Files.exists(zipFsPath))
+            FileUtils.deleteFileTreeWithRetry(zipFsPath);
+        if (Files.exists(defaultFsPath))
+            FileUtils.deleteFileTreeWithRetry(defaultFsPath);
+
+        httpTestServer.stop();
+        httpsTestServer.stop();
+        http2TestServer.stop();
+        https2TestServer.stop();
+        http3TestServer.stop();
+        zipFs.close();
+    }
+
+    static class HttpEchoHandler implements HttpServerAdapters.HttpTestHandler {
+        @Override
+        public void handle(HttpServerAdapters.HttpTestExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody();
+                OutputStream os = t.getResponseBody()) {
+                is.readAllBytes();
+                t.getResponseHeaders().addHeader("Content-Disposition",
+                                "attachment; filename=example.html");
+                t.sendResponseHeaders(200, MSG.getBytes().length);
+                os.write(MSG.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+    }
+}

@@ -1,0 +1,170 @@
+/*
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+ /*
+ * @test
+ * @bug 8005471 8008577 8129881 8130845 8136518 8181157 8210490 8220037
+ *      8234347 8236548 8317979 8354548
+ * @modules jdk.localedata
+ * @run main CLDRDisplayNamesTest
+ * @summary Make sure that localized time zone names of CLDR are used
+ * if specified.
+ */
+
+import java.text.*;
+import java.util.*;
+import static java.util.TimeZone.*;
+
+public class CLDRDisplayNamesTest {
+    /*
+     * The first element is a language tag. The rest are localized
+     * display names of America/Los_Angeles copied from the CLDR
+     * resources data. If data change in CLDR, test data below will
+     * need to be changed accordingly.
+     *
+     * Generic names are NOT tested (until they are supported by API).
+     */
+    static final String[][] CLDR_DATA = {
+        {
+            "ja-JP",
+            "米国太平洋標準時",
+            "PST",
+            "米国太平洋夏時間",
+            "PDT",
+        },
+        {
+            "zh-CN",
+            "北美太平洋标准时间",
+            "PST",
+            "北美太平洋夏令时间",
+            "PDT",
+        },
+        {
+            "de-DE",
+            "Nordamerikanische Westküsten-Normalzeit",
+            "PST",
+            "Nordamerikanische Westküsten-Sommerzeit",
+            "PDT",
+        },
+    };
+
+    private static final String NO_INHERITANCE_MARKER = "∅∅∅";
+
+    public static void main(String[] args) {
+        // Make sure that localized time zone names of CLDR are used
+        // if specified.
+        TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
+        int errors = 0;
+        for (String[] data : CLDR_DATA) {
+            Locale locale = Locale.forLanguageTag(data[0]);
+            for (int i = 1; i < data.length; i++) {
+                int style = ((i % 2) == 1) ? LONG : SHORT;
+                boolean daylight = (i == 3 || i == 4);
+                String name = tz.getDisplayName(daylight, style, locale);
+                if (!data[i].equals(name)) {
+                    System.err.printf("error: got '%s' expected '%s' (style=%d, daylight=%s, locale=%s)%n",
+                            name, data[i], style, daylight, locale);
+                    errors++;
+                }
+            }
+        }
+
+        // for 8129881
+        /* 8234347: CLDR Converter will not pre-fill short display names from COMPAT anymore.
+        tz = TimeZone.getTimeZone("Europe/Vienna");
+        String name = tz.getDisplayName(false, SHORT, Locale.ENGLISH);
+        if (!"CET".equals(name)) {
+            System.err.printf("error: got '%s' expected 'CET' %n", name);
+            errors++;
+        }
+        */
+
+        // for 8130845
+        SimpleDateFormat fmtROOT = new SimpleDateFormat("EEE MMM d hh:mm:ss z yyyy", Locale.ROOT);
+        SimpleDateFormat fmtUS = new SimpleDateFormat("EEE MMM d hh:mm:ss z yyyy", Locale.US);
+        SimpleDateFormat fmtUK = new SimpleDateFormat("EEE MMM d hh:mm:ss z yyyy", Locale.UK);
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.ROOT);
+            fmtROOT.parse("Thu Nov 13 04:35:51 GMT-09:00 2008");
+            fmtUS.parse("Thu Nov 13 04:35:51 AKST 2008");
+            fmtUK.parse("Thu Nov 13 04:35:51 GMT-09:00 2008");
+        } catch (ParseException pe) {
+            System.err.println(pe);
+            errors++;
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
+
+        // for 8210490
+        // Check that TimeZone.getDisplayName should honor passed locale parameter,
+        // even if default locale is set to some other locale.
+        Locale.setDefault(Locale.forLanguageTag("ar-PK"));
+        TimeZone zi = TimeZone.getTimeZone("Etc/GMT-5");
+        String displayName = zi.getDisplayName(false, TimeZone.SHORT, Locale.US);
+        Locale.setDefault(originalLocale);
+        if (!displayName.equals("GMT+05:00")) {
+            System.err.println("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
+            errors++;
+        }
+
+        // 8217366: No "no inheritance marker" should be left in the returned array
+        // from DateFormatSymbols.getZoneStrings()
+        errors += List.of(Locale.ROOT,
+                Locale.CHINA,
+                Locale.GERMANY,
+                Locale.JAPAN,
+                Locale.UK,
+                Locale.US,
+                Locale.forLanguageTag("hi-IN"),
+                Locale.forLanguageTag("es-419")).stream()
+            .peek(System.out::println)
+            .map(l -> DateFormatSymbols.getInstance(l).getZoneStrings())
+            .flatMap(zoneStrings -> Arrays.stream(zoneStrings))
+            .filter(namesArray -> Arrays.stream(namesArray)
+                .anyMatch(aName -> aName.equals(NO_INHERITANCE_MARKER)))
+            .peek(marker -> {
+                 System.err.println("No-inheritance-marker is detected with tzid: "
+                                                + marker[0]);
+            })
+            .count();
+
+        // 8220037: Make sure CLDRConverter uniquely produces bundles, regardless of the
+        // source file enumeration order.
+        /* 8234347: CLDR Converter will not pre-fill short display names from COMPAT anymore.
+        tz = TimeZone.getTimeZone("America/Argentina/La_Rioja");
+        if (!"ARST".equals(tz.getDisplayName(true, TimeZone.SHORT,
+                                new Locale.Builder()
+                                    .setLanguage("en")
+                                    .setRegion("CA")
+                                    .build()))) {
+            System.err.println("Short display name of \"" + tz.getID() + "\" was not \"ARST\"");
+            errors++;
+        }
+        */
+
+        if (errors > 0) {
+            throw new RuntimeException("test failed");
+        }
+    }
+}

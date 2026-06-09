@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_COMPILER_COMPILER_GLOBALS_PD_HPP
+#define SHARE_COMPILER_COMPILER_GLOBALS_PD_HPP
+
+// Platform-specific Default values for VM flags used by the compiler.
+//
+// Note: for historical reasons, some of these flags are declared in globals.hpp.
+// E.g., BackgroundCompilation. Such declarations should be moved to this
+// file instead.
+
+#include "runtime/globals_shared.hpp"
+#ifdef COMPILER1
+#include "c1/c1_globals.hpp"
+#endif // COMPILER1
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif // COMPILER2
+
+#if !defined(COMPILER1) && !defined(COMPILER2)
+define_pd_global(bool, BackgroundCompilation,        false);
+define_pd_global(bool, CICompileOSR,                 false);
+define_pd_global(bool, UseTypeProfile,               false);
+define_pd_global(bool, UseOnStackReplacement,        false);
+define_pd_global(bool, InlineIntrinsics,             false);
+define_pd_global(bool, PreferInterpreterNativeStubs, true);
+define_pd_global(bool, ProfileInterpreter,           false);
+define_pd_global(bool, ProfileTraps,                 false);
+define_pd_global(bool, TieredCompilation,            false);
+
+define_pd_global(intx, CompileThreshold,             0);
+
+define_pd_global(intx,   OnStackReplacePercentage,   0);
+define_pd_global(bool,   InlineClassNatives,         true);
+define_pd_global(bool,   InlineUnsafeOps,            true);
+define_pd_global(size_t, InitialCodeCacheSize,       160*K);
+define_pd_global(size_t, ReservedCodeCacheSize,      32*M);
+define_pd_global(size_t, NonProfiledCodeHeapSize,    0);
+define_pd_global(size_t, ProfiledCodeHeapSize,       0);
+define_pd_global(size_t, NonNMethodCodeHeapSize,     32*M);
+
+define_pd_global(size_t, CodeCacheExpansionSize,     32*K);
+define_pd_global(size_t, CodeCacheMinBlockLength,    1);
+define_pd_global(size_t, CodeCacheMinimumUseSpace,   200*K);
+#define CI_COMPILER_COUNT 0
+#else
+
+#ifdef COMPILER2
+#define CI_COMPILER_COUNT 2
+#else
+#define CI_COMPILER_COUNT 1
+#endif // COMPILER2
+
+#endif // no compilers
+
+#endif // SHARE_COMPILER_COMPILER_GLOBALS_PD_HPP

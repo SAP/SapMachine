@@ -1,0 +1,176 @@
+#
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeFileStart.gmk
+
+################################################################################
+# This file builds the native component of the JTReg tests for Hotspot.
+# It also covers the test-image part, where the built files are copied to the
+# test image.
+################################################################################
+
+include CopyFiles.gmk
+include TestFilesCompilation.gmk
+
+################################################################################
+# Targets for building the native tests themselves.
+################################################################################
+
+# This might have been added to by a custom extension.
+HOTSPOT_JTREG_NATIVE_SRC += $(TOPDIR)/test/hotspot/jtreg
+
+HOTSPOT_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/hotspot/jtreg/native
+VM_TESTBASE_DIR := $(TOPDIR)/test/hotspot/jtreg/vmTestbase
+NSK_SHARE_DIR := $(VM_TESTBASE_DIR)/nsk/share
+
+################################################################################
+# Platform independent setup
+
+# Optimization -O3 needed, HIGH == -O3
+HOTSPOT_JTREG_LIBRARIES_OPTIMIZATION_libNoFramePointer := HIGH
+
+HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exesigtest := java.base:libjvm
+HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
+
+################################################################################
+# Platform specific setup
+
+ifeq ($(call isTargetOs, linux), true)
+  HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := -fomit-frame-pointer
+  HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
+  HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
+  HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeinvoke := java.base:libjvm
+  HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-gap := java.base:libjvm
+  HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-tls := java.base:libjvm
+  TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
+  HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
+  HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ldl
+  HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
+  HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libfast-math := -ffast-math
+  # SapMachine 2023-10-04: Added link flags for malloc hooks tests
+  HOTSPOT_JTREG_EXECUTABLES_LIBS_exetestmallochooks := -ldl
+  HOTSPOT_JTREG_LIBRARIES_LIBS_libtestmallochooks := -ldl
+else
+  HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
+      exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
+endif
+
+ifneq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64), true+true)
+  HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
+endif
+
+ifeq ($(call isTargetOs, windows), true)
+  HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
+  HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libnativeStack := java.base:libjvm
+
+  HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c \
+      libCompleteExit.c libMonitorWithDeadObjectTest.c libTestPsig.c \
+      exeGetCreatedJavaVMs.c libTestUnloadedClass.cpp
+else
+  HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeGetCreatedJavaVMs := java.base:libjvm
+
+  HOTSPOT_JTREG_EXCLUDE += libNativeException.c exeGetProcessorInfo.c
+endif
+
+################################################################################
+# Global setup
+
+  # Any executable which launches the JVM and uses a custom launcher needs to
+  # explicitly link in the default ASan and LSan options.
+ifeq ($(ASAN_ENABLED), true)
+  HOTSPOT_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/asan/asan_default_options.c
+endif
+ifeq ($(LSAN_ENABLED), true)
+  HOTSPOT_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
+endif
+
+HOTSPOT_JTREG_CFLAGS := \
+    -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS \
+    -I$(NSK_SHARE_DIR)/aod \
+    -I$(NSK_SHARE_DIR)/gc/lock/jni \
+    -I$(NSK_SHARE_DIR)/gc/lock/jniref \
+    -I$(NSK_SHARE_DIR)/jdi \
+    -I$(NSK_SHARE_DIR)/jni \
+    -I$(NSK_SHARE_DIR)/jvmti \
+    -I$(NSK_SHARE_DIR)/jvmti/agent_common \
+    -I$(NSK_SHARE_DIR)/jvmti/aod \
+    -I$(NSK_SHARE_DIR)/locks \
+    -I$(NSK_SHARE_DIR)/native \
+    -I$(TOPDIR)/test/lib/jdk/test/lib/jvmti \
+    -I$(VM_TESTBASE_DIR)/nsk/stress/jni \
+    -I$(VM_TESTBASE_DIR)/vm/mlvm/share \
+    -I$(VM_TESTBASE_DIR)/vm/share \
+    #
+
+# This evaluation is expensive and should only be done if this target was
+# explicitly called.
+ifneq ($(filter build-test-hotspot-jtreg-native, $(MAKECMDGOALS)), )
+  $(eval $(call SetupTestFilesCompilation, HOTSPOT_JTREG_LIBRARIES, \
+      TYPE := LIBRARY, \
+      SOURCE_DIRS := $(HOTSPOT_JTREG_NATIVE_SRC), \
+      OUTPUT_DIR := $(HOTSPOT_JTREG_OUTPUT_DIR), \
+      EXCLUDE := $(HOTSPOT_JTREG_EXCLUDE), \
+      CFLAGS := $(HOTSPOT_JTREG_CFLAGS), \
+      LIBS := $(LIBPTHREAD), \
+  ))
+
+  $(eval $(call SetupTestFilesCompilation, HOTSPOT_JTREG_EXECUTABLES, \
+      TYPE := PROGRAM, \
+      SOURCE_DIRS := $(HOTSPOT_JTREG_NATIVE_SRC), \
+      OUTPUT_DIR := $(HOTSPOT_JTREG_OUTPUT_DIR), \
+      EXCLUDE := $(HOTSPOT_JTREG_EXCLUDE), \
+      EXTRA_FILES := $(HOTSPOT_JTREG_EXTRA_FILES), \
+      CFLAGS := $(HOTSPOT_JTREG_CFLAGS), \
+      LIBS := $(LIBPTHREAD), \
+  ))
+endif
+
+build-test-hotspot-jtreg-native: $(HOTSPOT_JTREG_LIBRARIES) \
+    $(HOTSPOT_JTREG_EXECUTABLES)
+
+################################################################################
+# Targets for building test-image.
+################################################################################
+
+# Copy to hotspot jtreg test image
+$(eval $(call SetupCopyFiles, COPY_HOTSPOT_JTREG_NATIVE, \
+    SRC := $(HOTSPOT_JTREG_OUTPUT_DIR), \
+    DEST := $(TEST_IMAGE_DIR)/hotspot/jtreg/native, \
+    FILES := $(wildcard $(addprefix $(HOTSPOT_JTREG_OUTPUT_DIR), /bin/* \
+        /lib/*)), \
+    FLATTEN := true, \
+))
+
+test-image-hotspot-jtreg-native: $(COPY_HOTSPOT_JTREG_NATIVE)
+
+all: build-test-hotspot-jtreg-native
+test-image: test-image-hotspot-jtreg-native
+
+.PHONY: build-test-hotspot-jtreg-native test-image-hotspot-jtreg-native \
+    test-image
+
+################################################################################
+
+include MakeFileEnd.gmk

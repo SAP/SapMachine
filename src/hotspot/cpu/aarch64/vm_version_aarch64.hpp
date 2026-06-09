@@ -1,0 +1,283 @@
+/*
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef CPU_AARCH64_VM_VERSION_AARCH64_HPP
+#define CPU_AARCH64_VM_VERSION_AARCH64_HPP
+
+#include "spin_wait_aarch64.hpp"
+#include "runtime/abstract_vm_version.hpp"
+#include "utilities/sizes.hpp"
+
+#include <initializer_list>
+
+class stringStream;
+
+#define BIT_MASK(flag) (1ULL<<(flag))
+
+class VM_Version : public Abstract_VM_Version {
+  friend class VMStructs;
+
+protected:
+  static int _cpu;
+  static int _model;
+  static int _model2;
+  static int _variant;
+  static int _revision;
+  static int _stepping;
+
+  static int _zva_length;
+  static int _dcache_line_size;
+  static int _icache_line_size;
+  static int _initial_sve_vector_length;
+  static int _max_supported_sve_vector_length;
+  static bool _rop_protection;
+  static uintptr_t _pac_mask;
+  // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
+  // implemented as `movi; cpy(imm, merging)`.
+  static constexpr bool _prefer_sve_merging_mode_cpy = true;
+  static bool _cache_dic_enabled;
+  static bool _cache_idc_enabled;
+
+  // IC IVAU trap probe for Neoverse N1 erratum 1542419.
+  // Set by get_os_cpu_info() on Linux via ic_ivau_probe_linux_aarch64.S.
+  static bool _ic_ivau_trapped;
+
+  static SpinWait _spin_wait;
+
+  // Read additional info using OS-specific interfaces
+  static void get_os_cpu_info();
+
+  // Set the SVE vector length to len. If the vector length cannot be
+  // changed to len, set the length to the largest possible value.
+  // Return the length that will be used, or -ve if an error occurred.
+  static int set_and_get_current_sve_vector_length(int len);
+  static int get_current_sve_vector_length();
+
+public:
+  // Initialization
+  static void initialize();
+  static void check_virtualizations();
+
+  static void insert_features_names(uint64_t features, stringStream& ss);
+
+  static void print_platform_virtualization_info(outputStream*);
+
+  // Asserts
+  static void assert_is_initialized() {
+  }
+
+  static bool expensive_load(int ld_size, int scale) {
+    if (cpu_family() == CPU_ARM) {
+      // Half-word load with index shift by 1 (aka scale is 2) has
+      // extra cycle latency, e.g. ldrsh w0, [x1,w2,sxtw #1].
+      if (ld_size == 2 && scale == 2) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // The CPU implementer codes can be found in
+  // ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile
+  // https://developer.arm.com/docs/ddi0487/latest
+  // Arm can assign codes that are not published in the manual.
+  // Apple's code is defined in
+  // https://github.com/apple/darwin-xnu/blob/33eb983/osfmk/arm/cpuid.h#L62
+  enum Family {
+    CPU_AMPERE    = 0xC0,
+    CPU_ARM       = 'A',
+    CPU_BROADCOM  = 'B',
+    CPU_CAVIUM    = 'C',
+    CPU_DEC       = 'D',
+    CPU_HISILICON = 'H',
+    CPU_INFINEON  = 'I',
+    CPU_MOTOROLA  = 'M',
+    CPU_NVIDIA    = 'N',
+    CPU_AMCC      = 'P',
+    CPU_QUALCOMM  = 'Q',
+    CPU_MARVELL   = 'V',
+    CPU_INTEL     = 'i',
+    CPU_APPLE     = 'a',
+  };
+
+  enum Ampere_CPU_Model {
+    CPU_MODEL_EMAG      = 0x0,   /* CPU implementer is CPU_AMCC */
+    CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1A = 0xac4, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1B = 0xac5  /* AMPERE_1B core Implements ARMv8.7 with CSSC, MTE, SM3/SM4 extensions */
+  };
+
+  enum ARM_CPU_Model {
+    CPU_MODEL_ARM_CORTEX_A53    = 0xd03,
+    CPU_MODEL_ARM_CORTEX_A73    = 0xd09,
+    CPU_MODEL_ARM_NEOVERSE_N1   = 0xd0c,
+    CPU_MODEL_ARM_NEOVERSE_V1   = 0xd40,
+    CPU_MODEL_ARM_NEOVERSE_N2   = 0xd49,
+    CPU_MODEL_ARM_NEOVERSE_V2   = 0xd4f,
+    CPU_MODEL_ARM_NEOVERSE_V3AE = 0xd83,
+    CPU_MODEL_ARM_NEOVERSE_V3   = 0xd84,
+    CPU_MODEL_ARM_NEOVERSE_N3   = 0xd8e,
+  };
+
+#define CPU_FEATURE_FLAGS(decl)            \
+    decl(FP,            fp            )    \
+    decl(ASIMD,         asimd         )    \
+    decl(EVTSTRM,       evtstrm       )    \
+    decl(AES,           aes           )    \
+    decl(PMULL,         pmull         )    \
+    decl(SHA1,          sha1          )    \
+    decl(SHA2,          sha256        )    \
+    decl(CRC32,         crc32         )    \
+    decl(LSE,           lse           )    \
+    decl(FPHP,          fphp          )    \
+    decl(ASIMDHP,       asimdhp       )    \
+    decl(DCPOP,         dcpop         )    \
+    decl(SHA3,          sha3          )    \
+    decl(SHA512,        sha512        )    \
+    decl(SVE,           sve           )    \
+    decl(SB,            sb            )    \
+    decl(PACA,          paca          )    \
+    decl(SVEBITPERM,    svebitperm    )    \
+    decl(SVE2,          sve2          )    \
+    decl(A53MAC,        a53mac        )    \
+    decl(ECV,           ecv           )    \
+    decl(WFXT,          wfxt          )
+
+  enum Feature_Flag {
+#define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
+    CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
+#undef DECLARE_CPU_FEATURE_FLAG
+    MAX_CPU_FEATURES
+  };
+
+  STATIC_ASSERT(sizeof(_features) * BitsPerByte >= MAX_CPU_FEATURES);
+
+  static const char* _features_names[];
+
+  // Feature identification
+#define CPU_FEATURE_DETECTION(id, name) \
+  static bool supports_##name() { return supports_feature(CPU_##id); }
+  CPU_FEATURE_FLAGS(CPU_FEATURE_DETECTION)
+#undef CPU_FEATURE_DETECTION
+
+  static void set_feature(Feature_Flag flag) {
+    _features |= BIT_MASK(flag);
+  }
+  static void clear_feature(Feature_Flag flag) {
+    _features &= (~BIT_MASK(flag));
+  }
+  static bool supports_feature(Feature_Flag flag) {
+    return (_features & BIT_MASK(flag)) != 0;
+  }
+  static bool supports_feature(uint64_t features, Feature_Flag flag) {
+    return (features & BIT_MASK(flag)) != 0;
+  }
+
+  static bool cpu_supports_aes()      { return supports_feature(_cpu_features, CPU_AES); }
+
+  static int cpu_family()                     { return _cpu; }
+  static int cpu_model()                      { return _model; }
+  static int cpu_model2()                     { return _model2; }
+  static int cpu_variant()                    { return _variant; }
+  static int cpu_revision()                   { return _revision; }
+
+  static bool model_is(int cpu_model) {
+    return _model == cpu_model || _model2 == cpu_model;
+  }
+
+  static bool model_is_in(std::initializer_list<int> cpu_models) {
+    for (const int& cpu_model : cpu_models) {
+      if (_model == cpu_model || _model2 == cpu_model) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static bool is_zva_enabled() { return 0 < _zva_length; }
+  static int zva_length() {
+    assert(is_zva_enabled(), "ZVA not available");
+    return _zva_length;
+  }
+
+  static int icache_line_size() { return _icache_line_size; }
+  static int dcache_line_size() { return _dcache_line_size; }
+  static int get_initial_sve_vector_length()        { return _initial_sve_vector_length; };
+  static int get_max_supported_sve_vector_length()  { return _max_supported_sve_vector_length; };
+
+  // Aarch64 supports fast class initialization checks
+  static bool supports_fast_class_init_checks() { return true; }
+  constexpr static bool supports_stack_watermark_barrier() { return true; }
+  constexpr static bool supports_recursive_fast_locking() { return true; }
+
+  constexpr static bool supports_secondary_supers_table() { return true; }
+
+  static void get_compatible_board(char *buf, int buflen);
+
+  static const SpinWait& spin_wait_desc() { return _spin_wait; }
+
+  static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
+
+  static bool supports_float16() { return true; }
+
+#ifdef __APPLE__
+  // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
+  static bool is_cpu_emulated();
+#endif
+
+  static void initialize_cpu_information(void);
+
+  static bool use_rop_protection() { return _rop_protection; }
+
+  static bool prefer_sve_merging_mode_cpy() { return _prefer_sve_merging_mode_cpy; }
+
+  // For common 64/128-bit unpredicated vector operations, we may prefer
+  // emitting NEON instructions rather than the corresponding SVE instructions.
+  static bool use_neon_for_vector(int vector_length_in_bytes) {
+    return vector_length_in_bytes <= 16;
+  }
+
+  static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
+  static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
+  static bool is_ic_ivau_trapped()   { return _ic_ivau_trapped; }
+
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss);
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+
+  // Returns number of bytes required to store cpu features representation
+  static int cpu_features_size();
+
+  // Stores cpu features representation in the provided buffer. This representation is arch dependent.
+  // Size of the buffer must be same as returned by cpu_features_size()
+  static void store_cpu_features(void* buf);
+
+  static bool verify_aot_code_cache_features(void* features_buffer);
+};
+
+#endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

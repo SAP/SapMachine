@@ -1,0 +1,95 @@
+#
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+
+include LauncherCommon.gmk
+
+ifeq ($(call isTargetOs, windows), true)
+  ACCESSIBILITY_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
+
+  ##############################################################################
+  # Build jabswitch
+  ##############################################################################
+
+  $(eval $(call SetupJdkExecutable, BUILD_JABSWITCH, \
+      NAME := jabswitch, \
+      CXXFLAGS_FILTER_OUT := -Zc:wchar_t-, \
+      CXXFLAGS := -Zc:wchar_t -analyze- -Od -Gd -D_WINDOWS -D_UNICODE \
+          -DUNICODE -RTC1 -EHsc, \
+      DISABLED_WARNINGS_microsoft_jabswitch.cpp := 4267 4996, \
+      LIBS_windows := advapi32.lib user32.lib version.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+      MANIFEST := $(ACCESSIBILITY_SRCDIR)/jabswitch/jabswitch.manifest, \
+      MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
+  ))
+
+  TARGETS += $(BUILD_JABSWITCH)
+
+  ##############################################################################
+  # Build jaccessinspector
+  ##############################################################################
+
+  $(eval $(call SetupJdkExecutable, BUILD_JACCESSINSPECTOR, \
+      NAME := jaccessinspector, \
+      EXTRA_SRC := \
+          bridge \
+          common \
+          toolscommon, \
+      EXTRA_HEADER_DIRS := include/bridge, \
+      CFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      CXXFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      LDFLAGS_windows := -stack:655360, \
+      LIBS_windows := advapi32.lib user32.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
+  ))
+
+  TARGETS += $(BUILD_JACCESSINSPECTOR)
+
+  ##############################################################################
+  # Build jaccesswalker
+  ##############################################################################
+
+  $(eval $(call SetupJdkExecutable, BUILD_JACCESSWALKER, \
+      NAME := jaccesswalker, \
+      EXTRA_SRC := \
+          bridge \
+          common \
+          toolscommon, \
+      EXTRA_HEADER_DIRS := include/bridge, \
+      CFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      CXXFLAGS := -DACCESSBRIDGE_ARCH_64 -EHsc, \
+      LDFLAGS_windows := -stack:655360, \
+      LIBS_windows := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
+      VERSIONINFO_RESOURCE := \
+          $(ACCESSIBILITY_SRCDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
+  ))
+
+  TARGETS += $(BUILD_JACCESSWALKER)
+endif
+
+################################################################################

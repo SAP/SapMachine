@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.test.lib.net.SimpleSSLContext;
+import static java.lang.System.out;
+import static java.net.http.HttpClient.Version;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import jdk.test.lib.security.SecurityUtils;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+/*
+ * @test
+ * @bug 8239594 8371887
+ * @summary This test verifies that the TLS version handshake respects ssl context
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext TlsContextTest
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ * @run junit/othervm -Dtest.requiresHost=true
+ *                   -Djdk.httpclient.HttpClient.log=headers
+ *                   -Djdk.internal.httpclient.disableHostnameVerification
+ *                   -Djdk.internal.httpclient.debug=false
+ *                    ${test.main.class}
+ */
+
+public class TlsContextTest implements HttpServerAdapters {
+
+    static HttpTestServer https2Server;
+    static String https2URI;
+    static SSLContext server;
+    final static Integer ITERATIONS = 3;
+
+    @BeforeAll
+    public static void setUp() throws Exception {
+        // Re-enable TLSv1 and TLSv1.1 since test depends on them
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
+
+        server = SimpleSSLContext.findSSLContext("TLS");
+        final ExecutorService executor = Executors.newCachedThreadPool();
+        https2Server = HttpTestServer.of(
+                new Http2TestServer("localhost", true, 0, executor, 50, null, server, true)
+                        .enableH3AltServiceOnSamePort());
+        https2Server.addHandler(new TlsVersionTestHandler("https", https2Server),
+                "/server/");
+        https2Server.start();
+        https2URI = "https://" + https2Server.serverAuthority() + "/server/";
+    }
+
+    public static Object[][] scenarios() throws Exception {
+        return new Object[][]{
+                { SimpleSSLContext.findSSLContext("TLS"),     HTTP_2,   "TLSv1.3" },
+                { SimpleSSLContext.findSSLContext("TLSv1.2"), HTTP_2,   "TLSv1.2" },
+                { SimpleSSLContext.findSSLContext("TLSv1.1"), HTTP_1_1, "TLSv1.1" },
+                { SimpleSSLContext.findSSLContext("TLSv1.1"), HTTP_2,   "TLSv1.1" },
+                { SimpleSSLContext.findSSLContext("TLSv1.3"), HTTP_3,   "TLSv1.3" },
+                { SimpleSSLContext.findSSLContext("TLSv1.2"), HTTP_3,   "TLSv1.2" },
+                { SimpleSSLContext.findSSLContext("TLSv1.1"), HTTP_3,   "TLSv1.1" },
+        };
+    }
+
+    /**
+     * Tests various scenarios between client and server tls handshake with valid http
+     */
+    @ParameterizedTest
+    @MethodSource("scenarios")
+    public void testVersionProtocolsNoParams(SSLContext context,
+                                     Version version,
+                                     String expectedProtocol) throws Exception {
+        runTest(context, version, expectedProtocol, false);
+    }
+
+    /**
+     * Tests various scenarios between client and server tls handshake with valid http,
+     * but with empty SSLParameters
+     */
+    @ParameterizedTest
+    @MethodSource("scenarios")
+    public void testVersionProtocolsEmptyParams(SSLContext context,
+                                             Version version,
+                                             String expectedProtocol) throws Exception {
+        runTest(context, version, expectedProtocol, true);
+    }
+
+    private void runTest(SSLContext context, Version version, String expectedProtocol,
+                         boolean setEmptyParams) throws Exception {
+        // for HTTP/3 we won't accept to set the version to HTTP/3 on the
+        //    client if we don't have TLSv1.3; We will set the version
+        //    on the request instead in that case.
+        var builder = version == HTTP_3 ? newClientBuilderForH3()
+                : HttpClient.newBuilder().version(version);
+        var reqBuilder = HttpRequest.newBuilder(new URI(https2URI));
+
+        if (setEmptyParams) {
+            builder.sslParameters(new SSLParameters());
+        }
+        HttpClient client = builder.sslContext(context)
+                .build();
+        if (version == HTTP_3) {
+            // warmup to obtain AltService
+            client.send(reqBuilder.version(HTTP_2).GET().build(), ofString());
+            reqBuilder = reqBuilder.version(HTTP_3);
+        }
+
+        HttpRequest request = reqBuilder.GET().build();
+        for (int i = 0; i < ITERATIONS; i++) {
+            HttpResponse<String> response = client.send(request, ofString());
+            testAllProtocols(response, expectedProtocol, version);
+        }
+        client.close();
+    }
+
+    private void testAllProtocols(HttpResponse<String> response,
+                                  String expectedProtocol,
+                                  Version clientVersion) {
+        String protocol = response.sslSession().get().getProtocol();
+        int statusCode = response.statusCode();
+        Version version = response.version();
+        out.println("Got Body " + response.body());
+        out.println("The protocol negotiated is :" + protocol);
+        assertEquals(200, statusCode);
+        assertEquals(expectedProtocol, protocol);
+        if (clientVersion == HTTP_3) {
+            assertEquals(expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 :
+                    expectedProtocol.equals("TLSv1.2") ? HTTP_2 : HTTP_3, version);
+        } else {
+            assertEquals(expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 : HTTP_2, version);
+        }
+    }
+
+    @AfterAll
+    public static void teardown() throws Exception {
+        https2Server.stop();
+    }
+
+    static class TlsVersionTestHandler implements HttpTestHandler {
+        final String scheme;
+        final HttpTestServer server;
+
+        TlsVersionTestHandler(String scheme, HttpTestServer server) {
+            this.scheme = scheme;
+            this.server = server;
+        }
+
+        @Override
+        public void handle(HttpTestExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody();
+                 OutputStream os = t.getResponseBody()) {
+                byte[] bytes = is.readAllBytes();
+                t.sendResponseHeaders(200, bytes.length);
+                if (bytes.length > 0) {
+                    os.write(bytes);
+                }
+            }
+        }
+    }
+}

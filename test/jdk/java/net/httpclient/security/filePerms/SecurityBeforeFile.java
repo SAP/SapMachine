@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @summary Verifies security checks are performed before existence checks
+ *          in pre-defined body processors APIs
+ * @run junit/othervm ${test.main.class}
+ */
+
+import java.io.FileNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
+import static java.lang.System.out;
+import static java.nio.file.StandardOpenOption.*;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class SecurityBeforeFile {
+
+    @Test
+    public void BodyPublishersOfFile() {
+        Path p = Paths.get("doesNotExist.txt");
+        if (Files.exists(p))
+            throw new AssertionError("Unexpected " + p);
+
+        try {
+            BodyPublishers.ofFile(p);
+            fail("UNEXPECTED, file " + p.toString() + " exists?");
+        } catch (FileNotFoundException fnfe) {
+            out.println("caught expected file not found exception: " + fnfe);
+        }
+    }
+
+    public static Object[][] handlerOpenOptions() {
+        return new Object[][] {
+                { new OpenOption[] {               } },
+                { new OpenOption[] { CREATE        } },
+                { new OpenOption[] { CREATE, WRITE } },
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("handlerOpenOptions")
+    public void BodyHandlersOfFileDownload(OpenOption[] openOptions) {
+        Path p = Paths.get("doesNotExistDir");
+        if (Files.exists(p))
+            throw new AssertionError("Unexpected " + p);
+
+        try {
+            BodyHandlers.ofFileDownload(p, openOptions);
+            fail("UNEXPECTED, file " + p.toString() + " exists?");
+        } catch (IllegalArgumentException iae) {
+            out.println("caught expected illegal argument exception: " + iae);
+        }
+    }
+}

@@ -1,0 +1,548 @@
+/*
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_OPTO_ADDNODE_HPP
+#define SHARE_OPTO_ADDNODE_HPP
+
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/type.hpp"
+#include "utilities/pair.hpp"
+
+// Portions of code courtesy of Clifford Click
+
+class PhaseTransform;
+typedef const Pair<Node*, jint> ConstAddOperands;
+
+//------------------------------AddNode----------------------------------------
+// Classic Add functionality.  This covers all the usual 'add' behaviors for
+// an algebraic ring.  Add-integer, add-float, add-double, and binary-or are
+// all inherited from this class.  The various identity values are supplied
+// by virtual functions.
+class AddNode : public Node {
+  virtual uint hash() const;
+
+  class Multiplication {
+    bool _is_valid = false;
+
+    Node* _variable = nullptr;
+    jlong _multiplier = 0;
+
+  private:
+    Multiplication() {}
+
+  public:
+    Multiplication(Node* variable, jlong multiplier) :
+          _is_valid(true),
+          _variable(variable),
+          _multiplier(multiplier) {}
+
+    static Multiplication make_invalid() {
+      static Multiplication invalid = Multiplication();
+      return invalid;
+    }
+
+    static Multiplication find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt);
+    static Multiplication find_simple_addition_pattern(const Node* n, BasicType bt);
+    static Multiplication find_simple_lshift_pattern(const Node* n, BasicType bt);
+    static Multiplication find_simple_multiplication_pattern(const Node* n, BasicType bt);
+    static Multiplication find_power_of_two_addition_pattern(const Node* n, BasicType bt);
+
+    Multiplication add(const Multiplication rhs) const {
+      if (is_valid_with(rhs.variable()) && rhs.is_valid_with(variable())) {
+        return Multiplication(variable(), java_add(multiplier(), rhs.multiplier()));
+      }
+
+      return make_invalid();
+    }
+
+    bool is_valid() const { return _is_valid; }
+    bool is_valid_with(const Node* variable) const {
+      return _is_valid && this->_variable == variable;
+    }
+
+    Node* variable() const { return _variable; }
+    jlong multiplier() const { return _multiplier; }
+  };
+
+ public:
+  AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
+    init_class_id(Class_Add);
+  }
+
+  // Handle algebraic identities here.  If we have an identity, return the Node
+  // we are equivalent to.  We look for "add of zero" as an identity.
+  virtual Node* Identity(PhaseGVN* phase);
+
+  // We also canonicalize the Node, moving constants to the right input,
+  // and flatten expressions (so that 1+x+2 becomes x+3).
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
+  Node* Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt);
+
+  // Compute a new Type for this node.  Basically we just do the pre-check,
+  // then call the virtual add() to set the type.
+  virtual const Type* Value(PhaseGVN* phase) const;
+
+  // Check if this addition involves the additive identity
+  virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
+
+  // Supplied function returns the sum of the inputs.
+  // This also type-checks the inputs for sanity.  Guaranteed never to
+  // be passed a TOP or BOTTOM type, these are filtered out by a pre-check.
+  virtual const Type *add_ring( const Type *, const Type * ) const = 0;
+
+  // Supplied function to return the additive identity type
+  virtual const Type *add_id() const = 0;
+
+  // Supplied function to return the additive opcode
+  virtual int max_opcode() const = 0;
+
+  // Supplied function to return the multiplicative opcode
+  virtual int min_opcode() const = 0;
+
+  static AddNode* make(Node* in1, Node* in2, BasicType bt);
+
+  // Utility function to check if the given node is a NOT operation,
+  // i.e., n == m ^ (-1).
+  static bool is_not(PhaseGVN* phase, Node* n, BasicType bt);
+
+  // Utility function to make a NOT operation, i.e., returning n ^ (-1).
+  static AddNode* make_not(PhaseGVN* phase, Node* n, BasicType bt);
+};
+
+//------------------------------AddINode---------------------------------------
+// Add 2 integers
+class AddINode : public AddNode {
+public:
+  AddINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeInt::ZERO; }
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  int max_opcode() const { return Op_MaxI; }
+  int min_opcode() const { return Op_MinI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------AddLNode---------------------------------------
+// Add 2 longs
+class AddLNode : public AddNode {
+public:
+  AddLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeLong::ZERO; }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  int max_opcode() const { return Op_MaxL; }
+  int min_opcode() const { return Op_MinL; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------AddFNode---------------------------------------
+// Add 2 floats
+class AddFNode : public AddNode {
+public:
+  AddFNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeF::ZERO; }
+  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  int max_opcode() const { return Op_MaxF; }
+  int min_opcode() const { return Op_MinF; }
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
+//------------------------------AddDNode---------------------------------------
+// Add 2 doubles
+class AddDNode : public AddNode {
+public:
+  AddDNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeD::ZERO; }
+  virtual const Type *bottom_type() const { return Type::DOUBLE; }
+  int max_opcode() const { return Op_MaxD; }
+  int min_opcode() const { return Op_MinD; }
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual uint ideal_reg() const { return Op_RegD; }
+};
+
+//------------------------------AddHFNode---------------------------------------
+// Add 2 half-precision floats
+class AddHFNode : public AddNode {
+public:
+  AddHFNode(Node* in1, Node* in2) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* add_of_identity(const Type* t1, const Type* t2) const;
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::ZERO; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
+//------------------------------AddPNode---------------------------------------
+// Add pointer plus integer to get pointer.  NOT commutative, really.
+// So not really an AddNode.  Lives here, because people associate it with
+// an add.
+class AddPNode : public Node {
+private:
+  AddPNode(Node* base, Node* ptr, Node* off) : Node(nullptr, base, ptr, off) {
+    init_class_id(Class_AddP);
+    assert((ptr->bottom_type() == Type::TOP) ||
+           ((base == Compile::current()->top()) == (ptr->bottom_type()->make_ptr()->isa_oopptr() == nullptr)),
+           "base input only needed for heap addresses");
+  }
+
+public:
+  enum { Control,               // When is it safe to do this add?
+         Base,                  // Base oop, for GC purposes
+         Address,               // Actually address, derived from base
+         Offset } ;             // Offset added to address
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type *bottom_type() const;
+  virtual uint  ideal_reg() const { return Op_RegP; }
+  Node         *base_node() { assert( req() > Base, "Missing base"); return in(Base); }
+  static Node* Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
+                                     // second return value:
+                                     intptr_t& offset);
+
+  static AddPNode* make_with_base(Node* base, Node* ptr, Node* offset) {
+    return new AddPNode(base, ptr, offset);
+  }
+
+  static AddPNode* make_with_base(Node* base, Node* offset) {
+    return make_with_base(base, base, offset);
+  }
+
+  static AddPNode* make_off_heap(Node* ptr, Node* offset) {
+    return make_with_base(Compile::current()->top(), ptr, offset);
+  }
+
+  // Collect the AddP offset values into the elements array, giving up
+  // if there are more than length.
+  int unpack_offsets(Node* elements[], int length) const;
+
+  // Do not match base-ptr edge
+  virtual uint match_edge(uint idx) const;
+
+#ifdef ASSERT
+  bool address_input_has_same_base() const {
+    Node *addp = in(Address);
+    return !addp->is_AddP() || addp->in(Base)->is_top() || addp->in(Base) == in(Base);
+  }
+#endif
+};
+
+//------------------------------OrINode----------------------------------------
+// Logically OR 2 integers.  Included with the ADD nodes because it inherits
+// all the behavior of addition on a ring.
+class OrINode : public AddNode {
+public:
+  OrINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeInt::ZERO; }
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  int max_opcode() const { return Op_MaxI; }
+  int min_opcode() const { return Op_MinI; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+//------------------------------OrLNode----------------------------------------
+// Logically OR 2 longs.  Included with the ADD nodes because it inherits
+// all the behavior of addition on a ring.
+class OrLNode : public AddNode {
+public:
+  OrLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeLong::ZERO; }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  int max_opcode() const { return Op_MaxL; }
+  int min_opcode() const { return Op_MinL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+//------------------------------XorINode---------------------------------------
+// XOR'ing 2 integers
+class XorINode : public AddNode {
+public:
+  XorINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeInt::ZERO; }
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  int max_opcode() const { return Op_MaxI; }
+  int min_opcode() const { return Op_MinI; }
+  virtual const Type *Value(PhaseGVN *phase) const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------XorINode---------------------------------------
+// XOR'ing 2 longs
+class XorLNode : public AddNode {
+public:
+  XorLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeLong::ZERO; }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  int max_opcode() const { return Op_MaxL; }
+  int min_opcode() const { return Op_MinL; }
+  virtual const Type *Value(PhaseGVN *phase) const;
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------MaxNode----------------------------------------
+// Max (or min) of 2 values.  Included with the ADD nodes because it inherits
+// all the behavior of addition on a ring.
+class MinMaxNode : public AddNode {
+private:
+  static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
+  static Node* build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn);
+  Node* extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands);
+
+public:
+  MinMaxNode(Node* in1, Node* in2) : AddNode(in1, in2) {
+    init_class_id(Class_MinMax);
+  }
+  virtual int Opcode() const = 0;
+  virtual int max_opcode() const = 0;
+  virtual int min_opcode() const = 0;
+  Node* IdealI(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  Node* find_identity_operation(Node* operation, Node* operand);
+  int opposite_opcode() const;
+
+  static Node* unsigned_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, true, true, t, gvn);
+  }
+
+  static Node* unsigned_min(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, false, true, t, gvn);
+  }
+
+  static Node* signed_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, true, false, t, gvn);
+  }
+
+  static Node* signed_min(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max(a, b, false, false, t, gvn);
+  }
+
+  // max(a-b, 0)
+  static Node* max_diff_with_zero(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max_diff_with_zero(a, b, true, t, gvn);
+  }
+
+  // min(a-b, 0)
+  static Node* min_diff_with_zero(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
+    return build_min_max_diff_with_zero(a, b, false, t, gvn);
+  }
+
+  static Node* build_min_max_int(Node* a, Node* b, bool is_max);
+  static Node* build_min_max_long(PhaseGVN* phase, Node* a, Node* b, bool is_max);
+};
+
+//------------------------------MaxINode---------------------------------------
+// Maximum of 2 integers.  Included with the ADD nodes because it inherits
+// all the behavior of addition on a ring.
+class MaxINode : public MinMaxNode {
+public:
+  MaxINode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeInt::make(min_jint); }
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+  int max_opcode() const { return Op_MaxI; }
+  int min_opcode() const { return Op_MinI; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+//------------------------------MinINode---------------------------------------
+// MINimum of 2 integers.  Included with the ADD nodes because it inherits
+// all the behavior of addition on a ring.
+class MinINode : public MinMaxNode {
+public:
+  MinINode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring( const Type *, const Type * ) const;
+  virtual const Type *add_id() const { return TypeInt::make(max_jint); }
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+  int max_opcode() const { return Op_MaxI; }
+  int min_opcode() const { return Op_MinI; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+//------------------------------MaxLNode---------------------------------------
+// MAXimum of 2 longs.
+class MaxLNode : public MinMaxNode {
+public:
+  MaxLNode(Compile* C, Node* in1, Node* in2) : MinMaxNode(in1, in2) {
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
+  virtual int Opcode() const;
+  virtual const Type* add_ring(const Type* t0, const Type* t1) const;
+  virtual const Type* add_id() const { return TypeLong::make(min_jlong); }
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+  int max_opcode() const { return Op_MaxL; }
+  int min_opcode() const { return Op_MinL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+//------------------------------MinLNode---------------------------------------
+// MINimum of 2 longs.
+class MinLNode : public MinMaxNode {
+public:
+  MinLNode(Compile* C, Node* in1, Node* in2) : MinMaxNode(in1, in2) {
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
+  virtual int Opcode() const;
+  virtual const Type* add_ring(const Type* t0, const Type* t1) const;
+  virtual const Type* add_id() const { return TypeLong::make(max_jlong); }
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+  int max_opcode() const { return Op_MaxL; }
+  int min_opcode() const { return Op_MinL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+//------------------------------MaxFNode---------------------------------------
+// Maximum of 2 floats.
+class MaxFNode : public MinMaxNode {
+public:
+  MaxFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const;
+  virtual const Type *add_id() const { return TypeF::NEG_INF; }
+  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  int max_opcode() const { return Op_MaxF; }
+  int min_opcode() const { return Op_MinF; }
+};
+
+//------------------------------MinFNode---------------------------------------
+// Minimum of 2 floats.
+class MinFNode : public MinMaxNode {
+public:
+  MinFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const;
+  virtual const Type *add_id() const { return TypeF::POS_INF; }
+  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  int max_opcode() const { return Op_MaxF; }
+  int min_opcode() const { return Op_MinF; }
+};
+
+//------------------------------MaxHFNode--------------------------------------
+// Maximum of 2 half floats.
+class MaxHFNode : public MinMaxNode {
+public:
+  MaxHFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::NEG_INF; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+};
+
+//------------------------------MinHFNode---------------------------------------
+// Minimum of 2 half floats.
+class MinHFNode : public MinMaxNode {
+public:
+  MinHFNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::POS_INF; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+};
+
+//------------------------------MaxDNode---------------------------------------
+// Maximum of 2 doubles.
+class MaxDNode : public MinMaxNode {
+public:
+  MaxDNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const;
+  virtual const Type *add_id() const { return TypeD::NEG_INF; }
+  virtual const Type *bottom_type() const { return Type::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegD; }
+  int max_opcode() const { return Op_MaxD; }
+  int min_opcode() const { return Op_MinD; }
+};
+
+//------------------------------MinDNode---------------------------------------
+// Minimum of 2 doubles.
+class MinDNode : public MinMaxNode {
+public:
+  MinDNode(Node* in1, Node* in2) : MinMaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const;
+  virtual const Type *add_id() const { return TypeD::POS_INF; }
+  virtual const Type *bottom_type() const { return Type::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegD; }
+  int max_opcode() const { return Op_MaxD; }
+  int min_opcode() const { return Op_MinD; }
+};
+
+#endif // SHARE_OPTO_ADDNODE_HPP

@@ -1,0 +1,243 @@
+/*
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.lang.Integer;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
+import java.util.function.IntUnaryOperator;
+import java.util.stream.Stream;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jdk.incubator.vector.VectorSpecies;
+import jdk.test.lib.Utils;
+
+import org.testng.Assert;
+
+public class AbstractVectorTest {
+
+    static final Random RAND = Utils.getRandomInstance();
+
+    interface ToBoolF {
+        boolean apply(int i);
+    }
+
+    static boolean[] fill_boolean(int s , ToBoolF f) {
+        return fill_boolean(new boolean[s], f);
+    }
+
+    static boolean[] fill_boolean(boolean[] a, ToBoolF f) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = f.apply(i);
+        }
+        return a;
+    }
+
+    static <R> IntFunction<R> withToString(String s, IntFunction<R> f) {
+        return new IntFunction<R>() {
+            @Override
+            public R apply(int v) {
+                return f.apply(v);
+            }
+
+            @Override
+            public String toString() {
+                return s;
+            }
+        };
+    }
+
+    static <R> BiFunction<Integer,Integer,R> withToStringBi(String s, BiFunction<Integer,Integer,R> f) {
+        return new BiFunction<Integer,Integer,R>() {
+            @Override
+            public R apply(Integer v, Integer u) {
+                return f.apply(v, u);
+            }
+
+            @Override
+            public String toString() {
+                return s;
+            }
+        };
+    }
+
+    static final List<IntFunction<boolean[]>> BOOL_ARRAY_GENERATORS = List.of(
+            withToString("boolean[i % 2]", (int s) -> {
+                return fill_boolean(s,
+                            i -> ((i % 2) == 0));
+            }),
+            withToString("boolean[i % 5]", (int s) -> {
+                return fill_boolean(s,
+                            i -> ((i % 5) == 0));
+            })
+    );
+
+    interface IntOp {
+        int apply(int i);
+    }
+
+    static int[] fillInts(int s , IntOp f) {
+        return fillInts(new int[s], f);
+    }
+
+    static int[] fillInts(int[] a, IntOp f) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = f.apply(i);
+        }
+        return a;
+    }
+
+    static final List<IntFunction<boolean[]>> BOOLEAN_MASK_GENERATORS = List.of(
+            withToString("mask[i % 2]", (int s) -> {
+                return fill_boolean(s,
+                        i -> ((i % 2) == 0));
+            }),
+            withToString("mask[true]", (int s) -> {
+                boolean[] a = new boolean[s];
+                Arrays.fill(a, true);
+                return a;
+            }),
+            withToString("mask[false]", boolean[]::new)
+    );
+
+    static final List<List<IntFunction<boolean[]>>>
+        BOOLEAN_MASK_COMPARE_GENERATOR_PAIRS =
+            Stream.of(BOOLEAN_MASK_GENERATORS.get(0)).
+                flatMap(fa -> BOOLEAN_MASK_GENERATORS.stream().skip(1).map(
+                                      fb -> List.of(fa, fb))).collect(Collectors.toList());
+
+    static long[] pack_booleans_to_longs(boolean[] mask) {
+        int totalLongs = (mask.length + 63) / 64; // ceil division
+        long[] packed = new long[totalLongs];
+        for (int i = 0; i < mask.length; i++) {
+            int longIndex = i / 64;
+            int bitIndex = i % 64;
+            if (mask[i]) {
+                packed[longIndex] |= 1L << bitIndex;
+            }
+        }
+        return packed;
+    }
+
+    static final List<IntFunction<long[]>> LONG_MASK_GENERATORS = BOOLEAN_MASK_GENERATORS.stream()
+            .map(f -> withToString(
+                    f.toString().replace("mask", "long_mask"),
+                    (IntFunction<long[]>) (int l) -> pack_booleans_to_longs(f.apply(l))
+            ))
+            .collect(Collectors.toList());
+
+    static final List<BiFunction<Integer,Integer,int[]>> INT_SHUFFLE_GENERATORS = List.of(
+            withToStringBi("shuffle[random]",
+                    (Integer l, Integer m) -> RAND.ints(l, 0, m).toArray())
+    );
+
+    interface RangeIntOp {
+        int apply(int i, int min, int max);
+    }
+
+    static int[] fillRangeInts(int s, int min, int max, RangeIntOp f) {
+        return fillRangeInts(new int[s], min, max, f);
+    }
+
+    static int[] fillRangeInts(int[] a, int min, int max, RangeIntOp f) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = f.apply(i, min, max);
+        }
+        return a;
+    }
+
+    static final List<List<BiFunction<Integer, Integer, int[]>>>
+       INT_SHUFFLE_COMPARE_GENERATOR_PAIRS = List.of(
+           List.of(
+               withToStringBi("shuffle[i]", (Integer l, Integer m) -> {
+                   return fillRangeInts(l, 0, m,  (i, _min, _max) -> (i % _max));
+               }),
+               withToStringBi("shuffle[random]", (Integer l, Integer m) -> {
+                   return RAND.ints(l, 0, m).toArray();
+               })
+           ),
+           List.of(
+               withToStringBi("shuffle[i]", (Integer l, Integer m) -> {
+                   return fillRangeInts(l, 0, m,  (i, _min, _max) -> (i % _max));
+               }),
+               withToStringBi("shuffle[random]", (Integer l, Integer m) -> {
+                   return RAND.ints(l, 0, m).toArray();
+               })
+           )
+    );
+
+    static final List<BiFunction<Integer,Integer,int[]>> INT_INDEX_GENERATORS = List.of(
+            withToStringBi("index[random]",
+                    (Integer l, Integer m) -> RAND.ints(l, 0, m).toArray())
+    );
+
+    static boolean isIndexOutOfBoundsForMask(boolean[] mask, int offset, int length) {
+        return isIndexOutOfBoundsForMask(mask, offset, length, 1);
+    }
+
+    static boolean isIndexOutOfBoundsForMask(boolean[] mask, int offset, int length, int eSize) {
+        for (int i = 0; i < mask.length; i++) {
+            int index = i * eSize + offset;
+            if (mask[i]) {
+                if (index < 0 || index > length - eSize) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    static boolean isIndexOutOfBounds(int size, int offset, int length) {
+        int upperBound = offset + size;
+        return upperBound < size || upperBound > length;
+    }
+
+    public static int[] expectedShuffle(int length, IntUnaryOperator fn) {
+        int [] a = new int[length];
+        for (int i = 0; i < length; i++) {
+            int elem = fn.applyAsInt(i);
+            int wrapElem = Math.floorMod(elem, length);
+            if (elem != wrapElem) {
+                elem = wrapElem - length;
+            }
+            a[i] = elem;
+        }
+        return a;
+    }
+
+    // Non-optimized test partial wrap derived from the Spec:
+    // Validation function for lane indexes which may be out of the valid range of [0..VLENGTH-1].
+    // The index is forced into this range by adding or subtracting a suitable multiple of VLENGTH.
+    // Specifically, the index is reduced into the required range by computing the value of length-floor, where
+    // floor=vectorSpecies().loopBound(length) is the next lower multiple of VLENGTH.
+    // As long as VLENGTH is a power of two, then the reduced index also equal to index & (VLENGTH - 1).
+    static int testPartiallyWrapIndex(VectorSpecies<?> vsp, int index) {
+        if (index >= 0 && index < vsp.length()) {
+            return index;
+        }
+        int wrapped = Math.floorMod(index, vsp.length());
+        return wrapped - vsp.length();
+    }
+}

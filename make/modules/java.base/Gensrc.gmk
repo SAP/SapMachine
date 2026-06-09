@@ -1,0 +1,141 @@
+#
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+
+include GensrcCommon.gmk
+include GensrcProperties.gmk
+include GensrcStreamPreProcessing.gmk
+
+include gensrc/GensrcBuffer.gmk
+include gensrc/GensrcCharacterData.gmk
+include gensrc/GensrcCharsetCoder.gmk
+include gensrc/GensrcCharsetMapping.gmk
+include gensrc/GensrcMisc.gmk
+include gensrc/GensrcModuleLoaderMap.gmk
+include gensrc/GensrcRegex.gmk
+include gensrc/GensrcScopedMemoryAccess.gmk
+include gensrc/GensrcVarHandles.gmk
+
+################################################################################
+
+CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
+GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
+CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
+TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
+ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
+
+$(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
+    $(wildcard $(CLDR_DATA_DIR)/main/en*.xml) \
+    $(wildcard $(CLDR_DATA_DIR)/supplemental/*.xml) \
+    $(wildcard $(TZ_DATA_DIR)/*) \
+    $(ZONENAME_TEMPLATE) \
+    $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(GENSRC_DIR))
+	$(call LogInfo, Processing CLDR data for java.base)
+	$(call ExecuteWithLog, $@, \
+	    $(TOOL_CLDRCONVERTER) -base $(CLDR_DATA_DIR) \
+	    -baselocales "en-US" \
+	    -o $(GENSRC_DIR) \
+	    -basemodule \
+	    -year $(COPYRIGHT_YEAR) \
+	    -zntempfile $(ZONENAME_TEMPLATE) \
+	    -tzdatadir $(TZ_DATA_DIR))
+	$(TOUCH) $@
+
+TARGETS += $(CLDR_GEN_DONE)
+
+################################################################################
+
+$(eval $(call SetupCompileProperties, LIST_RESOURCE_BUNDLE, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/launcher/resources, \
+    CLASS := ListResourceBundle, \
+))
+
+$(eval $(call SetupCompileProperties, SUN_UTIL, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/util/resources, \
+    CLASS := sun.util.resources.LocaleNamesBundle, \
+))
+
+$(eval $(call SetupCompileProperties, SECURITY_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/util/resources, \
+    CLASS := ListResourceBundle, \
+))
+
+$(eval $(call SetupCompileProperties, KEYTOOL_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/tools/keytool/resources, \
+    CLASS := ListResourceBundle, \
+))
+
+TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL) $(SECURITY_RESOURCES) $(KEYTOOL_RESOURCES)
+
+################################################################################
+
+GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/LocaleEquivalentMaps.java
+
+$(GENSRC_LSREQUIVMAPS): $(MODULE_SRC)/share/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(@D))
+	$(TOOL_GENERATELSREQUIVMAPS) $< $@ $(COPYRIGHT_YEAR)
+
+TARGETS += $(GENSRC_LSREQUIVMAPS)
+
+################################################################################
+
+INTPOLY_GEN_DONE := $(GENSRC_DIR)/_intpoly-gensrc.marker
+INTPOLY_HEADER := $(TOPDIR)/make/jdk/src/classes/build/tools/intpoly/header.txt
+$(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(GENSRC_DIR))
+	$(call LogInfo, Generating fixed-field math classes for java.base)
+	$(call ExecuteWithLog, $@, \
+	    $(TOOL_INTPOLY) \
+	    $(INTPOLY_HEADER) \
+	    $(GENSRC_DIR)) $(LOG_DEBUG)
+	$(TOUCH) $@
+
+TARGETS += $(INTPOLY_GEN_DONE)
+
+################################################################################
+
+RELEASE_FILE_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/resources/release.txt.template
+RELEASE_FILE_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jdk/internal/misc/resources/release.txt
+
+RELEASE_FILE_VARDEPS := $(COMPANY_NAME) $(VERSION_STRING) $(VERSION_DATE)
+RELEASE_FILE_VARDEPS_FILE := $(call DependOnVariable, RELEASE_FILE_VARDEPS, \
+    $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jlink_release_txt.vardeps)
+
+$(eval $(call SetupTextFileProcessing, BUILD_RELEASE_FILE, \
+    SOURCE_FILES := $(RELEASE_FILE_TEMPLATE), \
+    OUTPUT_FILE := $(RELEASE_FILE_TARGET), \
+    REPLACEMENTS := \
+        @@COMPANY_NAME@@ => $(COMPANY_NAME) ; \
+        @@VERSION_STRING@@ => $(VERSION_STRING) ; \
+        @@VERSION_DATE@@ => $(VERSION_DATE) , \
+))
+
+$(BUILD_RELEASE_FILE): $(RELEASE_FILE_VARDEPS_FILE)
+
+TARGETS += $(BUILD_RELEASE_FILE)
+
+################################################################################

@@ -1,0 +1,244 @@
+/*
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+@import url('../api/resource-files/fonts/dejavu.css');
+
+body {
+  font-family: DejaVu Sans, Bitstream Vera Sans, Luxi Sans, Verdana, Arial, Helvetica, sans-serif;
+  font-size: 10pt;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  min-width: 100%;
+  line-height: 1.4;
+}
+
+pre, code, tt {
+    font-family: DejaVu Sans Mono, Bitstream Vera Sans Mono, Luxi Mono, Courier New, monospace;
+}
+
+main, footer {
+  margin: 16px 27px;
+}
+
+/* Adjust horizontal margin for content elements outside of main element */
+:is(body, header) > :is(nav, h1, h2, h3, h4, h5, h6, p, .sub-title) {
+    margin-left: 27px;
+    margin-right: 27px;
+}
+
+blockquote {
+  margin: 1.5ex 0 1.5ex 2em;
+}
+
+p {
+  margin-top: 1ex;
+  margin-bottom: 1ex;
+}
+
+dd > p:first-child, pre:first-child {
+  margin-top: 0;
+}
+
+h1:first-child, h2:first-child {
+  margin-top: 0;
+}
+
+h1, h2 {
+  margin-top: 2ex;
+  margin-bottom: 1ex;
+}
+
+h3, h4, h5 {
+  margin-top: 1.5ex;
+  margin-bottom: 1ex;
+}
+
+h4, h5 {
+  font-size: 100%;
+}
+
+.subtitle {
+    font-style: italic;
+    font-weight: bold;
+    margin-bottom: 1em;
+}
+
+h1.title + .subtitle {
+    margin-top: -1em;
+}
+
+a { text-decoration: none }
+
+a:link {
+  color: #4A6782;
+}
+
+a:visited {
+  color: #666666;
+}
+
+a[href]:hover {
+  color: #e76f00;
+}
+
+a img {
+  border-width: 0;
+}
+
+img {
+  background: white;
+}
+
+table {
+  border-collapse: collapse;
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+th, td {
+  padding: 3px;
+  vertical-align: top;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+caption  {
+  text-align: left;
+  font-style: italic;
+  text-indent: 15px;
+  margin-bottom:10px;
+}
+
+tr:nth-child(even), tr:nth-child(even) th[scope=row] {
+  background: #E3E3E3;
+}
+
+tr:nth-child(odd), tr:nth-child(odd) th[scope=row] {
+  background: #FFF;
+}
+
+th {
+  background: #DDF;
+}
+
+table.centered {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.centered td {
+  text-align: left;
+}
+.centered {
+  text-align: center;
+}
+
+.draft-header {
+  text-align: center;
+  font-size: 11.2px;
+  padding: 6px;
+  line-height: initial;
+}
+
+.legal-footer {
+    font-style: italic;
+    font-size: 80%;
+}
+
+nav#TOC {
+  border: 1px solid gray;
+  border-radius: 10px;
+  padding: 5px 10px;
+  margin-bottom: 15px;
+}
+
+nav#TOC ul ul {
+    font-size:smaller;
+}
+
+nav#TOC ul ul li {
+    display: inline-block
+}
+
+nav#TOC ul ul li::before {
+    content: " \2022  "
+}
+
+/* Rules below replicate sizing of navigation bar in API docs */
+header#title-block-header div.navbar {
+    padding: 0 20px 0 26px;
+    margin-bottom: 30px;
+    background-color: #4D7A97;
+    color: #FFFFFF;
+    height: 44px;
+    overflow: hidden;
+    font-size: 0.857em;
+    line-height: initial;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+}
+
+header#title-block-header div.navbar nav {
+    flex: 1 1 auto;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+header#title-block-header div.navbar div {
+    flex: 0 0 auto;
+    font-size: 10.978px;
+    white-space: nowrap;
+}
+
+header#title-block-header ul {
+    display:block;
+    margin:0 25px 0 0;
+    padding:0;
+}
+header#title-block-header ul li {
+    list-style:none;
+    float:left;
+    padding: 5px 6px;
+    text-transform:uppercase;
+}
+
+header#title-block-header li.no-link {
+    background-color:#F8981D;
+    color:#253441;
+    margin: auto 5px;
+}
+
+header#title-block-header a:link, header#title-block-header a:active, header#title-block-header a:visited {
+    color:#ffffff;
+    text-decoration:none;
+    text-transform:uppercase;
+}
+header#title-block-header a:hover {
+    color:#bb7a2a;
+}

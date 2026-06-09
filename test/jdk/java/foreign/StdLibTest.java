@@ -1,0 +1,432 @@
+/*
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @run junit/othervm/timeout=600 --enable-native-access=ALL-UNNAMED StdLibTest
+ */
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import java.lang.foreign.*;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+final class StdLibTest extends NativeTestHelper {
+
+    static final Linker ABI = Linker.nativeLinker();
+
+    static final StdLibHelper STD_LIB_HELPER = new StdLibHelper();
+
+    @ParameterizedTest
+    @MethodSource("stringPairs")
+    void test_strcat(String s1, String s2) throws Throwable {
+        assertEquals(s1 + s2, STD_LIB_HELPER.strcat(s1, s2));
+    }
+
+    @ParameterizedTest
+    @MethodSource("stringPairs")
+    void test_strcmp(String s1, String s2) throws Throwable {
+        assertEquals(Math.signum(s1.compareTo(s2)), Math.signum(STD_LIB_HELPER.strcmp(s1, s2)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("strings")
+    void test_puts(String s) throws Throwable {
+        assertTrue(STD_LIB_HELPER.puts(s) >= 0);
+    }
+
+    @ParameterizedTest
+    @MethodSource("strings")
+    void test_strlen(String s) throws Throwable {
+        assertEquals(STD_LIB_HELPER.strlen(s), s.length());
+    }
+
+    @ParameterizedTest
+    @MethodSource("instants")
+    void test_time(Instant instant) throws Throwable {
+        StdLibHelper.Tm tm = STD_LIB_HELPER.gmtime(instant.getEpochSecond());
+        LocalDateTime localTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+        assertEquals(localTime.getSecond(), tm.sec());
+        assertEquals(localTime.getMinute(), tm.min());
+        assertEquals(localTime.getHour(), tm.hour());
+        //day pf year in Java has 1-offset
+        assertEquals(localTime.getDayOfYear() - 1, tm.yday());
+        assertEquals(localTime.getDayOfMonth(), tm.mday());
+        //days of week starts from Sunday in C, but on Monday in Java, also account for 1-offset
+        assertEquals(localTime.getDayOfWeek().getValue() - 1,  (tm.wday() + 6) % 7);
+        //month in Java has 1-offset
+        assertEquals(localTime.getMonth().getValue() - 1, tm.mon());
+        assertEquals(ZoneOffset.UTC.getRules()
+                .isDaylightSavings(Instant.ofEpochMilli(instant.getEpochSecond() * 1000)), tm.isdst());
+    }
+
+    @ParameterizedTest
+    @MethodSource("ints")
+    void test_qsort(List<Integer> ints) throws Throwable {
+        if (ints.size() > 0) {
+            int[] input = ints.stream().mapToInt(i -> i).toArray();
+            int[] sorted = STD_LIB_HELPER.qsort(input);
+            Arrays.sort(input);
+            assertArrayEquals(input, sorted);
+        }
+    }
+
+    @Test
+    void test_rand() throws Throwable {
+        int val = STD_LIB_HELPER.rand();
+        for (int i = 0 ; i < 100 ; i++) {
+            int newVal = STD_LIB_HELPER.rand();
+            if (newVal != val) {
+                return; //ok
+            }
+            val = newVal;
+        }
+        fail("All values are the same! " + val);
+    }
+
+    @ParameterizedTest
+    @MethodSource("printfArgs")
+    void test_printf(List<PrintfArg> args) throws Throwable {
+        String javaFormatArgs = args.stream()
+                .map(a -> a.javaFormat)
+                .collect(Collectors.joining(","));
+        String nativeFormatArgs = args.stream()
+                .map(a -> a.nativeFormat)
+                .collect(Collectors.joining(","));
+
+        String javaFormatString = "hello(" + javaFormatArgs + ")\n";
+        String nativeFormatString = "hello(" + nativeFormatArgs + ")\n";
+
+        String expected = String.format(javaFormatString, args.stream()
+                .map(a -> a.javaValue).toArray());
+
+        int found = STD_LIB_HELPER.printf(nativeFormatString, args);
+        assertEquals(expected.length(), found);
+    }
+
+    @Test
+    void testSystemLibraryBadLookupName() {
+        assertTrue(LINKER.defaultLookup().find("strlen\u0000foobar").isEmpty());
+    }
+
+    static final class StdLibHelper {
+
+        final static MethodHandle strcat = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("strcat"),
+                FunctionDescriptor.of(C_POINTER, C_POINTER, C_POINTER));
+
+        final static MethodHandle strcmp = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("strcmp"),
+                FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER));
+
+        final static MethodHandle puts = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("puts"),
+                FunctionDescriptor.of(C_INT, C_POINTER));
+
+        final static MethodHandle strlen = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("strlen"),
+                FunctionDescriptor.of(C_INT, C_POINTER));
+
+        final static MethodHandle gmtime = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("gmtime"),
+                FunctionDescriptor.of(C_POINTER.withTargetLayout(Tm.LAYOUT), C_POINTER));
+
+        // void qsort( void *ptr, size_t count, size_t size, int (*comp)(const void *, const void *) );
+        final static MethodHandle qsort = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("qsort"),
+                FunctionDescriptor.ofVoid(C_POINTER, C_SIZE_T, C_SIZE_T, C_POINTER));
+
+        final static FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT,
+                C_POINTER.withTargetLayout(C_INT), C_POINTER.withTargetLayout(C_INT));
+
+        final static MethodHandle qsortCompar;
+
+        final static MethodHandle rand = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("rand"),
+                FunctionDescriptor.of(C_INT));
+
+        final static MethodHandle vprintf = ABI.downcallHandle(ABI.defaultLookup().findOrThrow("vprintf"),
+                FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER));
+
+        final static MemorySegment printfAddr = ABI.defaultLookup().findOrThrow("printf");
+
+        final static FunctionDescriptor printfBase = FunctionDescriptor.of(C_INT, C_POINTER);
+
+        static {
+            try {
+                //qsort upcall handle
+                qsortCompar = MethodHandles.lookup().findStatic(StdLibTest.StdLibHelper.class, "qsortCompare",
+                        qsortComparFunction.toMethodType());
+            } catch (ReflectiveOperationException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        String strcat(String s1, String s2) throws Throwable {
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment buf = arena.allocate(s1.length() + s2.length() + 1);
+                buf.setString(0, s1);
+                MemorySegment other = arena.allocateFrom(s2);
+                return ((MemorySegment)strcat.invokeExact(buf, other)).getString(0);
+            }
+        }
+
+        int strcmp(String s1, String s2) throws Throwable {
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment ns1 = arena.allocateFrom(s1);
+                MemorySegment ns2 = arena.allocateFrom(s2);
+                return (int)strcmp.invokeExact(ns1, ns2);
+            }
+        }
+
+        int puts(String msg) throws Throwable {
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocateFrom(msg);
+                return (int)puts.invokeExact(s);
+            }
+        }
+
+        int strlen(String msg) throws Throwable {
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment s = arena.allocateFrom(msg);
+                return (int)strlen.invokeExact(s);
+            }
+        }
+
+        Tm gmtime(long arg) throws Throwable {
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment time = arena.allocate(8);
+                time.set(C_LONG_LONG, 0, arg);
+                return new Tm((MemorySegment)gmtime.invokeExact(time));
+            }
+        }
+
+        static final class Tm {
+
+            //Tm pointer should never be freed directly, as it points to shared memory
+            private final MemorySegment base;
+
+            static final MemoryLayout LAYOUT = MemoryLayout.structLayout(
+                    C_INT.withName("sec"),
+                    C_INT.withName("min"),
+                    C_INT.withName("hour"),
+                    C_INT.withName("mday"),
+                    C_INT.withName("mon"),
+                    C_INT.withName("year"),
+                    C_INT.withName("wday"),
+                    C_INT.withName("yday"),
+                    C_BOOL.withName("isdst"),
+                    MemoryLayout.paddingLayout(3)
+            );
+
+            Tm(MemorySegment addr) {
+                this.base = addr;
+            }
+
+            int sec() {
+                return base.get(C_INT, 0);
+            }
+            int min() {
+                return base.get(C_INT, 4);
+            }
+            int hour() {
+                return base.get(C_INT, 8);
+            }
+            int mday() {
+                return base.get(C_INT, 12);
+            }
+            int mon() {
+                return base.get(C_INT, 16);
+            }
+            int year() {
+                return base.get(C_INT, 20);
+            }
+            int wday() {
+                return base.get(C_INT, 24);
+            }
+            int yday() {
+                return base.get(C_INT, 28);
+            }
+            boolean isdst() {
+                return base.get(C_BOOL, 32);
+            }
+        }
+
+        int[] qsort(int[] arr) throws Throwable {
+            //init native array
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment nativeArr = arena.allocateFrom(C_INT, arr);
+
+                //call qsort
+                MemorySegment qsortUpcallStub = ABI.upcallStub(qsortCompar, qsortComparFunction, arena);
+
+                // both of these fit in an int
+                // automatically widen them to long on x64
+                int count = arr.length;
+                int size = (int) C_INT.byteSize();
+                qsort.invoke(nativeArr, count, size, qsortUpcallStub);
+
+                //convert back to Java array
+                return nativeArr.toArray(C_INT);
+            }
+        }
+
+        static int qsortCompare(MemorySegment addr1, MemorySegment addr2) {
+            return addr1.get(C_INT, 0) -
+                    addr2.get(C_INT, 0);
+        }
+
+        int rand() throws Throwable {
+            return (int)rand.invokeExact();
+        }
+
+        int printf(String format, List<PrintfArg> args) throws Throwable {
+            try (var arena = Arena.ofConfined()) {
+                MemorySegment formatStr = arena.allocateFrom(format);
+                return (int)specializedPrintf(args).invokeExact(formatStr,
+                        args.stream().map(a -> a.nativeValue(arena)).toArray());
+            }
+        }
+
+        private MethodHandle specializedPrintf(List<PrintfArg> args) {
+            //method type
+            MethodType mt = MethodType.methodType(int.class, MemorySegment.class);
+            FunctionDescriptor fd = printfBase;
+            List<MemoryLayout> variadicLayouts = new ArrayList<>(args.size());
+            for (PrintfArg arg : args) {
+                mt = mt.appendParameterTypes(arg.carrier);
+                variadicLayouts.add(arg.layout);
+            }
+            Linker.Option varargIndex = Linker.Option.firstVariadicArg(fd.argumentLayouts().size());
+            MethodHandle mh = ABI.downcallHandle(printfAddr,
+                    fd.appendArgumentLayouts(variadicLayouts.toArray(new MemoryLayout[args.size()])),
+                    varargIndex);
+            return mh.asSpreader(1, Object[].class, args.size());
+        }
+    }
+
+    /*** data providers ***/
+
+    static Stream<Arguments> ints() {
+        return perms(0, new Integer[] { 0, 1, 2, 3, 4 }).stream()
+                .map(Arguments::of);
+    }
+
+    static Stream<Arguments> strings() {
+        return strings0()
+                .map(Arguments::of);
+    }
+
+    static Stream<Arguments> stringPairs() {
+        return strings0()
+                .flatMap(s -> strings0()
+                        .map(s2 -> Arguments.of(s, s2)));
+    }
+
+    static Stream<String> strings0() {
+        return perms(0, new String[] { "a", "b", "c" }).stream()
+                .map(l -> String.join("", l));
+    }
+
+    static Stream<Arguments> instants() {
+        Instant start = ZonedDateTime.of(LocalDateTime.parse("2017-01-01T00:00:00"), ZoneOffset.UTC).toInstant();
+        Instant end = ZonedDateTime.of(LocalDateTime.parse("2017-12-31T00:00:00"), ZoneOffset.UTC).toInstant();
+        return IntStream.range(0, 100)
+                .mapToObj(i -> start.plusSeconds((long)(Math.random() * (end.getEpochSecond() - start.getEpochSecond()))))
+                .map(Arguments::of);
+    }
+
+    static Stream<Arguments> printfArgs() {
+        ArrayList<List<PrintfArg>> res = new ArrayList<>();
+        List<List<PrintfArg>> perms = new ArrayList<>(perms(0, PrintfArg.values()));
+        for (int i = 0 ; i < 100 ; i++) {
+            Collections.shuffle(perms);
+            res.addAll(perms);
+        }
+        return res.stream()
+                .map(Arguments::of);
+    }
+
+    enum PrintfArg {
+        INT(int.class, C_INT, "%d", "%d", arena -> 42, 42),
+        LONG(long.class, C_LONG_LONG, "%lld", "%d", arena -> 84L, 84L),
+        DOUBLE(double.class, C_DOUBLE, "%.4f", "%.4f", arena -> 1.2345d, 1.2345d),
+        STRING(MemorySegment.class, C_POINTER, "%s", "%s", arena -> arena.allocateFrom("str"), "str");
+
+        final Class<?> carrier;
+        final ValueLayout layout;
+        final String nativeFormat;
+        final String javaFormat;
+        final Function<Arena, ?> nativeValueFactory;
+        final Object javaValue;
+
+        <Z, L extends ValueLayout> PrintfArg(Class<?> carrier, L layout, String nativeFormat, String javaFormat,
+                                             Function<Arena, Z> nativeValueFactory, Object javaValue) {
+            this.carrier = carrier;
+            this.layout = layout;
+            this.nativeFormat = nativeFormat;
+            this.javaFormat = javaFormat;
+            this.nativeValueFactory = nativeValueFactory;
+            this.javaValue = javaValue;
+        }
+
+        public Object nativeValue(Arena arena) {
+            return nativeValueFactory.apply(arena);
+        }
+    }
+
+    static <Z> Set<List<Z>> perms(int count, Z[] arr) {
+        if (count == arr.length) {
+            return Set.of(List.of());
+        } else {
+            return Arrays.stream(arr)
+                    .flatMap(num -> {
+                        Set<List<Z>> perms = perms(count + 1, arr);
+                        return Stream.concat(
+                                //take n
+                                perms.stream().map(l -> {
+                                    List<Z> li = new ArrayList<>(l);
+                                    li.add(num);
+                                    return li;
+                                }),
+                                //drop n
+                                perms.stream());
+                    }).collect(Collectors.toCollection(LinkedHashSet::new));
+        }
+    }
+}

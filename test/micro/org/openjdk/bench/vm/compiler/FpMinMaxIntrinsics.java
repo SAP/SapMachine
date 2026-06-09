@@ -1,0 +1,339 @@
+/*
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package org.openjdk.bench.vm.compiler;
+
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.*;
+
+import java.util.concurrent.TimeUnit;
+import java.util.Random;
+
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
+public class FpMinMaxIntrinsics {
+    private static final int COUNT = 1000;
+
+    private double[] doubles = new double[COUNT];
+    private float[] floats = new float[COUNT];
+
+    private int c1, c2, s1, s2;
+
+    private Random r = new Random();
+
+    private static int stride = 1;
+    private static float f_acc;
+    private static double d_acc;
+
+    @Setup
+    public void init() {
+        c1 = s1 = step();
+        c2 = COUNT - (s2 = step());
+
+        for (int i = 0; i < COUNT; i++) {
+            final int mappedIndex = i % 100;
+
+            if (mappedIndex >= 0 && mappedIndex < 10) {
+                // NaN
+                floats[i] = Float.NaN;
+                doubles[i] = Double.NaN;
+            } else if (mappedIndex >= 20 && mappedIndex < 30) {
+                // Equal (+0.0)
+                floats[i] = +0.0f;
+                doubles[i] = +0.0;
+            } else if (mappedIndex >= 40 && mappedIndex < 50) {
+                // Equal (-0.0)
+                floats[i] = -0.0f;
+                doubles[i] = -0.0;
+            } else if (mappedIndex >= 60 && mappedIndex < 70) {
+                // Descending
+                floats[i] = (float) (COUNT - i);
+                doubles[i] = (double) (COUNT - i);
+            } else if (mappedIndex >= 80 && mappedIndex < 90) {
+                // Ascending
+                floats[i] = (float) i;
+                doubles[i] = (double) i;
+            } else if (mappedIndex >= 90 && mappedIndex < 100) {
+                // Random (negative)
+                floats[i] = -r.nextFloat();
+                doubles[i] = -r.nextDouble();
+            } else {
+                // Random (positive)
+                floats[i] = r.nextFloat();
+                doubles[i] = r.nextDouble();
+            }
+        }
+    }
+
+    private int step() {
+        return (r.nextInt() & 0xf) + 1;
+    }
+
+    @Benchmark
+    public void dMax(Blackhole bh) {
+        for (int i = 0; i < COUNT; i++)
+            bh.consume(dMaxBench());
+    }
+
+    @Benchmark
+    public void dMin(Blackhole bh) {
+        for (int i = 0; i < COUNT; i++)
+            bh.consume(dMinBench());
+    }
+
+    @Benchmark
+    public void fMax(Blackhole bh) {
+        for (int i = 0; i < COUNT; i++)
+            bh.consume(fMaxBench());
+    }
+
+    @Benchmark
+    public void fMin(Blackhole bh) {
+        for (int i = 0; i < COUNT; i++)
+            bh.consume(fMinBench());
+    }
+
+    private double dMaxBench() {
+        inc();
+        return Math.max(doubles[c1], doubles[c2]);
+    }
+
+    private double dMinBench() {
+        inc();
+        return Math.min(doubles[c1], doubles[c2]);
+    }
+
+    private float fMaxBench() {
+        inc();
+        return Math.max(floats[c1], floats[c2]);
+    }
+
+    private float fMinBench() {
+        inc();
+        return Math.min(floats[c1], floats[c2]);
+    }
+
+    private void inc() {
+        c1 = c1 + s1 < COUNT ? c1 + s1 : (s1 = step());
+        c2 = c2 - s2 > 0 ? c2 - s2 : COUNT - (s2 = step());
+    }
+
+    @Benchmark
+    public double dMaxReduce() {
+        double result = Double.MIN_VALUE;
+
+        for (int i = 0; i < COUNT; i++)
+            result = Math.max(result, doubles[i]);
+
+        return result;
+    }
+
+    @Benchmark
+    public double dMinReduce() {
+        double result = Double.MAX_VALUE;
+
+        for (int i = 0; i < COUNT; i++)
+            result = Math.min(result, doubles[i]);
+
+        return result;
+    }
+
+    @Benchmark
+    public float fMaxReduce() {
+        float result = Float.MIN_VALUE;
+
+        for (int i = 0; i < COUNT; i++)
+            result = Math.max(result, floats[i]);
+
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReduce() {
+        float result = Float.MAX_VALUE;
+
+        for (int i = 0; i < COUNT; i++)
+            result = Math.min(result, floats[i]);
+
+        return result;
+    }
+
+    @Benchmark
+    public double dMaxReducePartiallyUnrolled() {
+        double result = Double.MIN_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.max(result, doubles[2*i]);
+            result = Math.max(result, doubles[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public double dMinReducePartiallyUnrolled() {
+        double result = Double.MAX_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.min(result, doubles[2*i]);
+            result = Math.min(result, doubles[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float fMaxReducePartiallyUnrolled() {
+        float result = Float.MIN_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.max(result, floats[2*i]);
+            result = Math.max(result, floats[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReducePartiallyUnrolled() {
+        float result = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.min(result, floats[2*i]);
+            result = Math.min(result, floats[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public double dMaxReduceNonCounted() {
+        double result = Double.MIN_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            result = Math.max(result, doubles[i]);
+        return result;
+    }
+
+    @Benchmark
+    public double dMinReduceNonCounted() {
+        double result = Double.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            result = Math.min(result, doubles[i]);
+        return result;
+    }
+
+    @Benchmark
+    public float fMaxReduceNonCounted() {
+        float result = Float.MIN_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            result = Math.max(result, floats[i]);
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReduceNonCounted() {
+        float result = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            result = Math.min(result, floats[i]);
+        return result;
+    }
+
+    @Benchmark
+    public double dMaxReduceGlobalAccumulator() {
+        d_acc = Double.MIN_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            d_acc = Math.max(d_acc, doubles[i]);
+        return d_acc;
+    }
+
+    @Benchmark
+    public double dMinReduceGlobalAccumulator() {
+        d_acc = Double.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            d_acc = Math.min(d_acc, doubles[i]);
+        return d_acc;
+    }
+
+    @Benchmark
+    public float fMaxReduceGlobalAccumulator() {
+        f_acc = Float.MIN_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            f_acc = Math.max(f_acc, floats[i]);
+        return f_acc;
+    }
+
+    @Benchmark
+    public float fMinReduceGlobalAccumulator() {
+        f_acc = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            f_acc = Math.min(f_acc, floats[i]);
+        return f_acc;
+    }
+
+    @Benchmark
+    public double dMaxReduceInOuterLoop() {
+        double result = Double.MIN_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.max(result, doubles[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
+
+    @Benchmark
+    public double dMinReduceInOuterLoop() {
+        double result = Double.MAX_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.min(result, doubles[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
+
+    @Benchmark
+    public float fMaxReduceInOuterLoop() {
+        float result = Float.MIN_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.max(result, floats[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
+
+    @Benchmark
+    public float fMinReduceInOuterLoop() {
+        float result = Float.MAX_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.min(result, floats[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
+}

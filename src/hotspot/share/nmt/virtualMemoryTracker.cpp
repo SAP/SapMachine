@@ -1,0 +1,358 @@
+/*
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#include "logging/log.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/regionsTree.inline.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
+#include "runtime/os.hpp"
+#include "utilities/ostream.hpp"
+
+VirtualMemoryTracker* VirtualMemoryTracker::Instance::_tracker = nullptr;
+VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
+
+void VirtualMemory::update_peak(size_t size) {
+  size_t peak_sz = peak_size();
+  while (peak_sz < size) {
+    size_t old_sz = AtomicAccess::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    if (old_sz == peak_sz) {
+      break;
+    } else {
+      peak_sz = old_sz;
+    }
+  }
+}
+
+void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
+  // Snapshot current thread stacks
+  VirtualMemoryTracker::Instance::snapshot_thread_stacks();
+  as_snapshot()->copy_to(s);
+}
+
+bool VirtualMemoryTracker::Instance::initialize(NMT_TrackingLevel level) {
+  assert(_tracker == nullptr, "only call once");
+  if (level >= NMT_summary) {
+    void* tracker = os::malloc(sizeof(VirtualMemoryTracker), mtNMT);
+    if (tracker == nullptr) return false;
+    _tracker = new (tracker) VirtualMemoryTracker(level == NMT_detail);
+  }
+  return true;
+}
+
+
+void VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size_t size,
+  const NativeCallStack& stack, MemTag mem_tag) {
+    assert(_tracker != nullptr, "Sanity check");
+    _tracker->add_reserved_region(base_addr, size, stack, mem_tag);
+}
+
+void VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
+  const NativeCallStack& stack, MemTag mem_tag) {
+  VMATree::SummaryDiff diff;
+  tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag), diff);
+  apply_summary_diff(diff);
+}
+
+void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
+  assert(_tracker != nullptr, "Sanity check");
+  _tracker->set_reserved_region_tag(addr, size, mem_tag);
+}
+
+void VirtualMemoryTracker::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
+  VMATree::SummaryDiff diff;
+  tree()->set_tag((VMATree::position)addr, size, mem_tag, diff);
+  apply_summary_diff(diff);
+}
+
+void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff& diff) {
+  assert(_tracker != nullptr, "Sanity check");
+  _tracker->apply_summary_diff(diff);
+}
+
+void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff& diff) {
+  VMATree::SingleDiff::delta reserve_delta, commit_delta;
+  size_t reserved, committed;
+  MemTag tag = mtNone;
+  auto print_err = [&](const char* str) {
+#ifdef ASSERT
+    log_error(nmt)("summary mismatch, at %s, for %s,"
+                   " diff-reserved:  %ld"
+                   " diff-committed: %ld"
+                   " vms-reserved: %zu"
+                   " vms-committed: %zu",
+                   str, NMTUtil::tag_to_name(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
+#endif
+  };
+
+  diff.visit([&](MemTag tag, const VMATree::SingleDiff& single_diff) {
+    reserve_delta = single_diff.reserve;
+    commit_delta = single_diff.commit;
+    reserved = VirtualMemorySummary::as_snapshot()->by_tag(tag)->reserved();
+    committed = VirtualMemorySummary::as_snapshot()->by_tag(tag)->committed();
+    if (reserve_delta != 0) {
+      if (reserve_delta > 0) {
+        VirtualMemorySummary::record_reserved_memory(reserve_delta, tag);
+      } else {
+        if ((size_t)-reserve_delta <= reserved) {
+          VirtualMemorySummary::record_released_memory(-reserve_delta, tag);
+        } else {
+          print_err("release");
+        }
+      }
+    }
+    if (commit_delta != 0) {
+      if (commit_delta > 0) {
+        if ((size_t)commit_delta <= ((size_t)reserve_delta + reserved)) {
+          VirtualMemorySummary::record_committed_memory(commit_delta, tag);
+        }
+        else {
+          print_err("commit");
+        }
+      }
+      else {
+        if ((size_t)-commit_delta <= committed) {
+          VirtualMemorySummary::record_uncommitted_memory(-commit_delta, tag);
+        } else {
+          print_err("uncommit");
+        }
+      }
+    }
+  });
+}
+
+void VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t size,
+  const NativeCallStack& stack) {
+  assert(_tracker != nullptr, "Sanity check");
+  _tracker->add_committed_region(addr, size, stack);
+}
+
+void VirtualMemoryTracker::add_committed_region(address addr, size_t size,
+  const NativeCallStack& stack) {
+    VMATree::SummaryDiff diff;
+    tree()->commit_region(addr, size, stack, diff);
+    apply_summary_diff(diff);
+}
+
+void VirtualMemoryTracker::Instance::remove_uncommitted_region(address addr, size_t size) {
+  assert(_tracker != nullptr, "Sanity check");
+  _tracker->remove_uncommitted_region(addr, size);
+}
+
+void VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
+  MemTracker::assert_locked();
+  VMATree::SummaryDiff diff;
+  tree()->uncommit_region(addr, size, diff);
+  apply_summary_diff(diff);
+}
+
+void VirtualMemoryTracker::Instance::remove_released_region(address addr, size_t size) {
+  assert(_tracker != nullptr, "Sanity check");
+  _tracker->remove_released_region(addr, size);
+}
+
+void VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
+  VMATree::SummaryDiff diff;
+  tree()->release_mapping((VMATree::position)addr, size, diff);
+  apply_summary_diff(diff);
+}
+
+void VirtualMemoryTracker::Instance::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
+  assert(_tracker != nullptr, "Sanity check");
+  _tracker->split_reserved_region(addr, size, split, mem_tag, split_mem_tag);
+}
+
+void VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
+  add_reserved_region(addr, split, NativeCallStack::empty_stack(), mem_tag);
+  add_reserved_region(addr + split, size - split, NativeCallStack::empty_stack(), split_mem_tag);
+}
+
+bool VirtualMemoryTracker::Instance::print_containing_region(const void* p, outputStream* st) {
+  assert(_tracker != nullptr, "Sanity check");
+  return _tracker->print_containing_region(p, st);
+}
+
+bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
+  VirtualMemoryRegion rgn = tree()->find_reserved_region((address)p);
+  if (!rgn.is_valid() || !rgn.contain_address((address)p)) {
+    return false;
+  }
+  st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
+               p2i(p), p2i(rgn.base()), p2i(rgn.end()), NMTUtil::tag_to_enum_name(rgn.mem_tag()));
+  if (MemTracker::tracking_level() == NMT_detail) {
+    rgn.reserved_call_stack()->print_on(st);
+  }
+  st->cr();
+  return true;
+}
+
+bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* walker) {
+  assert(_tracker != nullptr, "Sanity check");
+  return _tracker->walk_virtual_memory(walker);
+}
+
+bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
+  bool ret = true;
+  tree()->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
+    if (!walker->do_allocation_site(&rgn)) {
+      ret = false;
+      return false;
+    }
+    return true;
+  });
+  return ret;
+}
+
+size_t VirtualMemoryTracker::committed_size(const VirtualMemoryRegion* rgn) {
+  size_t result = 0;
+  tree()->visit_committed_regions(*rgn, [&](VirtualMemoryRegion& crgn) {
+    result += crgn.size();
+    return true;
+  });
+  return result;
+}
+
+size_t VirtualMemoryTracker::Instance::committed_size(const VirtualMemoryRegion* rgn) {
+  assert(_tracker != nullptr, "Sanity check");
+  return _tracker->committed_size(rgn);
+}
+
+address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rgn) {
+  assert(_tracker != nullptr, "Sanity check");
+  return _tracker->thread_stack_uncommitted_bottom(rgn);
+}
+
+address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const VirtualMemoryRegion* rgn) {
+  address bottom = rgn->base();
+  address top = rgn->end();
+    tree()->visit_committed_regions(*rgn, [&](VirtualMemoryRegion& crgn) {
+    address committed_top = crgn.base() + crgn.size();
+    if (committed_top < top) {
+      // committed stack guard pages, skip them
+      bottom = crgn.base() + crgn.size();
+    } else {
+      assert(top == committed_top, "Sanity, top=" INTPTR_FORMAT " , com-top=" INTPTR_FORMAT, p2i(top), p2i(committed_top));
+      return false;;
+    }
+    return true;
+  });
+
+  return bottom;
+}
+
+// Iterate the range, find committed region within its bound.
+class RegionIterator : public StackObj {
+private:
+  const address _start;
+  const size_t  _size;
+
+  address _current_start;
+public:
+  RegionIterator(address start, size_t size) :
+    _start(start), _size(size), _current_start(start) {
+  }
+
+  // return true if committed region is found
+  bool next_committed(address& start, size_t& size);
+private:
+  address end() const { return _start + _size; }
+};
+
+bool RegionIterator::next_committed(address& committed_start, size_t& committed_size) {
+  if (end() <= _current_start) return false;
+
+  const size_t page_sz = os::vm_page_size();
+  const size_t current_size = end() - _current_start;
+  if (os::first_resident_in_range(_current_start, current_size, committed_start, committed_size)) {
+    assert(committed_start != nullptr, "Must be");
+    assert(committed_size > 0 && is_aligned(committed_size, os::vm_page_size()), "Must be");
+
+    _current_start = committed_start + committed_size;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Walk all known thread stacks, snapshot their committed ranges.
+class SnapshotThreadStackWalker : public VirtualMemoryWalker {
+public:
+  SnapshotThreadStackWalker() {}
+
+  bool do_allocation_site(const VirtualMemoryRegion* rgn) {
+    if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
+      assert_lock_strong(NmtVirtualMemory_lock);
+    }
+    if (rgn->mem_tag() == mtThreadStack) {
+      address stack_bottom = VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(rgn);
+      address committed_start;
+      size_t  committed_size;
+      size_t stack_size = rgn->base() + rgn->size() - stack_bottom;
+      // Align the size to work with full pages (Alpine and AIX stack top is not page aligned)
+      size_t aligned_stack_size = align_up(stack_size, os::vm_page_size());
+
+      NativeCallStack ncs; // empty stack
+
+      RegionIterator itr(stack_bottom, aligned_stack_size);
+      DEBUG_ONLY(bool found_stack = false;)
+      while (itr.next_committed(committed_start, committed_size)) {
+        assert(committed_start != nullptr, "Should not be null");
+        assert(committed_size > 0, "Should not be 0");
+        // unaligned stack_size case: correct the region to fit the actual stack_size
+        if (stack_bottom + stack_size < committed_start + committed_size) {
+          committed_size = stack_bottom + stack_size - committed_start;
+        }
+        VirtualMemoryTracker::Instance::add_committed_region(committed_start, committed_size, ncs);
+        DEBUG_ONLY(found_stack = true;)
+      }
+#ifdef ASSERT
+      if (!found_stack) {
+        log_debug(thread)("Thread exited without proper cleanup, may leak thread object");
+      }
+#endif
+    }
+    return true;
+  }
+};
+
+void VirtualMemoryTracker::Instance::snapshot_thread_stacks() {
+  SnapshotThreadStackWalker walker;
+  walk_virtual_memory(&walker);
+}
+
+VirtualMemoryRegion RegionsTree::find_reserved_region(address addr) {
+    VirtualMemoryRegion rgn;
+    auto contain_region = [&](VirtualMemoryRegion& region_in_tree) {
+      if (region_in_tree.contain_address(addr)) {
+        rgn = region_in_tree;
+        return false;
+      }
+      return true;
+    };
+    visit_reserved_regions(contain_region);
+    return rgn;
+}
+
+bool VirtualMemoryRegion::equals_including_stacks(const VirtualMemoryRegion& rgn) const {
+  return size() == rgn.size() && committed_call_stack()->equals(*(rgn.reserved_call_stack()));
+}

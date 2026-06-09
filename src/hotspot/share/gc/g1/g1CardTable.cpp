@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "logging/log.hpp"
+#include "runtime/os.hpp"
+
+void G1CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
+  if (mr.is_empty()) {
+    return;
+  }
+  CardValue* start    = byte_for(mr.start());
+  CardValue* end      = byte_for(mr.last());
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1HeapRegion* r = g1h->heap_region_containing(mr.start());
+
+  assert(r == g1h->heap_region_containing(mr.last()), "MemRegion crosses region");
+
+  bool failures = false;
+  for (CardValue* curr = start; curr <= end; ++curr) {
+    CardValue curr_val = *curr;
+    bool failed = (val_equals) ? (curr_val != val) : (curr_val == val);
+    if (failed) {
+      if (!failures) {
+        log_error(gc, verify)("== CT verification failed: [" PTR_FORMAT "," PTR_FORMAT "] r: %d (%s) %sexpecting value: %d",
+                              p2i(start), p2i(end), r->hrm_index(), r->get_short_type_str(),
+                              (val_equals) ? "" : "not ", val);
+        failures = true;
+      }
+      log_error(gc, verify)("==   card " PTR_FORMAT " [" PTR_FORMAT "," PTR_FORMAT "], val: %d",
+                            p2i(curr), p2i(addr_for(curr)),
+                            p2i((HeapWord*) (((size_t) addr_for(curr)) + _card_size)),
+                            (int) curr_val);
+    }
+  }
+  guarantee(!failures, "there should not have been any failures");
+}
+
+void G1CardTableChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
+  // Default value for a clean card on the card table is -1. So we cannot take advantage of the zero_filled parameter.
+  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * G1HeapRegion::GrainWords);
+  _card_table->clear_MemRegion(mr);
+}
+
+size_t G1CardTable::compute_size(size_t mem_region_size_in_words) {
+  size_t number_of_slots = (mem_region_size_in_words / _card_size_in_words);
+  return os::align_up_vm_allocation_granularity(number_of_slots);
+}
+
+void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
+  mapper->set_mapping_changed_listener(&_listener);
+
+  _byte_map_size = mapper->reserved().byte_size();
+
+  HeapWord* low_bound  = _whole_heap.start();
+  HeapWord* high_bound = _whole_heap.end();
+
+  _covered[0] = _whole_heap;
+
+  _byte_map = (CardValue*) mapper->reserved().start();
+  _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
+  assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
+  assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
+
+  log_trace(gc, barrier)("G1CardTable::G1CardTable: ");
+  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[last_valid_index()]: " PTR_FORMAT,
+                         p2i(&_byte_map[0]), p2i(&_byte_map[last_valid_index()]));
+  log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT,  p2i(_byte_map_base));
+}
+
+bool G1CardTable::is_in_young(const void* p) const {
+  return G1CollectedHeap::heap()->heap_region_containing(p)->is_young();
+}

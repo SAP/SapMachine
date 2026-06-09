@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP
+
+#include "gc/shenandoah/shenandoahPadding.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/safepoint.hpp"
+
+class ShenandoahLock {
+private:
+  enum LockState { unlocked = 0, locked = 1 };
+
+  shenandoah_padding(0);
+  Atomic<LockState> _state;
+  shenandoah_padding(1);
+#ifdef ASSERT
+  Atomic<Thread*> _owner;
+  shenandoah_padding(2);
+#endif
+
+  template<bool ALLOW_BLOCK>
+  void contended_lock_internal(JavaThread* java_thread);
+  static void yield_or_sleep(int &yields);
+
+public:
+  ShenandoahLock() : _state(unlocked) {
+    DEBUG_ONLY(_owner.store_relaxed(nullptr);)
+  };
+
+  void lock(bool allow_block_for_safepoint = false) {
+    assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
+
+    if ((allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) ||
+        (_state.compare_exchange(unlocked, locked) != unlocked)) {
+      // 1. Java thread, and there is a pending safepoint. Dive into contended locking
+      //    immediately without trying anything else, and block.
+      // 2. Fast lock fails, dive into contended lock handling.
+      contended_lock(allow_block_for_safepoint);
+    }
+
+    assert(_state.load_relaxed() == locked, "must be locked");
+    assert(_owner.load_relaxed() == nullptr, "must not be owned");
+    DEBUG_ONLY(_owner.store_relaxed(Thread::current());)
+  }
+
+  void unlock() {
+    assert(_owner.load_relaxed() == Thread::current(), "sanity");
+    DEBUG_ONLY(_owner.store_relaxed((Thread*)nullptr);)
+    OrderAccess::fence();
+    _state.store_relaxed(unlocked);
+  }
+
+  void contended_lock(bool allow_block_for_safepoint);
+
+  bool owned_by_self() {
+#ifdef ASSERT
+    return _state.load_relaxed() == locked && _owner.load_relaxed() == Thread::current();
+#else
+    ShouldNotReachHere();
+    return false;
+#endif
+  }
+};
+
+// Simple lock using PlatformMonitor
+class ShenandoahSimpleLock {
+private:
+  PlatformMonitor   _lock; // native lock
+public:
+  ShenandoahSimpleLock();
+  void lock(bool allow_block_for_safepoint = false);
+  void unlock();
+};
+
+// templated reentrant lock
+template<typename Lock>
+class ShenandoahReentrantLock : public Lock {
+private:
+  Atomic<Thread*>       _owner;
+  uint64_t              _count;
+
+public:
+  ShenandoahReentrantLock();
+  ~ShenandoahReentrantLock();
+
+  void lock(bool allow_block_for_safepoint = false);
+  void unlock();
+
+  // If the lock already owned by this thread
+  bool owned_by_self() const ;
+};
+
+// template based ShenandoahLocker
+template<typename Lock>
+class ShenandoahLocker : public StackObj {
+  Lock* const _lock;
+public:
+  ShenandoahLocker(Lock* lock, bool allow_block_for_safepoint = false) : _lock(lock) {
+    assert(_lock != nullptr, "Must not");
+    _lock->lock(allow_block_for_safepoint);
+  }
+
+  ~ShenandoahLocker() {
+    _lock->unlock();
+  }
+};
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHLOCK_HPP

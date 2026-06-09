@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8132734 8144062
+ * @summary Test potential security related issues
+ * @library /lib/testlibrary/java/util/jar /test/lib/
+ * @build CreateMultiReleaseTestJars
+ *        jdk.test.lib.compiler.Compiler
+ *        jdk.test.lib.util.JarBuilder
+ * @run junit MultiReleaseJarSecurity
+ */
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.security.CodeSigner;
+import java.security.cert.Certificate;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.zip.ZipFile;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MultiReleaseJarSecurity {
+
+    static final int MAJOR_VERSION = Runtime.version().major();
+
+    static final String USER_DIR = System.getProperty("user.dir", ".");
+    static final File MULTI_RELEASE = new File(USER_DIR, "multi-release.jar");
+    static final File SIGNED_MULTI_RELEASE = new File(USER_DIR, "signed-multi-release.jar");
+
+    @BeforeAll
+    public static void initialize() throws Exception {
+        CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
+        creator.compileEntries();
+        creator.buildMultiReleaseJar();
+        creator.buildSignedMultiReleaseJar();
+    }
+
+    @AfterAll
+    public static void close() throws IOException {
+        Files.delete(MULTI_RELEASE.toPath());
+        Files.delete(SIGNED_MULTI_RELEASE.toPath());
+    }
+
+    @Test
+    public void testCertsAndSigners() throws IOException {
+        try (JarFile jf = new JarFile(SIGNED_MULTI_RELEASE, true, ZipFile.OPEN_READ, Runtime.version())) {
+            CertsAndSigners vcas = new CertsAndSigners(jf, jf.getJarEntry("version/Version.class"));
+            CertsAndSigners rcas = new CertsAndSigners(jf, jf.getJarEntry("META-INF/versions/" + MAJOR_VERSION + "/version/Version.class"));
+            assertArrayEquals(rcas.getCertificates(), vcas.getCertificates());
+            assertArrayEquals(rcas.getCodeSigners(), vcas.getCodeSigners());
+        }
+    }
+
+    private static class CertsAndSigners {
+        final private JarFile jf;
+        final private JarEntry je;
+        private boolean readComplete;
+
+        CertsAndSigners(JarFile jf, JarEntry je) {
+            this.jf = jf;
+            this.je = je;
+        }
+
+        Certificate[] getCertificates() throws IOException {
+            readEntry();
+            return je.getCertificates();
+        }
+
+        CodeSigner[] getCodeSigners() throws IOException {
+            readEntry();
+            return je.getCodeSigners();
+        }
+
+        private void readEntry() throws IOException {
+            if (!readComplete) {
+                try (InputStream is = jf.getInputStream(je)) {
+                    is.readAllBytes();
+                }
+                readComplete = true;
+            }
+        }
+    }
+}

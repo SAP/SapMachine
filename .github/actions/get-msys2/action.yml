@@ -1,0 +1,73 @@
+#
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Get MSYS2'
+description: 'Download MSYS2 and prepare a Windows host'
+inputs:
+  architecture:
+    description: 'Architecture'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: 'Install MSYS2 on x86.x64'
+      id: msys2-x64
+      uses: msys2/setup-msys2@v2.31.0
+      with:
+        install: 'autoconf tar unzip zip make'
+        path-type: minimal
+        release: false
+      if: ${{ inputs.architecture == 'x86.x64' }}
+
+    - name: 'Install MSYS2 on ARM64'
+      id: msys2-arm64
+      uses: msys2/setup-msys2@v2.31.0
+      with:
+        install: 'autoconf tar unzip zip make'
+        path-type: minimal
+        release: true
+        location: ${{ runner.tool_cache }}/msys2
+      if: ${{ inputs.architecture == 'ARM64' }}
+
+      # We can't run bash until this is completed, so stick with pwsh
+    - name: 'Set MSYS2 path for x64'
+      run: |
+        echo "${{ steps.msys2-x64.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
+      shell: pwsh
+      if: ${{ inputs.architecture == 'x86.x64' }}
+
+    - name: 'Set MSYS2 path for ARM64'
+      run: |
+        echo "${{ steps.msys2-arm64.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
+      shell: pwsh
+      if: ${{ inputs.architecture == 'ARM64' }}
+
+    # Remove the default config.site file provided by MSYS2 to ensure config.guess accurately detects the host system.
+    - name: 'Remove default config.site'
+      run: |
+        echo "Removing default config.site"
+        rm -f /etc/config.site
+      shell: env /usr/bin/bash --login -eo pipefail {0}

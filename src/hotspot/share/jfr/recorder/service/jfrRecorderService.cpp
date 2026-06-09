@@ -1,0 +1,844 @@
+/*
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
+#include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/leakprofiler/sampling/objectSampler.hpp"
+#include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
+#include "jfr/recorder/repository/jfrChunkRotation.hpp"
+#include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/repository/jfrRepository.hpp"
+#include "jfr/recorder/service/jfrPostBox.hpp"
+#include "jfr/recorder/service/jfrRecorderService.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrStorage.hpp"
+#include "jfr/recorder/storage/jfrStorageControl.hpp"
+#include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrDeprecationManager.hpp"
+#include "jfr/support/jfrSymbolTable.inline.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrThreadIterator.hpp"
+#include "jfr/utilities/jfrTime.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+#include "jfr/writers/jfrJavaEventWriter.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
+#include "logging/log.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/growableArray.hpp"
+
+// incremented on each flushpoint
+static u8 flushpoint_id = 0;
+
+class JfrRotationLock : public StackObj {
+ private:
+  static const Thread* _owner_thread;
+  static const int retry_wait_millis;
+  static volatile int _lock;
+  Thread* _thread;
+  bool _recursive;
+
+  static bool acquire(Thread* thread) {
+    if (AtomicAccess::cmpxchg(&_lock, 0, 1) == 0) {
+      assert(_owner_thread == nullptr, "invariant");
+      _owner_thread = thread;
+      return true;
+    }
+    return false;
+  }
+
+  // The system can proceed to a safepoint
+  // because even if the thread is a JavaThread,
+  // it is running as _thread_in_native here.
+  void lock() {
+    while (!acquire(_thread)) {
+      os::naked_short_sleep(retry_wait_millis);
+    }
+    assert(is_owner(), "invariant");
+  }
+
+ public:
+  JfrRotationLock() : _thread(Thread::current()), _recursive(false) {
+    assert(_thread != nullptr, "invariant");
+    if (_thread == _owner_thread) {
+      // Recursive case is not supported.
+      _recursive = true;
+      assert(_lock == 1, "invariant");
+      // For user, should not be "jfr, system".
+      log_info(jfr)("Unable to issue rotation due to recursive calls.");
+      return;
+    }
+    lock();
+  }
+
+  ~JfrRotationLock() {
+    assert(is_owner(), "invariant");
+    if (_recursive) {
+      return;
+    }
+    _owner_thread = nullptr;
+    OrderAccess::storestore();
+    _lock = 0;
+  }
+
+  static bool is_owner() {
+    return _owner_thread == Thread::current();
+  }
+
+  bool is_acquired_recursively() const {
+    return _recursive;
+  }
+};
+
+const Thread* JfrRotationLock::_owner_thread = nullptr;
+const int JfrRotationLock::retry_wait_millis = 10;
+volatile int JfrRotationLock::_lock = 0;
+
+template <typename Instance, size_t(Instance::*func)()>
+class Content {
+ private:
+  Instance& _instance;
+  u4 _elements;
+ public:
+  Content(Instance& instance) : _instance(instance), _elements(0) {}
+  bool process() {
+    _elements = (u4)(_instance.*func)();
+    return true;
+  }
+  u4 elements() const { return _elements; }
+};
+
+template <typename Content>
+class WriteContent : public StackObj {
+ protected:
+  const JfrTicks _start_time;
+  JfrTicks _end_time;
+  JfrChunkWriter& _cw;
+  Content& _content;
+  const int64_t _start_offset;
+ public:
+
+  WriteContent(JfrChunkWriter& cw, Content& content) :
+    _start_time(JfrTicks::now()),
+    _end_time(),
+    _cw(cw),
+    _content(content),
+    _start_offset(_cw.current_offset()) {
+    assert(_cw.is_valid(), "invariant");
+  }
+
+  bool process() {
+    // invocation
+    _content.process();
+    _end_time = JfrTicks::now();
+    return 0 != _content.elements();
+  }
+
+  const JfrTicks& start_time() const {
+    return _start_time;
+  }
+
+  const JfrTicks& end_time() const {
+    return _end_time;
+  }
+
+  int64_t start_offset() const {
+    return _start_offset;
+  }
+
+  int64_t end_offset() const {
+    return current_offset();
+  }
+
+  int64_t current_offset() const {
+    return _cw.current_offset();
+  }
+
+  u4 elements() const {
+    return (u4) _content.elements();
+  }
+
+  u8 size() const {
+    return (u8)(end_offset() - start_offset());
+  }
+
+  void write_elements(int64_t offset) {
+    _cw.write_padded_at_offset<u4>(elements(), offset);
+  }
+
+  void write_size() {
+    _cw.write_padded_at_offset<u8>(size(), start_offset());
+  }
+
+  void set_last_checkpoint() {
+    _cw.set_last_checkpoint_offset(start_offset());
+  }
+
+  void rewind() {
+    _cw.seek(start_offset());
+  }
+};
+
+static int64_t write_checkpoint_event_prologue(JfrChunkWriter& cw, u8 type_id) {
+  const int64_t last_cp_offset = cw.last_checkpoint_offset();
+  const int64_t delta_to_last_checkpoint = 0 == last_cp_offset ? 0 : last_cp_offset - cw.current_offset();
+  cw.reserve(sizeof(u8));
+  cw.write<u8>(EVENT_CHECKPOINT);
+  cw.write(JfrTicks::now());
+  cw.write<u8>(0); // duration
+  cw.write(delta_to_last_checkpoint);
+  cw.write<u4>(GENERIC); // checkpoint type
+  cw.write<u4>(1); // nof types in this checkpoint
+  cw.write(type_id);
+  return cw.reserve(sizeof(u4));
+}
+
+template <typename Content>
+class WriteCheckpointEvent : public WriteContent<Content> {
+ private:
+  const u8 _type_id;
+ public:
+  WriteCheckpointEvent(JfrChunkWriter& cw, Content& content, u8 type_id) :
+    WriteContent<Content>(cw, content), _type_id(type_id) {}
+
+  bool process() {
+    const int64_t num_elements_offset = write_checkpoint_event_prologue(this->_cw, _type_id);
+    if (!WriteContent<Content>::process()) {
+      // nothing to do, rewind writer to start
+      this->rewind();
+      assert(this->current_offset() == this->start_offset(), "invariant");
+      return false;
+    }
+    assert(this->elements() > 0, "invariant");
+    assert(this->current_offset() > num_elements_offset, "invariant");
+    this->write_elements(num_elements_offset);
+    this->write_size();
+    this->set_last_checkpoint();
+    return true;
+  }
+};
+
+template <typename Functor>
+static u4 invoke(Functor& f) {
+  f.process();
+  return f.elements();
+}
+
+template <typename Functor>
+static u4 invoke_with_flush_event(Functor& f) {
+  const u4 elements = invoke(f);
+  EventFlush e(UNTIMED);
+  e.set_starttime(f.start_time());
+  e.set_endtime(f.end_time());
+  e.set_flushId(flushpoint_id);
+  e.set_elements(f.elements());
+  e.set_size(f.size());
+  e.commit();
+  return elements;
+}
+
+class StackTraceRepository : public StackObj {
+ private:
+  JfrStackTraceRepository& _repo;
+  JfrChunkWriter& _cw;
+  size_t _elements;
+  bool _clear;
+
+ public:
+  StackTraceRepository(JfrStackTraceRepository& repo, JfrChunkWriter& cw, bool clear) :
+    _repo(repo), _cw(cw), _elements(0), _clear(clear) {}
+  bool process() {
+    _elements = _repo.write(_cw, _clear);
+    return true;
+  }
+  size_t elements() const { return _elements; }
+  void reset() { _elements = 0; }
+};
+
+typedef WriteCheckpointEvent<StackTraceRepository> WriteStackTrace;
+
+static u4 flush_stacktrace(JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter) {
+  StackTraceRepository str(stack_trace_repo, chunkwriter, false);
+  WriteStackTrace wst(chunkwriter, str, TYPE_STACKTRACE);
+  return invoke(wst);
+}
+
+static u4 write_stacktrace(JfrStackTraceRepository& stack_trace_repo, JfrChunkWriter& chunkwriter, bool clear) {
+  StackTraceRepository str(stack_trace_repo, chunkwriter, clear);
+  WriteStackTrace wst(chunkwriter, str, TYPE_STACKTRACE);
+  return invoke(wst);
+}
+
+typedef Content<JfrStorage, &JfrStorage::write> Storage;
+typedef WriteContent<Storage> WriteStorage;
+
+static size_t flush_storage(JfrStorage& storage, JfrChunkWriter& chunkwriter) {
+  assert(chunkwriter.is_valid(), "invariant");
+  Storage fsf(storage);
+  WriteStorage fs(chunkwriter, fsf);
+  return invoke(fs);
+}
+
+static size_t write_storage(JfrStorage& storage, JfrChunkWriter& chunkwriter) {
+  assert(chunkwriter.is_valid(), "invariant");
+  Storage fsf(storage);
+  WriteStorage fs(chunkwriter, fsf);
+  return invoke(fs);
+}
+
+typedef Content<JfrStringPool, &JfrStringPool::flush> FlushStringPoolFunctor;
+typedef Content<JfrStringPool, &JfrStringPool::write> WriteStringPoolFunctor;
+typedef WriteCheckpointEvent<FlushStringPoolFunctor> FlushStringPool;
+typedef WriteCheckpointEvent<WriteStringPoolFunctor> WriteStringPool;
+
+static u4 flush_stringpool(JfrStringPool& string_pool, JfrChunkWriter& chunkwriter) {
+  FlushStringPoolFunctor fspf(string_pool);
+  FlushStringPool fsp(chunkwriter, fspf, TYPE_STRING);
+  return invoke(fsp);
+}
+
+static u4 write_stringpool(JfrStringPool& string_pool, JfrChunkWriter& chunkwriter) {
+  WriteStringPoolFunctor wspf(string_pool);
+  WriteStringPool wsp(chunkwriter, wspf, TYPE_STRING);
+  return invoke(wsp);
+}
+
+typedef Content<JfrCheckpointManager, &JfrCheckpointManager::flush_type_set> FlushTypeSetFunctor;
+typedef WriteContent<FlushTypeSetFunctor> FlushTypeSet;
+
+static u4 flush_typeset(JfrCheckpointManager& checkpoint_manager, JfrChunkWriter& chunkwriter) {
+  FlushTypeSetFunctor flush_type_set(checkpoint_manager);
+  FlushTypeSet fts(chunkwriter, flush_type_set);
+  return invoke(fts);
+}
+
+class MetadataEvent : public StackObj {
+ private:
+  JfrChunkWriter& _cw;
+  size_t _elements;
+ public:
+  MetadataEvent(JfrChunkWriter& cw) : _cw(cw), _elements(0) {}
+  bool process() {
+    _elements = JfrMetadataEvent::write(_cw);
+    return true;
+  }
+  size_t elements() const { return _elements; }
+};
+
+typedef WriteContent<MetadataEvent> WriteMetadata;
+
+static u4 flush_metadata(JfrChunkWriter& chunkwriter) {
+  assert(chunkwriter.is_valid(), "invariant");
+  MetadataEvent me(chunkwriter);
+  WriteMetadata wm(chunkwriter, me);
+  return invoke(wm);
+}
+
+static u4 write_metadata(JfrChunkWriter& chunkwriter) {
+  assert(chunkwriter.is_valid(), "invariant");
+  MetadataEvent me(chunkwriter);
+  WriteMetadata wm(chunkwriter, me);
+  return invoke(wm);
+}
+
+class JfrSafepointClearVMOperation : public VM_Operation {
+ private:
+  JfrRecorderService& _instance;
+ public:
+  JfrSafepointClearVMOperation(JfrRecorderService& instance) : _instance(instance) {}
+  void doit() { _instance.safepoint_clear(); }
+  VMOp_Type type() const { return VMOp_JFRSafepointClear; }
+};
+
+class JfrSafepointWriteVMOperation : public VM_Operation {
+ private:
+  JfrRecorderService& _instance;
+ public:
+  JfrSafepointWriteVMOperation(JfrRecorderService& instance) : _instance(instance) {}
+  void doit() { _instance.safepoint_write(); }
+  VMOp_Type type() const { return VMOp_JFRSafepointWrite; }
+};
+
+JfrRecorderService::JfrRecorderService() :
+  _checkpoint_manager(JfrCheckpointManager::instance()),
+  _chunkwriter(JfrRepository::chunkwriter()),
+  _post_box(JfrPostBox::instance()),
+  _repository(JfrRepository::instance()),
+  _stack_trace_repository(JfrStackTraceRepository::instance()),
+  _storage(JfrStorage::instance()),
+  _string_pool(JfrStringPool::instance()) {}
+
+enum RecorderState {
+  STOPPED,
+  RUNNING
+};
+
+static RecorderState recorder_state = STOPPED;
+
+static void set_recorder_state(RecorderState from, RecorderState to) {
+  assert(from == recorder_state, "invariant");
+  recorder_state = to;
+  OrderAccess::fence();
+}
+
+static void start_recorder() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  set_recorder_state(STOPPED, RUNNING);
+  log_debug(jfr, system)("Recording service STARTED");
+}
+
+static void stop_recorder() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  JfrDeprecationManager::on_recorder_stop();
+  set_recorder_state(RUNNING, STOPPED);
+  log_debug(jfr, system)("Recording service STOPPED");
+}
+
+bool JfrRecorderService::is_recording() {
+  return recorder_state == RUNNING;
+}
+
+void JfrRecorderService::start() {
+  JfrRotationLock lock;
+  assert(!is_recording(), "invariant");
+  clear();
+  start_recorder();
+  assert(is_recording(), "invariant");
+  open_new_chunk();
+}
+
+static void stop() {
+  assert(JfrRecorderService::is_recording(), "invariant");
+  stop_recorder();
+  assert(!JfrRecorderService::is_recording(), "invariant");
+}
+
+void JfrRecorderService::clear() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  pre_safepoint_clear();
+  invoke_safepoint_clear();
+  post_safepoint_clear();
+}
+
+void JfrRecorderService::pre_safepoint_clear() {
+  _storage.clear();
+  JfrStackTraceRepository::clear();
+  JfrSymbolTable::allocate_next_epoch();
+}
+
+void JfrRecorderService::invoke_safepoint_clear() {
+  JfrSafepointClearVMOperation op(*this);
+  ThreadInVMfromNative transition(JavaThread::current());
+  VMThread::execute(&op);
+}
+
+void JfrRecorderService::safepoint_clear() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  _storage.clear();
+  _checkpoint_manager.notify_threads(true);
+  _chunkwriter.set_time_stamp();
+  JfrDeprecationManager::on_safepoint_clear();
+  JfrStackTraceRepository::clear();
+  _checkpoint_manager.shift_epoch();
+}
+
+void JfrRecorderService::post_safepoint_clear() {
+  _string_pool.clear();
+  _checkpoint_manager.clear();
+}
+
+void JfrRecorderService::open_new_chunk(bool vm_error) {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  JfrChunkRotation::on_rotation();
+  const bool valid_chunk = _repository.open_chunk(vm_error);
+  _storage.control().set_to_disk(valid_chunk);
+  if (valid_chunk) {
+    _checkpoint_manager.write_static_type_set_and_threads();
+  }
+}
+
+void JfrRecorderService::vm_error_rotation() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  if (!_chunkwriter.is_valid()) {
+    open_new_chunk(true);
+  }
+  if (_chunkwriter.is_valid()) {
+    Thread* const thread = Thread::current();
+    _storage.flush_regular_buffer(thread->jfr_thread_local()->native_buffer(), thread);
+    _chunkwriter.mark_chunk_final();
+    JfrDeprecationManager::write_edges(_chunkwriter, thread, true);
+    invoke_flush();
+    _chunkwriter.set_time_stamp();
+    _repository.close_chunk();
+    assert(!_chunkwriter.is_valid(), "invariant");
+    _repository.on_vm_error();
+  }
+}
+
+void JfrRecorderService::rotate(int msgs) {
+  JfrRotationLock lock;
+  if (lock.is_acquired_recursively()) {
+    return;
+  }
+  if (msgs & MSGBIT(MSG_VM_ERROR)) {
+    stop();
+    vm_error_rotation();
+    return;
+  }
+  if (_storage.control().to_disk()) {
+    chunk_rotation();
+  } else {
+    in_memory_rotation();
+  }
+  if (msgs & (MSGBIT(MSG_STOP))) {
+    stop();
+  }
+}
+
+void JfrRecorderService::in_memory_rotation() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  // currently running an in-memory recording
+  assert(!_storage.control().to_disk(), "invariant");
+  open_new_chunk();
+  if (_chunkwriter.is_valid()) {
+    // dump all in-memory buffer data to the newly created chunk
+    write_storage(_storage, _chunkwriter);
+  }
+}
+
+void JfrRecorderService::chunk_rotation() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  finalize_current_chunk();
+  open_new_chunk();
+}
+
+void JfrRecorderService::finalize_current_chunk() {
+  assert(_chunkwriter.is_valid(), "invariant");
+  write();
+}
+
+void JfrRecorderService::write() {
+  pre_safepoint_write();
+  invoke_safepoint_write();
+  post_safepoint_write();
+}
+
+void JfrRecorderService::pre_safepoint_write() {
+  assert(_chunkwriter.is_valid(), "invariant");
+  if (LeakProfiler::is_running()) {
+    // Exclusive access to the object sampler instance.
+    // The sampler is released (unlocked) later in post_safepoint_write.
+    ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire());
+  }
+  write_storage(_storage, _chunkwriter);
+  write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  JfrSymbolTable::allocate_next_epoch();
+}
+
+void JfrRecorderService::invoke_safepoint_write() {
+  JfrSafepointWriteVMOperation op(*this);
+  // can safepoint here
+  ThreadInVMfromNative transition(JavaThread::current());
+  VMThread::execute(&op);
+}
+
+void JfrRecorderService::safepoint_write() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  JfrStackTraceRepository::clear_leak_profiler();
+  _checkpoint_manager.on_rotation();
+  _storage.write_at_safepoint();
+  _chunkwriter.set_time_stamp();
+  JfrDeprecationManager::on_safepoint_write();
+  write_stacktrace(_stack_trace_repository, _chunkwriter, true);
+  _checkpoint_manager.shift_epoch();
+}
+
+void JfrRecorderService::post_safepoint_write() {
+  assert(_chunkwriter.is_valid(), "invariant");
+  // During the safepoint tasks just completed, the system transitioned to a new epoch.
+  // Type tagging is epoch relative which entails we are able to write out the
+  // already tagged artifacts for the previous epoch. We can accomplish this concurrently
+  // with threads now tagging artifacts in relation to the new, now updated, epoch and remain outside of a safepoint.
+  write_stringpool(_string_pool, _chunkwriter);
+  _checkpoint_manager.write_type_set();
+  if (LeakProfiler::is_running()) {
+    // The object sampler instance was exclusively acquired and locked in pre_safepoint_write.
+    // Note: There is a dependency on write_type_set() above, ensure the release is subsequent.
+    ObjectSampler::release();
+  }
+  // serialize the metadata descriptor event and close out the chunk
+  write_metadata(_chunkwriter);
+  _repository.close_chunk();
+}
+
+static JfrBuffer* thread_local_buffer(Thread* t) {
+  assert(t != nullptr, "invariant");
+  return t->jfr_thread_local()->native_buffer();
+}
+
+static void reset_buffer(JfrBuffer* buffer, Thread* t) {
+  assert(buffer != nullptr, "invariant");
+  assert(t != nullptr, "invariant");
+  assert(buffer == thread_local_buffer(t), "invariant");
+  buffer->set_pos(const_cast<u1*>(buffer->top()));
+}
+
+static void reset_thread_local_buffer(Thread* t) {
+  reset_buffer(thread_local_buffer(t), t);
+}
+
+static void write_thread_local_buffer(JfrChunkWriter& chunkwriter, Thread* t) {
+  JfrBuffer * const buffer = thread_local_buffer(t);
+  assert(buffer != nullptr, "invariant");
+  if (!buffer->empty()) {
+    chunkwriter.write_unbuffered(buffer->top(), buffer->pos() - buffer->top());
+  }
+}
+
+size_t JfrRecorderService::flush() {
+  size_t total_elements = flush_metadata(_chunkwriter);
+  total_elements += flush_storage(_storage, _chunkwriter);
+  if (_string_pool.is_modified()) {
+    total_elements += flush_stringpool(_string_pool, _chunkwriter);
+  }
+  total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
+  return flush_typeset(_checkpoint_manager, _chunkwriter) + total_elements;
+}
+
+typedef Content<JfrRecorderService, &JfrRecorderService::flush> FlushFunctor;
+typedef WriteContent<FlushFunctor> Flush;
+
+void JfrRecorderService::invoke_flush() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  assert(_chunkwriter.is_valid(), "invariant");
+  Thread* const t = Thread::current();
+  ++flushpoint_id;
+  reset_thread_local_buffer(t);
+  FlushFunctor flushpoint(*this);
+  Flush fl(_chunkwriter, flushpoint);
+  invoke_with_flush_event(fl);
+  write_thread_local_buffer(_chunkwriter, t);
+  _repository.flush_chunk();
+}
+
+void JfrRecorderService::flushpoint() {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
+  JfrRotationLock lock;
+  if (_chunkwriter.is_valid()) {
+    invoke_flush();
+  }
+}
+
+void JfrRecorderService::process_full_buffers() {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
+  JfrRotationLock lock;
+  if (_chunkwriter.is_valid()) {
+    _storage.write_full();
+  }
+}
+
+void JfrRecorderService::evaluate_chunk_size_for_rotation() {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
+  JfrChunkRotation::evaluate(_chunkwriter);
+}
+
+// LeakProfiler event serialization support.
+
+struct JfrLeakProfilerEmitRequest {
+  int64_t cutoff_ticks;
+  bool emit_all;
+  bool skip_bfs;
+  bool oom;
+};
+
+typedef GrowableArrayCHeap<JfrLeakProfilerEmitRequest, mtTracing> JfrLeakProfilerEmitRequestQueue;
+static JfrLeakProfilerEmitRequestQueue* _queue = nullptr;
+constexpr const static int64_t _no_path_to_gc_roots = 0;
+static bool _oom_emit_request_posted = false;
+static bool _oom_emit_request_delivered = false;
+
+static inline bool exclude_paths_to_gc_roots(int64_t cutoff_ticks) {
+  return cutoff_ticks <= _no_path_to_gc_roots;
+}
+
+static void enqueue(const JfrLeakProfilerEmitRequest& request) {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  if (_queue == nullptr) {
+    _queue = new JfrLeakProfilerEmitRequestQueue(4);
+  }
+  assert(_queue != nullptr, "invariant");
+  assert(!_oom_emit_request_posted, "invariant");
+  if (request.oom) {
+    _oom_emit_request_posted = true;
+  }
+  _queue->append(request);
+}
+
+static JfrLeakProfilerEmitRequest dequeue() {
+  assert(JfrRotationLock::is_owner(), "invariant");
+  assert(_queue != nullptr, "invariant");
+  assert(_queue->is_nonempty(), "invariant");
+  const JfrLeakProfilerEmitRequest& request = _queue->first();
+  _queue->remove_at(0);
+  return request;
+}
+
+// This version of emit excludes path-to-gc-roots, i.e. it skips reference chains.
+static void emit_leakprofiler_events(bool emit_all, bool skip_bfs, JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  // Take the rotation lock to exclude flush() during event emits. This is because the event emit operation
+  // also creates a number of checkpoint events. Those checkpoint events require a future typeset checkpoint
+  // event for completeness, i.e., to be generated before being flushed to a segment.
+  // The upcoming flush() or rotation() after event emit completes this typeset checkpoint
+  // and serializes all checkpoint events to the same segment.
+  JfrRotationLock lock;
+  // Take the rotation lock before the thread transition, to avoid blocking safepoints.
+  if (_oom_emit_request_posted) {
+    // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
+    // is pending or has already been completed. We are about to crash at any time now.
+    assert(CrashOnOutOfMemoryError, "invariant");
+    return;
+  }
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+  ThreadInVMfromNative transition(jt);
+  // Since we are not requesting path-to-gc-roots, i.e., reference chains, we need not issue a VM_Operation.
+  // Therefore, we can let the requesting thread process the request directly, since it already holds the requisite lock.
+  LeakProfiler::emit_events(_no_path_to_gc_roots, emit_all, skip_bfs);
+}
+
+void JfrRecorderService::transition_and_post_leakprofiler_emit_msg(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt);)
+  assert(!JfrRotationLock::is_owner(), "invariant");
+  // Transition to _thread_in_VM and post a synchronous message to the JFR Recorder Thread
+  // for it to process our enqueued request, which includes paths-to-gc-roots, i.e., reference chains.
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+  ThreadInVMfromNative transition(jt);
+  _post_box.post(MSG_EMIT_LEAKP_REFCHAINS);
+}
+
+// This version of emit includes path-to-gc-roots, i.e., it includes in the request traversing of reference chains.
+// Traversing reference chains is performed as part of a VM_Operation, and we initiate it from the JFR Recorder Thread.
+// Because multiple threads can concurrently report_on_java_out_of_memory(), having them all post a synchronous JFR msg,
+// they rendezvous at a safepoint in a convenient state, ThreadBlockInVM. This mechanism prevents any thread from racing past
+// this point and begin executing VMError::report_and_die(), until at least one oom request has been delivered.
+void JfrRecorderService::emit_leakprofiler_events_paths_to_gc_roots(int64_t cutoff_ticks,
+                                                                    bool emit_all,
+                                                                    bool skip_bfs,
+                                                                    bool oom,
+                                                                    JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt);)
+  assert(!exclude_paths_to_gc_roots(cutoff_ticks), "invariant");
+
+  {
+    JfrRotationLock lock;
+    // Take the rotation lock to read and post a request for the JFR Recorder Thread.
+    if (_oom_emit_request_posted) {
+      if (!oom) {
+        // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
+        // is pending or has already been completed. We are about to crash at any time now.
+        assert(CrashOnOutOfMemoryError, "invariant");
+        return;
+      }
+    } else {
+      assert(!_oom_emit_request_posted, "invariant");
+      JfrLeakProfilerEmitRequest request = { cutoff_ticks, emit_all, skip_bfs, oom };
+      enqueue(request);
+    }
+  }
+  JfrRecorderService service;
+  service.transition_and_post_leakprofiler_emit_msg(jt);
+}
+
+// Leakprofiler serialization request, the jdk.jfr.internal.JVM.emitOldObjectSamples() Java entry point.
+void JfrRecorderService::emit_leakprofiler_events(int64_t cutoff_ticks,
+                                                  bool emit_all,
+                                                  bool skip_bfs) {
+  JavaThread* const jt = JavaThread::current();
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt);)
+  if (exclude_paths_to_gc_roots(cutoff_ticks)) {
+    ::emit_leakprofiler_events(emit_all, skip_bfs, jt);
+    return;
+  }
+  emit_leakprofiler_events_paths_to_gc_roots(cutoff_ticks, emit_all, skip_bfs, /* oom */ false, jt);
+}
+
+// Leakprofiler serialization request, the report_on_java_out_of_memory VM entry point.
+void JfrRecorderService::emit_leakprofiler_events_on_oom() {
+  assert(CrashOnOutOfMemoryError, "invariant");
+  if (EventOldObjectSample::is_enabled()) {
+    JavaThread* const jt = JavaThread::current();
+    DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt);)
+    ThreadToNativeFromVM transition(jt);
+    emit_leakprofiler_events_paths_to_gc_roots(max_jlong, false, false, /* oom */ true, jt);
+  }
+}
+
+// The worker routine for the JFR Recorder Thread when processing MSG_EMIT_LEAKP_REFCHAINS messages.
+void JfrRecorderService::emit_leakprofiler_events() {
+  JavaThread* const jt = JavaThread::current();
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  // Take the rotation lock before the transition.
+  JfrRotationLock lock;
+  if (_oom_emit_request_delivered) {
+    // A request to emit leakprofiler events in response to CrashOnOutOfMemoryError
+    // has already been completed. We are about to crash at any time now.
+    assert(_oom_emit_request_posted, "invariant");
+    assert(CrashOnOutOfMemoryError, "invariant");
+    return;
+  }
+
+  assert(_queue->is_nonempty(), "invariant");
+
+  {
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+    ThreadInVMfromNative transition(jt);
+    while (_queue->is_nonempty()) {
+      const JfrLeakProfilerEmitRequest& request = dequeue();
+      LeakProfiler::emit_events(request.cutoff_ticks, request.emit_all, request.skip_bfs);
+      if (_oom_emit_request_posted && request.oom) {
+        assert(CrashOnOutOfMemoryError, "invariant");
+        _oom_emit_request_delivered = true;
+        break;
+      }
+    }
+  }
+
+  // If processing involved an out-of-memory request, issue an immediate flush operation.
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  if (_chunkwriter.is_valid() && _oom_emit_request_delivered) {
+    invoke_flush();
+  }
+}

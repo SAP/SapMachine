@@ -1,0 +1,236 @@
+//
+// Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+//
+
+source %{
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetAssembler_x86.hpp"
+%}
+
+// ---------------------------------- LOADS ---------------------------------------
+//
+
+instruct loadP_shenandoah(rRegP dst, memory mem, rFlagsReg cr)
+%{
+  match(Set dst (LoadP mem));
+  predicate(UseShenandoahGC && n->as_Load()->barrier_data() != 0);
+  effect(TEMP_DEF dst, KILL cr);
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load $dst, $mem\t# ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm,
+      $dst$$Register,
+      $mem$$Address,
+      /* narrow = */ false
+    );
+  %}
+  ins_cost(125);
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct loadN_shenandoah(rRegN dst, memory mem, rFlagsReg cr)
+%{
+  match(Set dst (LoadN mem));
+  predicate(UseShenandoahGC && n->as_Load()->barrier_data() != 0);
+  effect(TEMP_DEF dst, KILL cr);
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "shenandoah_load $dst, $mem\t# compressed ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm,
+      $dst$$Register,
+      $mem$$Address,
+      /* narrow = */ true
+    );
+  %}
+  ins_cost(125);
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+// ---------------------------------- STORES ---------------------------------------
+//
+
+instruct storeP_shenandoah(memory mem, any_RegP src, rRegP tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreP mem src));
+  predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_store $mem, $src\t# ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+      $mem$$Address,  /* dst_narrow = */ false,
+      $src$$Register, /* src_narrow = */ false,
+      $tmp$$Register);
+  %}
+  ins_cost(125);
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct storeN_shenandoah(memory mem, rRegN src, rRegP tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreN mem src));
+  predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_store $mem, $src\t# compressed ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+      $mem$$Address,  /* dst_narrow = */ true,
+      $src$$Register, /* src_narrow = */ true,
+      $tmp$$Register
+    );
+  %}
+  ins_cost(125);
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct encodePAndStoreN_shenandoah(memory mem, any_RegP src, rRegP tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreN mem (EncodeP src)));
+  predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_store $mem, $src\t# compressed ptr (with encoding)" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+      $mem$$Address,  /* dst_narrow = */ true,
+      $src$$Register, /* src_narrow = */ false,
+      $tmp$$Register
+    );
+  %}
+  ins_cost(125);
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+// ---------------------- LOAD-STORES -----------------------------------
+
+instruct compareAndSwapP_shenandoah(rRegI res, memory mem, rRegP tmp, rax_RegP oldval, rRegP newval, rFlagsReg cr)
+%{
+  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  predicate(UseShenandoahGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP_DEF res, TEMP tmp, KILL oldval, KILL cr);
+  format %{ "shenandoah_cas $mem, $newval\t# ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem$$Address,
+      $oldval$$Register,
+      $newval$$Register,
+      $tmp$$Register,
+      /* narrow = */ false
+    );
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct compareAndSwapN_shenandoah(rRegI res, memory mem, rRegP tmp, rax_RegN oldval, rRegN newval, rFlagsReg cr)
+%{
+  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
+  predicate(UseShenandoahGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP_DEF res, TEMP tmp, KILL oldval, KILL cr);
+  format %{ "shenandoah_cas $mem, $newval\t# compressed ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      $res$$Register,
+      $mem$$Address,
+      $oldval$$Register,
+      $newval$$Register,
+      $tmp$$Register,
+      /* narrow = */ true
+    );
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct compareAndExchangeP_shenandoah(memory mem, rax_RegP oldval, rRegP newval, rRegP tmp, rFlagsReg cr)
+%{
+  match(Set oldval (CompareAndExchangeP mem (Binary oldval newval)));
+  predicate(UseShenandoahGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_cae $mem, $newval\t# ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      noreg,
+      $mem$$Address,
+      $oldval$$Register,
+      $newval$$Register,
+      $tmp$$Register,
+      /* narrow = */ false
+    );
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct compareAndExchangeN_shenandoah(memory mem, rax_RegN oldval, rRegN newval, rRegP tmp, rFlagsReg cr)
+%{
+  match(Set oldval (CompareAndExchangeN mem (Binary oldval newval)));
+  predicate(UseShenandoahGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_cae $mem, $newval\t# compressed ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->compare_and_set_c2(this, masm,
+      noreg,
+      $mem$$Address,
+      $oldval$$Register,
+      $newval$$Register,
+      $tmp$$Register,
+      /* narrow = */ true
+    );
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct getAndSetP_shenandoah(memory mem, rRegP newval, rRegP tmp, rFlagsReg cr)
+%{
+  match(Set newval (GetAndSetP mem newval));
+  predicate(UseShenandoahGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_gas $newval, $mem\t# ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
+      $newval$$Register,
+      $mem$$Address,
+      $tmp$$Register,
+      /* narrow = */ false
+    );
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct getAndSetN_shenandoah(memory mem, rRegN newval, rRegP tmp, rFlagsReg cr)
+%{
+  match(Set newval (GetAndSetN mem newval));
+  predicate(UseShenandoahGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "shenandoah_gas $newval, $mem\t# compressed ptr" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->get_and_set_c2(this, masm,
+      $newval$$Register,
+      $mem$$Address,
+      $tmp$$Register,
+      /* narrow = */ true
+    );
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}

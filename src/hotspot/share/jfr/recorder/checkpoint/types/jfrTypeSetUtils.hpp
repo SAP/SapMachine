@@ -1,0 +1,279 @@
+/*
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
+#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP
+
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/support/jfrSymbolTable.hpp"
+#include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrSet.hpp"
+#include "oops/klass.hpp"
+#include "oops/method.hpp"
+
+// Composite callback/functor building block
+template <typename T, typename Func1, typename Func2>
+class CompositeFunctor {
+ private:
+  Func1* _f;
+  Func2* _g;
+ public:
+  CompositeFunctor(Func1* f, Func2* g) : _f(f), _g(g) {
+    assert(f != nullptr, "invariant");
+    assert(g != nullptr, "invariant");
+  }
+  bool operator()(T const& value) {
+    return (*_f)(value) && (*_g)(value);
+  }
+};
+
+class JfrArtifactClosure {
+ public:
+  virtual void do_artifact(const void* artifact) = 0;
+};
+
+template <typename T, typename Callback>
+class JfrArtifactCallbackHost : public JfrArtifactClosure {
+ private:
+  JfrArtifactClosure** _subsystem_callback_loc;
+  Callback* _callback;
+ public:
+  JfrArtifactCallbackHost(JfrArtifactClosure** subsystem_callback_loc, Callback* callback) :
+          _subsystem_callback_loc(subsystem_callback_loc), _callback(callback) {
+    assert(*_subsystem_callback_loc == nullptr, "Subsystem callback should not be set yet");
+    *_subsystem_callback_loc = this;
+  }
+  ~JfrArtifactCallbackHost() {
+    *_subsystem_callback_loc = nullptr;
+  }
+  void do_artifact(const void* artifact) {
+    (*_callback)(reinterpret_cast<T const&>(artifact));
+  }
+};
+
+template <typename FieldSelector, typename Letter>
+class KlassToFieldEnvelope {
+  Letter* _letter;
+ public:
+  KlassToFieldEnvelope(Letter* letter) : _letter(letter) {}
+  bool operator()(const Klass* klass) {
+    assert(IS_SERIALIZED(klass), "invariant");
+    typename FieldSelector::TypePtr t = FieldSelector::select(klass);
+    return t != nullptr ? (*_letter)(t) : true;
+  }
+};
+
+template <typename T>
+class ClearArtifact {
+ public:
+  bool operator()(T const& value) {
+    CLEAR_SERIALIZED(value);
+    assert(IS_NOT_SERIALIZED(value), "invariant");
+    assert(IS_NOT_LEAKP(value), "invariant");
+    assert(IS_NOT_TRANSIENT(value), "invariant");
+    SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
+    CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
+    assert(IS_THIS_EPOCH_CLEARED_BIT_SET(value), "invariant");
+    assert(IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(value), "invariant");
+    return true;
+  }
+};
+
+template <>
+class ClearArtifact<const Method*> {
+ public:
+  bool operator()(const Method* method) {
+    assert(METHOD_FLAG_USED_PREVIOUS_EPOCH(method), "invariant");
+    CLEAR_SERIALIZED_METHOD(method);
+    assert(METHOD_IS_NOT_SERIALIZED(method), "invariant");
+    assert(METHOD_IS_NOT_LEAKP(method), "invariant");
+    assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
+    SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
+    if (METHOD_FLAG_USED_PREVIOUS_EPOCH_BIT(method)) {
+      CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
+    }
+    assert(IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
+    assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
+    return true;
+  }
+};
+
+template <typename T, bool leakp>
+class SymbolPredicate {
+  bool _class_unload;
+ public:
+  SymbolPredicate(bool class_unload) : _class_unload(class_unload) {}
+  bool operator()(T const& value) {
+    assert(value != nullptr, "invariant");
+    if (_class_unload) {
+      return leakp ? value->is_leakp() : value->is_unloading();
+    }
+    return leakp ? value->is_leakp() : !value->is_serialized();
+  }
+};
+
+template <bool leakp>
+class MethodFlagPredicate {
+  bool _current_epoch;
+ public:
+  MethodFlagPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
+  bool operator()(const Method* method) {
+    if (_current_epoch) {
+      return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
+    }
+    return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+  }
+};
+
+template <typename T>
+class LeakPredicate {
+ public:
+  LeakPredicate(bool class_unload) {}
+  bool operator()(T const& value) {
+    return IS_LEAKP(value);
+  }
+};
+
+template <>
+class LeakPredicate<const Method*> {
+ public:
+  LeakPredicate(bool class_unload) {}
+  bool operator()(const Method* method) {
+    assert(method != nullptr, "invariant");
+    return METHOD_IS_LEAKP(method);
+  }
+};
+
+/**
+ * When processing a set of artifacts, there will be a need
+ * to track transitive dependencies originating with each artifact.
+ * These might or might not be explicitly "tagged" at that point.
+ * With the introduction of "epochs" to allow for concurrent tagging,
+ * we attempt to avoid "tagging" an artifact to indicate its use in a
+ * previous epoch. This is mainly to reduce the risk for data races.
+ * Instead, JfrArtifactSet is used to track transitive dependencies
+ * during the write process itself.
+ *
+ * It can also provide opportunities for caching, as the ideal should
+ * be to reduce the amount of iterations necessary for locating artifacts
+ * in the respective VM subsystems.
+ */
+class JfrArtifactSet : public JfrCHeapObj {
+ public:
+  class JfrArtifactSetConfig : public AllStatic {
+   public:
+    typedef const Klass* KEY_TYPE;
+
+    constexpr static AnyObj::allocation_type alloc_type() {
+      return AnyObj::RESOURCE_AREA;
+    }
+
+    constexpr static MemTag memory_tag() {
+      return mtInternal;
+    }
+
+    // Knuth multiplicative hashing.
+    static uint32_t hash(const KEY_TYPE& k) {
+      const uint32_t v = static_cast<uint32_t>(JfrTraceId::load_raw(k));
+      return v * UINT32_C(2654435761);
+    }
+
+    static bool cmp(const KEY_TYPE& lhs, const KEY_TYPE& rhs) {
+      return lhs == rhs;
+    }
+  };
+
+  typedef JfrSet<JfrArtifactSetConfig> JfrKlassSet;
+
+ private:
+  JfrKlassSet* _klass_set;
+  JfrKlassSet* _klass_loader_set;
+  JfrKlassSet* _klass_loader_leakp_set;
+  size_t _total_count;
+  bool _class_unload;
+  bool _previous_epoch;
+
+ public:
+  JfrArtifactSet(bool class_unload, bool previous_epoch);
+  ~JfrArtifactSet();
+
+  // caller needs ResourceMark
+  void initialize(bool class_unload, bool previous_epoch);
+  void clear();
+
+  traceid mark(const Klass* klass, bool leakp);
+  traceid mark(const Symbol* symbol, bool leakp);
+  traceid bootstrap_name(bool leakp);
+
+  bool has_klass_entries() const;
+  size_t total_count() const;
+  void register_klass(const Klass* k);
+  bool should_do_cld_klass(const Klass* k, bool leakp);
+
+  template <typename T>
+  void iterate_symbols(T& functor);
+
+  template <typename T>
+  void iterate_strings(T& functor);
+
+  template <typename Writer>
+  void tally(Writer& writer) {
+    _total_count += writer.count();
+  }
+
+  template <typename Functor>
+  void iterate_klasses(Functor& functor) const {
+    if (iterate(functor, _klass_set)) {
+      iterate(functor, _klass_loader_set);
+    }
+  }
+
+ private:
+  template <typename Functor>
+  bool iterate(Functor& functor, JfrKlassSet* set) const {
+    assert(set != nullptr, "invariant");
+    if (set->is_nonempty()) {
+      set->iterate(functor);
+    }
+    return true;
+  }
+};
+
+class KlassArtifactRegistrator {
+ private:
+  JfrArtifactSet* _artifacts;
+ public:
+  KlassArtifactRegistrator(JfrArtifactSet* artifacts) :
+    _artifacts(artifacts) {
+    assert(_artifacts != nullptr, "invariant");
+  }
+
+  bool operator()(const Klass* klass) {
+    assert(klass != nullptr, "invariant");
+    _artifacts->register_klass(klass);
+    return true;
+  }
+};
+
+#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP

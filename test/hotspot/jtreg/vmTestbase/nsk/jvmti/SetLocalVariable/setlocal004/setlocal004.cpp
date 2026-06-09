@@ -1,0 +1,225 @@
+/*
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include "jvmti.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
+
+extern "C" {
+
+
+#define PASSED 0
+#define STATUS_FAILED 2
+#define INV_SLOT (-1)
+
+static jvmtiEnv *jvmti = nullptr;
+static jvmtiCapabilities caps;
+static jvmtiEventCallbacks callbacks;
+static jint result = PASSED;
+static jboolean printdump = JNI_FALSE;
+
+static void check_error(jvmtiError err, bool is_virtual, char* var_name) {
+    if (err != JVMTI_ERROR_TYPE_MISMATCH && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
+        printf("(%s) ", var_name);
+        printf("Error: expected: JVMTI_ERROR_TYPE_MISMATCH or JVMTI_ERROR_OPAQUE_FRAME,\n");
+        printf("\t    actual: %s (%d)\n", TranslateError(err), err);
+        result = STATUS_FAILED;
+    }
+}
+
+void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
+        jthread thr, jmethodID method, jlocation location) {
+    jvmtiError err;
+    jmethodID mid;
+    jlocation loc;
+    jint entryCount;
+    jvmtiLocalVariableEntry *table;
+    bool is_virtual = env->IsVirtualThread(thr);
+    int i;
+
+    err = jvmti_env->GetFrameLocation(thr, 1, &mid, &loc);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("(GetFrameLocation) unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        result = STATUS_FAILED;
+        return;
+    }
+
+    if (printdump == JNI_TRUE) {
+        printf(">>> obtaining local variables mapping ...\n");
+    }
+
+    err = jvmti_env->GetLocalVariableTable(mid, &entryCount, &table);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("(GetLocalVariableTable) unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        return;
+    }
+
+    if (printdump == JNI_TRUE) {
+        printf(">>> checking on type mismatch ...\n");
+    }
+    for (i = 0; i < entryCount; i++) {
+        char* var_name = table[i].name;
+
+        if (strlen(table[i].name) != 1) continue;
+        if (strcmp(table[i].name, "o") != 0) {
+            err = jvmti_env->SetLocalObject(thr, 1,
+                table[i].slot, (jobject)thr);
+            check_error(err, is_virtual, var_name);
+        }
+        if (strcmp(table[i].name, "i") != 0) {
+            err = jvmti_env->SetLocalInt(thr, 1,
+                table[i].slot, (jint)0);
+            check_error(err, is_virtual, var_name);
+        }
+        if (strcmp(table[i].name, "l") != 0) {
+            err = jvmti_env->SetLocalLong(thr, 1,
+                table[i].slot, (jlong)0);
+            check_error(err, is_virtual, var_name);
+        }
+        if (strcmp(table[i].name, "f") != 0) {
+            err = jvmti_env->SetLocalFloat(thr, 1,
+                table[i].slot, (jfloat)0);
+            check_error(err, is_virtual, var_name);
+        }
+        if (strcmp(table[i].name, "d") != 0) {
+            err = jvmti_env->SetLocalDouble(thr, 1,
+                table[i].slot, (jdouble)0);
+            check_error(err, is_virtual, var_name);
+        }
+    }
+
+    if (printdump == JNI_TRUE) {
+        printf(">>> ... done\n");
+    }
+}
+
+#ifdef STATIC_BUILD
+JNIEXPORT jint JNICALL Agent_OnLoad_setlocal004(JavaVM *jvm, char *options, void *reserved) {
+    return Agent_Initialize(jvm, options, reserved);
+}
+JNIEXPORT jint JNICALL Agent_OnAttach_setlocal004(JavaVM *jvm, char *options, void *reserved) {
+    return Agent_Initialize(jvm, options, reserved);
+}
+JNIEXPORT jint JNI_OnLoad_setlocal004(JavaVM *jvm, char *options, void *reserved) {
+    return JNI_VERSION_1_8;
+}
+#endif
+jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+    jvmtiError err;
+    jint res;
+
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
+        printdump = JNI_TRUE;
+    }
+
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+    if (res != JNI_OK || jvmti == nullptr) {
+        printf("Wrong result of a valid call to GetEnv!\n");
+        return JNI_ERR;
+    }
+
+    err = jvmti->GetPotentialCapabilities(&caps);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("(GetPotentialCapabilities) unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        return JNI_ERR;
+    }
+
+    err = jvmti->AddCapabilities(&caps);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("(AddCapabilities) unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        return JNI_ERR;
+    }
+
+    err = jvmti->GetCapabilities(&caps);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("(GetCapabilities) unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        return JNI_ERR;
+    }
+
+    if (!caps.can_access_local_variables) {
+        printf("Warning: access to local variables is not implemented\n");
+    } else if (caps.can_generate_breakpoint_events) {
+        callbacks.Breakpoint = &Breakpoint;
+        err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
+        if (err != JVMTI_ERROR_NONE) {
+            printf("(SetEventCallbacks) unexpected error: %s (%d)\n",
+                   TranslateError(err), err);
+            return JNI_ERR;
+        }
+    } else {
+        printf("Warning: Breakpoint event is not implemented\n");
+    }
+
+    return JNI_OK;
+}
+
+JNIEXPORT void JNICALL
+Java_nsk_jvmti_SetLocalVariable_setlocal004_getReady(JNIEnv *env, jclass cls) {
+    jvmtiError err;
+    jmethodID mid;
+
+    if (jvmti == nullptr) {
+        printf("JVMTI client was not properly loaded!\n");
+        result = STATUS_FAILED;
+        return;
+    }
+
+    if (!caps.can_access_local_variables ||
+        !caps.can_generate_breakpoint_events) return;
+
+    mid = env->GetStaticMethodID(cls, "checkPoint", "()V");
+    if (mid == 0) {
+        printf("Cannot find Method ID for method checkPoint\n");
+        result = STATUS_FAILED;
+        return;
+    }
+
+    err = jvmti->SetBreakpoint(mid, 0);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("Failed to SetBreakpoint: %s (%d)\n", TranslateError(err), err);
+        result = STATUS_FAILED;
+        return;
+    }
+
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+        JVMTI_EVENT_BREAKPOINT, nullptr);
+    if (err != JVMTI_ERROR_NONE) {
+        printf("Failed to enable BREAKPOINT event: %s (%d)\n",
+               TranslateError(err), err);
+        result = STATUS_FAILED;
+    }
+}
+
+JNIEXPORT jint JNICALL
+Java_nsk_jvmti_SetLocalVariable_setlocal004_getRes(JNIEnv *env, jclass cls) {
+    return result;
+}
+
+}

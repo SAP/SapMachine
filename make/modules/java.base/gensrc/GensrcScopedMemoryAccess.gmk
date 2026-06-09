@@ -1,0 +1,106 @@
+#
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
+SCOPED_INPUT_DIR := $(MODULE_SRC)/share/classes/jdk/internal/misc
+SCOPED_INPUT := $(SCOPED_INPUT_DIR)/X-ScopedMemoryAccess.java.template
+SCOPED_OUTPUT := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc/ScopedMemoryAccess.java
+
+################################################################################
+# Helper method to setup generation of scoped snippets.
+# Will add the generated snippet file name to SCOPED_SNIPPET_FILES.
+#
+# arg $1: type for this snippet
+define SetupGenScopedSnippets
+  $1_SCOPED_SNIPPET_FILE := $$(SCOPED_OUTPUT).snippet.$1
+
+  $1_KEYS := $1 CAS
+  ifneq ($$(filter byte, $1),)
+    $1_KEYS += byte
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter char short int long, $1),)
+    $1_KEYS += Unaligned
+  endif
+  ifneq ($$(filter boolean byte char short, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifeq ($$(filter boolean, $1),)
+    $1_KEYS += AtomicAdd
+  endif
+  ifeq ($$(filter float double, $1),)
+    $1_KEYS += Bitwise
+  endif
+
+  $$(eval $$(call SetupStreamPreProcessing, GEN_SCOPED_SNIPPET_$1, \
+      SOURCE_FILE := $$(SCOPED_INPUT_DIR)/X-ScopedMemoryAccess-bin.java.template, \
+      OUTPUT_FILE := $$($1_SCOPED_SNIPPET_FILE), \
+      INFO := Generating snippets for ScopedMemoryAccess ($1), \
+      SUBST_EMPTY_LINES := false, \
+      KEYS := $$($1_KEYS), \
+      REPLACEMENTS := \
+          type=$1 \
+          Type=$$(call Conv, $1, Type), \
+  ))
+  TARGETS += $$(GEN_SCOPED_SNIPPET_$1)
+
+  SCOPED_SNIPPET_FILES += $$($1_SCOPED_SNIPPET_FILE)
+endef
+
+################################################################################
+# Setup generation of snippet files, one for each primitive type. This will
+# populate SCOPED_SNIPPET_FILES.
+
+# SCOPED_TYPES is identical to PRIMITIVE_TYPES, but with a slightly different
+# order. Keep the original SCOPED_TYPES order for now to not change the
+# generated file.
+SCOPED_TYPES := boolean byte short char int long float double
+
+SCOPED_SNIPPET_FILES :=
+$(foreach t, $(SCOPED_TYPES), \
+  $(eval $(call SetupGenScopedSnippets,$t)) \
+)
+
+# Setup a rule for generating the ScopedMemoryAccess java class by incorporating
+# those snippets
+$(SCOPED_OUTPUT): $(SCOPED_INPUT) $(SCOPED_SNIPPET_FILES)
+	$(call LogInfo, Concatenating snippets for ScopedMemoryAccess.java)
+	$(CAT) $(SCOPED_INPUT) > $(SCOPED_OUTPUT).tmp
+	$(CAT) $(SCOPED_SNIPPET_FILES) >> $(SCOPED_OUTPUT).tmp
+	$(ECHO) "}" >> $(SCOPED_OUTPUT).tmp
+	$(MV) $(SCOPED_OUTPUT).tmp $(SCOPED_OUTPUT)
+
+TARGETS += $(SCOPED_OUTPUT)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

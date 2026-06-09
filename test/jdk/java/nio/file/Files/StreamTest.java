@@ -1,0 +1,556 @@
+/*
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/* @test
+ * @bug 8006884 8019526 8132539
+ * @library ..
+ * @build PassThroughFileSystem FaultyFileSystem
+ * @run junit StreamTest
+ * @summary Unit test for java.nio.file.Files methods that return a Stream
+ */
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.MalformedInputException;
+import java.nio.file.DirectoryIteratorException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.FileSystemLoopException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class StreamTest {
+    /**
+     * Default test folder
+     * testFolder - empty
+     *            - file
+     *            - dir - d1
+     *                  - f1
+     *                  - lnDir2 (../dir2)
+     *            - dir2
+     *            - linkDir (./dir)
+     *            - linkFile(./file)
+     */
+    static Path testFolder;
+    static boolean supportsSymbolicLinks;
+    static Path[] level1;
+    static Path[] all;
+    static Path[] allFollowLinks;
+
+    @BeforeAll
+    static void setupTestFolder() throws IOException {
+        testFolder = TestUtil.createTemporaryDirectory();
+        supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(testFolder);
+        TreeSet<Path> set = new TreeSet<>();
+
+        // Level 1
+        Path empty = testFolder.resolve("empty");
+        Path file = testFolder.resolve("file");
+        Path dir = testFolder.resolve("dir");
+        Path dir2 = testFolder.resolve("dir2");
+        Files.createDirectory(empty);
+        Files.createFile(file);
+        Files.createDirectory(dir);
+        Files.createDirectory(dir2);
+        set.add(empty);
+        set.add(file);
+        set.add(dir);
+        set.add(dir2);
+        if (supportsSymbolicLinks) {
+            Path tmp = testFolder.resolve("linkDir");
+            Files.createSymbolicLink(tmp, dir);
+            set.add(tmp);
+            tmp = testFolder.resolve("linkFile");
+            Files.createSymbolicLink(tmp, file);
+            set.add(tmp);
+        }
+        level1 = set.toArray(new Path[0]);
+
+        // Level 2
+        Path tmp = dir.resolve("d1");
+        Files.createDirectory(tmp);
+        set.add(tmp);
+        tmp = dir.resolve("f1");
+        Files.createFile(tmp);
+        set.add(tmp);
+        if (supportsSymbolicLinks) {
+            tmp = dir.resolve("lnDir2");
+            Files.createSymbolicLink(tmp, dir2);
+            set.add(tmp);
+        }
+        // walk include starting folder
+        set.add(testFolder);
+        all = set.toArray(new Path[0]);
+
+        // Follow links
+        if (supportsSymbolicLinks) {
+            tmp = testFolder.resolve("linkDir");
+            set.add(tmp.resolve("d1"));
+            set.add(tmp.resolve("f1"));
+            tmp = tmp.resolve("lnDir2");
+            set.add(tmp);
+        }
+        allFollowLinks = set.toArray(new Path[0]);
+    }
+
+    @AfterAll
+    static void cleanupTestFolder() throws IOException {
+        TestUtil.removeAll(testFolder);
+    }
+
+    @Test
+    public void testBasic() {
+        try (Stream<Path> s = Files.list(testFolder)) {
+            Object[] actual = s.sorted().toArray();
+            assertArrayEquals(level1, actual);
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+
+        try (Stream<Path> s = Files.list(testFolder.resolve("empty"))) {
+            int count = s.mapToInt(p -> 1).reduce(0, Integer::sum);
+            assertEquals(0, count, "Expect empty stream.");
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+    }
+
+    @Test
+    public void testWalk() {
+        try (Stream<Path> s = Files.walk(testFolder)) {
+            Object[] actual = s.sorted().toArray();
+            assertArrayEquals(all, actual);
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+    }
+
+    @Test
+    public void testWalkOneLevel() {
+        try (Stream<Path> s = Files.walk(testFolder, 1)) {
+            Object[] actual = s.filter(path -> ! path.equals(testFolder))
+                               .sorted()
+                               .toArray();
+            assertArrayEquals(level1, actual);
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+    }
+
+    @Test
+    public void testWalkFollowLink() {
+        // If link is not supported, the directory structure won't have link.
+        // We still want to test the behavior with FOLLOW_LINKS option.
+        try (Stream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
+            Object[] actual = s.sorted().toArray();
+            assertArrayEquals(allFollowLinks, actual);
+        } catch (IOException ioe) {
+            fail("Unexpected IOException");
+        }
+    }
+
+    private void validateFileSystemLoopException(Path start, Path... causes) {
+        try (Stream<Path> s = Files.walk(start, FileVisitOption.FOLLOW_LINKS)) {
+            try {
+                int count = s.mapToInt(p -> 1).reduce(0, Integer::sum);
+                fail("Should got FileSystemLoopException, but got " + count + "elements.");
+            } catch (UncheckedIOException uioe) {
+                IOException ioe = uioe.getCause();
+                if (ioe instanceof FileSystemLoopException) {
+                    FileSystemLoopException fsle = (FileSystemLoopException) ioe;
+                    boolean match = false;
+                    for (Path cause: causes) {
+                        if (fsle.getFile().equals(cause.toString())) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    assertTrue(match);
+                } else {
+                    fail("Unexpected UncheckedIOException cause " + ioe.toString());
+                }
+            }
+        } catch(IOException ex) {
+            fail("Unexpected IOException " + ex);
+        }
+    }
+
+    @Test
+    public void testWalkFollowLinkLoop() {
+        if (!supportsSymbolicLinks) {
+            return;
+        }
+
+        // Loops.
+        try {
+            Path dir = testFolder.resolve("dir");
+            Path linkdir = testFolder.resolve("linkDir");
+            Path d1 = dir.resolve("d1");
+            Path cause = d1.resolve("lnSelf");
+            Files.createSymbolicLink(cause, d1);
+
+            // loop in descendant.
+            validateFileSystemLoopException(dir, cause);
+            // loop in self
+            validateFileSystemLoopException(d1, cause);
+            // start from other place via link
+            validateFileSystemLoopException(linkdir,
+                    linkdir.resolve(Paths.get("d1", "lnSelf")));
+            Files.delete(cause);
+
+            // loop to parent.
+            cause = d1.resolve("lnParent");
+            Files.createSymbolicLink(cause, dir);
+
+            // loop should be detected at test/dir/d1/lnParent/d1
+            validateFileSystemLoopException(d1, cause.resolve("d1"));
+            // loop should be detected at link
+            validateFileSystemLoopException(dir, cause);
+            // loop should be detected at test/linkdir/d1/lnParent
+            // which is test/dir we have visited via test/linkdir
+            validateFileSystemLoopException(linkdir,
+                    linkdir.resolve(Paths.get("d1", "lnParent")));
+            Files.delete(cause);
+
+            // cross loop
+            Path dir2 = testFolder.resolve("dir2");
+            cause = dir2.resolve("lnDir");
+            Files.createSymbolicLink(cause, dir);
+            validateFileSystemLoopException(dir,
+                    dir.resolve(Paths.get("lnDir2", "lnDir")));
+            validateFileSystemLoopException(dir2,
+                    dir2.resolve(Paths.get("lnDir", "lnDir2")));
+            validateFileSystemLoopException(linkdir,
+                    linkdir.resolve(Paths.get("lnDir2", "lnDir")));
+            Files.delete(cause);
+        } catch(IOException ioe) {
+            fail("Unexpected IOException " + ioe);
+        }
+    }
+
+    private static class PathBiPredicate implements BiPredicate<Path, BasicFileAttributes> {
+        private final BiPredicate<Path, BasicFileAttributes> pred;
+        private final Set<Path> visited = new TreeSet<Path>();
+
+        PathBiPredicate(BiPredicate<Path, BasicFileAttributes> pred) {
+            this.pred = Objects.requireNonNull(pred);
+        }
+
+        public boolean test(Path path, BasicFileAttributes attrs) {
+            visited.add(path);
+            return pred.test(path, attrs);
+        }
+
+        public Path[] visited() {
+            return visited.toArray(new Path[0]);
+        }
+    }
+
+    @Test
+    public void testFind() throws IOException {
+        PathBiPredicate pred = new PathBiPredicate((path, attrs) -> true);
+
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+            Set<Path> result = s.collect(Collectors.toCollection(TreeSet::new));
+            assertArrayEquals(all, pred.visited());
+            assertArrayEquals(pred.visited(), result.toArray(new Path[0]));
+        }
+
+        pred = new PathBiPredicate((path, attrs) -> attrs.isSymbolicLink());
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+            s.forEach(path -> assertTrue(Files.isSymbolicLink(path)));
+            assertArrayEquals(all, pred.visited());
+        }
+
+        pred = new PathBiPredicate((path, attrs) ->
+            path.getFileName().toString().startsWith("e"));
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+            s.forEach(path -> assertEquals(path.getFileName().toString(), "empty"));
+            assertArrayEquals(all, pred.visited());
+        }
+
+        pred = new PathBiPredicate((path, attrs) ->
+            path.getFileName().toString().startsWith("l") && attrs.isRegularFile());
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
+            s.forEach(path -> fail("Expect empty stream"));
+            assertArrayEquals(all, pred.visited());
+        }
+    }
+
+    // Test borrowed from BytesAndLines
+    @Test
+    public void testLines() throws IOException {
+        final Charset US_ASCII = Charset.forName("US-ASCII");
+        Path tmpfile = Files.createTempFile("blah", "txt");
+
+        try {
+            // zero lines
+            assertEquals(0, Files.size(tmpfile), "File should be empty");
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkLines(s, Collections.emptyList());
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkLines(s, Collections.emptyList());
+            }
+
+            // one line
+            List<String> oneLine = Arrays.asList("hi");
+            Files.write(tmpfile, oneLine, US_ASCII);
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkLines(s, oneLine);
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkLines(s, oneLine);
+            }
+
+            // two lines using platform's line separator
+            List<String> twoLines = Arrays.asList("hi", "there");
+            Files.write(tmpfile, twoLines, US_ASCII);
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkLines(s, twoLines);
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkLines(s, twoLines);
+            }
+
+            // MalformedInputException
+            byte[] bad = { (byte)0xff, (byte)0xff };
+            Files.write(tmpfile, bad);
+            try (Stream<String> s = Files.lines(tmpfile)) {
+                checkMalformedInputException(s);
+            }
+            try (Stream<String> s = Files.lines(tmpfile, US_ASCII)) {
+                checkMalformedInputException(s);
+            }
+
+            // NullPointerException
+            checkNullPointerException(() -> Files.lines(null));
+            checkNullPointerException(() -> Files.lines(null, US_ASCII));
+            checkNullPointerException(() -> Files.lines(tmpfile, null));
+
+        } finally {
+            Files.delete(tmpfile);
+        }
+    }
+
+    private void checkLines(Stream<String> s, List<String> expected) {
+        List<String> lines = s.collect(Collectors.toList());
+        assertEquals(expected.size(), lines.size(), "Unexpected number of lines");
+        assertTrue(lines.equals(expected), "Unexpected content");
+    }
+
+    private void checkMalformedInputException(Stream<String> s) {
+            assertThrows(UncheckedIOException.class,
+                         () -> s.collect(Collectors.toList()),
+                         "MalformedInputException expected");
+    }
+
+    private void checkNullPointerException(Callable<?> c) {
+        assertThrows(NullPointerException.class, () -> c.call());
+    }
+
+    @Test
+    public void testDirectoryIteratorException() throws IOException {
+        Path dir = testFolder.resolve("dir2");
+        Path trigger = dir.resolve("DirectoryIteratorException");
+        Files.createFile(trigger);
+        FaultyFileSystem.FaultyFSProvider fsp = FaultyFileSystem.FaultyFSProvider.getInstance();
+        FaultyFileSystem fs = (FaultyFileSystem) fsp.newFileSystem(dir, null);
+
+        try {
+            fsp.setFaultyMode(false);
+            Path fakeRoot = fs.getRoot();
+            try {
+                try (Stream<Path> s = Files.list(fakeRoot)) {
+                    s.forEach(path -> assertEquals("DirectoryIteratorException", path.getFileName().toString()));
+                }
+            } catch (UncheckedIOException uioe) {
+                fail("Unexpected exception.");
+            }
+
+            fsp.setFaultyMode(true);
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(fakeRoot)) {
+                Iterator<Path> itor = ds.iterator();
+                assertThrows(DirectoryIteratorException.class,
+                             () -> {
+                                 while (itor.hasNext()) {
+                                     itor.next();
+                                 }
+                             });
+            }
+
+            try {
+                try (Stream<Path> s = Files.list(fakeRoot)) {
+                    s.forEach(path -> fail("should not get here"));
+                }
+            } catch (UncheckedIOException uioe) {
+                assertInstanceOf(FaultyFileSystem.FaultyException.class,
+                                 uioe.getCause());
+            } catch (DirectoryIteratorException die) {
+                fail("Should have been converted into UncheckedIOException.");
+            }
+        } finally {
+            // Cleanup
+            if (fs != null) {
+                fs.close();
+            }
+            Files.delete(trigger);
+        }
+    }
+
+    @Test
+    public void testUncheckedIOException() throws IOException {
+        Path triggerFile = testFolder.resolve(Paths.get("dir2", "IOException"));
+        Files.createFile(triggerFile);
+        Path triggerDir = testFolder.resolve(Paths.get("empty", "IOException"));
+        Files.createDirectories(triggerDir);
+        Files.createFile(triggerDir.resolve("file"));
+        FaultyFileSystem.FaultyFSProvider fsp = FaultyFileSystem.FaultyFSProvider.getInstance();
+        FaultyFileSystem fs = (FaultyFileSystem) fsp.newFileSystem(testFolder, null);
+
+        try {
+            fsp.setFaultyMode(false);
+            Path fakeRoot = fs.getRoot();
+            try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
+                // only one file
+                s.forEach(path -> assertEquals("IOException", path.getFileName().toString()));
+            }
+
+            try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
+                String[] result = s.map(path -> path.getFileName().toString())
+                                   .toArray(String[]::new);
+                // ordered as depth-first
+                assertArrayEquals(new String[] { "empty", "IOException", "file"}, result);
+            }
+
+            fsp.setFaultyMode(true);
+            try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
+                s.forEach(path -> fail("should have caused exception"));
+            } catch (UncheckedIOException uioe) {
+                assertInstanceOf(FaultyFileSystem.FaultyException.class,
+                                 uioe.getCause());
+            }
+
+            try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
+                String[] result = s.map(path -> path.getFileName().toString())
+                                   .toArray(String[]::new);
+                fail("should not reach here due to IOException");
+            } catch (UncheckedIOException uioe) {
+                assertInstanceOf(FaultyFileSystem.FaultyException.class,
+                                 uioe.getCause());
+            }
+
+            try (Stream<Path> s = Files.walk(
+                fakeRoot.resolve("empty").resolve("IOException")))
+            {
+                String[] result = s.map(path -> path.getFileName().toString())
+                                   .toArray(String[]::new);
+                fail("should not reach here due to IOException");
+            } catch (IOException ioe) {
+                assertInstanceOf(FaultyFileSystem.FaultyException.class, ioe);
+            } catch (UncheckedIOException ex) {
+                fail("Top level should be repored as is");
+            }
+         } finally {
+            // Cleanup
+            if (fs != null) {
+                fs.close();
+            }
+            Files.delete(triggerFile);
+            TestUtil.removeAll(triggerDir);
+        }
+    }
+
+    @Test
+    public void testConstructException() {
+        try (Stream<String> s = Files.lines(testFolder.resolve("notExist"), Charset.forName("UTF-8"))) {
+            s.forEach(l -> fail("File does not even exist!"));
+        } catch (IOException ioe) {
+            assertInstanceOf(NoSuchFileException.class, ioe);
+        }
+    }
+
+    @Test
+    public void testClosedStream() throws IOException {
+        try (Stream<Path> s = Files.list(testFolder)) {
+            s.close();
+            assertThrows(IllegalStateException.class,
+                         () -> s.sorted().toArray());
+        }
+
+        try (Stream<Path> s = Files.walk(testFolder)) {
+            s.close();
+            assertThrows(IllegalStateException.class,
+                         () -> s.sorted().toArray());
+        }
+
+        try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE,
+                    (p, attr) -> true)) {
+            s.close();
+            assertThrows(IllegalStateException.class,
+                         () -> s.sorted().toArray());
+        }
+    }
+
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    public void testProcFile() throws IOException {
+        Path path = Paths.get("/proc/cpuinfo");
+        if (Files.exists(path)) {
+            String NEW_LINE = System.getProperty("line.separator");
+            String s =
+                Files.lines(path).collect(Collectors.joining(NEW_LINE));
+            assertNotEquals(0, s.length(),
+                            "Files.lines(\"" + path + "\") returns no data");
+        }
+    }
+}

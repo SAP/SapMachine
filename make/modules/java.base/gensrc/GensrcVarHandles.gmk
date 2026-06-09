@@ -1,0 +1,173 @@
+#
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
+VARHANDLES_INPUT_DIR := $(MODULE_SRC)/share/classes/java/lang/invoke
+VARHANDLES_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/invoke
+
+################################################################################
+# Setup a rule for generating a VarHandle java class
+#
+# arg $1: type for this varhandle
+define GenerateVarHandle
+  VARHANDLE_$1_type := $$(strip $$(if $$(filter reference, $1), Object, $1))
+  VARHANDLE_$1_Type := $$(call Conv, $1, Type)
+
+  $1_KEYS := $$(VARHANDLE_$1_type) CAS
+  ifneq ($$(filter byte short char, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifeq ($$(filter boolean reference, $1),)
+    $1_KEYS += AtomicAdd
+  endif
+  ifeq ($$(filter float double reference, $1),)
+    $1_KEYS += Bitwise
+  endif
+
+  $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_$1, \
+      SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandle.java.template, \
+      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandle$$(VARHANDLE_$1_Type)s.java, \
+      INFO := Generating VarHandle class for $1, \
+      SUBST_EMPTY_LINES := false, \
+      KEYS := $$($1_KEYS), \
+      REPLACEMENTS := \
+          type=$$(VARHANDLE_$1_type) \
+          Type=$$(VARHANDLE_$1_Type), \
+  ))
+  TARGETS += $$(GEN_VARHANDLE_$1)
+endef
+
+################################################################################
+# Setup a rule for generating a VarHandleByteArray java class
+#
+# arg $1: type for this varhandle
+define GenerateVarHandleByteArray
+  VARHANDLE_BYTEARRAY_$1_Type := $$(call Conv, $1, Type)
+
+  $1_KEYS := $1
+  ifneq ($$(filter int long float double, $1),)
+    $1_KEYS += CAS
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter int long, $1),)
+    $1_KEYS += AtomicAdd Bitwise
+  endif
+
+  $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_BYTEARRAY_$1, \
+      SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandleByteArrayView.java.template, \
+      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandleByteArrayAs$$(VARHANDLE_BYTEARRAY_$1_Type)s.java, \
+      INFO := Generating VarHandleByteArray class for $1, \
+      SUBST_EMPTY_LINES := false, \
+      KEYS := $$($1_KEYS), \
+      REPLACEMENTS := \
+          type=$1 \
+          Type=$$(VARHANDLE_BYTEARRAY_$1_Type) \
+          BoxType=$$(call Conv, $1, Fulltype) \
+          rawType=$$(call Conv, $1, memtype) \
+          RawType=$$(call Conv, $1, Memtype) \
+          RawBoxType=$$(call Conv, $1, FullMemtype), \
+  ))
+  TARGETS += $$(GEN_VARHANDLE_BYTEARRAY_$1)
+endef
+
+################################################################################
+# Setup a rule for generating a VarHandleMemorySegment java class
+#
+# arg $1: type for this varhandle
+define GenerateVarHandleMemorySegment
+  VARHANDLE_SEGMENT_$1_Type := $$(call Conv, $1, Type)
+
+
+  $1_KEYS := $1
+  ifneq ($$(filter int long float double, $1),)
+    $1_KEYS += CAS
+  endif
+  ifneq ($$(filter boolean byte, $1),)
+    $1_KEYS += byte
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter boolean byte short char, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifneq ($$(filter int long, $1),)
+    $1_KEYS += AtomicAdd Bitwise
+  endif
+
+  $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_SEGMENT_$1, \
+      SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandleSegmentView.java.template, \
+      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandleSegmentAs$$(VARHANDLE_SEGMENT_$1_Type)s.java, \
+      INFO := Generating VarHandleSegment class for $1, \
+      SUBST_EMPTY_LINES := false, \
+      KEYS := $$($1_KEYS), \
+      REPLACEMENTS := \
+          type=$1 \
+          Type=$$(VARHANDLE_SEGMENT_$1_Type) \
+          BoxType=$$(call Conv, $1, Fulltype) \
+          rawType=$$(call Conv, $1, memtype) \
+          RawType=$$(call Conv, $1, Memtype) \
+          RawBoxType=$$(call Conv, $1, FullMemtype), \
+  ))
+  TARGETS += $$(GEN_VARHANDLE_SEGMENT_$1)
+endef
+
+################################################################################
+# Generate all VarHandle related classes
+
+$(foreach t, $(PRIMITIVE_TYPES) reference, \
+  $(eval $(call GenerateVarHandle,$t)) \
+)
+
+$(foreach t, $(NON_BYTE_NUMBER_TYPES), \
+  $(eval $(call GenerateVarHandleByteArray,$t)) \
+)
+
+$(foreach t, $(PRIMITIVE_TYPES), \
+  $(eval $(call GenerateVarHandleMemorySegment,$t)) \
+)
+
+################################################################################
+
+GENSRC_VARHANDLEGUARDS := $(VARHANDLES_OUTPUT_DIR)/VarHandleGuards.java
+
+$(GENSRC_VARHANDLEGUARDS): $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Generating $@)
+	$(call MakeTargetDir)
+	$(TOOL_VARHANDLEGUARDMETHODGENERATOR) \
+	    $(GENSRC_VARHANDLEGUARDS)
+
+TARGETS += $(GENSRC_VARHANDLEGUARDS)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

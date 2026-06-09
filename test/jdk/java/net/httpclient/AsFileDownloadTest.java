@@ -1,0 +1,489 @@
+/*
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Builder;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.net.ssl.SSLContext;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
+import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.util.FileUtils;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import static java.lang.System.out;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+import static java.net.http.HttpResponse.BodyHandlers.ofFileDownload;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+/*
+ * @test
+ * @summary Basic test for ofFileDownload
+ * @bug 8196965 8302475
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @run junit/othervm/timeout=480 ${test.main.class}
+ */
+public class AsFileDownloadTest {
+
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
+    private static HttpsServer httpsTestServer;       // HTTPS/1.1
+    private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer h3TestServer;       // HTTP/3
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String h3URI;
+    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+
+    static Path tempDir;
+
+    static final String[][] contentDispositionValues = new String[][] {
+          // URI query     Content-Type header value         Expected filename
+            { "001", "Attachment; filename=example001.html", "example001.html" },
+            { "002", "attachment; filename=example002.html", "example002.html" },
+            { "003", "ATTACHMENT; filename=example003.html", "example003.html" },
+            { "004", "attAChment; filename=example004.html", "example004.html" },
+            { "005", "attachmeNt; filename=example005.html", "example005.html" },
+
+            { "006", "attachment; Filename=example006.html", "example006.html" },
+            { "007", "attachment; FILENAME=example007.html", "example007.html" },
+            { "008", "attachment; fileName=example008.html", "example008.html" },
+            { "009", "attachment; fIlEnAMe=example009.html", "example009.html" },
+
+            { "010", "attachment; filename=Example010.html", "Example010.html" },
+            { "011", "attachment; filename=EXAMPLE011.html", "EXAMPLE011.html" },
+            { "012", "attachment; filename=eXample012.html", "eXample012.html" },
+            { "013", "attachment; filename=example013.HTML", "example013.HTML" },
+            { "014", "attachment; filename  =eXaMpLe014.HtMl", "eXaMpLe014.HtMl"},
+
+            { "015", "attachment; filename=a",               "a"               },
+            { "016", "attachment; filename= b",              "b"               },
+            { "017", "attachment; filename=  c",             "c"               },
+            { "018", "attachment; filename=    d",           "d"               },
+            { "019", "attachment; filename=e  ; filename*=utf-8''eee.txt",  "e"},
+            { "020", "attachment; filename*=utf-8''fff.txt; filename=f",    "f"},
+            { "021", "attachment;  filename=g",              "g"               },
+            { "022", "attachment;   filename= h",            "h"               },
+
+            { "023", "attachment; filename=\"space name\"",                       "space name" },
+            { "024", "attachment; filename=me.txt; filename*=utf-8''you.txt",     "me.txt"     },
+            { "025", "attachment; filename=\"m y.txt\"; filename*=utf-8''you.txt", "m y.txt"   },
+
+            { "030", "attachment; filename=\"foo/file1.txt\"",        "file1.txt" },
+            { "031", "attachment; filename=\"foo/bar/file2.txt\"",    "file2.txt" },
+            { "032", "attachment; filename=\"baz\\\\file3.txt\"",       "file3.txt" },
+            { "033", "attachment; filename=\"baz\\\\bar\\\\file4.txt\"",  "file4.txt" },
+            { "034", "attachment; filename=\"x/y\\\\file5.txt\"",       "file5.txt" },
+            { "035", "attachment; filename=\"x/y\\\\file6.txt\"",       "file6.txt" },
+            { "036", "attachment; filename=\"x/y\\\\z/file7.txt\"",     "file7.txt" },
+            { "037", "attachment; filename=\"x/y\\\\z/\\\\x/file8.txt\"", "file8.txt" },
+            { "038", "attachment; filename=\"/root/file9.txt\"",      "file9.txt" },
+            { "039", "attachment; filename=\"../file10.txt\"",        "file10.txt" },
+            { "040", "attachment; filename=\"..\\\\file11.txt\"",       "file11.txt" },
+            { "041", "attachment; filename=\"foo/../../file12.txt\"", "file12.txt" },
+    };
+
+    public static Object[][] positive() {
+        List<Object[]> list = new ArrayList<>();
+
+        Arrays.asList(contentDispositionValues).stream()
+                .map(e -> new Object[] {httpURI +  "?" + e[0], e[1], e[2], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionValues).stream()
+                .map(e -> new Object[] {httpsURI +  "?" + e[0], e[1], e[2], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionValues).stream()
+                .map(e -> new Object[] {http2URI +  "?" + e[0], e[1], e[2], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionValues).stream()
+                .map(e -> new Object[] {https2URI +  "?" + e[0], e[1], e[2], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionValues).stream()
+                .map(e -> new Object[] {h3URI +  "?" + e[0], e[1], e[2], Optional.of(Version.HTTP_3)})
+                .forEach(list::add);
+
+        return list.stream().toArray(Object[][]::new);
+    }
+
+    HttpClient newHttpClient(Optional<Version> version) {
+        var builder = version.isEmpty() || version.get() != Version.HTTP_3
+                ? HttpClient.newBuilder()
+                : HttpServerAdapters.createClientBuilderForH3().version(Version.HTTP_3);
+        return builder.sslContext(sslContext).proxy(Builder.NO_PROXY).build();
+    }
+
+    @ParameterizedTest
+    @MethodSource("positive")
+    void test(String uriString, String contentDispositionValue, String expectedFilename,
+              Optional<Version> requestVersion) throws Exception {
+        out.printf("test(%s, %s, %s): starting", uriString, contentDispositionValue, expectedFilename);
+        try (HttpClient client = newHttpClient(requestVersion)) {
+            TRACKER.track(client);
+            ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+            WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
+            URI uri = URI.create(uriString);
+            HttpRequest.Builder requestBuilder = newRequestBuilder(uriString);
+            if (requestVersion.isPresent()) {
+                requestBuilder.version(requestVersion.get());
+            }
+            HttpRequest request = requestBuilder.POST(
+                    BodyPublishers.ofString("May the luck of the Irish be with you!")).build();
+
+            BodyHandler bh = ofFileDownload(tempDir.resolve(uri.getPath().substring(1)),
+                    CREATE, TRUNCATE_EXISTING, WRITE);
+            out.println("Issuing request " + request);
+            HttpResponse<Path> response = client.send(request, bh);
+            Path body = response.body();
+            out.println("Got response: " + response);
+            out.println("Got body Path: " + body);
+            String fileContents = new String(Files.readAllBytes(response.body()), UTF_8);
+            out.println("Got body: " + fileContents);
+
+            assertEquals(200, response.statusCode());
+            assertEquals(expectedFilename, body.getFileName().toString());
+            assertTrue(response.headers().firstValue("Content-Disposition").isPresent());
+            assertEquals(                    contentDispositionValue, response.headers().firstValue("Content-Disposition").get());
+            assertEquals("May the luck of the Irish be with you!", fileContents);
+            if (requestVersion.isPresent()) {
+                assertEquals(requestVersion.get(), response.version(), "unexpected HTTP version" +
+                        " in response");
+            }
+
+            if (!body.toAbsolutePath().startsWith(tempDir.toAbsolutePath())) {
+                System.out.println("Tempdir = " + tempDir.toAbsolutePath());
+                System.out.println("body = " + body.toAbsolutePath());
+                throw new AssertionError("body in wrong location");
+            }
+            // additional checks unrelated to file download
+            caseInsensitivityOfHeaders(request.headers());
+            caseInsensitivityOfHeaders(response.headers());
+        }
+        AssertionError failed = TRACKER.checkClosed(1000);
+        if (failed != null) throw failed;
+    }
+
+    // --- Negative
+
+    static final String[][] contentDispositionBADValues = new String[][] {
+            // URI query     Content-Type header value
+            { "100", ""                                    },  // empty
+            { "101", "filename=example.html"               },  // no attachment
+            { "102", "attachment; filename=space name"     },  // unquoted with space
+            { "103", "attachment; filename="               },  // empty filename param
+            { "104", "attachment; filename=\""             },  // single quote
+            { "105", "attachment; filename=\"\""           },  // empty quoted
+            { "106", "attachment; filename=."              },  // dot
+            { "107", "attachment; filename=.."             },  // dot dot
+            { "108", "attachment; filename=\".."           },  // badly quoted dot dot
+            { "109", "attachment; filename=\"..\""         },  // quoted dot dot
+            { "110", "attachment; filename=\"bad"          },  // badly quoted
+            { "111", "attachment; filename=\"bad;"         },  // badly quoted with ';'
+            { "112", "attachment; filename=\"bad ;"        },  // badly quoted with ' ;'
+            { "113", "attachment; filename*=utf-8''xx.txt "},  // no "filename" param
+
+            { "120", "<<NOT_PRESENT>>"                     },  // header not present
+
+    };
+
+    public static Object[][] negative() {
+        List<Object[]> list = new ArrayList<>();
+
+        Arrays.asList(contentDispositionBADValues).stream()
+                .map(e -> new Object[] {httpURI +  "?" + e[0], e[1], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionBADValues).stream()
+                .map(e -> new Object[] {httpsURI +  "?" + e[0], e[1], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionBADValues).stream()
+                .map(e -> new Object[] {http2URI +  "?" + e[0], e[1], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionBADValues).stream()
+                .map(e -> new Object[] {https2URI +  "?" + e[0], e[1], Optional.empty()})
+                .forEach(list::add);
+        Arrays.asList(contentDispositionBADValues).stream()
+                .map(e -> new Object[] {h3URI +  "?" + e[0], e[1], Optional.of(Version.HTTP_3)})
+                .forEach(list::add);
+        return list.stream().toArray(Object[][]::new);
+    }
+
+    @ParameterizedTest
+    @MethodSource("negative")
+    void negativeTest(String uriString, String contentDispositionValue,
+                      Optional<Version> requestVersion) throws Exception {
+        out.printf("negativeTest(%s, %s): starting", uriString, contentDispositionValue);
+        try (HttpClient client = newHttpClient(requestVersion)) {
+            TRACKER.track(client);
+            ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+            WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
+
+            HttpRequest.Builder reqBuilder = newRequestBuilder(uriString);
+            if (requestVersion.isPresent()) {
+                reqBuilder.version(requestVersion.get());
+            }
+            HttpRequest request = reqBuilder.POST(BodyPublishers.ofString("Does not matter"))
+                    .build();
+            BodyHandler bh = ofFileDownload(tempDir, CREATE, TRUNCATE_EXISTING, WRITE);
+            try {
+                out.println("Issuing request " + request);
+                HttpResponse<Path> response = client.send(request, bh);
+                fail("UNEXPECTED response: " + response + ", path:" + response.body());
+            } catch (UncheckedIOException | IOException ioe) {
+                System.out.println("Caught expected: " + ioe);
+            }
+        }
+        AssertionError failed = TRACKER.checkClosed(1000);
+        if (failed != null) throw failed;
+    }
+
+    // -- Infrastructure
+
+    static String serverAuthority(HttpServer server) {
+        final String hostIP = InetAddress.getLoopbackAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + server.getAddress().getPort();
+    }
+
+    Version version(String uri) {
+        if (uri.contains("/http1/")) return Version.HTTP_1_1;
+        if (uri.contains("/https1/")) return Version.HTTP_1_1;
+        if (uri.contains("/http2/")) return Version.HTTP_2;
+        if (uri.contains("/https2/")) return Version.HTTP_2;
+        if (uri.contains("/h3/")) return Version.HTTP_3;
+        return null;
+    }
+
+    HttpRequest.Builder newRequestBuilder(String uri) {
+        var builder = HttpRequest.newBuilder(URI.create(uri));
+        if (version(uri) == Version.HTTP_3) {
+            builder.setOption(H3_DISCOVERY, h3TestServer.h3DiscoveryConfig());
+        }
+        return builder;
+    }
+
+    @BeforeAll
+    public static void setup() throws Exception {
+        tempDir = Paths.get("asFileDownloadTest.tmp.dir");
+        if (Files.exists(tempDir))
+            throw new AssertionError("Unexpected test work dir existence: " + tempDir.toString());
+
+        Files.createDirectory(tempDir);
+        // Unique dirs per test run, based on the URI path
+        Files.createDirectories(tempDir.resolve("http1/afdt/"));
+        Files.createDirectories(tempDir.resolve("https1/afdt/"));
+        Files.createDirectories(tempDir.resolve("http2/afdt/"));
+        Files.createDirectories(tempDir.resolve("https2/afdt/"));
+        Files.createDirectories(tempDir.resolve("h3/afdt/"));
+
+        // HTTP/1.1 server logging in case of security exceptions ( uncomment if needed )
+        //Logger logger = Logger.getLogger("com.sun.net.httpserver");
+        //ConsoleHandler ch = new ConsoleHandler();
+        //logger.setLevel(Level.ALL);
+        //ch.setLevel(Level.ALL);
+        //logger.addHandler(ch);
+
+        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        httpTestServer = HttpServer.create(sa, 0);
+        httpTestServer.createContext("/http1/afdt", new Http1FileDispoHandler());
+        httpURI = "http://" + serverAuthority(httpTestServer) + "/http1/afdt";
+
+        httpsTestServer = HttpsServer.create(sa, 0);
+        httpsTestServer.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), sslContext));
+        httpsTestServer.createContext("/https1/afdt", new Http1FileDispoHandler());
+        httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1/afdt";
+
+        http2TestServer = new Http2TestServer("localhost", false, 0);
+        http2TestServer.addHandler(new Http2FileDispoHandler(), "/http2/afdt");
+        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/afdt";
+
+        https2TestServer = new Http2TestServer("localhost", true, sslContext);
+        https2TestServer.addHandler(new Http2FileDispoHandler(), "/https2/afdt");
+        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/afdt";
+
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        h3TestServer.addHandler(new Http2FileDispoHandler(), "/h3/afdt");
+        h3URI = "https://" + h3TestServer.serverAuthority() + "/h3/afdt";
+
+        httpTestServer.start();
+        httpsTestServer.start();
+        http2TestServer.start();
+        https2TestServer.start();
+        h3TestServer.start();
+    }
+
+    @AfterAll
+    public static void teardown() throws Exception {
+        httpTestServer.stop(0);
+        httpsTestServer.stop(0);
+        http2TestServer.stop();
+        https2TestServer.stop();
+        h3TestServer.stop();
+
+        if (Files.exists(tempDir)) {
+            // clean up
+            FileUtils.deleteFileTreeWithRetry(tempDir);
+        }
+    }
+
+    static String contentDispositionValueFromURI(URI uri) {
+        String queryIndex = uri.getQuery();
+        String[][] values;
+        if (queryIndex.startsWith("0"))  // positive tests start with '0'
+            values = contentDispositionValues;
+        else if (queryIndex.startsWith("1"))  // negative tests start with '1'
+            values = contentDispositionBADValues;
+        else
+            throw new AssertionError("SERVER: UNEXPECTED query:" + queryIndex);
+
+        return Arrays.asList(values).stream()
+                .filter(e -> e[0].equals(queryIndex))
+                .map(e -> e[1])
+                .findFirst()
+                .orElseThrow();
+    }
+
+    static class Http1FileDispoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody();
+                 OutputStream os = t.getResponseBody()) {
+                byte[] bytes = is.readAllBytes();
+
+                String value = contentDispositionValueFromURI(t.getRequestURI());
+                if (!value.equals("<<NOT_PRESENT>>"))
+                    t.getResponseHeaders().set("Content-Disposition", value);
+
+                t.sendResponseHeaders(200, bytes.length);
+                os.write(bytes);
+            }
+        }
+    }
+
+    static class Http2FileDispoHandler implements Http2Handler, HttpServerAdapters.HttpTestHandler {
+
+        @Override
+        public void handle(Http2TestExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody();
+                 OutputStream os = t.getResponseBody()) {
+                byte[] bytes = is.readAllBytes();
+
+                String value = contentDispositionValueFromURI(t.getRequestURI());
+                if (!value.equals("<<NOT_PRESENT>>"))
+                    t.getResponseHeaders().addHeader("Content-Disposition", value);
+
+                t.sendResponseHeaders(200, bytes.length);
+                os.write(bytes);
+            }
+        }
+
+        @Override
+        public void handle(HttpTestExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody();
+                 OutputStream os = t.getResponseBody()) {
+                byte[] bytes = is.readAllBytes();
+
+                String value = contentDispositionValueFromURI(t.getRequestURI());
+                if (!value.equals("<<NOT_PRESENT>>"))
+                    t.getResponseHeaders().addHeader("Content-Disposition", value);
+
+                t.sendResponseHeaders(200, bytes.length);
+                os.write(bytes);
+            }
+        }
+    }
+
+    // ---
+
+    // Asserts case-insensitivity of headers (nothing to do with file
+    // download, just convenient as we have a couple of header instances. )
+    static void caseInsensitivityOfHeaders(HttpHeaders headers) {
+        try {
+            for (Map.Entry<String, List<String>> entry : headers.map().entrySet()) {
+                String headerName = entry.getKey();
+                List<String> headerValue = entry.getValue();
+
+                for (String name : List.of(headerName.toUpperCase(Locale.ROOT),
+                                           headerName.toLowerCase(Locale.ROOT))) {
+                    assertTrue(headers.firstValue(name).isPresent());
+                    assertEquals(headerValue.get(0), headers.firstValue(name).get());
+                    assertEquals(headerValue.size(), headers.allValues(name).size());
+                    assertEquals(headerValue, headers.allValues(name));
+                    assertEquals(headerValue.size(), headers.map().get(name).size());
+                    assertEquals(headerValue, headers.map().get(name));
+                }
+            }
+        } catch (Throwable t) {
+            System.out.println("failure in caseInsensitivityOfHeaders with:" + headers);
+            throw t;
+        }
+    }
+}

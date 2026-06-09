@@ -1,0 +1,75 @@
+/*
+ * Copyright (C) 2020, 2022, Tencent. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @key cgroups
+ * @bug 8242480
+ * @requires container.support
+ * @requires !vm.asan
+ * @library /test/lib
+ * @modules java.base/jdk.internal.platform
+ * @build GetFreeSwapSpaceSize
+ * @run driver/timeout=480 TestGetFreeSwapSpaceSize
+ */
+
+import jdk.test.lib.containers.docker.Common;
+import jdk.test.lib.containers.docker.DockerRunOptions;
+import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.process.OutputAnalyzer;
+
+public class TestGetFreeSwapSpaceSize {
+    private static final String imageName = Common.imageName("osbeanSwapSpace");
+
+    public static void main(String[] args) throws Exception {
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
+        DockerTestUtils.buildJdkContainerImage(imageName);
+
+        try {
+            testGetFreeSwapSpaceSize(
+                "150M", Integer.toString(((int) Math.pow(2, 20)) * 150),
+                "150M", Integer.toString(0)
+            );
+        } finally {
+            DockerTestUtils.removeDockerImage(imageName);
+        }
+    }
+
+    private static void testGetFreeSwapSpaceSize(String memoryAllocation, String expectedMemory,
+            String memorySwapAllocation, String expectedSwap) throws Exception {
+        Common.logNewTestCase("TestGetFreeSwapSpaceSize");
+
+        DockerRunOptions opts = Common.newOpts(imageName, "GetFreeSwapSpaceSize")
+            .addClassOptions(memoryAllocation, expectedMemory, memorySwapAllocation, expectedSwap)
+            .addDockerOpts(
+                "--memory", memoryAllocation,
+                "--memory-swap", memorySwapAllocation
+            );
+
+        OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
+        out.shouldHaveExitValue(0)
+           .shouldContain("TestGetFreeSwapSpaceSize PASSED.");
+    }
+}

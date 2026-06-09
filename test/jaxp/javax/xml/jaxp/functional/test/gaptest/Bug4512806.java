@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package test.gaptest;
+
+import org.junit.jupiter.api.Test;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
+
+import static javax.xml.transform.OutputKeys.ENCODING;
+import static javax.xml.transform.OutputKeys.INDENT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/*
+ * @test
+ * @bug 4512806
+ * @library /javax/xml/jaxp/libs
+ * @run junit/othervm test.gaptest.Bug4512806
+ * @summary test transformer.setOutputProperties(null)
+ */
+public class Bug4512806 {
+
+    @Test
+    public void testProperty() throws TransformerConfigurationException {
+        /* Create a transform factory instance */
+        TransformerFactory tfactory = TransformerFactory.newInstance();
+
+        /* Create a StreamSource instance */
+        StreamSource streamSource = new StreamSource(new StringReader(xslData));
+
+        transformer = tfactory.newTransformer(streamSource);
+        transformer.setOutputProperty(INDENT, "no");
+        transformer.setOutputProperty(ENCODING, "UTF-16");
+
+        assertEquals("indent=no", printPropertyValue(INDENT));
+        assertEquals("encoding=UTF-16", printPropertyValue(ENCODING));
+
+        transformer.setOutputProperties(null);
+
+        assertEquals("indent=yes", printPropertyValue(INDENT));
+        assertEquals("encoding=UTF-8", printPropertyValue(ENCODING));
+
+    }
+
+    private String printPropertyValue(String name) {
+        return name + "=" + transformer.getOutputProperty(name);
+    }
+
+    private Transformer transformer;
+
+    private static final String xslData = "<?xml version='1.0'?>"
+            + "<xsl:stylesheet"
+            + " version='1.0'"
+            + " xmlns:xsl='http://www.w3.org/1999/XSL/Transform'"
+            + ">\n"
+            + "   <xsl:output method='xml' indent='yes'"
+            + " encoding='UTF-8'/>\n"
+            + "   <xsl:template match='/'>\n"
+            + "     Hello World! \n"
+            + "   </xsl:template>\n"
+            + "</xsl:stylesheet>";
+
+
+}

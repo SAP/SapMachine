@@ -1,0 +1,213 @@
+/*
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ *
+ * @summary converted from VM Testbase nsk/jdi/ObjectReference/referringObjects/referringObjects003.
+ * VM Testbase keywords: [quick, jpda, jdi, feature_jdk6_jpda, vm6]
+ * VM Testbase readme:
+ * DESCRIPTION
+ *     Test check behaviour of ObjectReference.referringObjects for ThreadReference and ThreadGroupReference
+ *     and ObjectReference.disableCollection/ObjectReference.enableCollection for ThreadGroupReference
+ *     The test scenario is following:
+ *       - Debugger VM
+ *         - initiate in target VM thread execution:
+ *                 - Debugee VM
+ *                 - start several threads included in thread group
+ *                 - create references of all possible types to all started threads and thread group
+ *       - Debugger VM
+ *         - check that threads and thread group have correct number of referrers:
+ *         (thread referrers should include thread group and references with supported types,
+ *          thread group referrers should include group's threads, parent thread group and references with supported types)
+ *       - Debugger VM
+ *         - initiate in target VM thread stop:
+ *         - Debugee VM
+ *             - stop all threads and remove all references to threads and thread group
+ *       - Debugger VM
+ *         - force GC
+ *         - check that the test thread group has been collected. The reference from the
+ *           parent thread group is weak and should not prevent the test thread group from
+ *           being collected.
+ *         - check that there are no references to test threads in target VM
+ *
+ * @library /vmTestbase
+ *          /test/lib
+ * @build nsk.jdi.ObjectReference.referringObjects.referringObjects003.referringObjects003
+ *        nsk.jdi.ObjectReference.referringObjects.referringObjects003.referringObjects003a
+ * @run main/othervm/native
+ *      nsk.jdi.ObjectReference.referringObjects.referringObjects003.referringObjects003
+ *      -verbose
+ *      -arch=${os.family}-${os.simpleArch}
+ *      -waittime=5
+ *      -debugee.vmkind=java
+ *      -transport.address=dynamic
+ *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ */
+
+package nsk.jdi.ObjectReference.referringObjects.referringObjects003;
+
+import java.io.PrintStream;
+import java.util.*;
+import com.sun.jdi.*;
+import nsk.share.Consts;
+import nsk.share.jdi.HeapwalkingDebuggee;
+import nsk.share.jdi.HeapwalkingDebugger;
+import nsk.share.jpda.AbstractDebuggeeTest;
+
+public class referringObjects003 extends HeapwalkingDebugger {
+
+    public static void main(String argv[]) {
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
+    }
+
+    public static int run(String argv[], PrintStream out) {
+        return new referringObjects003().runIt(argv, out);
+    }
+
+    protected String debuggeeClassName() {
+        return "nsk.jdi.ObjectReference.referringObjects.referringObjects003.referringObjects003a";
+    }
+
+    // check ObjectReference type and number of referrers
+    public void checkThreadGroupReferrersCount(List<ObjectReference> objectReferences, int expectedCount) {
+        for (ObjectReference objectReference : objectReferences) {
+            if (!(objectReference instanceof ThreadGroupReference)) {
+                setSuccess(false);
+                log.complain("Unexpected type of ObjectReference: " + objectReference.getClass().getName()
+                        + ", expected ThreadGroupReference");
+            }
+
+            int referrerCount = objectReference.referringObjects(0).size();
+
+            if (referrerCount != expectedCount) {
+                setSuccess(false);
+                log.complain("List with wrong size was returned by ObjectReference.referringObjects(ThreadGroupReference): "
+                             + referrerCount + ", expected: " + expectedCount);
+            }
+        }
+    }
+
+    // check ObjectReference type and number of referrers
+    public void checkThreadReferrersCount(List<ObjectReference> objectReferences, int expectedCount) {
+        for (ObjectReference objectReference : objectReferences) {
+            if (!(objectReference instanceof ThreadReference)) {
+                setSuccess(false);
+                log.complain("Unexpected type of ObjectReference: " + objectReference.getClass().getName()
+                        + ", expected ThreadReference");
+            }
+
+            if (((ThreadReference)objectReference).name().contains("Test thread") == false)
+                continue;
+
+            int referrerCount = objectReference.referringObjects(0).size();
+
+            if (referrerCount != expectedCount) {
+                setSuccess(false);
+                log.complain("List with wrong size was returned by ObjectReference.referringObjects(ThreadReferrence): "
+                             + referrerCount + ", expected: " + expectedCount);
+            }
+        }
+    }
+
+    public void doTest() {
+        int threadCount = 15;
+
+        // threads and thread groups loaded before debugger command should be
+        // filtered
+        List<ObjectReference> threadGroupsToFilter = HeapwalkingDebugger.getObjectReferences(
+                "java.lang.ThreadGroup",
+                vm);
+        List<ObjectReference> threadsToFilter = HeapwalkingDebugger.getObjectReferences("java.lang.Thread", vm);
+
+        pipe.println(referringObjects003a.COMMAND_START_THREADS + ":" + threadCount);
+
+        if (!isDebuggeeReady())
+            return;
+
+        // check instance count
+        checkDebugeeAnswer_instances("java.lang.ThreadGroup", threadGroupsToFilter.size() + 1);
+        checkDebugeeAnswer_instances("java.lang.Thread", threadsToFilter.size() + threadCount);
+
+        List<ObjectReference> threadGroups = HeapwalkingDebugger.filterObjectReferrence(
+                threadGroupsToFilter,
+                HeapwalkingDebugger.getObjectReferences("java.lang.ThreadGroup", vm));
+
+        // thread group has 'threadCount' referrers + 1 referrer is parent
+        // thread group
+        // + 'includedIntoReferrersCountTypes.size()' referrers was additionally
+        // created
+        int expectedCount = threadCount + 1 + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size();
+
+        checkThreadGroupReferrersCount(threadGroups, expectedCount);
+
+        List<ObjectReference> threads = HeapwalkingDebugger.filterObjectReferrence(threadsToFilter, HeapwalkingDebugger
+                .getObjectReferences("java.lang.Thread", vm));
+
+        expectedCount = 1 + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size();
+
+        // 1 referrer is debugee object + 'includedIntoReferrersCountTypes.size()' referrers
+        // was additionally created (there is no longer a reference from ThreadGroup)
+        checkThreadReferrersCount(threads, expectedCount);
+
+        pipe.println(referringObjects003a.COMMAND_STOP_THREADS);
+
+        if (!isDebuggeeReady())
+            return;
+
+        // Force the test ThreadGroup to be collected. The only reference to it is a weak
+        // reference from the parent ThreadGroup.
+        forceGC();
+
+        checkDebugeeAnswer_instances("java.lang.ThreadGroup", threadGroupsToFilter.size());
+        checkDebugeeAnswer_instances("java.lang.Thread", threadsToFilter.size());
+
+        threadGroups = HeapwalkingDebugger.filterObjectReferrence(threadGroupsToFilter, HeapwalkingDebugger
+                .getObjectReferences("java.lang.ThreadGroup", vm));
+
+        if (threadGroups.size() != 0) {
+            setSuccess(false);
+            log.complain("All test threads groups should be removed");
+            log.complain("Unexpected threads groups:");
+            for (ObjectReference objectReference : threadGroups) {
+                log.complain(objectReference.toString());
+            }
+        }
+
+        threads = HeapwalkingDebugger.filterObjectReferrence(threadsToFilter, HeapwalkingDebugger.getObjectReferences(
+                "java.lang.Thread",
+                vm));
+
+        if (threads.size() != 0) {
+            setSuccess(false);
+            log.complain("All test threads should be removed");
+            log.complain("Unexpected threads:");
+            for (ObjectReference objectReference : threads) {
+                log.complain(objectReference.toString());
+            }
+        }
+    }
+}

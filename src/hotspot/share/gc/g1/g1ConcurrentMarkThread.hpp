@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP
+#define SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP
+
+#include "gc/shared/concurrentGCThread.hpp"
+
+class G1ConcurrentMark;
+class G1Policy;
+
+// The concurrent mark thread triggers the various steps of the concurrent marking
+// cycle, including various marking cleanup.
+//
+// The concurrent cycle may either be "Full" (i.e. include marking, rebuilding and
+// scrubbing, resetting for the next cycle) or "Undo", i.e. shortened to just the
+// reset part.
+class G1ConcurrentMarkThread: public ConcurrentGCThread {
+  G1ConcurrentMark* _cm;
+
+  enum ServiceState : uint {
+    Idle,
+    FullCycleMarking,
+    FullCycleRebuildOrScrub,
+    FullCycleResetForNextCycle,
+    UndoCycleResetForNextCycle
+  };
+
+  volatile ServiceState _state;
+
+  // Returns whether we are in a "Full" cycle.
+  bool is_in_full_concurrent_cycle() const;
+
+  // Wait for next cycle. Returns the command passed over.
+  bool wait_for_next_cycle();
+
+  bool mark_loop_needs_restart() const;
+
+  // Phases and subphases for the full concurrent cycle in order.
+  //
+  // All these methods return true if the cycle should be aborted.
+  bool phase_clear_cld_claimed_marks();
+  bool phase_scan_root_regions();
+
+  bool phase_mark_loop();
+  bool subphase_mark_from_roots();
+  bool subphase_preclean();
+  bool subphase_delay_to_keep_mmu_before_remark();
+  bool subphase_remark();
+
+  bool phase_rebuild_and_scrub();
+  bool phase_delay_to_keep_mmu_before_cleanup();
+  bool phase_cleanup();
+  bool phase_clear_bitmap_for_next_mark();
+
+  void concurrent_cycle_start();
+
+  void concurrent_mark_cycle_do();
+  void concurrent_undo_cycle_do();
+
+  void concurrent_cycle_end(bool mark_cycle_completed);
+
+  // Delay pauses to meet MMU.
+  void delay_to_keep_mmu(bool remark);
+  double mmu_delay_end(G1Policy* policy, bool remark);
+
+  void run_service();
+  void stop_service();
+
+ public:
+  // Constructor
+  G1ConcurrentMarkThread(G1ConcurrentMark* cm);
+
+  // Total cpu time used by all marking related threads (i.e. this thread and the
+  // marking worker threads) in seconds.
+  double total_mark_cpu_time_s();
+  // Cpu time used by all marking worker threads in seconds.
+  double worker_threads_cpu_time_s();
+  // State management.
+  void set_idle();
+  void start_full_cycle();
+  void start_undo_cycle();
+
+  void set_full_cycle_rebuild_and_scrub();
+  void set_full_cycle_reset_for_next_cycle();
+
+  bool is_idle() const;
+  // Returns true from the moment a concurrent cycle is
+  // initiated (during the concurrent start pause when calling one of the
+  // start_*_cycle() methods) to the moment when the cycle completes.
+  bool is_in_progress() const;
+
+  bool is_in_marking() const;
+  bool is_in_rebuild_or_scrub() const;
+  bool is_in_reset_for_next_cycle() const;
+
+  bool is_in_undo_cycle() const;
+
+  // Update the perf data counter for concurrent mark.
+  void update_perf_counter_cpu_time();
+};
+
+#endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP

@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package jdk.jfr.event.runtime;
+
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertEquals;
+
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.*;
+
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
+
+import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.Events;
+import jdk.test.whitebox.WhiteBox;
+
+/**
+ * @test TestSafepointEvents
+ * @requires vm.flagless
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   jdk.jfr.event.runtime.TestSafepointEvents
+ */
+public class TestSafepointEvents {
+
+    static final String[] EVENT_NAMES = new String[] {
+        EventNames.SafepointBegin,
+        EventNames.SafepointStateSynchronization,
+        EventNames.SafepointEnd
+    };
+
+    public static void main(String[] args) throws Exception {
+        Recording recording = new Recording();
+        for (String name : EVENT_NAMES) {
+            recording.enable(name).withThreshold(Duration.ofMillis(0));
+        }
+        recording.start();
+        WhiteBox.getWhiteBox().forceSafepoint();
+        recording.stop();
+
+        try {
+            // Collect all events grouped by safepoint id
+            SortedMap<Long, Set<String>> safepointIds = new TreeMap<>();
+            for (RecordedEvent event : Events.fromRecording(recording)) {
+                Long safepointId = event.getValue("safepointId");
+                String eventName = event.getEventType().getName();
+                safepointIds.computeIfAbsent(safepointId, k -> new HashSet<>()).add(eventName);
+            }
+
+            // Select the first set that is complete.
+            Set<String> safepointEvents = null;
+            for (Long key : safepointIds.keySet()) {
+                safepointEvents = safepointIds.get(key);
+                if (safepointEvents.size() == EVENT_NAMES.length) {
+                    break;
+                }
+            }
+            assertEquals(safepointEvents.size(), EVENT_NAMES.length,
+                "At least one safepoint id should map to a set containing an instance of each enabled event type.");
+
+            // Verify that the selected set contains an instance of each enabled event type.
+            for (String name : EVENT_NAMES) {
+                assertTrue(safepointEvents.contains(name), "Expected event '" + name + "' to be present");
+            }
+
+        } catch (Throwable e) {
+            recording.dump(Paths.get("failed.jfr"));
+            throw e;
+        } finally {
+            recording.close();
+        }
+    }
+}

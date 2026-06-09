@@ -1,0 +1,103 @@
+#
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
+CHARSETCODER_INPUT := $(MODULE_SRC)/share/classes/java/nio/charset/Charset-X-Coder.java.template
+CHARSETCODER_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio/charset
+
+################################################################################
+
+$(eval $(call SetupStreamPreProcessing, GEN_CHARSETDECODER, \
+    SOURCE_FILE := $(CHARSETCODER_INPUT), \
+    OUTPUT_FILE := $(CHARSETCODER_OUTPUT_DIR)/CharsetDecoder.java, \
+    INFO := Generating CharsetDecoder.java, \
+    KEYS := decoder, \
+    REPLACEMENTS := \
+        A='A' \
+        a='a' \
+        Code='Decode' \
+        code='decode' \
+        itypesPhrase='bytes$$(SPACE)in$$(SPACE)a$$(SPACE)specific$$(SPACE)charset' \
+        otypesPhrase='sixteen-bit$$(SPACE)Unicode$$(SPACE)characters' \
+        itype='byte' \
+        otype='character' \
+        Itype='Byte' \
+        Otype='Char' \
+        coder='decoder' \
+        Coder='Decoder' \
+        coding='decoding' \
+        OtherCoder='Encoder' \
+        replTypeName='string' \
+        replType='String' \
+        replFQType='java.lang.String' \
+        replLength='length()' \
+        ItypesPerOtype='CharsPerByte' \
+        notLegal='not$$(SPACE)legal$$(SPACE)for$$(SPACE)this$$(SPACE)charset' \
+        otypes-per-itype='chars-per-byte' \
+        outSequence='Unicode$$(SPACE)character', \
+))
+
+TARGETS += $(GEN_CHARSETDECODER)
+
+$(eval $(call SetupStreamPreProcessing, GEN_CHARSETENCODER, \
+    SOURCE_FILE := $(CHARSETCODER_INPUT), \
+    OUTPUT_FILE := $(CHARSETCODER_OUTPUT_DIR)/CharsetEncoder.java, \
+    INFO := Generating CharsetEncoder.java, \
+    KEYS := encoder, \
+    REPLACEMENTS := \
+        A='An' \
+        a='an' \
+        Code='Encode' \
+        code='encode' \
+        itypesPhrase='sixteen-bit$$(SPACE)Unicode$$(SPACE)characters' \
+        otypesPhrase='bytes$$(SPACE)in$$(SPACE)a$$(SPACE)specific$$(SPACE)charset' \
+        itype='character' \
+        otype='byte' \
+        Itype='Char' \
+        Otype='Byte' \
+        coder='encoder' \
+        Coder='Encoder' \
+        coding='encoding' \
+        OtherCoder='Decoder' \
+        replTypeName='byte$$(SPACE)array' \
+        replType='byte[]' \
+        replFQType='byte[]' \
+        replLength='length' \
+        ItypesPerOtype='BytesPerChar' \
+        notLegal='not$$(SPACE)a$$(SPACE)legal$$(SPACE)sixteen-bit$$(SPACE)Unicode$$(SPACE)sequence' \
+        otypes-per-itype='bytes-per-char' \
+        outSequence='byte$$(SPACE)sequence$$(SPACE)in$$(SPACE)the$$(SPACE)given$$(SPACE)charset', \
+))
+
+TARGETS += $(GEN_CHARSETENCODER)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

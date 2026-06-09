@@ -1,0 +1,345 @@
+/*
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package build.tools.taglet;
+
+import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Doclet;
+import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.doclet.Taglet;
+
+import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.util.Elements;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.lang.System.lineSeparator;
+import static java.nio.file.StandardOpenOption.*;
+import static java.util.stream.Collectors.joining;
+import static jdk.javadoc.doclet.Taglet.Location.TYPE;
+
+/**
+ * A block tag to optionally insert a reference to a sealed class hierarchy graph,
+ * and generate the corresponding dot file.
+ */
+public final class SealedGraph implements Taglet {
+    private static final String sealedDotOutputDir =
+            System.getProperty("sealedDotOutputDir");
+
+    private DocletEnvironment docletEnvironment;
+
+    /**
+     * Returns the set of locations in which a taglet may be used.
+     */
+    @Override
+    public Set<Location> getAllowedLocations() {
+        return EnumSet.of(TYPE);
+    }
+
+    @Override
+    public boolean isInlineTag() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return "sealedGraph";
+    }
+
+    @Override
+    public void init(DocletEnvironment env, Doclet doclet) {
+        docletEnvironment = env;
+    }
+
+    @Override
+    public String toString(List<? extends DocTree> tags, Element element) {
+        throw new UnsupportedOperationException();
+    }
+
+    // @Override - requires JDK-8373922 in build JDK
+    public String toString(List<? extends DocTree> tags, Element element, URI docRoot) {
+        if (sealedDotOutputDir == null || sealedDotOutputDir.isEmpty()) {
+            return "";
+        }
+        if (docletEnvironment == null || !(element instanceof TypeElement typeElement)) {
+            return "";
+        }
+
+        Elements util = docletEnvironment.getElementUtils();
+        ModuleElement module = util.getModuleOf(element);
+
+        // '.' in .DOT file name is converted to '/' in .SVG path, so we use '-' as separator for nested classes.
+        // module_package.subpackage.Outer-Inner.dot => module/package/subpackage/Outer-Inner-sealed-graph.svg
+        Path dotFile = Path.of(sealedDotOutputDir,
+                module.getQualifiedName() + "_"
+                        + util.getPackageOf(element).getQualifiedName() + "."
+                        + packagelessCanonicalName(typeElement).replace(".", "-") + ".dot");
+
+        Set<String> exports = module.getDirectives().stream()
+                .filter(ModuleElement.ExportsDirective.class::isInstance)
+                .map(ModuleElement.ExportsDirective.class::cast)
+                // Only include packages that are globally exported (i.e. no "to" exports)
+                .filter(ed -> ed.getTargetModules() == null)
+                .map(ModuleElement.ExportsDirective::getPackage)
+                .map(PackageElement::getQualifiedName)
+                .map(Objects::toString)
+                .collect(Collectors.toUnmodifiableSet());
+
+        String dotContent = new Renderer().graph(typeElement, exports, docRoot);
+
+        try  {
+            Files.writeString(dotFile, dotContent, WRITE, CREATE, TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String simpleTypeName = packagelessCanonicalName(typeElement);
+        String imageFile = simpleTypeName.replace(".", "-") + "-sealed-graph.svg";
+        int thumbnailHeight = 100; // also appears in the stylesheet
+        String hoverImage = "<span>"
+            + getImage(simpleTypeName, imageFile, -1, true)
+            + "</span>";
+
+        return "<dt>Sealed Class Hierarchy Graph:</dt>"
+                + "<dd>"
+                + "<a class=\"sealed-graph\" href=\"" + imageFile + "\">"
+                + getImage(simpleTypeName, imageFile, thumbnailHeight, false)
+                + hoverImage
+                + "</a>"
+                + "</dd>";
+    }
+
+    private static final String VERTICAL_ALIGN = "vertical-align:top";
+    private static final String BORDER = "border: solid lightgray 1px;";
+
+    private String getImage(String typeName, String file, int height, boolean useBorder) {
+        return String.format("<img style=\"%s\" alt=\"Sealed class hierarchy graph for %s\" src=\"%s\"%s>",
+                useBorder ? BORDER + " " + VERTICAL_ALIGN : VERTICAL_ALIGN,
+                typeName,
+                file,
+                (height <= 0 ? "" : " height=\"" + height + "\""));
+    }
+
+    private final class Renderer {
+
+        // Generates a graph in DOT format
+        String graph(TypeElement rootClass, Set<String> exports, URI pathToRoot) {
+            if (!isInPublicApi(rootClass, exports)) {
+                // Alternatively we can return "" for the graph since there is no single root to render
+                throw new IllegalArgumentException("Root not in public API: " + rootClass.getQualifiedName());
+            }
+            final State state = new State(pathToRoot);
+            traverse(state, rootClass, exports);
+            return state.render();
+        }
+
+        static void traverse(State state, TypeElement node, Set<String> exports) {
+            if (!isInPublicApi(node, exports)) {
+                throw new IllegalArgumentException("Bad request, not in public API: " + node.getQualifiedName());
+            }
+            state.addNode(node);
+            if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
+                state.addNonSealedEdge(node);
+            } else {
+                for (TypeElement subNode : permittedSubclasses(node, exports)) {
+                    state.addEdge(node, subNode);
+                    traverse(state, subNode, exports);
+                }
+            }
+        }
+
+        private final class State {
+
+            private static final String LABEL = "label";
+            private static final String TOOLTIP = "tooltip";
+            private static final String LINK = "href";
+
+            private final URI pathToRoot;
+
+            private final StringBuilder builder;
+
+            private final Map<String, Map<String, StyleItem>> nodeStyleMap;
+
+            private int nonSealedHierarchyCount = 0;
+
+            private sealed interface StyleItem {
+                String valueString();
+
+                record PlainString(String text) implements StyleItem {
+                    @Override
+                    public String valueString() {
+                        return "\"" + text + "\"";
+                    }
+                }
+                record HtmlString(String text) implements StyleItem {
+                    @Override
+                    public String valueString() {
+                        return "<" + text + ">";
+                    }
+                }
+            }
+
+            public State(URI pathToRoot) {
+                this.pathToRoot = pathToRoot;
+                nodeStyleMap = new LinkedHashMap<>();
+                builder = new StringBuilder()
+                        .append("digraph G {")
+                        .append(lineSeparator())
+                        .append("  nodesep=0.500000;")
+                        .append(lineSeparator())
+                        .append("  ranksep=0.600000;")
+                        .append(lineSeparator())
+                        .append("  pencolor=transparent;")
+                        .append(lineSeparator())
+                        .append("  node [shape=plaintext, fontcolor=\"#e76f00\", fontname=\"DejaVuSans\", fontsize=12, margin=\".2,.2\"];")
+                        .append(lineSeparator())
+                        .append("  edge [penwidth=2, color=\"#999999\", arrowhead=open, arrowsize=1];")
+                        .append(lineSeparator())
+                        .append("  rankdir=\"BT\";")
+                        .append(lineSeparator());
+            }
+
+            public void addNode(TypeElement node) {
+                var styles = nodeStyleMap.computeIfAbsent(id(node), n -> new LinkedHashMap<>());
+                styles.put(LABEL, new StyleItem.PlainString(node.getSimpleName().toString()));
+                styles.put(TOOLTIP, new StyleItem.PlainString(node.getQualifiedName().toString()));
+                styles.put(LINK, new StyleItem.PlainString(pathToRoot.resolve(relativeLink(node)).toString()));
+            }
+
+            private String relativeLink(TypeElement node) {
+                var util = SealedGraph.this.docletEnvironment.getElementUtils();
+                var path = util.getModuleOf(node).getQualifiedName().toString() + "/"
+                        + util.getPackageOf(node).getQualifiedName().toString().replace(".", "/");
+
+                return path + "/" + packagelessCanonicalName(node) + ".html";
+            }
+
+            public void addEdge(TypeElement node, TypeElement subNode) {
+                builder.append("  ")
+                        .append(quotedId(subNode))
+                        .append(" -> ")
+                        .append(quotedId(node))
+                        .append(";")
+                        .append(lineSeparator());
+            }
+
+            public void addNonSealedEdge(TypeElement node) {
+                // prepare open node
+                var openNodeId = "open node #" + nonSealedHierarchyCount++;
+                var styles = nodeStyleMap.computeIfAbsent(openNodeId, n -> new LinkedHashMap<>());
+                styles.put(LABEL, new StyleItem.HtmlString("<I>&lt;any&gt;</I>"));
+                styles.put(TOOLTIP, new StyleItem.PlainString("Non-sealed Hierarchy"));
+
+                // add link to parent node
+                builder.append("  ")
+                        .append('"')
+                        .append(openNodeId)
+                        .append('"')
+                        .append(" -> ")
+                        .append(quotedId(node))
+                        .append(" ")
+                        .append("[style=\"dashed\"]")
+                        .append(";")
+                        .append(lineSeparator());
+            }
+
+            public String render() {
+                nodeStyleMap.forEach((nodeName, styles) -> {
+                    builder.append("  ")
+                            .append('"').append(nodeName).append("\" ")
+                            .append(styles.entrySet().stream()
+                                    .map(e -> e.getKey() + "=" + e.getValue().valueString())
+                                    .collect(joining(" ", "[", "]")))
+                            .append(lineSeparator());
+                });
+                builder.append("}");
+                return builder.toString();
+            }
+
+            private String id(TypeElement node) {
+                return node.getQualifiedName().toString();
+            }
+
+            private String quotedId(TypeElement node) {
+                return "\"" + id(node) + "\"";
+            }
+        }
+
+        private static List<TypeElement> permittedSubclasses(TypeElement node, Set<String> exports) {
+            List<TypeElement> dfsStack = new ArrayList<TypeElement>().reversed(); // Faster operations to head
+            SequencedCollection<TypeElement> result = new LinkedHashSet<>(); // Deduplicate diamond interface inheritance
+            // The starting node may be in the public API - still expand it
+            prependSubclasses(node, dfsStack);
+
+            while (!dfsStack.isEmpty()) {
+                TypeElement now = dfsStack.removeFirst();
+                if (isInPublicApi(now, exports)) {
+                    result.addLast(now);
+                } else {
+                    // Skip the non-exported classes in the hierarchy
+                    prependSubclasses(now, dfsStack);
+                }
+            }
+
+            return List.copyOf(result);
+        }
+
+        private static void prependSubclasses(TypeElement node, List<TypeElement> dfs) {
+            for (var e : node.getPermittedSubclasses().reversed()) {
+                if (e instanceof DeclaredType dt && dt.asElement() instanceof TypeElement te) {
+                    dfs.addFirst(te);
+                }
+            }
+        }
+
+        private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {
+            var packageName = packageName(typeElement);
+            return packageName.isPresent() && exports.contains(packageName.get()) &&
+                    typeElement.getModifiers().contains(Modifier.PUBLIC);
+        }
+
+        private static Optional<String> packageName(TypeElement element) {
+            return switch (element.getNestingKind()) {
+                case TOP_LEVEL -> Optional.of(((PackageElement) element.getEnclosingElement()).getQualifiedName().toString());
+                case ANONYMOUS, LOCAL -> Optional.empty();
+                case MEMBER -> packageName((TypeElement) element.getEnclosingElement());
+            };
+        }
+    }
+
+    private static String packagelessCanonicalName(TypeElement element) {
+        String result = element.getSimpleName().toString();
+        while (element.getNestingKind() == NestingKind.MEMBER) {
+            element = (TypeElement) element.getEnclosingElement();
+            result = element.getSimpleName().toString() + '.' + result;
+        }
+        return result;
+    }
+}

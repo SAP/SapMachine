@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.internal.jimage;
+
+/**
+ * @implNote This interface needs to maintain JDK 8 source compatibility.
+ *
+ * It is used internally in the JDK to implement jimage/jrtfs access,
+ * but also compiled and delivered as part of the jrtfs.jar to support access
+ * to the jimage file provided by the shipped JDK by tools running on JDK 8.
+ */
+public interface ImageStrings {
+    // String offset constants are useful for efficient classification
+    // of location entries without string comparison.
+    // They are validated during initialization of ImageStringsWriter.
+    //
+    // Adding new strings (with larger offsets) is possible without changing
+    // the jimage version number, but any change to existing strings must be
+    // accompanied by a jimage version number change.
+
+    /** Fixed offset for the empty string in the strings table. */
+    int EMPTY_STRING_OFFSET = 0;
+    /** Fixed offset for the string "class" in the strings table. */
+    int CLASS_STRING_OFFSET = 1;
+    /** Fixed offset for the string "modules" in the strings table. */
+    int MODULES_STRING_OFFSET = 7;
+    /** Fixed offset for the string "packages" in the strings table. */
+    int PACKAGES_STRING_OFFSET = 15;
+
+    String get(int offset);
+
+    int add(final String string);
+
+    /**
+     * If there's a string at {@code offset} matching in full a substring of
+     * {@code string} starting at {@code stringOffset}, return the length
+     * of that string. Otherwise returns -1. Optional operation.
+     */
+    default int match(int offset, String string, int stringOffset) {
+        throw new UnsupportedOperationException();
+    }
+
+}
