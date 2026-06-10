@@ -21,9 +21,11 @@
  * questions.
  */
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
@@ -117,6 +119,7 @@ public class PartialArrayContentTest {
                 "-XX:+HeapDumpOverwrite",
                 "-XX:HeapDumpParallelism=1");
         verifyDump(dumpFile, false);
+        Asserts.assertEquals(1L, countTags(dumpFile, 0x2c), "Must have on end segmemnt");
         Asserts.assertTrue(firstSegment.exists(), "Segment file should not have been created (parallelism=1).");
         Asserts.assertEquals(firstSegment.length(), 0L, "Segment should not be modified.");
         // Create a dump with an array > 2GB to check for integer overflows in the partial array code.
@@ -160,6 +163,31 @@ public class PartialArrayContentTest {
                 LingeredApp.stopApp(theApp);
             }
         }
+    }
+
+    private static long countTags(File dumpFile, int tagToCount) throws Exception {
+        long result = 0;
+
+        try (RandomAccessFile raf = new RandomAccessFile(dumpFile, "r")) {
+            raf.skipBytes("JAVA PROFILE 1.0.2".length() + 1 + 4 + 8); // Skip header plus \0, size of oops and time stamp.
+
+            while (true) {
+                int tag = raf.readUnsignedByte();
+                Asserts.assertTrue(tag <= 0x2c, "Unknown tag " + tag);
+
+                if (tag == tagToCount) {
+                    result += 1;
+                }
+
+                raf.skipBytes(4);
+                long size = raf.readInt() & 0xffffffffL;
+                raf.seek(raf.getFilePointer() + size);
+            }
+        } catch (EOFException e) {
+            // Expected.
+        }
+
+        return result;
     }
 
     private static int verifyDump(File dumpFile, boolean isPartial) throws Exception {

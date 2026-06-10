@@ -2247,11 +2247,6 @@ void DumpMerger::merge_file(const char* path) {
 void DumpMerger::do_merge() {
   TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
 
-  // SapMachine 2026-05-06: No need to merge a non-parallel heap dump.
-  if (_dump_seq <= 1) {
-    return;
-  }
-
   // Since contents in segmented heap file were already zipped, we don't need to zip
   // them again during merging.
   AbstractCompressor* saved_compressor = _writer->compressor();
@@ -2483,7 +2478,8 @@ void VM_HeapDumper::doit() {
 
 void VM_HeapDumper::work(uint worker_id) {
   // VM Dumper works on all non-heap data dumping and part of heap iteration.
-  int dumper_id = get_next_dumper_id();
+  // SapMachine 2026-07-06: Don't create a segment for non-parallel dumps.
+  int dumper_id = is_parallel_dump() ? get_next_dumper_id() : VMDumperId;
 
   if (is_vm_dumper(dumper_id)) {
     // lock global writer, it will be unlocked after VM Dumper finishes with non-heap data
