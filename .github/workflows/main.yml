@@ -34,7 +34,11 @@ on:
       - '**/*.md'
       - 'doc/**'
   # SapMachine 2020-11-04: Trigger on pull request
+  # SapMachine 2026-06-11: Also trigger on label changes so that adding the
+  # 'ok-to-test' label (manually or via the /ok-to-test comment workflow)
+  # starts a fresh Sanity Checks run for an external contributor's PR.
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - sapmachine
   workflow_dispatch:
@@ -60,11 +64,63 @@ concurrency:
 jobs:
 
   ###
+  ### SapMachine 2026-06-11: Authorize PR author for CI runs.
+  ### Only repository collaborators with write+ permission may trigger
+  ### builds via 'pull_request'. Outside contributors and SAP org
+  ### members without explicit SapMachine repo access are rejected;
+  ### a repo admin must grant access, or comment '/ok-to-test' on the PR
+  ### (which adds the 'ok-to-test' label and re-runs this workflow), or
+  ### add the 'ok-to-test' label manually via the GitHub UI.
+  ###
+  ### The label authorizes only the SHA it was issued against — the
+  ### ok-to-test workflow drops the label on every 'synchronize' event,
+  ### so any new commit pushed to the PR requires fresh approval.
+  ###
+
+  authorize:
+    name: 'Authorize PR author'
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 'Check authorization'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+          # 'contains' on the labels array — true if a maintainer has
+          # already approved this revision via /ok-to-test or by adding
+          # the label manually.
+          HAS_OK_TO_TEST: ${{ contains(github.event.pull_request.labels.*.name, 'ok-to-test') }}
+        run: |
+          set -e
+          if [[ "$HAS_OK_TO_TEST" == "true" ]]; then
+            echo "::notice::Authorized via 'ok-to-test' label on PR by ${PR_AUTHOR}."
+            exit 0
+          fi
+          # Query the repo's collaborator permission for the PR author.
+          # Returns one of: admin, maintain, write, triage, read, none.
+          # An org member who is not on the SapMachine repo collaborator
+          # list resolves to 'none' (or 404, which we coerce to 'none').
+          permission=$(gh api "repos/${REPO}/collaborators/${PR_AUTHOR}/permission" \
+            --jq '.permission' 2>/dev/null || echo "none")
+          echo "PR author '${PR_AUTHOR}' has permission '${permission}' on ${REPO}"
+          case "$permission" in
+            admin|maintain|write)
+              echo "::notice::Authorized: ${PR_AUTHOR} is a SapMachine repository collaborator (${permission})."
+              ;;
+            *)
+              echo "::error::PR author '${PR_AUTHOR}' is not a SapMachine repository collaborator (permission: ${permission}) and the PR has no 'ok-to-test' label. A maintainer must review the change and comment '/ok-to-test' (or add the 'ok-to-test' label) to authorize this run. The label is removed automatically when new commits are pushed."
+              exit 1
+              ;;
+          esac
+
+  ###
   ### Determine platforms to include
   ###
 
   prepare:
     name: 'Prepare the run'
+    needs: authorize
     # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
     runs-on: ubuntu-24.04
