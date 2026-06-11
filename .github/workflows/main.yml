@@ -35,8 +35,7 @@ on:
       - 'doc/**'
   # SapMachine 2020-11-04: Trigger on pull request
   # SapMachine 2026-06-11: Also trigger on label changes so that adding the
-  # 'ok-to-test' label (manually or via the /ok-to-test comment workflow)
-  # starts a fresh Sanity Checks run for an external contributor's PR.
+  # 'ok-to-test' label by a repo collaborator starts a fresh Sanity Checks run.
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     branches:
@@ -65,20 +64,28 @@ jobs:
 
   ###
   ### SapMachine 2026-06-11: Authorize PR author for CI runs.
+  ###
   ### Only repository collaborators with write+ permission may trigger
   ### builds via 'pull_request'. Outside contributors and SAP org
-  ### members without explicit SapMachine repo access are rejected;
-  ### a repo admin must grant access, or comment '/ok-to-test' on the PR
-  ### (which adds the 'ok-to-test' label and re-runs this workflow), or
-  ### add the 'ok-to-test' label manually via the GitHub UI.
+  ### members without explicit SapMachine repo access are rejected.
   ###
-  ### The label authorizes only the SHA it was issued against — the
-  ### ok-to-test workflow drops the label on every 'synchronize' event,
-  ### so any new commit pushed to the PR requires fresh approval.
+  ### Sticky approval for legitimate external contributions: a maintainer
+  ### adds the 'ok-to-test' label to the PR (via the GitHub UI labels
+  ### dropdown). GitHub itself only allows users with at least 'triage'
+  ### on the repo to edit labels, so non-members cannot add it. We
+  ### additionally verify here that the adder has write+ permission, so
+  ### a triage-only collaborator cannot bypass the gate either.
+  ###
+  ### The label stays on across pushes, so once approved, all future
+  ### revisions of the PR run CI automatically. To revoke approval, a
+  ### maintainer removes the label.
   ###
 
   authorize:
     name: 'Authorize PR author'
+    # Only relevant for fork PRs. When head and base are the same repo,
+    # the matching 'push' run already covers it as a check (mirrors the
+    # 'prepare' job's condition below).
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
     runs-on: ubuntu-24.04
     steps:
@@ -86,33 +93,61 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
-          # 'contains' on the labels array — true if a maintainer has
-          # already approved this revision via /ok-to-test or by adding
-          # the label manually.
-          HAS_OK_TO_TEST: ${{ contains(github.event.pull_request.labels.*.name, 'ok-to-test') }}
+          # Whether the PR currently carries the 'ok-to-test' label.
+          # 'contains' on the labels array of the pull_request payload.
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'ok-to-test') }}
         run: |
           set -e
-          if [[ "$HAS_OK_TO_TEST" == "true" ]]; then
-            echo "::notice::Authorized via 'ok-to-test' label on PR by ${PR_AUTHOR}."
+
+          # Helper: returns 0 if the given user has write+ on this repo,
+          # 1 otherwise. Permissions are admin/maintain/write/triage/read,
+          # or 'none' (which we coerce 404s to). Org membership alone is
+          # NOT sufficient — only repository collaborators count.
+          has_write() {
+            local user="$1"
+            local perm
+            perm=$(gh api "repos/${REPO}/collaborators/${user}/permission" \
+              --jq '.permission' 2>/dev/null || echo "none")
+            echo "  '${user}' permission on ${REPO}: ${perm}"
+            case "$perm" in
+              admin|maintain|write) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          echo "Checking PR author '${PR_AUTHOR}'..."
+          if has_write "${PR_AUTHOR}"; then
+            echo "::notice::Authorized: PR author ${PR_AUTHOR} is a SapMachine repository collaborator."
             exit 0
           fi
-          # Query the repo's collaborator permission for the PR author.
-          # Returns one of: admin, maintain, write, triage, read, none.
-          # An org member who is not on the SapMachine repo collaborator
-          # list resolves to 'none' (or 404, which we coerce to 'none').
-          permission=$(gh api "repos/${REPO}/collaborators/${PR_AUTHOR}/permission" \
-            --jq '.permission' 2>/dev/null || echo "none")
-          echo "PR author '${PR_AUTHOR}' has permission '${permission}' on ${REPO}"
-          case "$permission" in
-            admin|maintain|write)
-              echo "::notice::Authorized: ${PR_AUTHOR} is a SapMachine repository collaborator (${permission})."
-              ;;
-            *)
-              echo "::error::PR author '${PR_AUTHOR}' is not a SapMachine repository collaborator (permission: ${permission}) and the PR has no 'ok-to-test' label. A maintainer must review the change and comment '/ok-to-test' (or add the 'ok-to-test' label) to authorize this run. The label is removed automatically when new commits are pushed."
-              exit 1
-              ;;
-          esac
+
+          if [[ "$HAS_LABEL" != "true" ]]; then
+            echo "::error::PR author '${PR_AUTHOR}' is not a SapMachine repository collaborator and the PR is not labeled 'ok-to-test'. A repository member with write+ permission must add the 'ok-to-test' label to authorize CI; once labeled, all future revisions of this PR run CI automatically."
+            exit 1
+          fi
+
+          # Label is on the PR — now verify it was added by a write+
+          # collaborator. Walk the issue events for the most recent
+          # 'labeled' event for 'ok-to-test' and check its actor.
+          echo "PR is labeled 'ok-to-test'; verifying who added the label..."
+          # Most recent first: paginate, filter to label=ok-to-test events,
+          # take the latest 'labeled' (vs 'unlabeled').
+          adder=$(gh api --paginate "repos/${REPO}/issues/${PR_NUMBER}/events" \
+            --jq '[.[] | select(.event=="labeled" and .label.name=="ok-to-test")] | sort_by(.created_at) | last | .actor.login' \
+            2>/dev/null || echo "")
+          if [[ -z "$adder" || "$adder" == "null" ]]; then
+            echo "::error::Could not determine who added the 'ok-to-test' label. Refusing to authorize."
+            exit 1
+          fi
+          echo "Label was added by '${adder}'."
+          if has_write "${adder}"; then
+            echo "::notice::Authorized: 'ok-to-test' label added by SapMachine collaborator ${adder}."
+            exit 0
+          fi
+          echo "::error::'ok-to-test' label was added by '${adder}', who is not a write+ SapMachine repository collaborator. Refusing to authorize."
+          exit 1
 
   ###
   ### Determine platforms to include
