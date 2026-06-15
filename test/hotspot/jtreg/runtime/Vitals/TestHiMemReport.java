@@ -98,6 +98,7 @@ public class TestHiMemReport {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:NativeMemoryTracking=summary",
+                "-Xlog:vitals", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
                 "sleep", "2" // num seconds to sleep to give the reporter thread time to generate output
@@ -117,6 +118,7 @@ public class TestHiMemReport {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:NativeMemoryTracking=summary",
+                "-Xlog:vitals", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-XX:HiMemReportDir=himemreport-1",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
@@ -150,6 +152,7 @@ public class TestHiMemReport {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:HiMemReportDir=himemreport-2",
+                "-Xlog:vitals", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders;GC.heap_dump",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
@@ -257,6 +260,7 @@ public class TestHiMemReport {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
                 "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders",
+                "-Xlog:vitals", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
@@ -302,7 +306,8 @@ public class TestHiMemReport {
      */
     static void testHasNaturalMax() throws IOException {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-Xlog:vitals", "-Xmx64m", "-version");
+               "-Xlog:vitals", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
+               "-XX:+HiMemReport", "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldNotMatch("HiMemReport.*limit could not be established");
@@ -321,7 +326,7 @@ public class TestHiMemReport {
             testHasNaturalMax();
         else if (args[0].equals("sleep")) {
             int numSeconds = Integer.parseInt(args[1]);
-            Thread.sleep(numSeconds * 1000);
+            Thread.sleep(numSeconds * 1000 * 4); // TODO: Remove the additional time factor of 4 later.
         } else
             throw new RuntimeException("Invalid test " + args[0]);
     }
