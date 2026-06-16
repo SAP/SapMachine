@@ -558,7 +558,7 @@ void DumpWriter::write_id(u4 x) {
 }
 
 // SapMachine 2026-06-16: Writes zeros to the buffer.
-void AbstractDumpWriter::write_zero(size_t len) {
+void DumpWriter::write_zero(size_t len) {
     assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
     DEBUG_ONLY(_sub_record_left -= len);
 
