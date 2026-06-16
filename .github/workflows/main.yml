@@ -33,10 +33,6 @@ on:
     paths-ignore:
       - '**/*.md'
       - 'doc/**'
-  # SapMachine 2020-11-04: Trigger on pull request
-  pull_request:
-    branches:
-      - sapmachine
   workflow_dispatch:
     inputs:
       platforms:
@@ -65,8 +61,6 @@ jobs:
 
   prepare:
     name: 'Prepare the run'
-    # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
     runs-on: ubuntu-24.04
     env:
       # List of platforms to exclude by default

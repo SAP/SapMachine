@@ -1,0 +1,75 @@
+#
+# Copyright (c) 2026, SAP SE. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details.
+#
+
+# Fires when the main sanity-check workflow finishes on a submit/* branch.
+# Extracts the PR number from the branch name and posts the CI result as a
+# comment on the original pull request.
+name: 'Report CI Result to Fork PR'
+
+on:
+  workflow_run:
+    workflows:
+      - 'SapMachine GHA Sanity Checks'
+    types:
+      - completed
+    branches:
+      - 'submit/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  report:
+    name: 'Post CI result to PR'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 'Extract PR number from branch name'
+        id: parse
+        run: |
+          # Branch name format: submit/<author>/pr-<number>
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          PR_NUMBER=$(echo "$BRANCH" | grep -oP '(?<=pr-)\d+')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "Could not extract PR number from branch: $BRANCH"
+            exit 1
+          fi
+          echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: 'Post result comment'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CONCLUSION="${{ github.event.workflow_run.conclusion }}"
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+          PR_NUMBER="${{ steps.parse.outputs.pr-number }}"
+
+          if [ "$CONCLUSION" = "success" ]; then
+            ICON=":white_check_mark:"
+            STATUS="passed"
+          else
+            ICON=":x:"
+            STATUS="failed ($CONCLUSION)"
+          fi
+
+          gh pr comment "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --body "${ICON} CI sanity checks **${STATUS}** for this PR. [View run](${RUN_URL})"
+
+      - name: 'Delete submit branch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${BRANCH}" || true
