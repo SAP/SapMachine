@@ -306,8 +306,8 @@ public class TestHiMemReport {
      */
     static void testHasNaturalMax() throws IOException {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-Xlog:vitals", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
-                "-XX:+HiMemReport", "-Xmx64m", "-version");
+                "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
+                "-XX:+HiMemReport", "-Xlog:vitals", "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldNotMatch("HiMemReport.*limit could not be established");
