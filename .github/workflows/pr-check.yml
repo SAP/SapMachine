@@ -1,0 +1,136 @@
+#
+# Copyright (c) 2026, SAP SE. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details.
+#
+
+# Fires in the upstream repo context when a fork PR is opened or updated.
+# Polls the fork repo's Actions API for a completed CI run on the PR head
+# commit, then mirrors the result as a native Check Run on the upstream PR.
+# No submit branches are created; no CI is re-run on the upstream runners.
+name: 'Mirror Fork PR CI Results'
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - sapmachine
+
+permissions:
+  checks: write
+  pull-requests: read
+
+jobs:
+  mirror:
+    name: 'Mirror fork CI result'
+    runs-on: ubuntu-24.04
+    # Only act on fork PRs — same-repo PRs get CI directly from main.yml.
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: 'Poll fork CI and mirror result'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          FORK_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          # Create a Check Run in pending state immediately so the PR shows
+          # "Waiting for fork CI" rather than no status at all.
+          CHECK_RUN_ID=$(gh api \
+            -X POST \
+            "repos/${{ github.repository }}/check-runs" \
+            -f name="Fork CI (SapMachine GHA Sanity Checks)" \
+            -f head_sha="${HEAD_SHA}" \
+            -f status="in_progress" \
+            -f output[title]="Waiting for fork CI to complete" \
+            -f output[summary]="Polling the fork repository for CI results on commit ${HEAD_SHA}" \
+            --jq '.id')
+          echo "Created check run: ${CHECK_RUN_ID}"
+
+          # Poll for up to 3 hours (180 x 60s). Fork builds take a long time.
+          MAX_ATTEMPTS=180
+          ATTEMPT=0
+          CONCLUSION=""
+
+          while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt ${ATTEMPT}/${MAX_ATTEMPTS} — checking fork CI status..."
+
+            # Fetch all workflow runs in the fork for this exact commit SHA.
+            RUNS=$(gh api \
+              "repos/${FORK_REPO}/actions/runs?head_sha=${HEAD_SHA}&per_page=10" \
+              --jq '.workflow_runs[]' 2>/dev/null || echo "")
+
+            if [[ -z "$RUNS" ]]; then
+              echo "No workflow runs found on fork yet — waiting..."
+              sleep 60
+              continue
+            fi
+
+            # Look for the sanity-checks workflow specifically. If the fork uses
+            # a different name, fall back to any completed run on this SHA.
+            RUN_STATUS=$(gh api \
+              "repos/${FORK_REPO}/actions/runs?head_sha=${HEAD_SHA}&per_page=10" \
+              --jq '.workflow_runs[] | select(.name == "SapMachine GHA Sanity Checks") | {status: .status, conclusion: .conclusion, url: .html_url}' \
+              2>/dev/null | head -1)
+
+            if [[ -z "$RUN_STATUS" ]]; then
+              # Fallback: any run on this SHA
+              RUN_STATUS=$(gh api \
+                "repos/${FORK_REPO}/actions/runs?head_sha=${HEAD_SHA}&per_page=10" \
+                --jq '.workflow_runs[0] | {status: .status, conclusion: .conclusion, url: .html_url}' \
+                2>/dev/null)
+            fi
+
+            STATUS=$(echo "$RUN_STATUS" | jq -r '.status')
+            CONCLUSION=$(echo "$RUN_STATUS" | jq -r '.conclusion')
+            RUN_URL=$(echo "$RUN_STATUS" | jq -r '.url')
+
+            echo "Fork CI status: ${STATUS}, conclusion: ${CONCLUSION}"
+
+            if [[ "$STATUS" == "completed" ]]; then
+              break
+            fi
+
+            sleep 60
+          done
+
+          # Map fork conclusion to GitHub check conclusion.
+          if [[ -z "$CONCLUSION" || "$CONCLUSION" == "null" ]]; then
+            CONCLUSION="timed_out"
+            TITLE="Fork CI did not complete within the polling window"
+            SUMMARY="No completed CI run was found on the fork for commit ${HEAD_SHA} after ${MAX_ATTEMPTS} minutes."
+          elif [[ "$CONCLUSION" == "success" ]]; then
+            TITLE="Fork CI passed"
+            SUMMARY="All sanity checks passed on the fork repository. [View run](${RUN_URL})"
+          else
+            TITLE="Fork CI ${CONCLUSION}"
+            SUMMARY="Sanity checks reported **${CONCLUSION}** on the fork repository. [View run](${RUN_URL})"
+          fi
+
+          # Update the Check Run with the final result.
+          gh api \
+            -X PATCH \
+            "repos/${{ github.repository }}/check-runs/${CHECK_RUN_ID}" \
+            -f status="completed" \
+            -f conclusion="${CONCLUSION}" \
+            -f output[title]="${TITLE}" \
+            -f output[summary]="${SUMMARY}" \
+            -f details_url="${RUN_URL}"
+
+          echo "Updated check run ${CHECK_RUN_ID} with conclusion: ${CONCLUSION}"
+
+          # Exit non-zero if CI failed so the upstream PR shows a red check.
+          if [[ "$CONCLUSION" != "success" ]]; then
+            exit 1
+          fi
