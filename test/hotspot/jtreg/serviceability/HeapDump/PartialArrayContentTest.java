@@ -39,7 +39,8 @@ import jdk.test.lib.hprof.parser.Reader;
 
 /*
  * @test
- * @summary Checks if -XX:+LimitPrimArrayContentInHeapDump works.
+ * @summary Checks if -XX:+LimitPrimitiveArrayContentInHeapDump works.
+ * @requires os.maxMemory > 4G
  * @library /test/lib
  * @run driver PartialArrayContentTest
  */
@@ -116,7 +117,7 @@ public class PartialArrayContentTest {
                 "-XX:+HeapDumpOverwrite",
                 "-XX:HeapDumpParallelism=1");
         verifyDump(dumpFile, false);
-        Asserts.assertEquals(1L, countTags(dumpFile, 0x2c), "Must have on end segmemnt");
+        Asserts.assertEquals(1L, countTags(dumpFile, 0x2c), "Must have one end segment");
         // Create a dump with an array > 2GB to check for integer overflows in the partial array code.
         createDump(dumpFile, false,
                 "-Xmx2500M",  // Ensures the 2 billion entry short array is in the heap dump.
