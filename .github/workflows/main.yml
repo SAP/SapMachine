@@ -109,7 +109,7 @@ jobs:
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
             elif [[ $GITHUB_EVENT_NAME == push ]]; then
-              if [[ 'startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
+              if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
                 # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
                 >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
                 echo 'false'
