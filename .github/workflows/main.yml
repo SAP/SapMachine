@@ -108,7 +108,6 @@ jobs:
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
-            # SapMachine 2022-06-24: Also handle 'pull_request' event.
             elif [[ $GITHUB_EVENT_NAME == push ]]; then
               if [[ 'startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
                 # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
