@@ -31,10 +31,10 @@ on:
     branches-ignore:
       # SapMachine 2020-11-04: Ignore sapmachine branch
       - sapmachine27
-  # SapMachine 2020-11-04: Trigger on pull request
-  pull_request:
-    branches:
-      - sapmachine27
+    # SapMachine 2026-06-01: do not trigger github actions for docs files
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
   workflow_dispatch:
     inputs:
       platforms:
@@ -63,8 +63,6 @@ jobs:
 
   prepare:
     name: 'Prepare the run'
-    # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
     runs-on: ubuntu-24.04
     env:
       # List of platforms to exclude by default
@@ -111,15 +109,14 @@ jobs:
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
-            # SapMachine 2022-06-24: Also handle 'pull_request' event.
-            elif [[ $GITHUB_EVENT_NAME == push ]] || [[ $GITHUB_EVENT_NAME == pull_request ]]; then
-              if [[ 'startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
+            elif [[ $GITHUB_EVENT_NAME == push ]]; then
+              if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
                 # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
                 >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
                 echo 'false'
                 return
               else
-                input=''
+                input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
               fi
             fi
 
