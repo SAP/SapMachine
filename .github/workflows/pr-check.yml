@@ -124,7 +124,7 @@ jobs:
                   -f head_sha="${HEAD_SHA}" \
                   -f status="in_progress" \
                   -f output[title]="Waiting for fork job: ${JOB_NAME}" \
-                  -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}." \
+                  -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}. [View job](${JOB_URL})" \
                   --jq '.id')
                 JOB_CHECK_RUN_IDS[$JOB_NAME]=$CR_ID
                 echo "    → check run ID: ${CR_ID}"
@@ -187,7 +187,7 @@ jobs:
                     -f head_sha="${HEAD_SHA}" \
                     -f status="in_progress" \
                     -f output[title]="Waiting for fork job: ${JOB_NAME}" \
-                    -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}." \
+                    -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}. [View job](${JOB_URL})" \
                     --jq '.id')
                   JOB_CHECK_RUN_IDS[$JOB_NAME]=$CR_ID
                 fi
