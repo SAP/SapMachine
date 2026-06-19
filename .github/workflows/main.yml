@@ -61,9 +61,6 @@ jobs:
   prepare:
     name: 'Prepare the run'
     runs-on: ubuntu-24.04
-    env:
-      # List of platforms to exclude by default
-      EXCLUDED_PLATFORMS: 'alpine-linux-x64'
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86-hs: ${{ steps.include.outputs.linux-x86-hs }}
