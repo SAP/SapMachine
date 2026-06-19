@@ -60,7 +60,7 @@ jobs:
 
   prepare:
     name: 'Prepare the run'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86-hs: ${{ steps.include.outputs.linux-x86-hs }}
