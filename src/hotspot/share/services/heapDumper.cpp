@@ -2522,7 +2522,7 @@ void VM_HeapDumper::work(uint worker_id) {
   ResourceMark rm;
   // share global compressor, local DumpWriter is not responsible for its life cycle
   // SapMachine 2026-05-06: Don't use segments if the dump is not parallel. This makes it
-  // possible to not use any disk space if dumping to a names pipe or a tty.
+  // possible to not use any disk space if dumping to a named pipe or a tty.
   DumpWriter* parallel_writer = is_parallel_dump() ? new DumpWriter(DumpMerger::get_writer_path(writer()->get_file_path(), dumper_id),
     writer()->is_overwrite(), writer()->compressor()) : nullptr;
   DumpWriter& segment_writer = parallel_writer == nullptr ? *writer() : *parallel_writer;
