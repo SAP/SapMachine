@@ -24,6 +24,7 @@
  * questions.
  */
 
+
 package jdk.internal.platform;
 
 import java.io.IOException;
