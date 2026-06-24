@@ -52,6 +52,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           FORK_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           UPSTREAM_REPO: ${{ github.repository }}
         run: |
@@ -72,6 +74,21 @@ jobs:
 
             if [[ -n "$RUN_ID" && "$RUN_ID" != "null" ]]; then
               echo "Found fork workflow run: ${RUN_ID}"
+              break
+            fi
+
+            # Fallback for reopened PRs: no new run may exist for HEAD_SHA,
+            # so locate the latest pull_request run for this PR number/branch.
+            RUN_ID=$(gh api \
+              "repos/${FORK_REPO}/actions/runs?event=pull_request&branch=${HEAD_REF}&per_page=50" \
+              --jq '.workflow_runs[]
+                | select(.name == "SapMachine GHA Sanity Checks")
+                | select(any(.pull_requests[]?; .number == ('"${PR_NUMBER}"' | tonumber)))
+                | .id' \
+              2>/dev/null | head -1)
+
+            if [[ -n "$RUN_ID" && "$RUN_ID" != "null" ]]; then
+              echo "Found fork workflow run via PR fallback: ${RUN_ID}"
               break
             fi
 
