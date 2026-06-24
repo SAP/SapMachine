@@ -89,6 +89,23 @@ jobs:
           # job name → '1' once the check run has been finalized
           declare -A JOB_DONE
 
+          # Pre-populate from any check runs already created for this SHA by a
+          # prior mirror run (e.g. when the PR is reopened without a new push).
+          EXISTING_JSON=$(gh api \
+            "repos/${UPSTREAM_REPO}/commits/${HEAD_SHA}/check-runs?per_page=100" \
+            --jq '.check_runs[] | select(.name != "Mirror fork CI result") | "\(.name)\t\(.id)\t\(.conclusion)"' \
+            2>/dev/null)
+          while IFS=$'\t' read -r CR_NAME CR_ID CR_CONCLUSION; do
+            [[ -z "$CR_NAME" ]] && continue
+            if [[ -z "${JOB_CHECK_RUN_IDS[$CR_NAME]}" ]]; then
+              JOB_CHECK_RUN_IDS[$CR_NAME]=$CR_ID
+              echo "  Resumed existing check run: ${CR_NAME} (ID: ${CR_ID})"
+            fi
+            if [[ -n "$CR_CONCLUSION" && "$CR_CONCLUSION" != "null" ]]; then
+              JOB_DONE[$CR_NAME]=1
+            fi
+          done <<< "$EXISTING_JSON"
+
           MAX_POLL=50
           POLL=0
           OVERALL_CONCLUSION=""
