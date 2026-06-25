@@ -108,7 +108,7 @@ jobs:
           # job name → fork job HTML URL
           declare -A JOB_URLS
 
-          MAX_POLL=50
+          MAX_POLL=90
           POLL=0
           OVERALL_CONCLUSION=""
 
