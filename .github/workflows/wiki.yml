@@ -11,6 +11,8 @@ jobs:
   wiki:
     if: ${{ github.event_name != 'schedule' || github.repository == 'SAP/SapMachine' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout SapMachine Wiki source
         uses: actions/checkout@v4
