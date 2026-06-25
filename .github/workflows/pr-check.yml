@@ -105,6 +105,8 @@ jobs:
           declare -A JOB_CHECK_RUN_IDS
           # job name → '1' once the check run has been finalized
           declare -A JOB_DONE
+          # job name → fork job HTML URL
+          declare -A JOB_URLS
 
           MAX_POLL=50
           POLL=0
@@ -132,6 +134,7 @@ jobs:
               JOB_URL=$(echo "$JOBS_JSON"        | jq -r ".jobs[$i].html_url")
 
               # Create a Check Run for this job the first time we see it.
+              JOB_URLS[$JOB_NAME]="$JOB_URL"
               if [[ -z "${JOB_CHECK_RUN_IDS[$JOB_NAME]}" ]]; then
                 echo "  Creating check run: ${JOB_NAME}"
                 CR_ID=$(gh api \
@@ -249,7 +252,7 @@ jobs:
                   -f status="completed" \
                   -f conclusion="timed_out" \
                   -f output[title]="Timed out: ${JOB_NAME}" \
-                  -f output[summary]="The polling window expired before job '${JOB_NAME}' completed."
+                  -f output[summary]="The polling window expired before job '${JOB_NAME}' completed. [View job](${JOB_URLS[$JOB_NAME]})"
               fi
             done
           fi
