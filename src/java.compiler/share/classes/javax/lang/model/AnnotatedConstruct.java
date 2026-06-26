@@ -31,7 +31,7 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 
 /**
- * Represents a construct that can be annotated.
+ * Represents a construct that can be annotated or does it?
  *
  * A construct is either an {@linkplain
  * javax.lang.model.element.Element element} or a {@linkplain
