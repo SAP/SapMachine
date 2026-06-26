@@ -725,6 +725,39 @@ const int ObjectAlignmentInBytes = 8;
           "compression. Otherwise the level must be between 1 and 9.")      \
           range(0, 9)                                                       \
                                                                             \
+  /* SapMachine 2026-05-06: Allow to overwrite the heap dump file. */       \
+  product(bool, HeapDumpOverwrite, false, MANAGEABLE,                       \
+          "If enabled, the heap dump on out of memory error can "           \
+          "overwrite an already existing file.")                            \
+                                                                            \
+  /* SapMachine 2026-05-06: Sets the parallelism of the heap dump. */       \
+  product(uint, HeapDumpParallelism, 0, MANAGEABLE,                         \
+          "Sets the parallelism of the heap dump creation. 0 means to let  "\
+          "the VM decide.")                                                 \
+          range(0, 100000)                                                  \
+                                                                            \
+  /* SapMachine 2026-05-06: Allow to skip content of arrays in dumps.*/     \
+  product(bool, LimitPrimitiveArrayContentInHeapDump, false, MANAGEABLE,    \
+          "If enabled, the content of primitive arrays is not completely "  \
+          "written to a heap dump for large arrays. Note that this only "   \
+          "really saves space, if the compression of the heap dump is "     \
+          "enabled too, since the skipped elements are written as "         \
+          "0 or false.")                                                    \
+                                                                            \
+  /* SapMachine 2026-05-06: Allow to skip content of arrays in dumps.*/     \
+  product(int, StringLikeContentSizeLimitInHeapDump, 120, MANAGEABLE,       \
+          "The number of entries in primitive char and byte arrays to "     \
+          "not skip in a heap dump when "                                   \
+          "LimitPrimitiveArrayContentInHeapDump is enabled.")               \
+          range(0, 100000)                                                  \
+                                                                            \
+  /* SapMachine 2026-05-06: Allow to skip contents of arrays in dumps.*/    \
+  product(int, ArrayContentSizeLimitInHeapDump, 50, MANAGEABLE,             \
+          "The number of entries in a primitive array other than char and " \
+          "byte arrays to not skip in a heap dump when "                    \
+          "LimitPrimitiveArrayContentInHeapDump is enabled.")               \
+          range(0, 100000)                                                  \
+                                                                            \
   product(ccstr, NativeMemoryTracking, DEBUG_ONLY("summary") NOT_DEBUG("off"), \
           "Native memory tracking options")                                 \
                                                                             \
