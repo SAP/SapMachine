@@ -35,7 +35,7 @@ const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
 #endif
 
 static float unpack(unsigned value);
-Also bad
+
 short Assembler::SIMD_Size_in_bytes[] = {
   // T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q
        8,   16,   8,  16,   8,  16,   8,  16,  16
