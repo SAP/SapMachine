@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,16 @@ on:
   push:
     branches-ignore:
       - pr/*
+    # SapMachine 2026-06-01: do not trigger github actions for docs files
     paths-ignore:
       - '**/*.md'
       - 'doc/**'
-  # SapMachine 2020-11-04: Trigger on pull request
-  pull_request:
-    branches:
-      - sapmachine
   workflow_dispatch:
     inputs:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x64-variants, linux-cross-compile, alpine-linux-x64, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'linux-x64, linux-x64-variants, linux-aarch64, linux-cross-compile, alpine-linux-x64, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -65,8 +62,6 @@ jobs:
 
   prepare:
     name: 'Prepare the run'
-    # SapMachine 2022-06-23: On 'pull_request' we only want to run GHA if the PR comes from a remote repo. Otherwise we have the run on 'push' already as a check.
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name }}
     runs-on: ubuntu-24.04
     env:
       # List of platforms to exclude by default
@@ -74,6 +69,7 @@ jobs:
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
+      linux-aarch64: ${{ steps.include.outputs.linux-aarch64 }}
       linux-cross-compile: ${{ steps.include.outputs.linux-cross-compile }}
       alpine-linux-x64: ${{ steps.include.outputs.alpine-linux-x64 }}
       macos-x64: ${{ steps.include.outputs.macos-x64 }}
@@ -112,8 +108,7 @@ jobs:
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
-            # SapMachine 2022-06-24: Also handle 'pull_request' event.
-            elif [[ $GITHUB_EVENT_NAME == push ]] || [[ $GITHUB_EVENT_NAME == pull_request ]]; then
+            elif [[ $GITHUB_EVENT_NAME == push ]]; then
               if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
                 # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
                 >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
@@ -199,12 +194,15 @@ jobs:
 
           echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
+          echo "linux-aarch64=$(check_platform linux-aarch64 linux aarch64)" >> $GITHUB_OUTPUT
           echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
           echo "alpine-linux-x64=$(check_platform alpine-linux-x64 alpine-linux x64)" >> $GITHUB_OUTPUT
-          echo "macos-x64=$(check_platform macos-x64 macos x64)" >> $GITHUB_OUTPUT
+          # SapMachine 2026-05-14: Disabling GHA for platforms that are not delivered
+          echo "macos-x64=false" >> $GITHUB_OUTPUT
           echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
-          echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
+          # SapMachine 2026-05-14: Disabling GHA for platforms that are not delivered
+          echo "windows-aarch64=false" >> $GITHUB_OUTPUT
           echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
           echo "dry-run=$(check_dry_run)" >> $GITHUB_OUTPUT
 
@@ -223,6 +221,20 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
     if: needs.prepare.outputs.linux-x64 == 'true'
+
+  build-linux-aarch64:
+    name: linux-aarch64
+    needs: prepare
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-aarch64
+      runs-on: 'ubuntu-24.04-arm'
+      bootjdk-platform: linux-aarch64
+      gcc-major-version: '14'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
+    if: needs.prepare.outputs.linux-aarch64 == 'true'
 
   build-linux-x64-hs-nopch:
     name: linux-x64-hs-nopch
@@ -318,7 +330,7 @@ jobs:
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       # Upload static libs bundles separately to avoid interference with normal linux-x64 bundle.
       # This bundle is not used by testing jobs, but downstreams use it to check that
-      # dependent projects, e.g. libgraal, builds fine.
+      # dependent projects build fine.
       bundle-suffix: "-static-libs"
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
@@ -376,8 +388,9 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
+      runs-on: windows-2022
+      architecture: 'x86.x64'
       msvc-toolset-version: '14.44'
-      msvc-toolset-architecture: 'x86.x64'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
@@ -389,10 +402,9 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-aarch64
+      runs-on: windows-11-arm
+      architecture: 'ARM64'
       msvc-toolset-version: '14.44'
-      msvc-toolset-architecture: 'arm64'
-      make-target: 'hotspot'
-      extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
@@ -446,6 +458,19 @@ jobs:
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       static-suffix: "-static"
 
+  test-linux-aarch64:
+    name: linux-aarch64
+    needs:
+      - prepare
+      - build-linux-aarch64
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: linux-aarch64
+      bootjdk-platform: linux-aarch64
+      runs-on: ubuntu-24.04-arm
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
+      debug-suffix: -debug
+
   test-macos-aarch64:
     name: macos-aarch64
     needs:
@@ -469,6 +494,21 @@ jobs:
     with:
       platform: windows-x64
       bootjdk-platform: windows-x64
-      runs-on: windows-2025
+      architecture: 'x86.x64'
+      runs-on: windows-2022
+      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
+      debug-suffix: -debug
+
+  test-windows-aarch64:
+    name: windows-aarch64
+    needs:
+      - prepare
+      - build-windows-aarch64
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: windows-aarch64
+      bootjdk-platform: windows-aarch64
+      architecture: 'ARM64'
+      runs-on: windows-11-arm
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
