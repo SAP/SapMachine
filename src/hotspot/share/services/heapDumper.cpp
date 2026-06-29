@@ -547,22 +547,22 @@ void AbstractDumpWriter::write_id(u4 x) {
 
 // SapMachine 2026-06-16: Writes zeros to the buffer.
 void AbstractDumpWriter::write_zero(size_t len) {
-    assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
-    DEBUG_ONLY(_sub_record_left -= len);
+  assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
+  DEBUG_ONLY(_sub_record_left -= len);
 
-    // flush buffer to make room.
-    while (len > buffer_size() - position()) {
-        assert(!_in_dump_segment || _is_huge_sub_record,
-            "Cannot overflow in non-huge sub-record.");
-        size_t to_write = buffer_size() - position();
-        memset(buffer() + position(), 0, to_write);
-        len -= to_write;
-        set_position(position() + to_write);
-        flush();
-    }
+  // flush buffer to make room.
+  while (len > buffer_size() - position()) {
+    assert(!_in_dump_segment || _is_huge_sub_record,
+           "Cannot overflow in non-huge sub-record.");
+    size_t to_write = buffer_size() - position();
+    memset(buffer() + position(), 0, to_write);
+    len -= to_write;
+    set_position(position() + to_write);
+    flush();
+  }
 
-    memset(buffer() + position(), 0, len);
-    set_position(position() + len);
+  memset(buffer() + position(), 0, len);
+  set_position(position() + len);
 }
 
 // We use java mirror as the class ID
@@ -1558,17 +1558,17 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
   int fill_with_zero = 0;
 
   if (LimitPrimitiveArrayContentInHeapDump) {
-      int limit = ArrayContentSizeLimitInHeapDump;
+    int limit = ArrayContentSizeLimitInHeapDump;
 
-      if (type == T_BYTE || type == T_CHAR) {
-          limit = StringLikeContentSizeLimitInHeapDump;
-      }
+    if (type == T_BYTE || type == T_CHAR) {
+      limit = StringLikeContentSizeLimitInHeapDump;
+    }
 
-      if (length > limit) {
-          fill_with_zero = length - limit;
-          length = limit;
-          length_in_bytes = (u4)length * type_size;
-      }
+    if (length > limit) {
+      fill_with_zero = length - limit;
+      length = limit;
+      length_in_bytes = (u4)length * type_size;
+    }
   }
 
   // If the byte ordering is big endian then we can copy most types directly
@@ -1640,7 +1640,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
 
   // SapMachine 2026-06-16: Fill with zeros, if we don't dump the whole content of the array.
   if (fill_with_zero > 0) {
-      writer->write_zero((u4)fill_with_zero * type_size);
+    writer->write_zero((u4)fill_with_zero * type_size);
   }
 
   writer->end_sub_record();
