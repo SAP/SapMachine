@@ -676,6 +676,10 @@ protected:
     // Space to save apx registers after signal handle
     jlong        apx_save[2]; // Save r16 and r31
 
+    // cpuid function 0xD, subleaf 19 (APX extended state)
+    uint32_t          apx_xstate_size;          // EAX: size of APX state (128)
+    uint32_t          apx_xstate_offset;        // EBX: offset in standard XSAVE area
+
     VM_Features feature_flags() const;
 
     // Asserts
@@ -739,6 +743,11 @@ public:
   static ByteSize ymm_save_offset() { return byte_offset_of(CpuidInfo, ymm_save); }
   static ByteSize zmm_save_offset() { return byte_offset_of(CpuidInfo, zmm_save); }
   static ByteSize apx_save_offset() { return byte_offset_of(CpuidInfo, apx_save); }
+  static ByteSize apx_xstate_offset_offset() { return byte_offset_of(CpuidInfo, apx_xstate_offset); }
+  static ByteSize apx_xstate_size_offset() { return byte_offset_of(CpuidInfo, apx_xstate_size); }
+
+  static uint32_t apx_xstate_offset() { return _cpuid_info.apx_xstate_offset; }
+  static uint32_t apx_xstate_size()   { return _cpuid_info.apx_xstate_size; }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
@@ -939,6 +948,12 @@ public:
   static bool is_intel_cascade_lake();
 
   static bool is_intel_darkmont();
+
+  static bool is_intel_modern_cpu() {
+    precond(is_intel()); // should be called only for intel CPU
+    // Efficient cores in hybrid CPU may not support hyper-threads.
+    return (supports_avx() || (supports_sse4_2() && (supports_ht() || supports_hybrid())));
+  }
 
   static int avx3_threshold();
 

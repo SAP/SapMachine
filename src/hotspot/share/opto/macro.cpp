@@ -2321,12 +2321,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   // No need for a null check on unlock
 
   // Make the merge point
-  Node *region;
-  Node *mem_phi;
-
-  region  = new RegionNode(3);
-  // create a Phi for the memory state
-  mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+  Node* region = new RegionNode(3);
 
   FastUnlockNode *funlock = new FastUnlockNode( ctrl, obj, box );
   funlock = transform_later( funlock )->as_FastUnlock();
@@ -2355,12 +2350,15 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   transform_later(region);
   _igvn.replace_node(_callprojs.fallthrough_proj, region);
 
-  Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory) );
-  mem_phi->init_req(1, memproj );
-  mem_phi->init_req(2, mem);
-  transform_later(mem_phi);
-
-  _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
+  if (_callprojs.fallthrough_memproj != nullptr) {
+    // create a Phi for the memory state
+    Node* mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+    Node* memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
+    mem_phi->init_req(1, memproj);
+    mem_phi->init_req(2, mem);
+    transform_later(mem_phi);
+    _igvn.replace_node(_callprojs.fallthrough_memproj, mem_phi);
+  }
 }
 
 void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
@@ -2500,6 +2498,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_ModD ||
                n->Opcode() == Op_ModF ||
+               n->Opcode() == Op_PowD ||
                n->is_OpaqueNotNull()       ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
@@ -2656,19 +2655,11 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     default:
       switch (n->Opcode()) {
       case Op_ModD:
-      case Op_ModF: {
-        CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(),
-                                              mod_macro->_name, TypeRawPtr::BOTTOM);
-        call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
-        call->init_req(TypeFunc::I_O, C->top());
-        call->init_req(TypeFunc::Memory, C->top());
-        call->init_req(TypeFunc::ReturnAdr, C->top());
-        call->init_req(TypeFunc::FramePtr, C->top());
-        for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-          call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
-        }
-        _igvn.replace_node(mod_macro, call);
+      case Op_ModF:
+      case Op_PowD: {
+        CallLeafPureNode* call_macro = n->as_CallLeafPure();
+        CallLeafPureNode* call = call_macro->inline_call_leaf_pure_node();
+        _igvn.replace_node(call_macro, call);
         transform_later(call);
         break;
       }
