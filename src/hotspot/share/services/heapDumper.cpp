@@ -441,6 +441,8 @@ class AbstractDumpWriter : public CHeapObj<mtInternal> {
   void write_symbolID(Symbol* o);
   void write_classID(Klass* k);
   void write_id(u4 x);
+  // SapMachine 2026-05-06: Writes zeros to the buffer.
+  void write_zero(size_t len);
 
   // Start a new sub-record. Starts a new heap dump segment if needed.
   void start_sub_record(u1 tag, u4 len);
@@ -537,6 +539,26 @@ void AbstractDumpWriter::write_id(u4 x) {
 #else
   write_u4(x);
 #endif
+}
+
+// SapMachine 2026-05-06: Writes zeros to the buffer.
+void AbstractDumpWriter::write_zero(size_t len) {
+  assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
+  DEBUG_ONLY(_sub_record_left -= len);
+
+  // flush buffer to make room.
+  while (len > buffer_size() - position()) {
+    assert(!_in_dump_segment || _is_huge_sub_record,
+      "Cannot overflow in non-huge sub-record.");
+    size_t to_write = buffer_size() - position();
+    memset(buffer() + position(), 0, to_write);
+    len -= to_write;
+    set_position(position() + to_write);
+    flush();
+  }
+
+  memset(buffer() + position(), 0, len);
+  set_position(position() + len);
 }
 
 // We use java mirror as the class ID
@@ -1374,6 +1396,24 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     return;
   }
 
+  // SapMachine 2026-05-06: If enabled, we don't dump the whole content of large arrays, but just the start
+  // and fill the rest with zeroes.
+  int fill_with_zero = 0;
+
+  if (LimitPrimitiveArrayContentInHeapDump) {
+    int limit = ArrayContentSizeLimitInHeapDump;
+
+    if (type == T_BYTE || type == T_CHAR) {
+      limit = StringLikeContentSizeLimitInHeapDump;
+    }
+
+    if (length > limit) {
+      fill_with_zero = length - limit;
+      length = limit;
+      length_in_bytes = (u4) length * type_size;
+    }
+  }
+
   // If the byte ordering is big endian then we can copy most types directly
 
   switch (type) {
@@ -1439,6 +1479,11 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
       break;
     }
     default : ShouldNotReachHere();
+  }
+
+  // SapMachine 2026-05-06: Fill with zeros, if we don't dump the whole content of the array.
+  if (fill_with_zero > 0) {
+    writer->write_zero((u4) fill_with_zero * type_size);
   }
 
   writer->end_sub_record();
@@ -2435,7 +2480,8 @@ void VM_HeapDumper::doit() {
 
 void VM_HeapDumper::work(uint worker_id) {
   // VM Dumper works on all non-heap data dumping and part of heap iteration.
-  int dumper_id = get_next_dumper_id();
+  // SapMachine 2026-07-06: Don't create a segment for non-parallel dumps.
+  int dumper_id = is_parallel_dump() ? get_next_dumper_id() : VMDumperId;
 
   if (is_vm_dumper(dumper_id)) {
     // lock global writer, it will be unlocked after VM Dumper finishes with non-heap data
@@ -2477,8 +2523,11 @@ void VM_HeapDumper::work(uint worker_id) {
 
   ResourceMark rm;
   // share global compressor, local DumpWriter is not responsible for its life cycle
-  DumpWriter segment_writer(DumpMerger::get_writer_path(writer()->get_file_path(), dumper_id),
-                            writer()->is_overwrite(), writer()->compressor());
+  // SapMachine 2026-05-06: Don't use segments if the dump is not parallel. This makes it
+  // possible to not use any disk space if dumping to a named pipe or a tty.
+  DumpWriter* parallel_writer = is_parallel_dump() ? new DumpWriter(DumpMerger::get_writer_path(writer()->get_file_path(), dumper_id),
+    writer()->is_overwrite(), writer()->compressor()) : nullptr;
+  DumpWriter& segment_writer = parallel_writer == nullptr ? *writer() : *parallel_writer;
   if (!segment_writer.has_error()) {
     if (is_vm_dumper(dumper_id)) {
       // dump some non-heap subrecords to heap dump segment
@@ -2535,6 +2584,8 @@ void VM_HeapDumper::work(uint worker_id) {
     // At this point, all fragments of the heapdump have been written to separate files.
     // We need to merge them into a complete heapdump and write HPROF_HEAP_DUMP_END at that time.
   }
+  // SapMachine 2026-05-06
+  delete parallel_writer;
 }
 
 void VM_HeapDumper::dump_stack_traces(AbstractDumpWriter* writer) {
@@ -2585,6 +2636,17 @@ void VM_HeapDumper::dump_vthread(oop vt, AbstractDumpWriter* segment_writer) {
   // unmounted vthread has no JavaThread
   ThreadDumper thread_dumper(ThreadDumper::ThreadType::UnmountedVirtual, nullptr, vt);
   thread_dumper.init_serial_nums(&_thread_serial_num, &_frame_serial_num);
+
+  // SapMachine 2026-05-06: If we don't do a parallel dump, we don't need the lock
+  // but have to end the current heap dump segment.
+  if (!is_parallel_dump()) {
+    segment_writer->finish_dump_segment();
+    thread_dumper.dump_stack_traces(writer(), _klass_map);
+    thread_dumper.dump_thread_obj(segment_writer);
+    thread_dumper.dump_stack_refs(segment_writer);
+
+    return;
+  }
 
   // write HPROF_TRACE/HPROF_FRAME records to global writer
   _dumper_controller->lock_global_writer();
@@ -2736,7 +2798,9 @@ void HeapDumper::set_error(char const* error) {
 // outside of a JVM safepoint
 void HeapDumper::dump_heap_from_oome() {
   // SapMachine 2024-05-10: HeapDumpPath for jcmd
-  HeapDumper::dump_heap(false, true);
+  // SapMachine 2026-05-06: Handle HeapDumpOverwrite and HeapDumpParallelism.
+  HeapDumper::dump_heap(false, true, tty, -1, HeapDumpOverwrite, HeapDumpParallelism == 0 ?
+                        HeapDumper::default_num_of_dump_threads(): HeapDumpParallelism);
 }
 
 // Called by error reporting by a single Java thread outside of a JVM safepoint,
@@ -2746,7 +2810,9 @@ void HeapDumper::dump_heap_from_oome() {
 // inteference when updating the static variables base_path and dump_file_seq below.
 void HeapDumper::dump_heap() {
   // SapMachine 2024-05-10: HeapDumpPath for jcmd
-  HeapDumper::dump_heap(false, false);
+  // SapMachine 2026-05-06: Handle HeapDumpOverwrite and HeapDumpParallelism.
+  HeapDumper::dump_heap(false, false, tty, -1, HeapDumpOverwrite, HeapDumpParallelism == 0 ?
+                        HeapDumper::default_num_of_dump_threads() : HeapDumpParallelism);
 }
 
 // SapMachine 2024-05-10: HeapDumpPath for jcmd
