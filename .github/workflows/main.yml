@@ -28,9 +28,6 @@ name: 'SapMachine GHA Sanity Checks'
 
 on:
   push:
-    branches-ignore:
-      # SapMachine 2020-11-04: Ignore sapmachine branch
-      - sapmachine26
     # SapMachine 2026-06-01: do not trigger github actions for docs files
     paths-ignore:
       - '**/*.md'
