@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,41 @@
  * questions.
  */
 
+#include <assert.h>
+#include <stdbool.h>
 
-#include "Utilities.h"
-// Platform.java includes
-#include "com_sun_media_sound_Platform.h"
+#include <unistd.h>
+#include "childproc.h"
+#include "childproc_errorcodes.h"
 
-/*
- * Declare library specific JNI_Onload entry if static build
- */
-DEF_STATIC_JNI_OnLoad
+void buildErrorCode(errcode_t* errcode, int step, int hint, int errno_) {
+    errcode_t e;
 
-/*
- * Class:     com_sun_media_sound_Platform
- * Method:    nIsBigEndian
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_com_sun_media_sound_Platform_nIsBigEndian(JNIEnv *env, jclass clss) {
-    return UTIL_IsBigEndianPlatform();
+    assert(step < (1 << 8));
+    e.step = step;
+
+    assert(errno_ < (1 << 8));
+    e.errno_ = errno_;
+
+    const int maxhint = (1 << 16);
+    e.hint = hint < maxhint ? hint : maxhint;
+
+    (*errcode) = e;
+}
+
+int exitCodeFromErrorCode(errcode_t errcode) {
+    /* We use the fail step number as exit code, but avoid 0 and 1
+     * and try to avoid the [128..256) range since that one is used by
+     * shells to codify abnormal kills by signal. */
+    return 0x10 + errcode.step;
+}
+
+bool sendErrorCode(int fd, errcode_t errcode) {
+    return writeFully(fd, &errcode, sizeof(errcode)) == sizeof(errcode);
+}
+
+bool sendAlivePing(int fd) {
+    errcode_t errcode;
+    buildErrorCode(&errcode, ESTEP_CHILD_ALIVE, getpid(), 0);
+    return sendErrorCode(fd, errcode);
 }

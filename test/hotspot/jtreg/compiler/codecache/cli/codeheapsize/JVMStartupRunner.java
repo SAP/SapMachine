@@ -48,7 +48,8 @@ public class JVMStartupRunner implements CodeCacheCLITestCase.Runner {
                 new String[]{ INCONSISTENT_CH_SIZES_ERROR },
                 "JVM startup should not fail with consistent code heap sizes",
                 "JVM output should not contain warning about inconsistent code "
-                + "heap sizes", ExitCode.OK, options.prepareOptions());
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                + "heap sizes", ExitCode.OK, options.prepareOptions("-XX:-UseLargePages"));
 
         verifySingleInconsistentValue(options);
         verifyAllInconsistentValues(options);
