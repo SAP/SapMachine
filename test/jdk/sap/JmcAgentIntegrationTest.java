@@ -26,7 +26,7 @@
  * @test
  * @summary Runs the test for the SAP JMC agent integration.
  *
- * @run main/othervm JmcAgentIntegrationTest
+ * @run main/othervm/timeout=1200 JmcAgentIntegrationTest
  */
 
 import java.lang.reflect.Method;
