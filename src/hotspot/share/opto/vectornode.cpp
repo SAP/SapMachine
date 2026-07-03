@@ -1343,6 +1343,14 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
     return nullptr;
   }
 
+  // Reassociation is beneficial if transformed node with replicate inputs can
+  // subsequently be collapsed by push_through_replicate into Replicate(ScalarOp(..)).
+  // That folding needs a scalar opcode for this operation/element type.
+  // Safety check to ensure we skip useless/redundant reassociations.
+  if (scalar_opcode(Opcode(), vect_type()->element_basic_type()) == 0) {
+    return nullptr;
+  }
+
   Node* in1 = in(1);
   Node* in2 = in(2);
   if (in2->Opcode() == Op_Replicate && in1->Opcode() == Opcode()) {
@@ -1406,6 +1414,13 @@ Node* VectorNode::push_through_replicate(PhaseGVN* phase) {
   }
 
   sop = phase->transform(sop);
+
+  // For subword types, the scalar operation computes at int width and may
+  // produce values outside the subword range. Narrow the result unconditionally
+  // before feeding it to Replicate.
+  if (is_subword_type(bt)) {
+    sop = Compile::narrow_value(bt, sop, Type::get_const_basic_type(bt), phase, true);
+  }
 
   return new ReplicateNode(sop, vect_type());
 }
