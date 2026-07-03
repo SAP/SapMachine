@@ -1,0 +1,267 @@
+#
+# Copyright (c) 2026 SAP SE. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Fires in the upstream repo context when a PR from a fork is opened or updated.
+# Polls the fork repo's Actions API for the "SapMachine GHA Sanity Checks"
+# run on the PR head commit, then mirrors every individual job as a native
+# Check Run on the upstream PR — matching the appearance of the fork's own
+# checks tab. No submit branches are created; no CI is re-run upstream.
+name: 'Mirror Checks from Source Fork'
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  checks: write
+  pull-requests: read
+
+jobs:
+  mirror:
+    name: 'Sync Actions from Fork'
+    runs-on: ubuntu-24.04
+    # Only act on fork PRs — same-repo PRs get CI directly from main.yml.
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: 'Poll fork CI and mirror per-job results'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FORK_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          UPSTREAM_REPO: ${{ github.repository }}
+        run: |
+          # ── Phase 1: Wait for the fork workflow run to appear ───────────────
+          # The fork may not have triggered its CI yet immediately after push.
+          MAX_WAIT=20
+          ATTEMPT=0
+          RUN_ID=""
+
+          while [[ $ATTEMPT -lt $MAX_WAIT ]]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Waiting for workflow run on fork (attempt ${ATTEMPT}/${MAX_WAIT})..."
+
+            RUN_ID=$(gh api \
+              "repos/${FORK_REPO}/actions/runs?head_sha=${HEAD_SHA}&per_page=10" \
+              --jq '.workflow_runs[] | select(.name == "SapMachine GHA Sanity Checks") | .id' \
+              2>/dev/null | head -1)
+
+            if [[ -n "$RUN_ID" && "$RUN_ID" != "null" ]]; then
+              echo "Found workflow run on fork: ${RUN_ID}"
+              break
+            fi
+
+            # Fallback for reopened PRs: no new run may exist for HEAD_SHA,
+            # so locate the latest pull_request run for this PR number/branch.
+            RUN_ID=$(gh api \
+              "repos/${FORK_REPO}/actions/runs?event=pull_request&branch=${HEAD_REF}&per_page=50" \
+              --jq '.workflow_runs[]
+                | select(.name == "SapMachine GHA Sanity Checks")
+                | select(any(.pull_requests[]?; .number == ('"${PR_NUMBER}"' | tonumber)))
+                | .id' \
+              2>/dev/null | head -1)
+
+            if [[ -n "$RUN_ID" && "$RUN_ID" != "null" ]]; then
+              echo "Found workflow run on fork via PR fallback: ${RUN_ID}"
+              break
+            fi
+
+            sleep 60
+          done
+
+          if [[ -z "$RUN_ID" || "$RUN_ID" == "null" ]]; then
+            echo "No workflow run found on fork within ${MAX_WAIT} minutes — giving up."
+            exit 1
+          fi
+
+          # ── Phase 2: Mirror each fork job as an upstream Check Run ──────────
+          # job name → upstream check run ID
+          declare -A JOB_CHECK_RUN_IDS
+          # job name → '1' once the check run has been finalized
+          declare -A JOB_DONE
+          # job name → fork job HTML URL
+          declare -A JOB_URLS
+
+          MAX_POLL=180
+          POLL=0
+          OVERALL_CONCLUSION=""
+
+          while [[ $POLL -lt $MAX_POLL ]]; do
+            POLL=$((POLL + 1))
+            echo "Poll ${POLL}/${MAX_POLL} — syncing fork job statuses..."
+
+            JOBS_JSON=$(gh api \
+              "repos/${FORK_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+              2>/dev/null)
+
+            if [[ -z "$JOBS_JSON" ]]; then
+              sleep 60
+              continue
+            fi
+
+            JOB_COUNT=$(echo "$JOBS_JSON" | jq '.jobs | length')
+
+            for i in $(seq 0 $((JOB_COUNT - 1))); do
+              JOB_NAME=$(echo "$JOBS_JSON"       | jq -r ".jobs[$i].name")
+              JOB_STATUS=$(echo "$JOBS_JSON"     | jq -r ".jobs[$i].status")
+              JOB_CONCLUSION=$(echo "$JOBS_JSON" | jq -r ".jobs[$i].conclusion")
+              JOB_URL=$(echo "$JOBS_JSON"        | jq -r ".jobs[$i].html_url")
+
+              # Create a Check Run for this job the first time we see it.
+              JOB_URLS[$JOB_NAME]="$JOB_URL"
+              if [[ -z "${JOB_CHECK_RUN_IDS[$JOB_NAME]}" ]]; then
+                echo "  Creating check run: ${JOB_NAME}"
+                CR_ID=$(gh api \
+                  -X POST \
+                  "repos/${UPSTREAM_REPO}/check-runs" \
+                  -f name="${JOB_NAME}" \
+                  -f head_sha="${HEAD_SHA}" \
+                  -f status="in_progress" \
+                  -f output[title]="Waiting for fork job: ${JOB_NAME}" \
+                  -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}. [View job](${JOB_URL})" \
+                  --jq '.id')
+                JOB_CHECK_RUN_IDS[$JOB_NAME]=$CR_ID
+                echo "    → check run ID: ${CR_ID}"
+              fi
+
+              # Finalize any job that has completed since the last poll.
+              if [[ "$JOB_STATUS" == "completed" && -z "${JOB_DONE[$JOB_NAME]}" ]]; then
+                CR_ID="${JOB_CHECK_RUN_IDS[$JOB_NAME]}"
+                # Guard against null conclusion (e.g. cancelled mid-queue).
+                [[ -z "$JOB_CONCLUSION" || "$JOB_CONCLUSION" == "null" ]] && JOB_CONCLUSION="cancelled"
+
+                if [[ "$JOB_CONCLUSION" == "success" ]]; then
+                  TITLE="Passed: ${JOB_NAME}"
+                  SUMMARY="Job **${JOB_NAME}** passed on the fork. [View job](${JOB_URL})"
+                else
+                  TITLE="${JOB_CONCLUSION^}: ${JOB_NAME}"
+                  SUMMARY="Job **${JOB_NAME}** reported **${JOB_CONCLUSION}** on the fork. [View job](${JOB_URL})"
+                fi
+
+                gh api \
+                  -X PATCH \
+                  "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
+                  -f status="completed" \
+                  -f conclusion="${JOB_CONCLUSION}" \
+                  -f output[title]="${TITLE}" \
+                  -f output[summary]="${SUMMARY}" \
+                  -f details_url="${JOB_URL}"
+
+                JOB_DONE[$JOB_NAME]=1
+                echo "  ✓ Finalized ${JOB_NAME}: ${JOB_CONCLUSION}"
+              fi
+            done
+
+            # Check whether the overall run has finished.
+            RUN_JSON=$(gh api \
+              "repos/${FORK_REPO}/actions/runs/${RUN_ID}" \
+              --jq '{status: .status, conclusion: .conclusion}' \
+              2>/dev/null)
+
+            RUN_STATUS=$(echo "$RUN_JSON" | jq -r '.status')
+            OVERALL_CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion')
+
+            if [[ "$RUN_STATUS" == "completed" ]]; then
+              echo "Workflow run on fork completed with conclusion: ${OVERALL_CONCLUSION}"
+              # Do one final job sync to catch any jobs that finished in this last window.
+              JOBS_JSON=$(gh api \
+                "repos/${FORK_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+                2>/dev/null)
+              JOB_COUNT=$(echo "$JOBS_JSON" | jq '.jobs | length')
+              for i in $(seq 0 $((JOB_COUNT - 1))); do
+                JOB_NAME=$(echo "$JOBS_JSON"       | jq -r ".jobs[$i].name")
+                JOB_STATUS=$(echo "$JOBS_JSON"     | jq -r ".jobs[$i].status")
+                JOB_CONCLUSION=$(echo "$JOBS_JSON" | jq -r ".jobs[$i].conclusion")
+                JOB_URL=$(echo "$JOBS_JSON"        | jq -r ".jobs[$i].html_url")
+                if [[ -z "${JOB_CHECK_RUN_IDS[$JOB_NAME]}" ]]; then
+                  CR_ID=$(gh api \
+                    -X POST \
+                    "repos/${UPSTREAM_REPO}/check-runs" \
+                    -f name="${JOB_NAME}" \
+                    -f head_sha="${HEAD_SHA}" \
+                    -f status="in_progress" \
+                    -f output[title]="Waiting for fork job: ${JOB_NAME}" \
+                    -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}. [View job](${JOB_URL})" \
+                    --jq '.id')
+                  JOB_CHECK_RUN_IDS[$JOB_NAME]=$CR_ID
+                fi
+                if [[ "$JOB_STATUS" == "completed" && -z "${JOB_DONE[$JOB_NAME]}" ]]; then
+                  CR_ID="${JOB_CHECK_RUN_IDS[$JOB_NAME]}"
+                  [[ -z "$JOB_CONCLUSION" || "$JOB_CONCLUSION" == "null" ]] && JOB_CONCLUSION="cancelled"
+                  if [[ "$JOB_CONCLUSION" == "success" ]]; then
+                    TITLE="Passed: ${JOB_NAME}"
+                    SUMMARY="Job **${JOB_NAME}** passed on the fork. [View job](${JOB_URL})"
+                  else
+                    TITLE="${JOB_CONCLUSION^}: ${JOB_NAME}"
+                    SUMMARY="Job **${JOB_NAME}** reported **${JOB_CONCLUSION}** on the fork. [View job](${JOB_URL})"
+                  fi
+                  gh api \
+                    -X PATCH \
+                    "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
+                    -f status="completed" \
+                    -f conclusion="${JOB_CONCLUSION}" \
+                    -f output[title]="${TITLE}" \
+                    -f output[summary]="${SUMMARY}" \
+                    -f details_url="${JOB_URL}"
+                  JOB_DONE[$JOB_NAME]=1
+                  echo "  ✓ Finalized ${JOB_NAME}: ${JOB_CONCLUSION}"
+                fi
+              done
+              break
+            fi
+
+            sleep 60
+          done
+
+          # ── Phase 3: Handle timeout ─────────────────────────────────────────
+          if [[ -z "$OVERALL_CONCLUSION" || "$OVERALL_CONCLUSION" == "null" ]]; then
+            OVERALL_CONCLUSION="timed_out"
+            echo "Timed out — marking remaining open check runs."
+            for JOB_NAME in "${!JOB_CHECK_RUN_IDS[@]}"; do
+              if [[ -z "${JOB_DONE[$JOB_NAME]}" ]]; then
+                CR_ID="${JOB_CHECK_RUN_IDS[$JOB_NAME]}"
+                gh api \
+                  -X PATCH \
+                  "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
+                  -f status="completed" \
+                  -f conclusion="timed_out" \
+                  -f output[title]="Timed out: ${JOB_NAME}" \
+                  -f output[summary]="The polling window expired before job '${JOB_NAME}' completed. [View job](${JOB_URLS[$JOB_NAME]})"
+              fi
+            done
+          fi
+
+          # Exit non-zero so the upstream PR shows a red check if CI did not pass.
+          if [[ "$OVERALL_CONCLUSION" != "success" ]]; then
+            exit 1
+          fi
