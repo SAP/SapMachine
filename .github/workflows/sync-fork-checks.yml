@@ -38,7 +38,7 @@ on:
       - reopened
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -265,3 +265,22 @@ jobs:
           if [[ "$OVERALL_CONCLUSION" != "success" ]]; then
             exit 1
           fi
+
+      - name: 'Cancel dangling check runs on cancellation'
+        if: cancelled()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          UPSTREAM_REPO: ${{ github.repository }}
+        run: |
+          echo "Job was cancelled — marking all in-progress check runs for ${HEAD_SHA} as cancelled."
+          gh api "repos/${UPSTREAM_REPO}/check-runs?head_sha=${HEAD_SHA}&per_page=100" \
+            --jq '.check_runs[] | select(.status != "completed") | .id' | \
+          while read -r CR_ID; do
+            echo "  Cancelling check run ${CR_ID}"
+            gh api -X PATCH "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
+              -f status="completed" \
+              -f conclusion="cancelled" \
+              -f output[title]="Cancelled" \
+              -f output[summary]="This check was cancelled because a newer run superseded it."
+          done
