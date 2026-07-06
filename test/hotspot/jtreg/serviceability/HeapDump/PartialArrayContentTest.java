@@ -120,7 +120,7 @@ public class PartialArrayContentTest {
         Asserts.assertEquals(1L, countTags(dumpFile, 0x2c), "Must have one end segment");
         // Create a dump with an array > 2GB to check for integer overflows in the partial array code.
         createDump(dumpFile, false,
-                "-Xmx2500M",  // Ensures the 2 billion entry short array is in the heap dump.
+                "-Xmx2700M",  // Ensures the 2 billion entry short array is in the heap dump.
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=" + dumpFile,
                 "-XX:+HeapDumpOverwrite",
