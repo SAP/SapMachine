@@ -139,6 +139,17 @@ jobs:
               job_url=$(echo "$jobs_json"        | jq -r ".jobs[$i].html_url")
               JOB_URLS[$job_name]="$job_url"
 
+              # Never mirror skipped/neutral jobs to the upstream PR. The status
+              # API cannot delete a status once posted, so the only way to hide
+              # these is to never post one. Skipped jobs are 'completed' from
+              # the first poll (they never enter 'in_progress'), so this fires
+              # before any pending status is created.
+              if [[ "$job_status" == "completed" ]]; then
+                case "$job_conclusion" in
+                  skipped|neutral) continue ;;
+                esac
+              fi
+
               # Post a pending status the first time we see a job.
               if [[ -z "${JOB_PENDING[$job_name]}" && -z "${JOB_DONE[$job_name]}" ]]; then
                 echo "  Pending status: ${job_name}"
