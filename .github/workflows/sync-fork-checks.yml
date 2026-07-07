@@ -36,14 +36,18 @@ on:
       - opened
       - synchronize
       - reopened
+    # Mirror main.yml's paths-ignore: docs-only PRs never trigger fork CI, so
+    # skipping this workflow avoids polling for a run that will never appear.
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
-  checks: write
-  pull-requests: read
+  statuses: write
 
 jobs:
   mirror:
@@ -52,15 +56,36 @@ jobs:
     # Only act on fork PRs — same-repo PRs get CI directly from main.yml.
     if: github.event.pull_request.head.repo.full_name != github.repository
     steps:
-      - name: 'Poll fork CI and mirror per-job results'
+      - name: 'Poll fork CI and mirror per-job results as commit statuses'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
           FORK_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           UPSTREAM_REPO: ${{ github.repository }}
         run: |
+          # Post (or overwrite) a commit status on the PR head SHA. Statuses are
+          # keyed purely by SHA + context, so — unlike API-created check runs —
+          # they reliably re-appear on the PR when it is closed and reopened
+          # without a new push.
+          post_status() {
+            local context="$1" state="$2" desc="$3" url="$4"
+            gh api -X POST "repos/${UPSTREAM_REPO}/statuses/${HEAD_SHA}" \
+              -f state="${state}" \
+              -f context="${context}" \
+              -f description="${desc:0:140}" \
+              -f target_url="${url}" >/dev/null
+          }
+
+          # Map a fork job conclusion to a commit-status state.
+          # Allowed status states: error | failure | pending | success.
+          map_state() {
+            case "$1" in
+              success) echo "success" ;;
+              failure) echo "failure" ;;
+              *)       echo "error"   ;;
+            esac
+          }
+
           # ── Phase 1: Wait for the fork workflow run to appear ───────────────
           # The fork may not have triggered its CI yet immediately after push.
           MAX_WAIT=20
@@ -81,21 +106,6 @@ jobs:
               break
             fi
 
-            # Fallback for reopened PRs: no new run may exist for HEAD_SHA,
-            # so locate the latest pull_request run for this PR number/branch.
-            RUN_ID=$(gh api \
-              "repos/${FORK_REPO}/actions/runs?event=pull_request&branch=${HEAD_REF}&per_page=50" \
-              --jq '.workflow_runs[]
-                | select(.name == "SapMachine GHA Sanity Checks")
-                | select(any(.pull_requests[]?; .number == ('"${PR_NUMBER}"' | tonumber)))
-                | .id' \
-              2>/dev/null | head -1)
-
-            if [[ -n "$RUN_ID" && "$RUN_ID" != "null" ]]; then
-              echo "Found workflow run on fork via PR fallback: ${RUN_ID}"
-              break
-            fi
-
             sleep 60
           done
 
@@ -104,83 +114,57 @@ jobs:
             exit 1
           fi
 
-          # ── Phase 2: Mirror each fork job as an upstream Check Run ──────────
-          # job name → upstream check run ID
-          declare -A JOB_CHECK_RUN_IDS
-          # job name → '1' once the check run has been finalized
-          declare -A JOB_DONE
-          # job name → fork job HTML URL
-          declare -A JOB_URLS
+          # ── Phase 2: Mirror each fork job as a commit status ───────────────
+          declare -A JOB_DONE      # job name → '1' once finalized
+          declare -A JOB_PENDING   # job name → '1' once a pending status posted
+          declare -A JOB_URLS      # job name → fork job HTML URL
 
           MAX_POLL=180
           POLL=0
           OVERALL_CONCLUSION=""
 
+          # Sync the current fork job states into upstream commit statuses.
+          sync_jobs() {
+            local jobs_json job_count i job_name job_status job_conclusion job_url state
+            jobs_json=$(gh api \
+              "repos/${FORK_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+              2>/dev/null)
+            [[ -z "$jobs_json" ]] && return
+
+            job_count=$(echo "$jobs_json" | jq '.jobs | length')
+            for i in $(seq 0 $((job_count - 1))); do
+              job_name=$(echo "$jobs_json"       | jq -r ".jobs[$i].name")
+              job_status=$(echo "$jobs_json"     | jq -r ".jobs[$i].status")
+              job_conclusion=$(echo "$jobs_json" | jq -r ".jobs[$i].conclusion")
+              job_url=$(echo "$jobs_json"        | jq -r ".jobs[$i].html_url")
+              JOB_URLS[$job_name]="$job_url"
+
+              # Post a pending status the first time we see a job.
+              if [[ -z "${JOB_PENDING[$job_name]}" && -z "${JOB_DONE[$job_name]}" ]]; then
+                echo "  Pending status: ${job_name}"
+                post_status "${job_name}" "pending" \
+                  "Fork job in progress…" "${job_url}"
+                JOB_PENDING[$job_name]=1
+              fi
+
+              # Finalize any job that has completed since the last poll.
+              if [[ "$job_status" == "completed" && -z "${JOB_DONE[$job_name]}" ]]; then
+                # Guard against null conclusion (e.g. cancelled mid-queue).
+                [[ -z "$job_conclusion" || "$job_conclusion" == "null" ]] && job_conclusion="cancelled"
+                state=$(map_state "$job_conclusion")
+                echo "  ✓ Finalized ${job_name}: ${job_conclusion} → ${state}"
+                post_status "${job_name}" "${state}" \
+                  "Fork job reported '${job_conclusion}'." "${job_url}"
+                JOB_DONE[$job_name]=1
+              fi
+            done
+          }
+
           while [[ $POLL -lt $MAX_POLL ]]; do
             POLL=$((POLL + 1))
             echo "Poll ${POLL}/${MAX_POLL} — syncing fork job statuses..."
 
-            JOBS_JSON=$(gh api \
-              "repos/${FORK_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
-              2>/dev/null)
-
-            if [[ -z "$JOBS_JSON" ]]; then
-              sleep 60
-              continue
-            fi
-
-            JOB_COUNT=$(echo "$JOBS_JSON" | jq '.jobs | length')
-
-            for i in $(seq 0 $((JOB_COUNT - 1))); do
-              JOB_NAME=$(echo "$JOBS_JSON"       | jq -r ".jobs[$i].name")
-              JOB_STATUS=$(echo "$JOBS_JSON"     | jq -r ".jobs[$i].status")
-              JOB_CONCLUSION=$(echo "$JOBS_JSON" | jq -r ".jobs[$i].conclusion")
-              JOB_URL=$(echo "$JOBS_JSON"        | jq -r ".jobs[$i].html_url")
-
-              # Create a Check Run for this job the first time we see it.
-              JOB_URLS[$JOB_NAME]="$JOB_URL"
-              if [[ -z "${JOB_CHECK_RUN_IDS[$JOB_NAME]}" ]]; then
-                echo "  Creating check run: ${JOB_NAME}"
-                CR_ID=$(gh api \
-                  -X POST \
-                  "repos/${UPSTREAM_REPO}/check-runs" \
-                  -f name="${JOB_NAME}" \
-                  -f head_sha="${HEAD_SHA}" \
-                  -f status="in_progress" \
-                  -f output[title]="Waiting for fork job: ${JOB_NAME}" \
-                  -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}. [View job](${JOB_URL})" \
-                  --jq '.id')
-                JOB_CHECK_RUN_IDS[$JOB_NAME]=$CR_ID
-                echo "    → check run ID: ${CR_ID}"
-              fi
-
-              # Finalize any job that has completed since the last poll.
-              if [[ "$JOB_STATUS" == "completed" && -z "${JOB_DONE[$JOB_NAME]}" ]]; then
-                CR_ID="${JOB_CHECK_RUN_IDS[$JOB_NAME]}"
-                # Guard against null conclusion (e.g. cancelled mid-queue).
-                [[ -z "$JOB_CONCLUSION" || "$JOB_CONCLUSION" == "null" ]] && JOB_CONCLUSION="cancelled"
-
-                if [[ "$JOB_CONCLUSION" == "success" ]]; then
-                  TITLE="Passed: ${JOB_NAME}"
-                  SUMMARY="Job **${JOB_NAME}** passed on the fork. [View job](${JOB_URL})"
-                else
-                  TITLE="${JOB_CONCLUSION^}: ${JOB_NAME}"
-                  SUMMARY="Job **${JOB_NAME}** reported **${JOB_CONCLUSION}** on the fork. [View job](${JOB_URL})"
-                fi
-
-                gh api \
-                  -X PATCH \
-                  "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
-                  -f status="completed" \
-                  -f conclusion="${JOB_CONCLUSION}" \
-                  -f output[title]="${TITLE}" \
-                  -f output[summary]="${SUMMARY}" \
-                  -f details_url="${JOB_URL}"
-
-                JOB_DONE[$JOB_NAME]=1
-                echo "  ✓ Finalized ${JOB_NAME}: ${JOB_CONCLUSION}"
-              fi
-            done
+            sync_jobs
 
             # Check whether the overall run has finished.
             RUN_JSON=$(gh api \
@@ -193,50 +177,8 @@ jobs:
 
             if [[ "$RUN_STATUS" == "completed" ]]; then
               echo "Workflow run on fork completed with conclusion: ${OVERALL_CONCLUSION}"
-              # Do one final job sync to catch any jobs that finished in this last window.
-              JOBS_JSON=$(gh api \
-                "repos/${FORK_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
-                2>/dev/null)
-              JOB_COUNT=$(echo "$JOBS_JSON" | jq '.jobs | length')
-              for i in $(seq 0 $((JOB_COUNT - 1))); do
-                JOB_NAME=$(echo "$JOBS_JSON"       | jq -r ".jobs[$i].name")
-                JOB_STATUS=$(echo "$JOBS_JSON"     | jq -r ".jobs[$i].status")
-                JOB_CONCLUSION=$(echo "$JOBS_JSON" | jq -r ".jobs[$i].conclusion")
-                JOB_URL=$(echo "$JOBS_JSON"        | jq -r ".jobs[$i].html_url")
-                if [[ -z "${JOB_CHECK_RUN_IDS[$JOB_NAME]}" ]]; then
-                  CR_ID=$(gh api \
-                    -X POST \
-                    "repos/${UPSTREAM_REPO}/check-runs" \
-                    -f name="${JOB_NAME}" \
-                    -f head_sha="${HEAD_SHA}" \
-                    -f status="in_progress" \
-                    -f output[title]="Waiting for fork job: ${JOB_NAME}" \
-                    -f output[summary]="Polling fork repository for job '${JOB_NAME}' on commit ${HEAD_SHA}. [View job](${JOB_URL})" \
-                    --jq '.id')
-                  JOB_CHECK_RUN_IDS[$JOB_NAME]=$CR_ID
-                fi
-                if [[ "$JOB_STATUS" == "completed" && -z "${JOB_DONE[$JOB_NAME]}" ]]; then
-                  CR_ID="${JOB_CHECK_RUN_IDS[$JOB_NAME]}"
-                  [[ -z "$JOB_CONCLUSION" || "$JOB_CONCLUSION" == "null" ]] && JOB_CONCLUSION="cancelled"
-                  if [[ "$JOB_CONCLUSION" == "success" ]]; then
-                    TITLE="Passed: ${JOB_NAME}"
-                    SUMMARY="Job **${JOB_NAME}** passed on the fork. [View job](${JOB_URL})"
-                  else
-                    TITLE="${JOB_CONCLUSION^}: ${JOB_NAME}"
-                    SUMMARY="Job **${JOB_NAME}** reported **${JOB_CONCLUSION}** on the fork. [View job](${JOB_URL})"
-                  fi
-                  gh api \
-                    -X PATCH \
-                    "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
-                    -f status="completed" \
-                    -f conclusion="${JOB_CONCLUSION}" \
-                    -f output[title]="${TITLE}" \
-                    -f output[summary]="${SUMMARY}" \
-                    -f details_url="${JOB_URL}"
-                  JOB_DONE[$JOB_NAME]=1
-                  echo "  ✓ Finalized ${JOB_NAME}: ${JOB_CONCLUSION}"
-                fi
-              done
+              # Do one final job sync to catch jobs that finished in this last window.
+              sync_jobs
               break
             fi
 
@@ -246,17 +188,12 @@ jobs:
           # ── Phase 3: Handle timeout ─────────────────────────────────────────
           if [[ -z "$OVERALL_CONCLUSION" || "$OVERALL_CONCLUSION" == "null" ]]; then
             OVERALL_CONCLUSION="timed_out"
-            echo "Timed out — marking remaining open check runs."
-            for JOB_NAME in "${!JOB_CHECK_RUN_IDS[@]}"; do
+            echo "Timed out — marking unfinished jobs as errored."
+            for JOB_NAME in "${!JOB_PENDING[@]}"; do
               if [[ -z "${JOB_DONE[$JOB_NAME]}" ]]; then
-                CR_ID="${JOB_CHECK_RUN_IDS[$JOB_NAME]}"
-                gh api \
-                  -X PATCH \
-                  "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
-                  -f status="completed" \
-                  -f conclusion="timed_out" \
-                  -f output[title]="Timed out: ${JOB_NAME}" \
-                  -f output[summary]="The polling window expired before job '${JOB_NAME}' completed. [View job](${JOB_URLS[$JOB_NAME]})"
+                post_status "${JOB_NAME}" "error" \
+                  "Polling window expired before the fork job completed." \
+                  "${JOB_URLS[$JOB_NAME]}"
               fi
             done
           fi
@@ -266,21 +203,32 @@ jobs:
             exit 1
           fi
 
-      - name: 'Cancel dangling check runs on cancellation'
+      # Runs only when the workflow is cancelled — either superseded by the
+      # concurrency group (a new push/reopen for the same PR) or cancelled
+      # manually by a maintainer from the Actions UI. The poll step above is
+      # killed abruptly and never reaches its cleanup, so any statuses it left
+      # as 'pending' would otherwise block the PR forever. This step re-reads
+      # the current statuses on the head SHA and flips any that are still
+      # 'pending' to 'error'.
+      - name: 'Mark unfinished mirrored statuses as errored on cancellation'
         if: cancelled()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           UPSTREAM_REPO: ${{ github.repository }}
         run: |
-          echo "Job was cancelled — marking all in-progress check runs for ${HEAD_SHA} as cancelled."
-          gh api "repos/${UPSTREAM_REPO}/check-runs?head_sha=${HEAD_SHA}&per_page=100" \
-            --jq '.check_runs[] | select(.status != "completed") | .id' | \
-          while read -r CR_ID; do
-            echo "  Cancelling check run ${CR_ID}"
-            gh api -X PATCH "repos/${UPSTREAM_REPO}/check-runs/${CR_ID}" \
-              -f status="completed" \
-              -f conclusion="cancelled" \
-              -f output[title]="Cancelled" \
-              -f output[summary]="This check was cancelled because a newer run superseded it."
+          echo "Run cancelled — marking any pending mirrored statuses as errored."
+          # The combined status endpoint returns the latest status per context.
+          # Carry over each pending status's target_url so the "Details" link
+          # back to the fork job is preserved on the errored status.
+          gh api "repos/${UPSTREAM_REPO}/commits/${HEAD_SHA}/status" \
+            --jq '.statuses[] | select(.state == "pending") | [.context, .target_url] | @tsv' \
+            2>/dev/null | while IFS=$'\t' read -r context url; do
+            [[ -z "$context" ]] && continue
+            echo "  Marking cancelled: ${context}"
+            gh api -X POST "repos/${UPSTREAM_REPO}/statuses/${HEAD_SHA}" \
+              -f state="error" \
+              -f context="${context}" \
+              -f description="Mirror run was cancelled before this job completed." \
+              -f target_url="${url}" >/dev/null
           done
