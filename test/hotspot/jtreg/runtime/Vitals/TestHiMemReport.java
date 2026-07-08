@@ -96,10 +96,10 @@ public class TestHiMemReport {
 
     static void testPrint() throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
+                "-XX:+HiMemReport", "-XX:HiMemReportMax=64m",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xlog:vitals=trace", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
-                "-Xmx128m", "-Xms64m", "-XX:+AlwaysPreTouch",
+                "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
                 "sleep", "2" // num seconds to sleep to give the reporter thread time to generate output
         );
@@ -116,11 +116,11 @@ public class TestHiMemReport {
 
     static void testDump() throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
+                "-XX:+HiMemReport", "-XX:HiMemReportMax=64m",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xlog:vitals=trace", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-XX:HiMemReportDir=himemreport-1",
-                "-Xmx128m", "-Xms64m", "-XX:+AlwaysPreTouch",
+                "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
                 "sleep", "2" // num seconds to sleep to give the reporter thread time to generate output
                 );
