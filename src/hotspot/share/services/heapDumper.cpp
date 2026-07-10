@@ -559,22 +559,22 @@ void DumpWriter::write_id(u4 x) {
 
 // SapMachine 2026-06-16: Writes zeros to the buffer.
 void DumpWriter::write_zero(size_t len) {
-    assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
-    DEBUG_ONLY(_sub_record_left -= len);
+  assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
+  DEBUG_ONLY(_sub_record_left -= len);
 
-    // flush buffer to make room.
-    while (len > buffer_size() - position()) {
-        assert(!_in_dump_segment || _is_huge_sub_record,
-            "Cannot overflow in non-huge sub-record.");
-        size_t to_write = buffer_size() - position();
-        memset(buffer() + position(), 0, to_write);
-        len -= to_write;
-        set_position(position() + to_write);
-        flush();
-    }
+  // flush buffer to make room.
+  while (len > buffer_size() - position()) {
+    assert(!_in_dump_segment || _is_huge_sub_record,
+           "Cannot overflow in non-huge sub-record.");
+    size_t to_write = buffer_size() - position();
+    memset(buffer() + position(), 0, to_write);
+    len -= to_write;
+    set_position(position() + to_write);
+    flush();
+ }
 
-    memset(buffer() + position(), 0, len);
-    set_position(position() + len);
+  memset(buffer() + position(), 0, len);
+  set_position(position() + len);
 }
 
 // We use java mirror as the class ID
