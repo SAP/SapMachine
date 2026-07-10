@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.controldependency;
 
 /*
  * @test
- * @bug 8261235
- * @requires vm.compiler1.enabled
- * @summary Tests custom bytecode which requires too many virtual registers in the linear scan of C1.
- *          The test should bail out in C1.
+ * @bug 8385420
+ * @summary C2 correctly handles the case when the removed CastPPNode has a CMove use.
+ * @run main ${test.main.class}
+ * @run main/othervm -Xbatch -XX:CompileOnly=${test.main.class}::test
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM ${test.main.class}
  *
- * @compile TestTooManyVirtualRegisters.jasm
- * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,compiler.c1.TestTooManyVirtualRegisters::*
- *                   ${test.main.class}
  */
-
-package compiler.c1;
-
-public class TestTooManyVirtualRegistersMain {
+public class TestRemoveCastPPWithCMoveUse {
     public static void main(String[] args) {
-        for (char i = 0; i < 10000; i++) {
-            TestTooManyVirtualRegisters.test(i);
+        for (int i = 0; i < 10_000; i++) {
+            test(null, false);
+            test(null, true);
+            test("", false);
+            test("", true);
         }
     }
-}
 
+    static int test(String a, boolean flag) {
+        StringBuilder sb = new StringBuilder();
+        if (a == null) {
+            sb.append("");
+        } else {
+            sb.append(flag ? a : "");
+        }
+        return sb.length();
+    }
+}
