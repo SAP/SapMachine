@@ -53,6 +53,10 @@ jobs:
   mirror:
     name: 'Sync Actions from Fork'
     runs-on: ubuntu-24.04
+    # Cap below GitHub's 6h hard limit so the poll step's own deadline (see
+    # MAX_TOTAL_MINUTES below) and the Phase 3 cleanup always run before the
+    # runner is forcibly killed.
+    timeout-minutes: 350
     # Only act on fork PRs — same-repo PRs get CI directly from main.yml.
     if: github.event.pull_request.head.repo.full_name != github.repository
     steps:
@@ -85,6 +89,14 @@ jobs:
               *)       echo "error"   ;;
             esac
           }
+
+          # Overall wall-clock budget for this step. Fork sanity runs can take
+          # ~5h end-to-end (jobs queue behind limited runners), far longer than
+          # a fixed poll count would cover, so we poll against a deadline sized
+          # just under the job's timeout-minutes. SECONDS is the bash builtin
+          # counting elapsed time since the shell started.
+          MAX_TOTAL_MINUTES=340
+          DEADLINE=$(( SECONDS + MAX_TOTAL_MINUTES * 60 ))
 
           # ── Phase 1: Wait for the fork workflow run to appear ───────────────
           # The fork may not have triggered its CI yet immediately after push.
@@ -119,8 +131,6 @@ jobs:
           declare -A JOB_PENDING   # job name → '1' once a pending status posted
           declare -A JOB_URLS      # job name → fork job HTML URL
 
-          MAX_POLL=180
-          POLL=0
           OVERALL_CONCLUSION=""
 
           # Sync the current fork job states into upstream commit statuses.
@@ -171,9 +181,9 @@ jobs:
             done
           }
 
-          while [[ $POLL -lt $MAX_POLL ]]; do
-            POLL=$((POLL + 1))
-            echo "Poll ${POLL}/${MAX_POLL} — syncing fork job statuses..."
+          # Poll until the fork run completes or the wall-clock budget is spent.
+          while [[ $SECONDS -lt $DEADLINE ]]; do
+            echo "Poll at ${SECONDS}s / ${MAX_TOTAL_MINUTES}m budget — syncing fork job statuses..."
 
             sync_jobs
 
@@ -203,7 +213,7 @@ jobs:
             for JOB_NAME in "${!JOB_PENDING[@]}"; do
               if [[ -z "${JOB_DONE[$JOB_NAME]}" ]]; then
                 post_status "${JOB_NAME}" "error" \
-                  "Polling window expired before the fork job completed." \
+                  "Fork run still in progress when the mirror's ${MAX_TOTAL_MINUTES}m polling budget expired." \
                   "${JOB_URLS[$JOB_NAME]}"
               fi
             done
