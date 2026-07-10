@@ -98,8 +98,9 @@ public class TestHiMemReport {
 
     static void testPrint() throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
+                "-XX:+HiMemReport", "-XX:HiMemReportMax=64m",
                 "-XX:NativeMemoryTracking=summary",
+                "-Xlog:vitals=trace", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
                 "sleep", "2" // num seconds to sleep to give the reporter thread time to generate output
@@ -117,8 +118,9 @@ public class TestHiMemReport {
 
     static void testDump() throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
+                "-XX:+HiMemReport", "-XX:HiMemReportMax=64m",
                 "-XX:NativeMemoryTracking=summary",
+                "-Xlog:vitals=trace", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-XX:HiMemReportDir=himemreport-1",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
@@ -150,8 +152,9 @@ public class TestHiMemReport {
         String reportDirName = "himemreport-2";
         // Here we not only dump, but we also execute several jcmds. Therefore we take some more seconds to sleep
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
+                "-XX:+HiMemReport", "-XX:HiMemReportMax=64m",
                 "-XX:HiMemReportDir=himemreport-2",
+                "-Xlog:vitals=trace", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders;GC.heap_dump",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
@@ -206,7 +209,7 @@ public class TestHiMemReport {
                 ".*HiMemReport *= *true.*",
                 ".*HiMemReportDir *= *himemreport-2.*",
                 ".*HiMemReportExec *= *VM.flags.*VM.metaspace.*GC.heap_dump.*",
-                ".*HiMemReportMax *= *134217728.*"
+                ".*HiMemReportMax *= *67108864.*"
         });
 
         // "VM.metaspace":
@@ -257,8 +260,9 @@ public class TestHiMemReport {
     // Test multiple Execs, with the output of the commands going to stderr
     static void testDumpWithExecToStderr() throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportMax=128m",
+                "-XX:+HiMemReport", "-XX:HiMemReportMax=64m",
                 "-XX:HiMemReportExec=VM.flags -all;VM.metaspace show-loaders",
+                "-Xlog:vitals=trace", "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
@@ -278,7 +282,7 @@ public class TestHiMemReport {
         // ... as well as the output of VM.flags
         line = VitalsUtils.matchPatterns(lines, line + 1, new String [] {
                         ".*HiMemReport *= *true.*",
-                        ".*HiMemReportMax *= *134217728.*",
+                        ".*HiMemReportMax *= *67108864.*",
                         "HiMemReport: Successfully executed \"VM.flags -all\" \\(\\d+ ms\\)"
         });
 
@@ -304,7 +308,8 @@ public class TestHiMemReport {
      */
     static void testHasNaturalMax() throws IOException {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-Xlog:vitals", "-Xmx64m", "-version");
+                "-XX:+PrintVitalsAtExit", "-XX:VitalsSampleInterval=1",
+                "-XX:+HiMemReport", "-Xlog:vitals=trace", "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldNotMatch("HiMemReport.*limit could not be established");
