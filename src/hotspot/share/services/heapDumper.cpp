@@ -571,7 +571,7 @@ void DumpWriter::write_zero(size_t len) {
     len -= to_write;
     set_position(position() + to_write);
     flush();
- }
+  }
 
   memset(buffer() + position(), 0, len);
   set_position(position() + len);
@@ -1223,17 +1223,17 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
   int fill_with_zero = 0;
 
   if (LimitPrimitiveArrayContentInHeapDump) {
-      int limit = ArrayContentSizeLimitInHeapDump;
+    int limit = ArrayContentSizeLimitInHeapDump;
 
-      if (type == T_BYTE || type == T_CHAR) {
-          limit = StringLikeContentSizeLimitInHeapDump;
-      }
+    if (type == T_BYTE || type == T_CHAR) {
+      limit = StringLikeContentSizeLimitInHeapDump;
+    }
 
-      if (length > limit) {
-          fill_with_zero = length - limit;
-          length = limit;
-          length_in_bytes = (u4)length * type_size;
-      }
+    if (length > limit) {
+      fill_with_zero = length - limit;
+      length = limit;
+      length_in_bytes = (u4)length * type_size;
+    }
   }
 
   // If the byte ordering is big endian then we can copy most types directly
@@ -1305,7 +1305,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
 
   // SapMachine 2026-06-16: Fill with zeros, if we don't dump the whole content of the array.
   if (fill_with_zero > 0) {
-      writer->write_zero((u4)fill_with_zero * type_size);
+    writer->write_zero((u4)fill_with_zero * type_size);
   }
 
   writer->end_sub_record();
