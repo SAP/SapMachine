@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2125,6 +2125,11 @@ final class FdLibm {
         }
 
         public static double compute(final double x, final double y) {
+            return compute(x, y, true);
+        }
+
+        public static double compute(final double x, final double y,
+                                     boolean fdlibm53compat) {
             double z;
             double r, s, t, u, v, w;
             int i, j, k, n;
@@ -2207,8 +2212,15 @@ final class FdLibm {
             // |y| is huge
             if (y_abs > 0x1.00000_ffff_ffffp31) { // if |y| > ~2**31
                 final double INV_LN2   =  0x1.7154_7652_b82fep0;   //  1.44269504088896338700e+00 = 1/ln2
-                final double INV_LN2_H =  0x1.715476p0;            //  1.44269502162933349609e+00 = 24 bits of 1/ln2
-                final double INV_LN2_L =  0x1.4ae0_bf85_ddf44p-26; //  1.92596299112661746887e-08 = 1/ln2 tail
+                double INV_LN2_H;
+                double INV_LN2_L;
+                if (fdlibm53compat) {
+                    INV_LN2_H =  0x1.715476p0;            //  1.44269502162933349609e+00 = 24 bits of 1/ln2
+                    INV_LN2_L =  0x1.4ae0_bf85_ddf44p-26; //  1.92596299112661746887e-08 = 1/ln2 tail
+                } else {
+                    INV_LN2_H =  0x1.7154_7p+0;           //  1.4426946640014648438      = 21 bits of 1/ln2
+                    INV_LN2_L =  0x1.94ae_0bf8_5ddf4p-22; //  3.7688749856360991145e-07  = 1/ln2 tail
+                }
 
                 // Over/underflow if x is not close to one
                 if (x_abs < 0x1.fffff_0000_0000p-1) // |x| < ~0.9999995231628418
