@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,40 +21,31 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8273359
+ * @bug 8382536
+ * @summary C2: sharpen_type_after_if: assert(val->find_edge(con) > 0) failed: mismatch
  *
- * @modules java.base/jdk.internal.misc:+open
- * @run main/othervm -Xbatch compiler.unsafe.AlignmentGapAccess
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  */
+package compiler.types;
 
-package compiler.unsafe;
+public class TestSubTypeCheckConstantCastII {
+    static class A {}
 
-import jdk.internal.misc.Unsafe;
+    static boolean isInstanceOfA(Object obj) {
+        return (obj instanceof A);
+    }
 
-public class AlignmentGapAccess {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
-    static class A           { int  fa; }
-    static class B extends A { byte fb; }
-    static class C extends B { int  fc; }
-
-    static final long FA_OFFSET = UNSAFE.objectFieldOffset(A.class, "fa");
-    static final long FB_OFFSET = UNSAFE.objectFieldOffset(B.class, "fb");
-    static final long FC_OFFSET = UNSAFE.objectFieldOffset(C.class, "fc");
-
-    static int test(B obj) {
-        return UNSAFE.getInt(obj, FB_OFFSET + 1);
+    static void test(boolean b, Object obj) {
+        if (b) {
+            return;
+        }
+        // b == false
+        if (b != isInstanceOfA(obj)) {}
     }
 
     public static void main(String[] args) {
-        System.out.printf("Layout: +%d: fa; +%d: fb; +%d: fc\n",
-                          FA_OFFSET, FB_OFFSET, FC_OFFSET);
-
-        for (int i = 0; i < 20_000; i++) {
-            test(new C());
-        }
-        System.out.println("TEST PASSED");
+        test(true, new A());
     }
 }
