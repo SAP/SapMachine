@@ -101,6 +101,7 @@ public:
     char* endptr = NULL;
     value = (value_t)::strtoll(text, &endptr, 10);
     if (endptr == text || errno != 0) {
+      log_debug(vitals, os)("Failed to parse \"%s\"", text);
       value = INVALID_VALUE;
     } else {
       value *= scale;
@@ -124,7 +125,10 @@ public:
     if (s != NULL) {
       errno = 0;
       const char* p = s + ::strlen(prefix);
-      return as_value(p, scale);
+      value = as_value(p, scale);
+      log_trace(vitals, os)("Reading \"%s\": %llu", prefix, (unsigned long long) value);
+    } else {
+      log_debug(vitals, os)("Could not find prefix \"%s\"", prefix);
     }
     return value;
   }

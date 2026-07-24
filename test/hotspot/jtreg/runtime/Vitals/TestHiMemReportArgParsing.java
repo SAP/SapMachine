@@ -78,8 +78,8 @@ public class TestHiMemReportArgParsing {
         File subdir = VitalsUtils.createSubTestDir("test-outputdir-1", false);
         VitalsUtils.fileShouldNotExist(subdir);
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(), "-Xlog:vitals",
-                "-Xmx64m", "-version");
+                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(),
+                "-Xlog:vitals=trace,vitals+os=trace", "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
@@ -97,8 +97,8 @@ public class TestHiMemReportArgParsing {
         File subdir = VitalsUtils.createSubTestDir("test-outputdir-2", true);
         VitalsUtils.fileShouldExist(subdir);
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(), "-Xlog:vitals",
-                "-Xmx64m", "-version");
+                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + subdir.getAbsolutePath(),
+                "-Xlog:vitals=trace,vitals+os=trace", "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
         output.shouldHaveExitValue(0);
@@ -117,8 +117,8 @@ public class TestHiMemReportArgParsing {
         File f = new File("/tmp/gibsnicht/gibsnicht/gibsnicht");
         VitalsUtils.fileShouldNotExist(f);
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + f.getAbsolutePath(), "-Xlog:vitals",
-                "-Xmx64m", "-version");
+                "-XX:+HiMemReport", "-XX:HiMemReportDir=" + f.getAbsolutePath(),
+                "-Xlog:vitals=trace,vitals+os=trace", "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
         output.shouldNotHaveExitValue(0);
@@ -134,7 +134,7 @@ public class TestHiMemReportArgParsing {
      */
     static void testHiMemReportOn() throws IOException {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+HiMemReport", "-Xlog:vitals",
+                "-XX:+HiMemReport", "-Xlog:vitals=trace,vitals+os=trace",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
@@ -150,7 +150,7 @@ public class TestHiMemReportArgParsing {
      */
     static void testHiMemReportOff() throws IOException {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:-HiMemReport", "-Xlog:vitals",
+                "-XX:-HiMemReport", "-Xlog:vitals=trace,vitals+os=trace",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
@@ -163,7 +163,7 @@ public class TestHiMemReportArgParsing {
      */
     static void testHiMemReportOffByDefault() throws IOException {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-Xlog:vitals",
+                "-Xlog:vitals=trace,vitals+os=trace",
                 "-Xmx64m", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.reportDiagnosticSummary();
