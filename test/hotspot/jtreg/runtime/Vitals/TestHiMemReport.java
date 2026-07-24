@@ -159,7 +159,7 @@ public class TestHiMemReport {
                 "-XX:NativeMemoryTracking=summary",
                 "-Xmx128m", "-Xms128m", "-XX:+AlwaysPreTouch",
                 TestHiMemReport.class.getName(),
-                "sleep", "12" // num seconds to sleep to give the reporter thread time to generate output
+                "sleep", "30" // num seconds to sleep to give the reporter thread time to generate output
         );
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
