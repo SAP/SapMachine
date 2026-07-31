@@ -43,7 +43,7 @@ import jdk.test.lib.hprof.parser.Reader;
  * @requires os.maxMemory > 4G
  * @requires !jdk.static
  * @library /test/lib
- * @run driver PartialArrayContentTest jmc
+ * @run driver PartialArrayContentTest jcmd
  */
 
 /*
@@ -100,7 +100,7 @@ public class PartialArrayContentTest {
     private static int nonCharLikeLimit = 50;
 
     public static void main(String[] args) throws Exception {
-        if (args[0].equals("jmc")) {
+        if (args[0].equals("jcmd")) {
             checkPartialContentWithJcmd();
         } else {
             checkPartialContentWithOOM();
