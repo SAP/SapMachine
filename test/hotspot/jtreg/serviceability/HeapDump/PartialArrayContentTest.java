@@ -41,8 +41,17 @@ import jdk.test.lib.hprof.parser.Reader;
  * @test
  * @summary Checks if -XX:+LimitPrimitiveArrayContentInHeapDump works.
  * @requires os.maxMemory > 4G
+ * @requires !jdk.static
  * @library /test/lib
- * @run driver PartialArrayContentTest
+ * @run driver PartialArrayContentTest jcmd
+ */
+
+/*
+ * @test
+ * @summary Checks if -XX:+LimitPrimitiveArrayContentInHeapDump works.
+ * @requires os.maxMemory > 4G
+ * @library /test/lib
+ * @run driver PartialArrayContentTest oom
  */
 class ArrayAllocApp extends LingeredApp {
     public static int arraySize = 54321;
@@ -91,8 +100,11 @@ public class PartialArrayContentTest {
     private static int nonCharLikeLimit = 50;
 
     public static void main(String[] args) throws Exception {
-        checkPartialContentWithJcmd();
-        checkPartialContentWithOOM();
+        if (args[0].equals("jcmd")) {
+            checkPartialContentWithJcmd();
+        } else {
+            checkPartialContentWithOOM();
+        }
     }
 
     public static void checkPartialContentWithJcmd() throws Exception {
