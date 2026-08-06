@@ -43,6 +43,16 @@ public class ML_DSA_Test {
         }
     }
 
+    static NamedParameterSpec genParams(String pname) {
+       return switch (pname) {
+            case "ML-DSA-44" -> new NamedParameterSpec(pname);
+            case "ML-DSA-65" -> new NamedParameterSpec(pname);
+            case "ML-DSA-87" -> new NamedParameterSpec(pname);
+            default -> throw new RuntimeException("Unknown params: " + pname);
+
+        };
+    }
+
     static void keyGenTest(JSONValue kat, Provider p) throws Exception {
         var g = p == null
                 ? KeyPairGenerator.getInstance("ML-DSA")
@@ -52,7 +62,7 @@ public class ML_DSA_Test {
                 : KeyFactory.getInstance("ML-DSA", p);
         for (var t : kat.get("testGroups").asArray()) {
             var pname = t.get("parameterSet").asString();
-            var np = new NamedParameterSpec(pname);
+            var np = genParams(pname);
             System.out.println(">> " + pname);
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
