@@ -1,0 +1,255 @@
+#
+# Copyright (c) 2026 SAP SE. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Fires in the upstream repo context when a PR from a fork is opened or updated.
+# Polls the fork repo's Actions API for the "SapMachine GHA Sanity Checks"
+# run on the PR head commit, then mirrors every individual job as a native
+# Check Run on the upstream PR — matching the appearance of the fork's own
+# checks tab. No submit branches are created; no CI is re-run upstream.
+name: 'Mirror Checks from Source Fork'
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    # Mirror main.yml's paths-ignore: docs-only PRs never trigger fork CI, so
+    # skipping this workflow avoids polling for a run that will never appear.
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  statuses: write
+
+jobs:
+  mirror:
+    name: 'Sync Actions from Fork'
+    runs-on: ubuntu-24.04
+    # Cap below GitHub's 6h hard limit so the poll step's own deadline (see
+    # MAX_TOTAL_MINUTES below) and the Phase 3 cleanup always run before the
+    # runner is forcibly killed.
+    timeout-minutes: 350
+    # Only act on fork PRs — same-repo PRs get CI directly from main.yml.
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: 'Poll fork CI and mirror per-job results as commit statuses'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          FORK_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          UPSTREAM_REPO: ${{ github.repository }}
+        run: |
+          # Post (or overwrite) a commit status on the PR head SHA. Statuses are
+          # keyed purely by SHA + context, so — unlike API-created check runs —
+          # they reliably re-appear on the PR when it is closed and reopened
+          # without a new push.
+          post_status() {
+            local context="$1" state="$2" desc="$3" url="$4"
+            gh api -X POST "repos/${UPSTREAM_REPO}/statuses/${HEAD_SHA}" \
+              -f state="${state}" \
+              -f context="${context}" \
+              -f description="${desc:0:140}" \
+              -f target_url="${url}" >/dev/null
+          }
+
+          # Map a fork job conclusion to a commit-status state.
+          # Allowed status states: error | failure | pending | success.
+          map_state() {
+            case "$1" in
+              success) echo "success" ;;
+              failure) echo "failure" ;;
+              *)       echo "error"   ;;
+            esac
+          }
+
+          # Overall wall-clock budget for this step. Fork sanity runs can take
+          # ~5h end-to-end (jobs queue behind limited runners), far longer than
+          # a fixed poll count would cover, so we poll against a deadline sized
+          # just under the job's timeout-minutes. SECONDS is the bash builtin
+          # counting elapsed time since the shell started.
+          MAX_TOTAL_MINUTES=340
+          DEADLINE=$(( SECONDS + MAX_TOTAL_MINUTES * 60 ))
+
+          # ── Phase 1: Wait for the fork workflow run to appear ───────────────
+          # The fork may not have triggered its CI yet immediately after push.
+          MAX_WAIT=20
+          ATTEMPT=0
+          RUN_ID=""
+
+          while [[ $ATTEMPT -lt $MAX_WAIT ]]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Waiting for workflow run on fork (attempt ${ATTEMPT}/${MAX_WAIT})..."
+
+            RUN_ID=$(gh api \
+              "repos/${FORK_REPO}/actions/runs?head_sha=${HEAD_SHA}&per_page=10" \
+              --jq '.workflow_runs[] | select(.name == "SapMachine GHA Sanity Checks") | .id' \
+              2>/dev/null | head -1)
+
+            if [[ -n "$RUN_ID" && "$RUN_ID" != "null" ]]; then
+              echo "Found workflow run on fork: ${RUN_ID}"
+              break
+            fi
+
+            sleep 60
+          done
+
+          if [[ -z "$RUN_ID" || "$RUN_ID" == "null" ]]; then
+            echo "No workflow run found on fork within ${MAX_WAIT} minutes — giving up."
+            exit 1
+          fi
+
+          # ── Phase 2: Mirror each fork job as a commit status ───────────────
+          declare -A JOB_DONE      # job name → '1' once finalized
+          declare -A JOB_PENDING   # job name → '1' once a pending status posted
+          declare -A JOB_URLS      # job name → fork job HTML URL
+
+          OVERALL_CONCLUSION=""
+
+          # Sync the current fork job states into upstream commit statuses.
+          sync_jobs() {
+            local jobs_json job_count i job_name job_status job_conclusion job_url state
+            jobs_json=$(gh api \
+              "repos/${FORK_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+              2>/dev/null)
+            [[ -z "$jobs_json" ]] && return
+
+            job_count=$(echo "$jobs_json" | jq '.jobs | length')
+            for i in $(seq 0 $((job_count - 1))); do
+              job_name=$(echo "$jobs_json"       | jq -r ".jobs[$i].name")
+              job_status=$(echo "$jobs_json"     | jq -r ".jobs[$i].status")
+              job_conclusion=$(echo "$jobs_json" | jq -r ".jobs[$i].conclusion")
+              job_url=$(echo "$jobs_json"        | jq -r ".jobs[$i].html_url")
+              JOB_URLS[$job_name]="$job_url"
+
+              # Never mirror skipped/neutral jobs to the upstream PR. The status
+              # API cannot delete a status once posted, so the only way to hide
+              # these is to never post one. Skipped jobs are 'completed' from
+              # the first poll (they never enter 'in_progress'), so this fires
+              # before any pending status is created.
+              if [[ "$job_status" == "completed" ]]; then
+                case "$job_conclusion" in
+                  skipped|neutral) continue ;;
+                esac
+              fi
+
+              # Post a pending status the first time we see a job.
+              if [[ -z "${JOB_PENDING[$job_name]}" && -z "${JOB_DONE[$job_name]}" ]]; then
+                echo "  Pending status: ${job_name}"
+                post_status "${job_name}" "pending" \
+                  "Fork job in progress…" "${job_url}"
+                JOB_PENDING[$job_name]=1
+              fi
+
+              # Finalize any job that has completed since the last poll.
+              if [[ "$job_status" == "completed" && -z "${JOB_DONE[$job_name]}" ]]; then
+                # Guard against null conclusion (e.g. cancelled mid-queue).
+                [[ -z "$job_conclusion" || "$job_conclusion" == "null" ]] && job_conclusion="cancelled"
+                state=$(map_state "$job_conclusion")
+                echo "  ✓ Finalized ${job_name}: ${job_conclusion} → ${state}"
+                post_status "${job_name}" "${state}" \
+                  "Fork job reported '${job_conclusion}'." "${job_url}"
+                JOB_DONE[$job_name]=1
+              fi
+            done
+          }
+
+          # Poll until the fork run completes or the wall-clock budget is spent.
+          while [[ $SECONDS -lt $DEADLINE ]]; do
+            echo "Poll at ${SECONDS}s / ${MAX_TOTAL_MINUTES}m budget — syncing fork job statuses..."
+
+            sync_jobs
+
+            # Check whether the overall run has finished.
+            RUN_JSON=$(gh api \
+              "repos/${FORK_REPO}/actions/runs/${RUN_ID}" \
+              --jq '{status: .status, conclusion: .conclusion}' \
+              2>/dev/null)
+
+            RUN_STATUS=$(echo "$RUN_JSON" | jq -r '.status')
+            OVERALL_CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion')
+
+            if [[ "$RUN_STATUS" == "completed" ]]; then
+              echo "Workflow run on fork completed with conclusion: ${OVERALL_CONCLUSION}"
+              # Do one final job sync to catch jobs that finished in this last window.
+              sync_jobs
+              break
+            fi
+
+            sleep 60
+          done
+
+          # ── Phase 3: Handle timeout ─────────────────────────────────────────
+          if [[ -z "$OVERALL_CONCLUSION" || "$OVERALL_CONCLUSION" == "null" ]]; then
+            OVERALL_CONCLUSION="timed_out"
+            echo "Timed out — marking unfinished jobs as errored."
+            for JOB_NAME in "${!JOB_PENDING[@]}"; do
+              if [[ -z "${JOB_DONE[$JOB_NAME]}" ]]; then
+                post_status "${JOB_NAME}" "error" \
+                  "Fork run still in progress when the mirror's ${MAX_TOTAL_MINUTES}m polling budget expired." \
+                  "${JOB_URLS[$JOB_NAME]}"
+              fi
+            done
+          fi
+
+          # Exit non-zero so the upstream PR shows a red check if CI did not pass.
+          if [[ "$OVERALL_CONCLUSION" != "success" ]]; then
+            exit 1
+          fi
+
+      # Runs only when the workflow is cancelled — either superseded by the
+      # concurrency group (a new push/reopen for the same PR) or cancelled
+      # manually by a maintainer from the Actions UI. The poll step above is
+      # killed abruptly and never reaches its cleanup, so any statuses it left
+      # as 'pending' would otherwise block the PR forever. This step re-reads
+      # the current statuses on the head SHA and flips any that are still
+      # 'pending' to 'error'.
+      - name: 'Mark unfinished mirrored statuses as errored on cancellation'
+        if: cancelled()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          UPSTREAM_REPO: ${{ github.repository }}
+        run: |
+          echo "Run cancelled — marking any pending mirrored statuses as errored."
+          # The combined status endpoint returns the latest status per context.
+          # Carry over each pending status's target_url so the "Details" link
+          # back to the fork job is preserved on the errored status.
+          gh api "repos/${UPSTREAM_REPO}/commits/${HEAD_SHA}/status" \
+            --jq '.statuses[] | select(.state == "pending") | [.context, .target_url] | @tsv' \
+            2>/dev/null | while IFS=$'\t' read -r context url; do
+            [[ -z "$context" ]] && continue
+            echo "  Marking cancelled: ${context}"
+            gh api -X POST "repos/${UPSTREAM_REPO}/statuses/${HEAD_SHA}" \
+              -f state="error" \
+              -f context="${context}" \
+              -f description="Mirror run was cancelled before this job completed." \
+              -f target_url="${url}" >/dev/null
+          done
