@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class TestZAllocationStallEvent {
             recording.start();
 
             // Allocate many large objects quickly, to outrun the GC
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 1000; i++) {
                 blackHole(new byte[16 * 1024 * 1024]);
             }
 

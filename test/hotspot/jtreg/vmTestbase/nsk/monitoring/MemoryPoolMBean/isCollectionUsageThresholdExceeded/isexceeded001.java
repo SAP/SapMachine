@@ -119,15 +119,11 @@ public class isexceeded001 {
                 isExceeded = monitor.isCollectionThresholdExceeded(pool);
                 if (!isExceeded) {
 
-                    // Refresh the values
-                    threshold = monitor.getCollectionThreshold(pool);
-                    usage = monitor.getCollectionUsage(pool);
-                    if (used >= threshold) {
-                        log.complain("isCollectionUsageThresholdExceeded() "
-                                   + "returned false, while threshold = "
-                                   + threshold + " and " + "used = " + used);
-                        testFailed = true;
-                    }
+                    // Don't refresh the values: usage may have decreased outside our control.
+                    log.complain("isCollectionUsageThresholdExceeded() "
+                               + "returned false, while threshold = "
+                               + threshold + " and " + "used = " + used);
+                    testFailed = true;
                 }
             } else {
                 log.display("  used value (" + used + ") did not cross the "
@@ -136,9 +132,10 @@ public class isexceeded001 {
                 isExceeded = monitor.isCollectionThresholdExceeded(pool);
                 if (isExceeded) {
 
-                    // Refresh the values
+                    // Refresh the values: usage may have increased outside our control.
                     threshold = monitor.getCollectionThreshold(pool);
                     usage = monitor.getCollectionUsage(pool);
+                    used = usage.getUsed();
                     if (used < threshold) {
                         log.complain("isCollectionUsageThresholdExceeded() "
                                    + "returned true, while threshold = "

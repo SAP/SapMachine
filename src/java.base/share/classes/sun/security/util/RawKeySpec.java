@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.security.provider;
 
-/*
- * The SHAKE256 extendable output function.
+package sun.security.util;
+
+import java.security.spec.KeySpec;
+
+/**
+ * This is a KeySpec that is used to specify a key by its byte array implementation.
+ * It is intended to be used in testing algorithms where the algorithm specification
+ * describes the key in this form.
  */
-public final class SHAKE256 extends SHA3 {
-    public SHAKE256(int d) {
-        super("SHAKE256", d, (byte) 0x1F, 64);
+public class RawKeySpec implements KeySpec {
+    private final byte[] keyArr;
+    /**
+     * The sole constructor.
+     * @param key contains the key as a byte array
+     */
+    public RawKeySpec(byte[] key) {
+        keyArr = key.clone();
     }
 
-    public void update(byte in) {
-        engineUpdate(in);
-    }
-    public void update(byte[] in, int off, int len) {
-        engineUpdate(in, off, len);
-    }
-
-    public byte[] digest() {
-        return engineDigest();
-    }
-
-    public void reset() {
-        engineReset();
+    /**
+     * Getter function.
+     * @return a copy of the key bits
+     */
+    public byte[] getKeyArr() {
+        return keyArr.clone();
     }
 }

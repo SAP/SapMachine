@@ -25,8 +25,12 @@
 
 package sun.security.util;
 
+import java.security.AccessController;
 import java.security.AlgorithmParameters;
 import java.security.Key;
+import java.security.PrivilegedAction;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.InvalidKeyException;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.EdECKey;
@@ -190,6 +194,28 @@ public final class KeyUtil {
         }
 
         return -1;
+    }
+
+    /**
+     * Returns the algorithm name of the given key object. If an EC key is
+     * specified, returns the algorithm name and its named curve.
+     *
+     * @param key the key object, cannot be null
+     * @return the algorithm name of the given key object, or return in the
+     *       form of "EC (named curve)" if the given key object is an EC key
+     */
+    public static final String fullDisplayAlgName(Key key) {
+        String result = key.getAlgorithm();
+        if (key instanceof PrivateKey || key instanceof PublicKey) {
+            AlgorithmParameterSpec paramSpec = getParams(key);
+            if (paramSpec instanceof NamedCurve) {
+                NamedCurve nc = (NamedCurve)paramSpec;
+                result += " (" + nc.getNameAndAliases()[0] + ")";
+            } else if (paramSpec instanceof NamedParameterSpec nps) {
+                result = nps.getName();
+            }
+        }
+        return result;
     }
 
     /**
@@ -421,5 +447,25 @@ public final class KeyUtil {
         return t;
     }
 
+    @SuppressWarnings({"deprecation", "removal"})
+    public static AlgorithmParameterSpec getParams(Key key) {
+        try {
+            var m = key.getClass().getMethod("getParams");
+            if (!m.isAccessible()) {
+                PrivilegedAction<Object> pa = () -> {
+                    m.setAccessible(true);
+                    return null;
+                };
+                AccessController.doPrivileged(pa);
+            }
+            var result = m.invoke(key);
+            if (result instanceof AlgorithmParameterSpec spec) {
+                return spec;
+            }
+        } catch (NoSuchMethodException e) {
+        } catch (ReflectiveOperationException e) {
+        }
+        return null;
+    }
 }
 

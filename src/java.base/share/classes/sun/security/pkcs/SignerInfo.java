@@ -42,7 +42,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import sun.security.provider.SHAKE256;
+import sun.security.provider.SHA3.SHAKE256;
 import sun.security.timestamp.TimestampToken;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;

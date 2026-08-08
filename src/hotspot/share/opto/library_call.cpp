@@ -6578,7 +6578,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   src = must_be_not_null(src, true);
   Node* src_start = array_element_address(src, ofs, src_elem);
   Node* state = nullptr;
-  Node* digest_length = nullptr;
+  Node* block_size = nullptr;
   address stubAddr;
   const char *stubName;
 
@@ -6609,11 +6609,11 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_sha3_implCompress:
     assert(UseSHA3Intrinsics, "need SHA3 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, T_BYTE);
+    state = get_state_from_digest_object(digestBase_obj, T_LONG);
     stubAddr = StubRoutines::sha3_implCompress();
     stubName = "sha3_implCompress";
-    digest_length = get_digest_length_from_digest_object(digestBase_obj);
-    if (digest_length == nullptr) return false;
+    block_size = get_block_size_from_digest_object(digestBase_obj);
+    if (block_size == nullptr) return false;
     break;
   default:
     fatal_unexpected_iid(id);
@@ -6626,14 +6626,14 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
 
   // Call the stub.
   Node* call;
-  if (digest_length == nullptr) {
+  if (block_size == nullptr) {
     call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
                              src_start, state);
   } else {
     call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
-                             src_start, state, digest_length);
+                             src_start, state, block_size);
   }
 
   return true;
@@ -6710,7 +6710,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA3";
       stub_name = "sha3_implCompressMB";
       stub_addr = StubRoutines::sha3_implCompressMB();
-      elem_type = T_BYTE;
+      elem_type = T_LONG;
     }
     break;
   default:
@@ -6745,15 +6745,15 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
   Node* state = get_state_from_digest_object(digest_obj, elem_type);
   if (state == nullptr) return false;
 
-  Node* digest_length = nullptr;
+  Node* block_size = nullptr;
   if (strcmp("sha3_implCompressMB", stubName) == 0) {
-    digest_length = get_digest_length_from_digest_object(digest_obj);
-    if (digest_length == nullptr) return false;
+    block_size = get_block_size_from_digest_object(digest_obj);
+    if (block_size == nullptr) return false;
   }
 
   // Call the stub.
   Node* call;
-  if (digest_length == nullptr) {
+  if (block_size == nullptr) {
     call = make_runtime_call(RC_LEAF|RC_NO_FP,
                              OptoRuntime::digestBase_implCompressMB_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
@@ -6762,7 +6762,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
      call = make_runtime_call(RC_LEAF|RC_NO_FP,
                              OptoRuntime::digestBase_implCompressMB_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
-                             src_start, state, digest_length, ofs, limit);
+                             src_start, state, block_size, ofs, limit);
   }
 
   // return ofs (int)
@@ -6790,11 +6790,11 @@ Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, BasicTy
   return state;
 }
 
-//------------------------------get_digest_length_from_sha3_object----------------------------------
-Node * LibraryCallKit::get_digest_length_from_digest_object(Node *digest_object) {
-  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I");
-  assert (digest_length != nullptr, "sanity");
-  return digest_length;
+//------------------------------get_block_size_from_sha3_object----------------------------------
+Node * LibraryCallKit::get_block_size_from_digest_object(Node *digest_object) {
+  Node* block_size = load_field_from_object(digest_object, "blockSize", "I");
+  assert (block_size != nullptr, "sanity");
+  return block_size;
 }
 
 //----------------------------inline_digestBase_implCompressMB_predicate----------------------------
