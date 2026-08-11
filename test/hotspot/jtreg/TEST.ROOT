@@ -59,6 +59,7 @@ requires.extraPropDefns.vmOpts = \
 # SapMachine 2025-06-11: reduce number of cds/jsa archives
 requires.properties= \
     sun.arch.data.model \
+    java.enablePreview \
     vm.vendor \
     vm.simpleArch \
     vm.bits \

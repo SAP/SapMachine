@@ -36,7 +36,7 @@
 #include "runtime/globals.hpp"
 #include "vitals/vitals.hpp"
 
-inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
+inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader, bool& created) {
   guarantee(loader() != nullptr && oopDesc::is_oop(loader()), "Loader must be oop");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
   // it's already in the loader_data, so no need to add
@@ -44,6 +44,7 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
   if (loader_data) {
      return loader_data;
   }
+  created = true;
   return ClassLoaderDataGraph::add(loader, false);
 }
 

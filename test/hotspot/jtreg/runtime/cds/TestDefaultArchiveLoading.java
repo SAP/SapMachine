@@ -91,8 +91,10 @@ import jtreg.SkippedException;
 
 public class TestDefaultArchiveLoading {
 
+    static String archivePreviewSuffix = "";
+
     private static String archiveName(String archiveSuffix) {
-        return "classes" + archiveSuffix + ".jsa";
+        return "classes" + archiveSuffix + archivePreviewSuffix + ".jsa";
     }
 
     private static Path archivePath(String archiveSuffix) {
@@ -114,6 +116,10 @@ public class TestDefaultArchiveLoading {
 
         String archiveSuffix;
         char coh, coops;
+        String preview = System.getProperty("test.java.opts", "");
+        if (preview.contains("--enable-preview")) {
+            archivePreviewSuffix = "_preview";
+        }
 
         switch (args[0]) {
             case "nocoops_nocoh":
