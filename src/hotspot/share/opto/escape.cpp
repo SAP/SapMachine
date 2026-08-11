@@ -1142,6 +1142,11 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "electronicCodeBook_decryptAESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "counterMode_AESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "ghash_processBlocks") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "dilithiumAlmostNtt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "dilithiumAlmostInverseNtt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "dilithiumNttMult") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "dilithiumMontMulByConstant") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "dilithiumDecomposePoly") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "md5_implCompress") == 0 ||
@@ -1153,6 +1158,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "sha512_implCompress") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha512_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha3_implCompress") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "double_keccak") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha3_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "multiplyToLen") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "squareToLen") == 0 ||
