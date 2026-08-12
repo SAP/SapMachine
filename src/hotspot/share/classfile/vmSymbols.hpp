@@ -441,7 +441,7 @@
   template(cs_name,                                   "cs")                                       \
   template(refStack_name,                             "refStack")                                 \
   template(refSP_name,                                "refSP")                                    \
-  template(get_name,                                  "get")                                      \
+  template(get0_name,                                 "get0")                                     \
   template(refersTo0_name,                            "refersTo0")                                \
   template(put_name,                                  "put")                                      \
   template(type_name,                                 "type")                                     \

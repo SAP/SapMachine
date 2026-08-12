@@ -94,7 +94,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dpow:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
   case vmIntrinsics::_Continuation_doYield:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
@@ -238,7 +238,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_storeFence:
     case vmIntrinsics::_fullFence:
     case vmIntrinsics::_countPositives:
-    case vmIntrinsics::_Reference_get:
+    case vmIntrinsics::_Reference_get0:
     case vmIntrinsics::_Continuation_doYield:
     case vmIntrinsics::_Continuation_enterSpecial:
       break;
@@ -472,6 +472,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha5_implCompress:
     if (!UseSHA512Intrinsics) return true;
     break;
+  case vmIntrinsics::_double_keccak:
   case vmIntrinsics::_sha3_implCompress:
     if (!UseSHA3Intrinsics) return true;
     break;
@@ -483,6 +484,13 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_chacha20Block:
     if (!UseChaCha20Intrinsics) return true;
+    break;
+  case vmIntrinsics::_dilithiumAlmostNtt:
+  case vmIntrinsics::_dilithiumAlmostInverseNtt:
+  case vmIntrinsics::_dilithiumNttMult:
+  case vmIntrinsics::_dilithiumMontMulByConstant:
+  case vmIntrinsics::_dilithiumDecomposePoly:
+    if (!UseDilithiumIntrinsics) return true;
     break;
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
