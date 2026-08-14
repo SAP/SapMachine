@@ -60,6 +60,11 @@ Assembler::SIMD_Arrangement Assembler::esize2arrangement(int esize, bool isQ) {
     return _esize2arrangement_table[esize][isQ];
 }
 
+unsigned Assembler::regVariant_to_elemBits(Assembler::SIMD_RegVariant T){
+  guarantee(T != Q, "Invalid register variant");
+  return 1 << (T + 3);
+}
+
 void Assembler::emit_data64(jlong data,
                             relocInfo::relocType rtype,
                             int format) {

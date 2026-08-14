@@ -569,6 +569,11 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,           address)                               \
      static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
+     static_field(StubRoutines,                _dilithiumAlmostNtt,                           address)                               \
+     static_field(StubRoutines,                _dilithiumAlmostInverseNtt,                    address)                               \
+     static_field(StubRoutines,                _dilithiumNttMult,                             address)                               \
+     static_field(StubRoutines,                _dilithiumMontMulByConstant,                   address)                               \
+     static_field(StubRoutines,                _dilithiumDecomposePoly,                       address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
@@ -576,6 +581,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
      static_field(StubRoutines,                _updateBytesCRC32C,                            address)                               \
      static_field(StubRoutines,                _updateBytesAdler32,                           address)                               \
+     static_field(StubRoutines,                _double_keccak,                                address)                               \
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \
      static_field(StubRoutines,                _squareToLen,                                  address)                               \
      static_field(StubRoutines,                _bigIntegerRightShiftWorker,                   address)                               \

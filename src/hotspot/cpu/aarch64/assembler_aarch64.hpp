@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1515,6 +1515,9 @@ public:
     B, H, S, D, Q, INVALID
   };
 
+  // Return the corresponding bits for different SIMD_RegVariant value.
+  static unsigned regVariant_to_elemBits(SIMD_RegVariant T);
+
   enum shift_kind { LSL, LSR, ASR, ROR };
 
   void op_shifted_reg(Instruction_aarch64 &current_insn, unsigned decode,
@@ -2282,6 +2285,41 @@ public:
     }
   }
 
+  // Single-structure load/store method (all addressing variants)
+  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Address a,
+             int op1, int op2, int regs) {
+    int expectedImmediate = (regVariant_to_elemBits(T) >> 3) * regs;
+    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
+    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
+    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
+    Register Xn = a.base();
+    int Rm;
+
+    switch (a.getMode()) {
+    case Address::base_plus_offset:
+      guarantee(a.offset() == 0, "no offset allowed here");
+      Rm = 0;
+      break;
+    case Address::post:
+      guarantee(a.offset() == expectedImmediate, "bad offset");
+      op1 |= 0b100;
+      Rm = 0b11111;
+      break;
+    case Address::post_reg:
+      op1 |= 0b100;
+      Rm = a.index()->encoding();
+      break;
+    default:
+      ShouldNotReachHere();
+      Rm = 0;  // unreachable
+    }
+
+    starti;
+    f(0,31), f((index >> (3 - T)), 30);
+    f(op1, 29, 21), f(Rm, 20, 16), f(op2 | opcode | sVal, 15, 12);
+    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
+  }
+
  public:
 
 #define INSN1(NAME, op1, op2)                                           \
@@ -2339,6 +2377,71 @@ public:
 #undef INSN3
 #undef INSN4
 
+// Handle common single-structure ld/st parameter sanity checks
+// for all variations (1 to 4) of SIMD reigster inputs.  This
+// method will call the routine that generates the opcode.
+template<typename R, typename... Rx>
+  void ldst_sstr(SIMD_RegVariant T, int index, const Address &a,
+            int op1, int op2, R firstReg, Rx... otherRegs) {
+    const FloatRegister vtSet[] = { firstReg, otherRegs... };
+    const int regCount = sizeof...(otherRegs) + 1;
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||
+              (T == H && index <= 7) || (T == S && index <= 3) ||
+              (T == D && index <= 1)), "invalid index");
+    assert(regCount >= 1 && regCount <= 4, "illegal register count");
+
+    // Check to make sure when multiple SIMD registers are used
+    // that they are in successive order.
+    for (int i = 0; i < regCount - 1; i++) {
+      assert(vtSet[i]->successor() == vtSet[i + 1],
+             "Registers must be ordered");
+    }
+
+    ld_st(firstReg, T, index, a, op1, op2, regCount);
+  }
+
+// Define a set of INSN1/2/3/4 macros to handle single-structure
+// load/store instructions.
+#define INSN1(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, SIMD_RegVariant T, int index,             \
+            const Address &a) {                                         \
+    ldst_sstr(T, index, a, op1, op2, Vt);                               \
+ }
+
+#define INSN2(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, SIMD_RegVariant T,     \
+            int index, const Address &a) {                              \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2);                          \
+  }
+
+#define INSN3(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            SIMD_RegVariant T, int index, const Address &a) {           \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3);                     \
+  }
+
+#define INSN4(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            FloatRegister Vt4, SIMD_RegVariant T, int index,            \
+            const Address &a) {                                         \
+    ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3, Vt4);                \
+  }
+
+  INSN1(ld1, 0b001101010, 0b0000);
+  INSN2(ld2, 0b001101011, 0b0000);
+  INSN3(ld3, 0b001101010, 0b0010);
+  INSN4(ld4, 0b001101011, 0b0010);
+
+  INSN1(st1, 0b001101000, 0b0000);
+  INSN2(st2, 0b001101001, 0b0000);
+  INSN3(st3, 0b001101000, 0b0010);
+  INSN4(st4, 0b001101001, 0b0010);
+
+#undef INSN1
+#undef INSN2
+#undef INSN3
+#undef INSN4
+
 #define INSN(NAME, opc)                                                                 \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     starti;                                                                             \
@@ -2362,6 +2465,7 @@ public:
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
     if (!acceptT2D) guarantee(T != T2D, "incorrect arrangement");                       \
+    if (opc2 ==  0b101101) guarantee(T != T8B && T != T16B, "incorrect arrangement");   \
     starti;                                                                             \
     f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
     f((int)T >> 1, 23, 22), f(1, 21), rf(Vm, 16), f(opc2, 15, 10);                      \
@@ -2389,6 +2493,8 @@ public:
   INSN(cmge,   0, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(cmhi,   1, 0b001101, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(cmhs,   1, 0b001111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(sqdmulh,0, 0b101101, false); // accepted arrangements: T4H, T8H, T2S, T4S
+  INSN(shsubv, 0, 0b001001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
 
 #undef INSN
 
