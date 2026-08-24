@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -703,7 +703,7 @@ public final class ML_KEM {
 
     private K_PKE_CipherText kPkeEncrypt(
             K_PKE_EncryptionKey publicKey, byte[] message, byte[] sigma) {
-        short[][] zeroes = new short[mlKem_k][ML_KEM_N];
+        short[][] zeroes = shortMatrixAlloc(mlKem_k, ML_KEM_N);
         byte[] pkBytes = publicKey.keyBytes;
         byte[] rho = Arrays.copyOfRange(pkBytes,
                 pkBytes.length - 32, pkBytes.length);
@@ -792,7 +792,7 @@ public final class ML_KEM {
         System.arraycopy(rho, 0, seedBuf, 0, rho.length);
         seedBuf[rhoLen + 2] = 0x1F;
         seedBuf[XOF_BLOCK_LEN - 1] = (byte)0x80;
-        byte[][] xofBufArr = new byte[nrPar][XOF_BLOCK_LEN + XOF_PAD];
+        byte[][] xofBufArr = byteMatrixAlloc(nrPar, XOF_BLOCK_LEN + XOF_PAD);
         int[] iIndex = new int[nrPar];
         int[] jIndex = new int[nrPar];
 
@@ -1181,7 +1181,6 @@ public final class ML_KEM {
             int r = a[m] + b[m] + ML_KEM_Q; // This makes r > - ML_KEM_Q
             a[m] = (short) r;
         }
-        mlKemBarrettReduce(a);
     }
 
     // Adds the polynomial b to a in place, i.e. (the modified) a will hold
@@ -1354,22 +1353,16 @@ public final class ML_KEM {
         }
     }
 
-    // The intrinsic implementations assume that the input and output buffers
-    // are such that condensed can be read in 96-byte chunks and
-    // parsed can be written in 64 shorts chunks except for the last chunk
-    // that can be either 48 or 64 shorts. In other words,
-    // if (i - 1) * 64 < parsedLengths <= i * 64 then
-    // parsed.length should be either i * 64 or (i-1) * 64 + 48 and
-    // condensed.length should be at least index + i * 96.
+    // An intrinsic implementation assumes that the input and output buffers
+    // are such that condensed can be read in chunks of 192 bytes and
+    // parsed can be written in chunks of 128 shorts, so callers should allocate
+    // the condensed and parsed arrays accordingly, see the assert()
     private void twelve2Sixteen(byte[] condensed, int index,
                                 short[] parsed, int parsedLength) {
-        int i = parsedLength / 64;
-        int remainder = parsedLength - i * 64;
-        if (remainder != 0) {
-            i++;
-        }
-        assert ((remainder == 0) || (remainder == 48)) &&
-                (index + i * 96 <= condensed.length);
+        int n = (parsedLength + 127) / 128;
+        assert ((parsed.length >= n * 128) &&
+                (condensed.length >= index + n * 192));
+
         implKyber12To16(condensed, index, parsed, parsedLength);
     }
 
@@ -1549,5 +1542,23 @@ public final class ML_KEM {
         int m = ((MONT_Q_INV_MOD_R * aLow) << (32 - MONT_R_BITS)) >> (32 - MONT_R_BITS);
 
         return (aHigh - ((m * MONT_Q) >> MONT_R_BITS)); // subtract signed high product
+    }
+
+    // For multidimensional array initialization, manually allocating each entry is
+    // faster than doing the entire initialization in one go
+    static short[][] shortMatrixAlloc(int first, int second) {
+        short[][] res = new short[first][];
+        for (int i = 0; i < first; i++) {
+            res[i] = new short[second];
+        }
+        return res;
+    }
+
+    static byte[][] byteMatrixAlloc(int first, int second) {
+        byte[][] res = new byte[first][];
+        for (int i = 0; i < first; i++) {
+            res[i] = new byte[second];
+        }
+        return res;
     }
 }
