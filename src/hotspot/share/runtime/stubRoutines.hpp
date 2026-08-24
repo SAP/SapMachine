@@ -207,6 +207,13 @@ class StubRoutines: AllStatic {
   static address _electronicCodeBook_decryptAESCrypt;
   static address _counterMode_AESCrypt;
   static address _ghash_processBlocks;
+  static address _kyberNtt;
+  static address _kyberInverseNtt;
+  static address _kyberNttMult;
+  static address _kyberAddPoly_2;
+  static address _kyberAddPoly_3;
+  static address _kyber12To16;
+  static address _kyberBarrettReduce;
   static address _dilithiumAlmostNtt;
   static address _dilithiumAlmostInverseNtt;
   static address _dilithiumNttMult;
@@ -381,6 +388,13 @@ class StubRoutines: AllStatic {
   static address electronicCodeBook_decryptAESCrypt()   { return _electronicCodeBook_decryptAESCrypt; }
   static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
   static address ghash_processBlocks()   { return _ghash_processBlocks; }
+  static address kyberNtt()                   { return _kyberNtt; }
+  static address kyberInverseNtt()            { return _kyberInverseNtt; }
+  static address kyberNttMult()               { return _kyberNttMult; }
+  static address kyberAddPoly_2()             { return _kyberAddPoly_2; }
+  static address kyberAddPoly_3()             { return _kyberAddPoly_3; }
+  static address kyber12To16()                { return _kyber12To16; }
+  static address kyberBarrettReduce()         { return _kyberBarrettReduce; }
   static address dilithiumAlmostNtt()         { return _dilithiumAlmostNtt; }
   static address dilithiumAlmostInverseNtt()  { return _dilithiumAlmostInverseNtt; }
   static address dilithiumNttMult()           { return _dilithiumNttMult; }

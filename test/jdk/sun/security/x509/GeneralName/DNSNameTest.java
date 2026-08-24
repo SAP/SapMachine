@@ -52,7 +52,7 @@ public class DNSNameTest {
             "1abc.com",
             "123.com",
             "a-b-c.com", // hyphens
-            IDN.toASCII("公司.江利子") // IDN punycode
+            IDN.toASCII("\u516c\u53f8.\u6c5f\u5229\u5b50") // IDN punycode
     );
 
     private static final List<String> GOOD_SAN_NAMES = Stream.concat(
