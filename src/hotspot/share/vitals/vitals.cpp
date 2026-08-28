@@ -601,7 +601,7 @@ int LoadAverageColumn::do_print0(outputStream* st, value_t value,
     value_t load_average;
 
     // Use the minute resolution until an age of 2.5 minutes
-    // and 5 minute resulution until an age of 7.5 minutes.
+    // and 5 minute resolution until an age of 7.5 minutes.
     // The extremes use last_value_age, so they use the one minute average.
     if (last_value_age <= 150) {
       load_average = value >> 32;

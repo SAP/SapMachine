@@ -570,6 +570,12 @@ ALL_VALUES_DO(RESETVAL)
       _syst_ldavg = (rl1 << 32) | (rl5 << 16) | rl15;
     } else {
       _syst_ldavg = INVALID_VALUE;
+      static bool traced = false;
+
+      if (!traced) {
+        log_trace(vitals)("Could not parse /proc/loadavg: \n%s", bf.text());
+        traced = true;
+      }
     }
   }
 
