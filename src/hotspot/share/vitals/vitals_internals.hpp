@@ -93,6 +93,8 @@ namespace sapmachine_vitals {
     // output stream can be nullptr; in that case, method shall return number of characters it would have printed.
     virtual int do_print0(outputStream* os, value_t value,
         value_t last_value, int last_value_age, const print_info_t* pi) const = 0;
+    // Can be overridden by the implementation. By default writes the 64 bit value.
+    virtual int do_print_raw0(outputStream* os, value_t value) const;
 
   public:
 
@@ -167,6 +169,17 @@ namespace sapmachine_vitals {
         int last_value_age, const print_info_t* pi) const;
   public:
     TimeStampColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
+      : Column(category, header, name, description, extremum)
+    {}
+  };
+
+  // Special column which can handle the 3 load averages in the raw value.
+  class LoadAverageColumn: public Column {
+    int do_print0(outputStream* os, value_t value, value_t last_value,
+        int last_value_age, const print_info_t* pi) const;
+    int do_print_raw0(outputStream* os, value_t value) const;
+  public:
+    LoadAverageColumn(const char* category, const char* header, const char* name, const char* description, Extremum extremum)
       : Column(category, header, name, description, extremum)
     {}
   };

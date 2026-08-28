@@ -551,11 +551,15 @@ int Column::do_print(outputStream* st, value_t value, value_t last_value,
     }
   } else {
     if (pi->raw) {
-      return printf_helper(st, UINT64_FORMAT, value);
+      return do_print_raw0(st, value);
     } else {
       return do_print0(st, value, last_value, last_value_age, pi);
     }
   }
+}
+
+int Column::do_print_raw0(outputStream* st, value_t value) const {
+  return printf_helper(st, UINT64_FORMAT, value);
 }
 
 int PlainValueColumn::do_print0(outputStream* st, value_t value,
@@ -589,6 +593,32 @@ int DeltaMemorySizeColumn::do_print0(outputStream* st, value_t value,
     return print_memory_size(st, value - last_value, pi->scale);
   }
   return 0;
+}
+
+int LoadAverageColumn::do_print0(outputStream* st, value_t value,
+    value_t last_value, int last_value_age, const print_info_t* pi) const {
+  if (value != INVALID_VALUE) {
+    value_t load_average;
+
+    // Use the minute resolution until an age of 2.5 minutes
+    // and 5 minute resulution until an age of 7.5 minutes.
+    // The extremes use last_value_age, so they use the one minute average.
+    if (last_value_age <= 150) {
+      load_average = value >> 32;
+    } else if (last_value_age < 450) {
+      load_average = (value >> 16) & 0xffff;
+    } else {
+      load_average = value & 0xffff;
+    }
+
+    return printf_helper(st, UINT64_FORMAT, load_average);
+  }
+
+  return 0;
+}
+
+int LoadAverageColumn::do_print_raw0(outputStream* st, value_t value) const {
+  return do_print0(st, value, INVALID_VALUE, 0, nullptr);
 }
 
 ////////////// sample printing ///////////////////////////

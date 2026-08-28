@@ -106,6 +106,8 @@ static Column* g_col_system_num_threads = nullptr;
 static Column* g_col_system_num_procs_running = nullptr;
 static Column* g_col_system_num_procs_blocked = nullptr;
 
+static Column* g_col_system_load_avg = nullptr;
+
 static bool g_show_cgroup_info = false;
 static Column* g_col_system_cgrp_limit_in_bytes = nullptr;
 static Column* g_col_system_cgrp_soft_limit_in_bytes = nullptr;
@@ -176,9 +178,12 @@ bool platform_columns_initialize() {
       define_column<PlainValueColumn>(system_cat, nullptr, "t", "Number of threads", true);
 
   g_col_system_num_procs_running =
-      define_column<PlainValueColumn>(system_cat, nullptr, "tr", "Number of threads running", true);
+      define_column<PlainValueColumn>(system_cat, nullptr, "tr", "Number of running and runnable threads", true);
   g_col_system_num_procs_blocked =
       define_column<PlainValueColumn>(system_cat, nullptr, "tb", "Number of threads blocked on disk IO", true);
+
+  g_col_system_load_avg =
+      define_column<LoadAverageColumn>(system_cat, nullptr, "la", "Load average in percent", true, MAX);
 
   g_col_system_cpu_user =
       define_column<CPUTimeColumn>(system_cat, "cpu", "us", "CPU user time [host]", true);
@@ -286,6 +291,8 @@ void sample_platform_values(Sample* sample) {
 
   set_value_in_sample(g_col_system_num_procs_running, sample, OSWrapper::syst_tr());
   set_value_in_sample(g_col_system_num_procs_blocked, sample, OSWrapper::syst_tb());
+
+  set_value_in_sample(g_col_system_load_avg, sample, OSWrapper::syst_ldavg());
 
   // cgroups business
   if (g_show_cgroup_info) {
