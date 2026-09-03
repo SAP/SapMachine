@@ -434,7 +434,7 @@ public interface HttpServerAdapters {
     public static class HttpHeadOrGetHandler implements HttpTestHandler {
         final String responseBody;
         public HttpHeadOrGetHandler() {
-            this("pâté de tête persillé");
+            this("p\u00e2t\u00e9 de t\u00eate persill\u00e9");
         }
         public HttpHeadOrGetHandler(String responseBody) {
             this.responseBody = Objects.requireNonNull(responseBody);
