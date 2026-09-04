@@ -438,6 +438,7 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+  void mark_projections_unsafe_for_fold_compare() const;
 };
 
 class RangeCheckNode : public IfNode {
