@@ -4499,6 +4499,8 @@ public final class Unsafe {
     private native int getLoadAverage0(double[] loadavg, int nelems);
     @IntrinsicCandidate
     private native int[] getFieldMap0(Class <?> c);
+    // SapMachine 2025-02-05: Report error for DirectMemoryOom to exit the VM
+    public native void reportJavaOutOfMemory0(String message);
 
 
     /**
