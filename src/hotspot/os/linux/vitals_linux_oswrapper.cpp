@@ -35,7 +35,6 @@
 #include <fcntl.h>
 #include <string.h>
 
-
 #define LOG_HERE_F(msg, ...)  { printf("[%d] ", (int)::getpid()); ::printf(msg, __VA_ARGS__); printf("\n"); fflush(stdout); }
 #define LOG_HERE(msg)         { printf("[%d] ", (int)::getpid()); ::printf("%s", msg); printf("\n"); fflush(stdout); }
 
@@ -371,6 +370,7 @@ const char* CGroups::_file_lim = nullptr;
 const char* CGroups::_file_limsw = nullptr;
 const char* CGroups::_file_slim = nullptr;
 const char* CGroups::_file_kusg = nullptr;
+double proc_scale_factor = 0.0;
 
 void OSWrapper::update_if_needed() {
 
@@ -394,6 +394,7 @@ ALL_VALUES_DO(RESETVAL)
 
     if (first_call) {
       log_trace(vitals)("Read /proc/meminfo: \n%s", bf.text());
+      proc_scale_factor = 100.0 / MAX2(1, os::processor_count());
     }
 
     // All values in /proc/meminfo are in KB
@@ -436,7 +437,7 @@ ALL_VALUES_DO(RESETVAL)
     _syst_cpu_st = values.steal;
     _syst_cpu_gu = values.guest + values.guest_nice;
 
-    // procs_running: this is actually number of threads running
+    // procs_running: this is running and runnable threads.
     // procs_blocked: number of threads blocked on real disk IO
     // See https://utcc.utoronto.ca/~cks/space/blog/linux/ProcessStatesAndProcStat
     // and https://lore.kernel.org/lkml/12601530441257@xenotime.net/#t
@@ -555,6 +556,28 @@ ALL_VALUES_DO(RESETVAL)
     }
   }
 #endif // __GLIBC__
+
+  if (bf.read("/proc/loadavg")) {
+    float l1, l5, l15;
+    if (sscanf(bf.text(), "%f %f %f", &l1, &l5, &l15) == 3) {
+      // Convert to relative percentage-based loads, where 100 percent
+      // means the number of runnable threads equals the number of CPUs.
+      value_t rl1 = (value_t) MAX2(0.0, MIN2(65535.0, proc_scale_factor * l1));
+      value_t rl5 = (value_t) MAX2(0.0, MIN2(65535.0, proc_scale_factor * l5));
+      value_t rl15 = (value_t) MAX2(0.0, MIN2(65535.0, proc_scale_factor * l15));
+      // We put the three values into one, since we want to display
+      // the longer averaged one in table with coarser resolution.
+      _syst_ldavg = (rl1 << 32) | (rl5 << 16) | rl15;
+    } else {
+      _syst_ldavg = INVALID_VALUE;
+      static bool traced = false;
+
+      if (!traced) {
+        log_trace(vitals)("Could not parse /proc/loadavg: \n%s", bf.text());
+        traced = true;
+      }
+    }
+  }
 
   first_call = false;
 
