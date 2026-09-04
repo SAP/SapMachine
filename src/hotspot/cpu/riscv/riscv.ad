@@ -1544,27 +1544,25 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
     }
   }
 
-  if (bottom_type()->isa_vect() != NULL) {
-    uint ireg = ideal_reg();
-    if (ireg == Op_VecA && cbuf) {
-      C2_MacroAssembler _masm(cbuf);
-      int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
-      if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
-        // stack to stack
-        __ spill_copy_vector_stack_to_stack(src_offset, dst_offset,
-                                            vector_reg_size_in_bytes);
-      } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_stack) {
-        // vpr to stack
-        __ spill(as_VectorRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo));
-      } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vector) {
-        // stack to vpr
-        __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
-      } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
-        // vpr to vpr
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
-      } else {
-        ShouldNotReachHere();
-      }
+  if (bottom_type()->isa_vect() != NULL && cbuf != NULL) {
+    assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
+    C2_MacroAssembler _masm(cbuf);
+    int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
+    if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
+      // stack to stack
+      __ spill_copy_vector_stack_to_stack(src_offset, dst_offset,
+                                          vector_reg_size_in_bytes);
+    } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_stack) {
+      // vpr to stack
+      __ spill(as_VectorRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo));
+    } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vector) {
+      // stack to vpr
+      __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
+    } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
+      // vpr to vpr
+      __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+    } else {
+      ShouldNotReachHere();
     }
   } else if (cbuf != NULL) {
     C2_MacroAssembler _masm(cbuf);
@@ -1650,12 +1648,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       st->print("%s", Matcher::regName[dst_lo]);
     }
     if (bottom_type()->isa_vect() != NULL) {
-      int vsize = 0;
-      if (ideal_reg() == Op_VecA) {
-        vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
-      } else {
-        ShouldNotReachHere();
-      }
+      assert(ideal_reg() == Op_VecA, "Must be Op_VecA");
+      int vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
       st->print("\t# vector spill size = %d", vsize);
     } else {
       st->print("\t# spill size = %d", is64 ? 64 : 32);
