@@ -25,6 +25,9 @@
 
 package java.lang;
 
+// SapMachine 2024-07-01: process group extension
+import jdk.internal.access.JavaLangProcessAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 
 import java.io.*;
@@ -108,6 +111,18 @@ public abstract class Process {
     private Charset inputCharset;
     private BufferedReader errorReader;
     private Charset errorCharset;
+
+    // SapMachine 2024-07-01: process group extension
+    static {
+        SharedSecrets.setJavaLangProcessAccess(
+            new JavaLangProcessAccess() {
+                @Override
+                public void destroyProcessGroup(Process leader, boolean force) throws IOException {
+                    ((ProcessImpl)leader).terminateProcessGroup(force);
+                }
+            }
+        );
+    }
 
     /**
      * Default constructor for Process.
