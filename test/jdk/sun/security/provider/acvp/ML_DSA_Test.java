@@ -24,7 +24,9 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
 import jdk.test.lib.security.FixedSecureRandom;
 import sun.security.provider.ML_DSA_Impls;
+import sun.security.util.DerOutputStream;
 
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
@@ -68,12 +70,13 @@ public class ML_DSA_Test {
             System.out.println(">> " + pname);
             for (var c : t.get("tests").asArray()) {
                 System.out.print(c.get("tcId").asString() + " ");
-                g.initialize(np, new FixedSecureRandom(toByteArray(c.get("seed").asString())));
+                var seed = toByteArray(c.get("seed").asString());
+                g.initialize(np, new FixedSecureRandom(seed));
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
-                var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
                 Asserts.assertEqualsByteArray(toByteArray(c.get("pk").asString()), pk);
-                Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()), sk);
+                Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()),
+                        ML_DSA_Impls.seedToExpanded(pname, seed));
             }
             System.out.println();
         }
@@ -106,7 +109,7 @@ public class ML_DSA_Test {
                 var sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
                     public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return toByteArray(c.get("sk").asString()); }
+                    public byte[] getEncoded() { return oct(toByteArray(c.get("sk").asString())); }
                 };
                 var sr = new FixedSecureRandom(
                         det ? new byte[32] : toByteArray(c.get("rnd").asString()));
@@ -118,6 +121,16 @@ public class ML_DSA_Test {
             }
             System.out.println();
         }
+    }
+
+    static byte[] oct(byte[] in) {
+        DerOutputStream dos = new DerOutputStream();
+        try {
+            dos.putOctetString(in);
+        } catch (IOException e) {
+            // ignore
+        }
+        return dos.toByteArray();
     }
 
     static void sigVerTest(JSONValue kat, Provider p) throws Exception {
