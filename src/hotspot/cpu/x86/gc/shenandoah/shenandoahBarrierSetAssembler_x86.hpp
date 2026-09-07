@@ -46,7 +46,7 @@ private:
                     Register pre_val,
                     Register tmp);
 
-  void card_barrier(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj, Register tmp);
 
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count,
