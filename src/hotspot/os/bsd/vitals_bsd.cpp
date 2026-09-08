@@ -30,11 +30,17 @@
 
 namespace sapmachine_vitals {
 
+static Column* g_col_system_load_average = nullptr;
+
 bool platform_columns_initialize() {
+  g_col_system_load_average =
+      define_column<PlainValueColumn>("system", nullptr, "la", "Load average in the sample interval in percent", true);
+
   return true;
 }
 
 void sample_platform_values(Sample* record, Sample* long_term_sample) {
+  set_load_average(g_col_system_load_average, get_load_avg_from_os_interface(), sample, long_term_sample);
 }
 
 } // namespace sapmachine_vitals

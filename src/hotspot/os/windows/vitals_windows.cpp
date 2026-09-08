@@ -121,24 +121,15 @@ static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
   }
 }
 
-static double get_load_average() {
+static value_t get_load_average() {
   if (!has_loadavg) {
-    return -1.0;
+    return INVALID_VALUE;
   }
 
   return get_load_average_impl(false);
 }
 
 void sample_platform_values(Sample* sample, Sample* long_term_sample) {
-  double load_avg = get_load_average();
-
-  add_load_average(load_avg);
-  set_value_in_sample(g_col_system_load_average, sample, load_avg);
-
-  if (long_term_sample != nullptr) {
-    set_value_in_sample(g_col_system_load_average, sample, get_long_term_load_average());
-  }
-
   MEMORYSTATUSEX mse;
   mse.dwLength = sizeof(mse);
   if (::GlobalMemoryStatusEx(&mse)) {
@@ -152,6 +143,8 @@ void sample_platform_values(Sample* sample, Sample* long_term_sample) {
     set_value_in_sample(g_col_process_working_set_size, sample, cnt.WorkingSetSize);
     set_value_in_sample(g_col_process_commit_charge, sample, cnt.PagefileUsage);
   }
+
+  set_load_average(g_col_system_load_average, get_load_average(), sample, long_term_sample);
 }
 
 } // namespace sapmachine_vitals

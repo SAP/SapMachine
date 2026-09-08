@@ -241,8 +241,11 @@ namespace sapmachine_vitals {
     return c;
   }
 
-  void add_load_average(double load_avg);
-  double get_long_term_load_average();
+  // Load average handling.
+  bool initialize_load_average();
+  double get_proc_scale_factor();
+  value_t get_load_avg_from_os_interface();
+  void set_load_average(Column* column, value_t load_avg, Sample* sample, Sample* long_term_sample);
 
   // Ask platform to add platform specific columns
   bool platform_columns_initialize();

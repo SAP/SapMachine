@@ -979,6 +979,11 @@ static void sample_values(Sample* sample, Sample* long_term_sample, bool avoid_l
   time_t t;
   ::time(&t);
   sample->set_timestamp(t);
+
+  if (long_term_sample != nullptr) {
+    long_term_sample->set_timestamp(t);
+  }
+
   DEBUG_ONLY(sample->set_num(-1);)
   sample_jvm_values(sample, avoid_locking);
   sample_platform_values(sample, long_term_sample);
@@ -1359,6 +1364,7 @@ bool initialize() {
   g_all_tables = new SampleTables();
   success = success && (g_all_tables != nullptr);
 
+  success = success && initialize_load_average();
   success = success && initialize_sampler_thread();
 
   if (success) {
@@ -1491,22 +1497,30 @@ const Thread* samplerthread() { return g_sampler_thread; }
 static float* load_avg_hist = nullptr;
 static int load_avg_hist_size = 0;
 static int load_avg_hist_next_pos = 0;
+static double proc_scale_factor = 0.0;
 
-void add_load_average(double load_avg) {
-  if (load_avg_hist == nullptr) {
-    load_avg_hist_size = (int)(1 + VitalsLongTermSampleIntervalMinutes * 60 / MIN2((uintx)1, VitalsSampleInterval));
-    load_avg_hist = NEW_C_HEAP_ARRAY(float, load_avg_hist_size, mtInternal);
+bool initialize_load_average() {
+  load_avg_hist_size = (int)(1 + VitalsLongTermSampleIntervalMinutes * 60 / MIN2((uintx)1, VitalsSampleInterval));
+  load_avg_hist = NEW_C_HEAP_ARRAY(float, load_avg_hist_size, mtInternal);
+  proc_scale_factor = 100.0 / MAX2(1, os::processor_count());
 
-    for (int i = 0; i < load_avg_hist_size; ++i) {
-      load_avg_hist[i] = -1.0;
-    }
+  for (int i = 0; i < load_avg_hist_size; ++i) {
+    load_avg_hist[i] = -1.0;
   }
 
-  load_avg_hist[load_avg_hist_next_pos] = load_avg;
+  return true;
+}
+
+double get_proc_scale_factor() {
+  return proc_scale_factor;
+}
+
+void add_load_average(value_t load_avg) {
+  load_avg_hist[load_avg_hist_next_pos] = load_avg == INVALID_VALUE ? -1.0f : (float) load_avg;
   load_avg_hist_next_pos = (load_avg_hist_next_pos + 1) % load_avg_hist_size;
 }
 
-double get_long_term_load_average() {
+value_t get_long_term_load_average() {
   double history_average = 0.0;
   int nr_of_history_entries = 0;
 
@@ -1517,8 +1531,45 @@ double get_long_term_load_average() {
     }
   }
 
-  return history_average = MAX2(1, nr_of_history_entries);
+  return (value_t) (history_average / MAX2(1, nr_of_history_entries));
 }
 
+value_t get_load_avg_from_os_interface() {
+  double avgs[3];
+  int nr_of_avgs = ::getloadavg(avgs, 3);
+  value_t load_avg;
+
+  if (nr_of_avgs > 1) {
+    // Convert to relative percentage-based loads, where 100 percent
+    // means the number of runnable threads equals the number of CPUs.
+    // And use the load average value most representative for the interval
+    if ((VitalsSampleInterval < 150) || (nr_of_avgs < 2)) {
+      load_avg = (value_t) MAX2(0.0, avgs[0] * proc_scale_factor);
+    } else if ((VitalsSampleInterval < 450) || (nr_of_avgs < 3)) {
+      load_avg = (value_t) MAX2(0.0, avgs[1] * proc_scale_factor);
+    } else {
+      load_avg = (value_t) MAX2(0.0, avgs[2] * proc_scale_factor);
+    }
+  } else {
+    load_avg = INVALID_VALUE;
+    static bool traced = false;
+
+    if (!traced) {
+      log_trace(vitals)("Could not get load average");
+      traced = true;
+    }
+  }
+
+  return load_avg;
+}
+
+void set_load_average(Column* column, value_t load_avg, Sample* sample, Sample* long_term_sample) {
+  add_load_average(load_avg);
+  set_value_in_sample(column, sample, load_avg);
+
+  if (long_term_sample != nullptr) {
+    set_value_in_sample(column, sample, get_long_term_load_average());
+  }
+}
 
 } // namespace sapmachine_vitals
