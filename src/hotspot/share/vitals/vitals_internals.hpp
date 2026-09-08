@@ -241,10 +241,13 @@ namespace sapmachine_vitals {
     return c;
   }
 
+  void add_load_average(double load_avg);
+  double get_long_term_load_average();
+
   // Ask platform to add platform specific columns
   bool platform_columns_initialize();
 
-  void sample_platform_values(Sample* sample);
+  void sample_platform_values(Sample* sample, Sample* long_term_sample);
   void sample_jvm_values(Sample* sample, bool avoid_locking);
 
 }; // namespace sapmachine_vitals
