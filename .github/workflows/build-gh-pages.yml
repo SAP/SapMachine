@@ -41,7 +41,7 @@ jobs:
             redirect_404.html
             static/assets/
             static/jfrevents/
-            html-include/
+            static/html-include/
           sparse-checkout-cone-mode: true
       - name: Prepare site folder
         run: |
@@ -50,7 +50,7 @@ jobs:
           mv redirect_404.html site/404.html
           mv static/assets site/
           mv static/jfrevents site/
-          mv html-include site/
+          mv static/html-include site/
       - name: Setup Pages
         uses: actions/configure-pages@v6
       - name: Upload artifact
