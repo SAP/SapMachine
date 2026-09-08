@@ -1572,7 +1572,7 @@ void set_load_average(Column* column, value_t load_avg, Sample* sample, Sample* 
   set_value_in_sample(column, sample, load_avg);
 
   if (long_term_sample != nullptr) {
-    set_value_in_sample(column, sample, get_long_term_load_average());
+    set_value_in_sample(column, long_term_sample, get_long_term_load_average());
   }
 }
 

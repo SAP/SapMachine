@@ -101,7 +101,7 @@ bool platform_columns_initialize() {
       define_column<MemorySizeColumn>("system", nullptr, "avail-phys", "Amount of physical memory currently available.", true, MIN);
 
   g_col_system_load_average =
-    define_column<MemorySizeColumn>("system", nullptr, "la", "Load average of system in percent.", has_loadavg, MAX);
+    define_column<PlainValueColumn>("system", nullptr, "la", "Load average of system in percent.", has_loadavg, MAX);
 
   // PROCESS_MEMORY_COUNTERS_EX WorkingSetSize
   g_col_process_working_set_size =
