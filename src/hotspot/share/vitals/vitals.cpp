@@ -1535,6 +1535,7 @@ value_t get_long_term_load_average() {
 }
 
 value_t get_load_avg_from_os_interface() {
+#ifndef _WINDOWS
   double avgs[3];
   int nr_of_avgs = ::getloadavg(avgs, 3);
   value_t load_avg;
@@ -1561,6 +1562,9 @@ value_t get_load_avg_from_os_interface() {
   }
 
   return load_avg;
+#else
+  return INVALID_VALUE;
+#endif
 }
 
 void set_load_average(Column* column, value_t load_avg, Sample* sample, Sample* long_term_sample) {
