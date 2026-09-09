@@ -59,7 +59,7 @@ static const int num_seconds_until_update = 1;
 
 class ProcFile {
   char* _buf;
-  char* _filename;
+  const char* _filename;
 
   // To keep the code simple, I just use a fixed sized buffer.
   enum { bufsize = 64*K };
@@ -73,7 +73,6 @@ public:
 
   ~ProcFile () {
     os::free(_buf);
-    os::free(_filename);
   }
 
   bool read(const char* filename) {
@@ -88,8 +87,8 @@ public:
     _buf[bytes_read] = '\0';
 
     ::fclose(f);
-    os::free(_filename);
-    _filename = os::strdup(filename);
+    // All filenames we get are live for the time we need it. No need to strdup.
+    _filename = filename;
 
     return bytes_read > 0 && bytes_read < bufsize;
   }

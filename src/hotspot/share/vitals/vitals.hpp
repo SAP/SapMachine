@@ -40,6 +40,7 @@ class Thread;
 namespace sapmachine_vitals {
 
   bool initialize();
+  bool begin_sampling();
   void cleanup();
 
   struct print_info_t {

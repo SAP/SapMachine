@@ -1365,7 +1365,6 @@ bool initialize() {
   success = success && (g_all_tables != nullptr);
 
   success = success && initialize_load_average();
-  success = success && initialize_sampler_thread();
 
   if (success) {
     log_info(vitals)("Vitals initialized.");
@@ -1376,6 +1375,18 @@ bool initialize() {
 
   return success;
 
+}
+
+bool begin_sampling() {
+  bool success = initialize_sampler_thread();
+
+  if (success) {
+    log_debug(vitals)("Sampler thread started.");
+  } else {
+    log_debug(vitals)("Sampler thread failed to start.");
+  }
+
+  return success;
 }
 
 void cleanup() {
