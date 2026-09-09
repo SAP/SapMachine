@@ -39,7 +39,7 @@ bool platform_columns_initialize() {
   return true;
 }
 
-void sample_platform_values(Sample* record, Sample* long_term_sample) {
+void sample_platform_values(Sample* sample, Sample* long_term_sample) {
   set_load_average(g_col_system_load_average, get_load_avg_from_os_interface(), sample, long_term_sample);
 }
 
