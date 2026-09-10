@@ -836,13 +836,8 @@ public:
     return ((_count + 1) % _large_table_count) == 0;
   }
 
-  bool add_sample(const Sample* sample, Sample* long_term_sample) {
+  void add_sample(const Sample* sample, Sample* long_term_sample) {
     AutoLock autolock(&g_vitals_lock);
-
-    // If we for whatever reason didn't get a long term sample when needed, inform the caller.
-    if ((((_count + 1) % _large_table_count) == 0) && (long_term_sample == nullptr)) {
-      return false;
-    }
 
     // Nothing we do in here blocks: the sample values are already taken,
     // we only modify existing data structures (no memory is allocated either).
@@ -852,6 +847,7 @@ public:
     _count++;
     // Feed long term table
     if ((_count % _large_table_count) == 0) {
+      assert(long_term_sample != nullptr, "should have the long term sample");
       _long_term_table.add_sample(long_term_sample);
     }
 
@@ -896,8 +892,6 @@ public:
       // Remember the last sample.
       ::memcpy(last_sample, sample, Sample::size_in_bytes());
     }
-
-    return true;
   }
 
   void print_all(outputStream* st, const print_info_t* pi, const Sample* sample_now) {
@@ -1021,15 +1015,7 @@ class SamplerThread: public NamedThread {
       }
     }
 
-    // Since we are not locked during determining if we need a long term sample,
-    // we try again when the long term sample was needed but not supplied.
-    // Since this is really unlikely, given the sample interval is at least 1 second,
-    // we leave it at that.
-    if (!g_all_tables->add_sample(_sample, for_long_term ? _long_term_sample : nullptr)) {
-      if (!for_long_term) {
-        take_sample(true);
-      }
-    }
+    g_all_tables->add_sample(_sample, for_long_term ? _long_term_sample : nullptr);
   }
 
 public:
