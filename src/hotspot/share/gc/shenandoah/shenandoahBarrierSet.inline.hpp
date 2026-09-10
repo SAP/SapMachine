@@ -189,23 +189,28 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oo
 }
 
 template <DecoratorSet decorators, typename T>
-inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
+inline void ShenandoahBarrierSet::write_ref_field_post(T* field, oop new_value) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
+
+  if (new_value == nullptr) {
+    // Null reference stores do not require card mark.
+    return;
+  }
+
   if (_heap->is_in_young(field)) {
     // Young field stores do not require card mark.
     return;
   }
-  T heap_oop = RawAccess<>::oop_load(field);
-  if (CompressedOops::is_null(heap_oop)) {
-    // Null reference store do not require card mark.
-    return;
-  }
-  oop obj = CompressedOops::decode_not_null(heap_oop);
-  if (!_heap->is_in_young(obj)) {
+
+  if (!_heap->is_in_young(new_value)) {
     // Not an old->young reference store.
     return;
   }
+
   volatile CardTable::CardValue* byte = card_table()->byte_for(field);
+  if (UseCondCardMark && (*byte == CardTable::dirty_card_val())) {
+    return;
+  }
   *byte = CardTable::dirty_card_val();
 }
 
@@ -296,7 +301,7 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
   oop_store_common(addr, value);
   if (ShenandoahCardBarrier) {
     ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-    bs->write_ref_field_post<decorators>(addr);
+    bs->write_ref_field_post<decorators>(addr, value);
   }
 }
 
@@ -320,7 +325,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   oop result = bs->oop_cmpxchg(decorators, addr, compare_value, new_value);
   if (ShenandoahCardBarrier) {
-    bs->write_ref_field_post<decorators>(addr);
+    bs->write_ref_field_post<decorators>(addr, new_value);
   }
   return result;
 }
@@ -333,7 +338,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
   oop result = bs->oop_cmpxchg(resolved_decorators, addr, compare_value, new_value);
   if (ShenandoahCardBarrier) {
-    bs->write_ref_field_post<decorators>(addr);
+    bs->write_ref_field_post<decorators>(addr, new_value);
   }
   return result;
 }
@@ -353,7 +358,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   oop result = bs->oop_xchg(decorators, addr, new_value);
   if (ShenandoahCardBarrier) {
-    bs->write_ref_field_post<decorators>(addr);
+    bs->write_ref_field_post<decorators>(addr, new_value);
   }
   return result;
 }
@@ -366,7 +371,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
   auto addr = AccessInternal::oop_field_addr<decorators>(base, offset);
   oop result = bs->oop_xchg(resolved_decorators, addr, new_value);
   if (ShenandoahCardBarrier) {
-    bs->write_ref_field_post<decorators>(addr);
+    bs->write_ref_field_post<decorators>(addr, new_value);
   }
   return result;
 }
