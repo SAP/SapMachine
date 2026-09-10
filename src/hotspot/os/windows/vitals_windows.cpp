@@ -45,7 +45,7 @@ static Column* g_col_process_commit_charge = nullptr;
 
 static bool log_pdh(const char* operation, PDH_STATUS status) {
   if (status != ERROR_SUCCESS) {
-    log_debug(vitals)("pdh opperation '%s' failed with error code %x", operation, status);
+    log_debug(vitals)("pdh operation '%s' failed with error code %x", operation, status);
     return false;
   }
 
@@ -73,7 +73,7 @@ static double get_load_average_impl(bool first_call) {
     if (log_pdh("collect data", PdhDll::PdhCollectQueryData(query)) &&
       log_pdh("format queue length", PdhDll::PdhGetFormattedCounterValue(queue_length_counter, PDH_FMT_DOUBLE, nullptr, &queue_length)) &&
       log_pdh("format processor time", PdhDll::PdhGetFormattedCounterValue(processor_time_counter, PDH_FMT_DOUBLE, nullptr, &processor_time))) {
-      log_debug(vitals)("Queue lengt. %d, processor time %d", (int)queue_length.doubleValue, (int)processor_time.doubleValue);
+      log_debug(vitals)("Queue length %d, processor time %d", (int)queue_length.doubleValue, (int)processor_time.doubleValue);
       load_avg = processor_time.doubleValue + queue_length.doubleValue * proc_scale_factor;
     }
   }

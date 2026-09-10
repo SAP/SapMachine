@@ -496,7 +496,7 @@ ALL_VALUES_DO(RESETVAL)
   // Number of processes: iterate over /proc/<pid> and count.
   // Number of threads: read "num_threads" from /proc/<pid>/stat
   {
-    TraceTime timer("Iterating all processes", TRACETIME_LOG(Info, vitals));
+    TraceTime timer("Iterating all processes", TRACETIME_LOG(Debug, vitals, os));
     DIR* d = ::opendir("/proc");
     if (d != nullptr) {
       value_t v_p = 0;
@@ -563,7 +563,7 @@ ALL_VALUES_DO(RESETVAL)
 #endif // __GLIBC__
 
   if ((VitalsSampleInterval < 30) && (_syst_tr != INVALID_VALUE)) {
-    // For short sample times we use the number of runnable and running threadsa
+    // For short sample times we use the number of runnable and running threads
     // to approximate the load average in that interval.
     _syst_load_average = (value_t) MAX2(0.0, _syst_tr * get_proc_scale_factor());
   } else {

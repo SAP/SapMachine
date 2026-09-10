@@ -1497,7 +1497,7 @@ static int load_avg_hist_next_pos = 0;
 static double proc_scale_factor = 0.0;
 
 bool initialize_load_average() {
-  load_avg_hist_size = (int)(1 + VitalsLongTermSampleIntervalMinutes * 60 / MIN2((uintx)1, VitalsSampleInterval));
+  load_avg_hist_size = (int)(1 + VitalsLongTermSampleIntervalMinutes * 60 / MAX2((uintx)1, VitalsSampleInterval));
   load_avg_hist = NEW_C_HEAP_ARRAY(float, load_avg_hist_size, mtInternal);
   proc_scale_factor = 100.0 / MAX2(1, os::processor_count());
 
@@ -1528,7 +1528,7 @@ value_t get_long_term_load_average() {
     }
   }
 
-  return (value_t) (history_average / MAX2(1, nr_of_history_entries));
+  return nr_of_history_entries == 0 ? INVALID_VALUE : (value_t) (history_average / MAX2(1, nr_of_history_entries));
 }
 
 value_t get_load_avg_from_os_interface() {
@@ -1537,7 +1537,7 @@ value_t get_load_avg_from_os_interface() {
   int nr_of_avgs = ::getloadavg(avgs, 3);
   value_t load_avg;
 
-  if (nr_of_avgs > 1) {
+  if (nr_of_avgs >= 1) {
     // Convert to relative percentage-based loads, where 100 percent
     // means the number of runnable threads equals the number of CPUs.
     // And use the load average value most representative for the interval
