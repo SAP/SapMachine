@@ -831,8 +831,14 @@ public:
       _large_table_count(MAX2(1, (int) (VitalsLongTermSampleIntervalMinutes * 60 / VitalsSampleInterval)))
   {}
 
-  void add_sample(const Sample* sample) {
+  // Should the next sample call include long term values.
+  bool next_sample_is_for_long_term() {
+    return ((_count + 1) % _large_table_count) == 0;
+  }
+
+  void add_sample(const Sample* sample, Sample* long_term_sample) {
     AutoLock autolock(&g_vitals_lock);
+
     // Nothing we do in here blocks: the sample values are already taken,
     // we only modify existing data structures (no memory is allocated either).
     _short_term_table.add_sample(sample);
@@ -841,7 +847,8 @@ public:
     _count++;
     // Feed long term table
     if ((_count % _large_table_count) == 0) {
-      _long_term_table.add_sample(sample);
+      assert(long_term_sample != nullptr, "should have the long term sample");
+      _long_term_table.add_sample(long_term_sample);
     }
 
     // Update exetremum samples if needed.
@@ -962,18 +969,24 @@ static SampleTables* g_all_tables = nullptr;
 /////////////// SAMPLING //////////////////////
 
 // Samples all values, but leaves timestamp unchanged
-static void sample_values(Sample* sample, bool avoid_locking) {
+static void sample_values(Sample* sample, Sample* long_term_sample, bool avoid_locking) {
   time_t t;
   ::time(&t);
   sample->set_timestamp(t);
+
+  if (long_term_sample != nullptr) {
+    long_term_sample->set_timestamp(t);
+  }
+
   DEBUG_ONLY(sample->set_num(-1);)
   sample_jvm_values(sample, avoid_locking);
-  sample_platform_values(sample);
+  sample_platform_values(sample, long_term_sample);
 }
 
 class SamplerThread: public NamedThread {
 
   Sample* _sample;
+  Sample* _long_term_sample;
   bool _stop;
   int _samples_taken;
   int _jump_cooldown;
@@ -982,12 +995,27 @@ class SamplerThread: public NamedThread {
     return (int)VitalsSampleInterval * 1000;
   }
 
-  void take_sample() {
+  void take_sample(bool for_long_term) {
     _sample->reset();
+
+    if (for_long_term) {
+      _long_term_sample->reset();
+    }
+
     DEBUG_ONLY(_sample->set_num(_samples_taken);)
     _samples_taken ++;
-    sample_values(_sample, VitalsLockFreeSampling);
-    g_all_tables->add_sample(_sample);
+    sample_values(_sample, for_long_term ? _long_term_sample : nullptr, VitalsLockFreeSampling);
+
+    // Fill in missing values in the long term table from the short term table.
+    if (for_long_term) {
+      for (int i = 0; i < _long_term_sample->num_values(); ++i) {
+        if (_long_term_sample->value(i) == INVALID_VALUE) {
+          _long_term_sample->set_value(i, _sample->value(i));
+        }
+      }
+    }
+
+    g_all_tables->add_sample(_sample, for_long_term ? _long_term_sample : nullptr);
   }
 
 public:
@@ -1000,13 +1028,14 @@ public:
       _jump_cooldown(0)
   {
     _sample = Sample::allocate();
+    _long_term_sample = Sample::allocate();
     this->set_name("vitals sampler thread");
   }
 
   virtual void run() {
     record_stack_base_and_size();
     for (;;) {
-      take_sample();
+      take_sample(g_all_tables->next_sample_is_for_long_term());
       os::naked_sleep(get_sample_interval_ms());
       if (_stop) {
         break;
@@ -1321,7 +1350,7 @@ bool initialize() {
   g_all_tables = new SampleTables();
   success = success && (g_all_tables != nullptr);
 
-  success = success && initialize_sampler_thread();
+  success = success && initialize_load_average();
 
   if (success) {
     log_info(vitals)("Vitals initialized.");
@@ -1332,6 +1361,18 @@ bool initialize() {
 
   return success;
 
+}
+
+bool begin_sampling() {
+  bool success = initialize_sampler_thread();
+
+  if (success) {
+    log_debug(vitals)("Sampler thread started.");
+  } else {
+    log_debug(vitals)("Sampler thread failed to start.");
+  }
+
+  return success;
 }
 
 void cleanup() {
@@ -1389,7 +1430,7 @@ void print_report(outputStream* st, const print_info_t* pinfo) {
   Sample* sample_now = nullptr;
   if (info.sample_now && !info.csv) {
     sample_now = Sample::allocate();
-    sample_values(sample_now, true /* never lock for now sample - be safe */ );
+    sample_values(sample_now, nullptr, true /* never lock for now sample - be safe */ );
   }
 
   g_all_tables->print_all(st, &info, sample_now);
@@ -1448,5 +1489,88 @@ void dump_reports() {
 
 // For printing in thread lists only.
 const Thread* samplerthread() { return g_sampler_thread; }
+
+// Load average handling.
+static float* load_avg_hist = nullptr;
+static int load_avg_hist_size = 0;
+static int load_avg_hist_next_pos = 0;
+static double proc_scale_factor = 0.0;
+
+bool initialize_load_average() {
+  load_avg_hist_size = (int)(1 + VitalsLongTermSampleIntervalMinutes * 60 / MAX2((uintx)1, VitalsSampleInterval));
+  load_avg_hist = NEW_C_HEAP_ARRAY(float, load_avg_hist_size, mtInternal);
+  proc_scale_factor = 100.0 / MAX2(1, os::processor_count());
+
+  for (int i = 0; i < load_avg_hist_size; ++i) {
+    load_avg_hist[i] = -1.0;
+  }
+
+  return true;
+}
+
+double get_proc_scale_factor() {
+  return proc_scale_factor;
+}
+
+void add_load_average(value_t load_avg) {
+  load_avg_hist[load_avg_hist_next_pos] = load_avg == INVALID_VALUE ? -1.0f : (float) load_avg;
+  load_avg_hist_next_pos = (load_avg_hist_next_pos + 1) % load_avg_hist_size;
+}
+
+value_t get_long_term_load_average() {
+  double history_average = 0.0;
+  int nr_of_history_entries = 0;
+
+  for (int i = 0; i < load_avg_hist_size; ++i) {
+    if (load_avg_hist[i] >= 0.0) {
+      history_average += load_avg_hist[i];
+      nr_of_history_entries++;
+    }
+  }
+
+  return nr_of_history_entries == 0 ? INVALID_VALUE : (value_t) (history_average / MAX2(1, nr_of_history_entries));
+}
+
+value_t get_load_avg_from_os_interface() {
+#ifndef _WINDOWS
+  double avgs[3];
+  int nr_of_avgs = os::loadavg(avgs, 3);
+  value_t load_avg;
+
+  if (nr_of_avgs >= 1) {
+    // Convert to relative percentage-based loads, where 100 percent
+    // means the number of runnable threads equals the number of CPUs.
+    // And use the load average value most representative for the interval
+    if ((VitalsSampleInterval < 150) || (nr_of_avgs < 2)) {
+      load_avg = (value_t) MAX2(0.0, avgs[0] * proc_scale_factor);
+    } else if ((VitalsSampleInterval < 450) || (nr_of_avgs < 3)) {
+      load_avg = (value_t) MAX2(0.0, avgs[1] * proc_scale_factor);
+    } else {
+      load_avg = (value_t) MAX2(0.0, avgs[2] * proc_scale_factor);
+    }
+  } else {
+    load_avg = INVALID_VALUE;
+    static bool traced = false;
+
+    if (!traced) {
+      log_trace(vitals)("Could not get load average");
+      traced = true;
+    }
+  }
+
+  return load_avg;
+#else
+  return INVALID_VALUE;
+#endif
+}
+
+void set_load_average(Column* column, value_t load_avg, Sample* sample, Sample* long_term_sample) {
+  add_load_average(load_avg);
+  set_value_in_sample(column, sample, load_avg);
+
+  if (long_term_sample != nullptr) {
+    set_value_in_sample(column, long_term_sample, get_long_term_load_average());
+  }
+}
 
 } // namespace sapmachine_vitals

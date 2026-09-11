@@ -23,27 +23,131 @@
  *
  */
 
+#include "logging/log.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "vitals/vitals_internals.hpp"
+#include "pdh_interface.hpp"
 
 #include <psapi.h>
 
 namespace sapmachine_vitals {
 
+static const DWORD PDH_SYSTEM_IDX = 2;
+static const DWORD PDH_PROCESSOR_TIME_IDX = 6;
+static const DWORD PDH_PROCESSOR_QUEUE_LENGTH_IDX = 44;
+static const DWORD PDH_PROCESSOR_IDX = 238;
+
 static Column* g_col_system_memoryload = nullptr;
 static Column* g_col_system_avail_phys = nullptr;
+static Column* g_col_system_load_average = nullptr;
 static Column* g_col_process_working_set_size = nullptr;
 static Column* g_col_process_commit_charge = nullptr;
 
+static bool log_pdh(const char* operation, PDH_STATUS status) {
+  if (status != ERROR_SUCCESS) {
+    log_debug(vitals)("pdh operation '%s' failed with error code %x", operation, status);
+    return false;
+  }
+
+  return true;
+}
+
+static bool has_loadavg = false;
+static double proc_scale_factor = 1.0;
+
+static HQUERY query;
+static HCOUNTER queue_length_counter, processor_time_counter;
+static PDH_FMT_COUNTERVALUE queue_length, processor_time;
+
+static bool add_pdh_string_from_index(DWORD index, stringStream* ss) {
+  DWORD size = 0;
+
+  if (PdhDll::PdhLookupPerfNameByIndex(nullptr, index, nullptr, &size) != PDH_MORE_DATA) {
+    return false;
+  }
+
+  char* pdh_string = NEW_C_HEAP_ARRAY(char, size, mtInternal);
+  pdh_string[size - 1] = '\0';
+  PDH_STATUS status = PdhDll::PdhLookupPerfNameByIndex(nullptr, index, pdh_string, &size);
+
+  if (status == ERROR_SUCCESS) {
+    ss->print_raw(pdh_string);
+  } else {
+    log_pdh("Converting index failed", status);
+  }
+
+  FREE_C_HEAP_ARRAY(pdh_string);
+
+  return status == ERROR_SUCCESS;
+}
+
+static double get_load_average_impl(bool first_call) {
+  double load_avg = -1;
+
+  if (first_call) {
+    stringStream queue_lengt_counter_name;
+    queue_lengt_counter_name.put('\\');
+    bool success = add_pdh_string_from_index(PDH_SYSTEM_IDX, &queue_lengt_counter_name);
+    queue_lengt_counter_name.put('\\');
+    success = success && add_pdh_string_from_index(PDH_PROCESSOR_QUEUE_LENGTH_IDX, &queue_lengt_counter_name);
+
+    stringStream processor_time_counter_name;
+    processor_time_counter_name.put('\\');
+    success = success && add_pdh_string_from_index(PDH_PROCESSOR_IDX, &processor_time_counter_name);
+    processor_time_counter_name.print_raw("(_Total)\\");
+    success = success && add_pdh_string_from_index(PDH_PROCESSOR_TIME_IDX, &processor_time_counter_name);
+
+    if (!success) {
+      log_debug(vitals)("Could not create the localized counters: '%s', '%s'", queue_lengt_counter_name.base(), processor_time_counter_name.base());
+      return load_avg;
+    }
+
+    has_loadavg = log_pdh("open query", PdhDll::PdhOpenQuery(nullptr, 0, &query)) &&
+      log_pdh("add queue length", PdhDll::PdhAddCounter(query, queue_lengt_counter_name.base(), 0, &queue_length_counter)) &&
+      log_pdh("add processor time", PdhDll::PdhAddCounter(query, processor_time_counter_name.base(), 0, &processor_time_counter)) &&
+      log_pdh("collect data", PdhDll::PdhCollectQueryData(query));
+    proc_scale_factor = 100.0 / MAX2(1, os::processor_count());
+  }
+  else {
+    TraceTime timer("Getting the counter values", TRACETIME_LOG(Debug, vitals, os));
+
+    if (log_pdh("collect data", PdhDll::PdhCollectQueryData(query)) &&
+      log_pdh("format queue length", PdhDll::PdhGetFormattedCounterValue(queue_length_counter, PDH_FMT_DOUBLE, nullptr, &queue_length)) &&
+      log_pdh("format processor time", PdhDll::PdhGetFormattedCounterValue(processor_time_counter, PDH_FMT_DOUBLE, nullptr, &processor_time))) {
+      log_debug(vitals)("Queue length %d, processor time %d", (int)queue_length.doubleValue, (int)processor_time.doubleValue);
+      load_avg = processor_time.doubleValue + queue_length.doubleValue * proc_scale_factor;
+    }
+  }
+
+  return load_avg;
+}
+
+static void initialize_pdh() {
+  if (!PdhDll::PdhAttach()) {
+    log_debug(vitals)("Could not attach pdh lib.");
+    return;
+  }
+
+  get_load_average_impl(true);
+}
+
 bool platform_columns_initialize() {
+  initialize_pdh();
+
   g_col_system_memoryload =
       define_column<PlainValueColumn>("system", nullptr, "mload", "Approximate percentage of physical memory that is in use.", true, MAX);
 
   // MEMORYSTATUSEX ullAvailPhys
   g_col_system_avail_phys =
       define_column<MemorySizeColumn>("system", nullptr, "avail-phys", "Amount of physical memory currently available.", true, MIN);
+
+  g_col_system_load_average =
+    define_column<PlainValueColumn>("system", nullptr, "la", "Load average in the sample interval in percent.", has_loadavg, MAX);
+
   // PROCESS_MEMORY_COUNTERS_EX WorkingSetSize
   g_col_process_working_set_size =
       define_column<MemorySizeColumn>("system", nullptr, "wset", "Working set size", true);
@@ -62,7 +166,15 @@ static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
   }
 }
 
-void sample_platform_values(Sample* sample) {
+static value_t get_load_average() {
+  if (!has_loadavg) {
+    return INVALID_VALUE;
+  }
+
+  return get_load_average_impl(false);
+}
+
+void sample_platform_values(Sample* sample, Sample* long_term_sample) {
   MEMORYSTATUSEX mse;
   mse.dwLength = sizeof(mse);
   if (::GlobalMemoryStatusEx(&mse)) {
@@ -76,6 +188,8 @@ void sample_platform_values(Sample* sample) {
     set_value_in_sample(g_col_process_working_set_size, sample, cnt.WorkingSetSize);
     set_value_in_sample(g_col_process_commit_charge, sample, cnt.PagefileUsage);
   }
+
+  set_load_average(g_col_system_load_average, get_load_average(), sample, long_term_sample);
 }
 
 } // namespace sapmachine_vitals
