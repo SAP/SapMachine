@@ -1534,7 +1534,7 @@ value_t get_long_term_load_average() {
 value_t get_load_avg_from_os_interface() {
 #ifndef _WINDOWS
   double avgs[3];
-  int nr_of_avgs = ::getloadavg(avgs, 3);
+  int nr_of_avgs = os::loadavg(avgs, 3);
   value_t load_avg;
 
   if (nr_of_avgs >= 1) {
