@@ -1006,7 +1006,7 @@ class SamplerThread: public NamedThread {
     _samples_taken ++;
     sample_values(_sample, for_long_term ? _long_term_sample : nullptr, VitalsLockFreeSampling);
 
-    // Fill in no set values in the long term table from the short term table.
+    // Fill in missing values in the long term table from the short term table.
     if (for_long_term) {
       for (int i = 0; i < _long_term_sample->num_values(); ++i) {
         if (_long_term_sample->value(i) == INVALID_VALUE) {
