@@ -68,7 +68,7 @@ public:
 
   ProcFile() : _buf(nullptr) {
     _buf = (char*)os::malloc(bufsize, mtInternal);
-    _filename = nullptr;
+    _filename = "<invalid>";
   }
 
   ~ProcFile () {
