@@ -106,10 +106,16 @@ static double get_load_average_impl(bool first_call) {
       return load_avg;
     }
 
-    has_loadavg = log_pdh("open query", PdhDll::PdhOpenQuery(nullptr, 0, &query)) &&
-      log_pdh("add queue length", PdhDll::PdhAddCounter(query, queue_lengt_counter_name.base(), 0, &queue_length_counter)) &&
-      log_pdh("add processor time", PdhDll::PdhAddCounter(query, processor_time_counter_name.base(), 0, &processor_time_counter)) &&
-      log_pdh("collect data", PdhDll::PdhCollectQueryData(query));
+    if (log_pdh("open query", PdhDll::PdhOpenQuery(nullptr, 0, &query))) {
+      has_loadavg = log_pdh("add queue length", PdhDll::PdhAddCounter(query, queue_lengt_counter_name.base(), 0, &queue_length_counter)) &&
+        log_pdh("add processor time", PdhDll::PdhAddCounter(query, processor_time_counter_name.base(), 0, &processor_time_counter)) &&
+        log_pdh("collect data", PdhDll::PdhCollectQueryData(query));
+
+      if (!has_loadavg) {
+        log_pdh("close query", PdhDll::PdhCloseQuery(query));
+      }
+    }
+
     proc_scale_factor = 100.0 / MAX2(1, os::processor_count());
   }
   else {
@@ -129,10 +135,13 @@ static double get_load_average_impl(bool first_call) {
 static void initialize_pdh() {
   if (!PdhDll::PdhAttach()) {
     log_debug(vitals)("Could not attach pdh lib.");
-    return;
+  } else {
+    get_load_average_impl(true);
   }
 
-  get_load_average_impl(true);
+  if (!has_loadavg) {
+    PdhDll::PdhDetach();
+  }
 }
 
 bool platform_columns_initialize() {
