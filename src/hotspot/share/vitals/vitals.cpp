@@ -1022,13 +1022,12 @@ public:
 
   SamplerThread()
     : NamedThread(),
-      _sample(nullptr),
+      _sample(Sample::allocate()),
+      _long_term_sample(Sample::allocate()),
       _stop(false),
       _samples_taken(0),
       _jump_cooldown(0)
   {
-    _sample = Sample::allocate();
-    _long_term_sample = Sample::allocate();
     this->set_name("vitals sampler thread");
   }
 
