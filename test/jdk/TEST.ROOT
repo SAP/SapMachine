@@ -61,7 +61,7 @@ sun/tools/jstatd sun/tools/jcmd \
 sun/tools/jinfo sun/tools/jmap sun/tools/jps sun/tools/jstack sun/tools/jstat \
 com/sun/tools/attach sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
-sun/tools/jhsdb
+sun/tools/jhsdb javax/sound
 
 # Group definitions
 groups=TEST.groups
