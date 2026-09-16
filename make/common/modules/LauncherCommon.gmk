@@ -86,7 +86,8 @@ define SetupBuildLauncherBody
   $1_RELAUNCHER_ARGUMENTS :=
 
   ifneq ($$($1_MAIN_CLASS), )
-    $1_JAVA_ARGS += -Xms8m
+    # SapMachine 2026-09-16: Don't enable vitals in tools.
+    $1_JAVA_ARGS += -Xms8m -XX:-EnableVitals
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
