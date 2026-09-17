@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2026 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -89,11 +89,11 @@ static double get_load_average_impl(bool first_call) {
   double load_avg = -1;
 
   if (first_call) {
-    stringStream queue_lengt_counter_name;
-    queue_lengt_counter_name.put('\\');
-    bool success = add_pdh_string_from_index(PDH_SYSTEM_IDX, &queue_lengt_counter_name);
-    queue_lengt_counter_name.put('\\');
-    success = success && add_pdh_string_from_index(PDH_PROCESSOR_QUEUE_LENGTH_IDX, &queue_lengt_counter_name);
+    stringStream queue_length_counter_name;
+    queue_length_counter_name.put('\\');
+    bool success = add_pdh_string_from_index(PDH_SYSTEM_IDX, &queue_length_counter_name);
+    queue_length_counter_name.put('\\');
+    success = success && add_pdh_string_from_index(PDH_PROCESSOR_QUEUE_LENGTH_IDX, &queue_length_counter_name);
 
     stringStream processor_time_counter_name;
     processor_time_counter_name.put('\\');
@@ -102,12 +102,12 @@ static double get_load_average_impl(bool first_call) {
     success = success && add_pdh_string_from_index(PDH_PROCESSOR_TIME_IDX, &processor_time_counter_name);
 
     if (!success) {
-      log_debug(vitals)("Could not create the localized counters: '%s', '%s'", queue_lengt_counter_name.base(), processor_time_counter_name.base());
+      log_debug(vitals)("Could not create the localized counters: '%s', '%s'", queue_length_counter_name.base(), processor_time_counter_name.base());
       return load_avg;
     }
 
     if (log_pdh("open query", PdhDll::PdhOpenQuery(nullptr, 0, &query))) {
-      has_loadavg = log_pdh("add queue length", PdhDll::PdhAddCounter(query, queue_lengt_counter_name.base(), 0, &queue_length_counter)) &&
+      has_loadavg = log_pdh("add queue length", PdhDll::PdhAddCounter(query, queue_length_counter_name.base(), 0, &queue_length_counter)) &&
         log_pdh("add processor time", PdhDll::PdhAddCounter(query, processor_time_counter_name.base(), 0, &processor_time_counter)) &&
         log_pdh("collect data", PdhDll::PdhCollectQueryData(query));
 
@@ -148,14 +148,14 @@ bool platform_columns_initialize() {
   initialize_pdh();
 
   g_col_system_memoryload =
-      define_column<PlainValueColumn>("system", nullptr, "mload", "Approximate percentage of physical memory that is in use.", true, MAX);
+      define_column<PlainValueColumn>("system", nullptr, "mload", "Approximate percentage of physical memory that is in use", true, MAX);
 
   // MEMORYSTATUSEX ullAvailPhys
   g_col_system_avail_phys =
-      define_column<MemorySizeColumn>("system", nullptr, "avail-phys", "Amount of physical memory currently available.", true, MIN);
+      define_column<MemorySizeColumn>("system", nullptr, "avail-phys", "Amount of physical memory currently available", true, MIN);
 
   g_col_system_load_average =
-    define_column<PlainValueColumn>("system", nullptr, "la", "Load average in the sample interval in percent.", has_loadavg, MAX);
+    define_column<PlainValueColumn>("system", nullptr, "la", "Load average in the sample interval in percent", has_loadavg, MAX);
 
   // PROCESS_MEMORY_COUNTERS_EX WorkingSetSize
   g_col_process_working_set_size =
