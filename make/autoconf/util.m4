@@ -566,6 +566,14 @@ AC_DEFUN([UTIL_CHECK_TYPE_file],
   fi
 ])
 
+AC_DEFUN([UTIL_CHECK_TYPE_executable],
+[
+  # Check that the argument is an existing file that the user has execute access to.
+  if (test ! -x "$1") || (test ! -f "$1") ; then
+    FAILURE="File $1 does not exist or is not executable"
+  fi
+])
+
 AC_DEFUN([UTIL_CHECK_TYPE_directory],
 [
   # Check that the argument is an existing directory
@@ -573,7 +581,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_directory],
     FAILURE="Directory $1 does not exist or is not readable"
   fi
 
-  if test "[x]ARG_CHECK_FOR_FILES" != x; then
+  if test "[x]ARG_CHECK_FOR_FILES" != "x:"; then
     for file in ARG_CHECK_FOR_FILES; do
       found_files=$($ECHO $(ls $1/$file 2> /dev/null))
       if test "x$found_files" = x; then
@@ -648,7 +656,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_features],
 # Arguments:
 #   NAME: The base name of this option (i.e. what follows --with-). Required.
 #   TYPE: The type of the value. Can be one of "string", "integer", "file",
-#     "directory", "literal", "multivalue" or "features". Required.
+#     "executable", "directory", "literal", "multivalue" or "features". Required.
 #   DEFAULT: The default value for this option. Can be any valid string.
 #     Required.
 #   OPTIONAL: If this feature can be disabled. Defaults to false. If true,
@@ -758,7 +766,7 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
   # Need to assign since we can't expand ARG TYPE inside the m4 quoted if statement
   TEST_TYPE="ARG_TYPE"
   # Additional [] needed to keep m4 from mangling shell constructs.
-  [ if [[ ! "$TEST_TYPE" =~ ^(string|integer|file|directory|literal|multivalue|features)$ ]] ; then ]
+  [ if [[ ! "$TEST_TYPE" =~ ^(string|integer|file|executable|directory|literal|multivalue|features)$ ]] ; then ]
     AC_MSG_ERROR([Internal error: Argument TYPE to [UTIL_ARG_WITH] must be a valid type, was: 'ARG_TYPE'])
   fi
 
@@ -845,25 +853,25 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
     else
       AC_MSG_RESULT([$ARG_RESULT, $REASON])
     fi
-  fi
 
-  # Verify value
-  # First use our dispatcher to verify that type requirements are satisfied
-  UTIL_CHECK_TYPE(ARG_TYPE, $ARG_RESULT)
+    # Verify value
+    # First use our dispatcher to verify that type requirements are satisfied
+    UTIL_CHECK_TYPE(ARG_TYPE, $ARG_RESULT)
 
-  if test "x$FAILURE" = x; then
-    # Execute custom verification payload, if present
-    RESULT="$ARG_RESULT"
+    if test "x$FAILURE" = x; then
+      # Execute custom verification payload, if present
+      RESULT="$ARG_RESULT"
 
-    ARG_CHECK_VALUE
+      ARG_CHECK_VALUE
 
-    ARG_RESULT="$RESULT"
-  fi
+      ARG_RESULT="$RESULT"
+    fi
 
-  if test "x$FAILURE" != x; then
-    AC_MSG_NOTICE([Invalid value for [--with-]ARG_NAME: "$ARG_RESULT"])
-    AC_MSG_NOTICE([$FAILURE])
-    AC_MSG_ERROR([Cannot continue])
+    if test "x$FAILURE" != x; then
+      AC_MSG_NOTICE([Invalid value for [--with-]ARG_NAME: "$ARG_RESULT"])
+      AC_MSG_NOTICE([$FAILURE])
+      AC_MSG_ERROR([Cannot continue])
+    fi
   fi
 
   # Execute result payloads, if present
