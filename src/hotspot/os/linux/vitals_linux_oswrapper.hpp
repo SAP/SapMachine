@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2026 SAP SE. All rights reserved.
  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -48,6 +48,7 @@ class OSWrapper {
 	  f(syst_t) \
 	  f(syst_tr) \
 	  f(syst_tb) \
+	  f(syst_load_average) \
 	  f(syst_cpu_us) \
 	  f(syst_cpu_sy) \
 	  f(syst_cpu_id) \
