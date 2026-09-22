@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2026 SAP SE. All rights reserved.
  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,6 +31,7 @@
 #include "vitals_linux_oswrapper.hpp"
 #include "logging/log.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timerTrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "vitals/vitals_internals.hpp"
 
@@ -62,6 +63,7 @@ static const int num_seconds_until_update = 1;
 
 class ProcFile {
   char* _buf;
+  const char* _filename;
 
   // To keep the code simple, I just use a fixed sized buffer.
   enum { bufsize = 64*K };
@@ -70,6 +72,7 @@ public:
 
   ProcFile() : _buf(NULL) {
     _buf = (char*)os::malloc(bufsize, mtInternal);
+    _filename = "<invalid>";
   }
 
   ~ProcFile () {
@@ -88,6 +91,8 @@ public:
     _buf[bytes_read] = '\0';
 
     ::fclose(f);
+    // All filenames we get are live for the time we need it. No need to strdup.
+    _filename = filename;
 
     return bytes_read > 0 && bytes_read < bufsize;
   }
@@ -95,13 +100,13 @@ public:
   const char* text() const { return _buf; }
 
   // Utility function; parse a number string as value_t
-  static value_t as_value(const char* text, size_t scale = 1) {
+  static value_t as_value(const char* prefix, const char* text, size_t scale = 1) {
     value_t value;
     errno = 0;
     char* endptr = NULL;
     value = (value_t)::strtoll(text, &endptr, 10);
     if (endptr == text || errno != 0) {
-      log_debug(vitals, os)("Failed to parse \"%s\"", text);
+      log_debug(vitals, os)("Failed to parse %s: \"%s\"", prefix, text);
       value = INVALID_VALUE;
     } else {
       value *= scale;
@@ -112,7 +117,7 @@ public:
   // Return the start of the file, as number. Useful for proc files which
   // contain a single number. Returns INVALID_VALUE if value did not parse
   value_t as_value(size_t scale = 1) const {
-    return as_value(_buf, scale);
+    return as_value(_filename, _buf, scale);
   }
 
   const char* get_prefixed_line(const char* prefix) const {
@@ -125,7 +130,7 @@ public:
     if (s != NULL) {
       errno = 0;
       const char* p = s + ::strlen(prefix);
-      value = as_value(p, scale);
+      value = as_value(prefix, p, scale);
       log_trace(vitals, os)("Reading \"%s\": %llu", prefix, (unsigned long long) value);
     } else {
       log_debug(vitals, os)("Could not find prefix \"%s\"", prefix);
@@ -495,6 +500,7 @@ ALL_VALUES_DO(RESETVAL)
   // Number of processes: iterate over /proc/<pid> and count.
   // Number of threads: read "num_threads" from /proc/<pid>/stat
   {
+    TraceTime timer("Iterating all processes", TRACETIME_LOG(Debug, vitals, os));
     DIR* d = ::opendir("/proc");
     if (d != NULL) {
       value_t v_p = 0;
@@ -559,6 +565,14 @@ ALL_VALUES_DO(RESETVAL)
     }
   }
 #endif // __GLIBC__
+
+  if ((VitalsSampleInterval < 30) && (_syst_tr != INVALID_VALUE)) {
+    // For short sample times we use the number of runnable and running threads
+    // to approximate the load average in that interval.
+    _syst_load_average = (value_t) MAX2(0.0, _syst_tr * get_proc_scale_factor());
+  } else {
+    _syst_load_average = get_load_avg_from_os_interface();
+  }
 
   first_call = false;
 

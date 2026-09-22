@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2026 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -105,8 +105,9 @@ static Column* g_col_system_pages_swapped_out = NULL;
 static Column* g_col_system_num_procs = NULL;
 static Column* g_col_system_num_threads = NULL;
 
-static Column* g_col_system_num_procs_running = NULL;
-static Column* g_col_system_num_procs_blocked = NULL;
+static Column* g_col_system_num_procs_running = nullptr;
+static Column* g_col_system_num_procs_blocked = nullptr;
+static Column* g_col_system_load_average = nullptr;
 
 static bool g_show_cgroup_info = false;
 static Column* g_col_system_cgrp_limit_in_bytes = NULL;
@@ -180,7 +181,9 @@ bool platform_columns_initialize() {
   g_col_system_num_procs_running =
       define_column<PlainValueColumn>(system_cat, NULL, "tr", "Number of threads running", true);
   g_col_system_num_procs_blocked =
-      define_column<PlainValueColumn>(system_cat, NULL, "tb", "Number of threads blocked on disk IO", true);
+      define_column<PlainValueColumn>(system_cat, nullptr, "tb", "Number of threads blocked on disk IO", true);
+  g_col_system_load_average =
+      define_column<PlainValueColumn>(system_cat, nullptr, "la", "Load average in the sample interval in percent", true);
 
   g_col_system_cpu_user =
       define_column<CPUTimeColumn>(system_cat, "cpu", "us", "CPU user time [host]", true);
@@ -263,7 +266,7 @@ static void set_value_in_sample(Column* col, Sample* sample, value_t val) {
   }
 }
 
-void sample_platform_values(Sample* sample) {
+void sample_platform_values(Sample* sample, Sample* long_term_sample) {
 
   int idx = 0;
 
@@ -288,6 +291,7 @@ void sample_platform_values(Sample* sample) {
 
   set_value_in_sample(g_col_system_num_procs_running, sample, OSWrapper::syst_tr());
   set_value_in_sample(g_col_system_num_procs_blocked, sample, OSWrapper::syst_tb());
+  set_load_average(g_col_system_load_average, OSWrapper::syst_load_average(), sample, long_term_sample);
 
   // cgroups business
   if (g_show_cgroup_info) {
