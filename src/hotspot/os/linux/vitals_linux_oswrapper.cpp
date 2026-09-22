@@ -30,6 +30,7 @@
 #include "osContainer_linux.hpp"
 #include "vitals_linux_oswrapper.hpp"
 #include "logging/log.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/globalDefinitions.hpp"
