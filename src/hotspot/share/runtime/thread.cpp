@@ -3107,6 +3107,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     sapmachine_vitals::initialize_himem_report_facility();
   }
 #endif // LINUX
+  if (EnableVitals) {
+      sapmachine_vitals::begin_sampling();
+  }
 
   BiasedLocking::init();
 
