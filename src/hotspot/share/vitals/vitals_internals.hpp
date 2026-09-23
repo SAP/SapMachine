@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2026 SAP SE. All rights reserved.
  * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -241,10 +241,16 @@ namespace sapmachine_vitals {
     return c;
   }
 
+  // Load average handling.
+  bool initialize_load_average();
+  double get_proc_scale_factor();
+  value_t get_load_avg_from_os_interface();
+  void set_load_average(Column* column, value_t load_avg, Sample* sample, Sample* long_term_sample);
+
   // Ask platform to add platform specific columns
   bool platform_columns_initialize();
 
-  void sample_platform_values(Sample* sample);
+  void sample_platform_values(Sample* sample, Sample* long_term_sample);
   void sample_jvm_values(Sample* sample, bool avoid_locking);
 
 }; // namespace sapmachine_vitals
