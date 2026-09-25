@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,16 +61,15 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # add -z,relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
     BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now"
-    # Linux : remove unused code+data in link step
-    if test "x$ENABLE_LINKTIME_GC" = xtrue; then
-      if test "x$OPENJDK_TARGET_CPU" = xs390x; then
-        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--gc-sections"
-      else
-        BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,--gc-sections"
-      fi
-    fi
 
     BASIC_LDFLAGS_JVM_ONLY=""
+    # Linux : remove unused code+data in link step
+    if test "x$ENABLE_LINKTIME_GC" = xtrue; then
+      # keep vtables : -Wl,--undefined-glob=_ZTV* (but this seems not to work with gold ld)
+      # so keep at least the Metadata vtable that is used in the serviceability agent
+      BASIC_LDFLAGS_JVM_ONLY="$BASIC_LDFLAGS_JVM_ONLY -Wl,--gc-sections -Wl,--undefined=_ZTV8Metadata"
+      BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,--gc-sections"
+    fi
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
