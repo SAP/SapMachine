@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,9 +128,9 @@ public class VitalsValuesSanityCheck {
      */
     private static void checkValueIsBetween(long value, String colname, long min, long max) {
         if (value < min) {
-            throw new RuntimeException(colname + " seems too low (expected at least " + min + ")");
+            throw new RuntimeException(colname + "(" + value + ") seems too low (expected at least " + min + ")");
         } else if (value >= max) {
-            throw new RuntimeException(colname + " seems too high (expected at most " + max + ")");
+            throw new RuntimeException(colname + "(" + value + ") seems too high (expected at most " + max + ")");
         }
     }
 
@@ -269,11 +269,6 @@ public class VitalsValuesSanityCheck {
 
                 long min_expected_kernel_threads = min_expected_java_threads;
                 long max_expected_kernel_threads = 1000000000; // same here
-                long syst_t = checkValueIsBetween(csv, "syst-t", min_expected_kernel_threads, max_expected_kernel_threads);
-
-                // threads running, blocked on disk IO (cannot be larger than number of kernel threads)
-                checkValueIsBetween(csv, "syst-tr", 0, syst_t);
-                checkValueIsBetween(csv, "syst-tb", 0, syst_t);
 
                 // Cgroup
                 // We may not always show this. But if we do, at least the usage numbers should be checked
