@@ -74,7 +74,7 @@ public class VitalsUtils {
         }
         if (nextToMatch < regexes.length) {
             throw new RuntimeException("Not all matches found. First missing pattern " + nextToMatch + ":" + regexes[nextToMatch] +
-			               "\nOutput: " /* + String.join("\n", lines)*/);
+			               "\nOutput: " + String.join("\n", lines));
         }
         return nLine;
     }
