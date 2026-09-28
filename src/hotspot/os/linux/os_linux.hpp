@@ -188,7 +188,7 @@ class os::Linux {
   static bool query_accurate_process_memory_info(accurate_meminfo_t* info);
 
   // Gets the total number of processes and threads on the system. If parameter is nullptr
-  // the value isn't determined. This is useful since the thread count is somewhat expensivce.
+  // the value isn't determined. This is useful since the thread count is somewhat expensive.
   static bool get_total_procs_and_threads(uint64_t* procs, uint64_t* threads);
 
   // Tells if the user asked for transparent huge pages.

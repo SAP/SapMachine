@@ -2489,7 +2489,7 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
         if (is_numerical_id(en->d_name)) {
           procs_count++;
           if (threads == nullptr) {
-              continue;
+            continue;
           }
           char tmp[128];
           jio_snprintf(tmp, sizeof(tmp), "/proc/%s/stat", en->d_name);
