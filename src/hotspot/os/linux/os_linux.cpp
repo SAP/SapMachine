@@ -2498,8 +2498,9 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
             // See man proc(5)
             // (20) num_threads  %ld
             long num_threads = 0;
-            ::fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads);
-            threads_count += num_threads;
+            if (fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads) == 1) {
+              threads_count += num_threads;
+            }
             ::fclose(fp);
           }
         }
