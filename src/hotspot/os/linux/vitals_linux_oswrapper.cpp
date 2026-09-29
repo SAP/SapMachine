@@ -24,6 +24,7 @@
  */
 
 #include "jvm_io.h"
+#include "os_linux.hpp"
 #include "logging/log.hpp"
 #include "osContainer_linux.hpp"
 #include "runtime/os.hpp"
