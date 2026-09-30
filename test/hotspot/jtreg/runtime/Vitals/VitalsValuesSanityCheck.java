@@ -63,6 +63,9 @@ import jdk.test.whitebox.WhiteBox;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -355,7 +358,11 @@ public class VitalsValuesSanityCheck {
         try {
             // wait some time. We sample with 1sec sample frequency, that should give us more than one sample
             // and therefore some of them should show delta values
-            Thread.sleep(4000);
+            for (int i = 0; i < 400; ++i) {
+                // Load some classes.
+                Proxy.getProxyClass(new URLClassLoader(new URL[0]), new Class [] { CharSequence.class });
+                Thread.sleep(10);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
