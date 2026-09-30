@@ -1238,8 +1238,16 @@ public class ZipFile implements ZipConstants, Closeable {
                 entries[index++] = hash;
                 entries[index++] = next;
                 entries[index  ] = pos;
+                // Validate comment if it exists
+                // if the bytes representing the comment cannot be converted to
+                // a String via zcp.toString, an Exception will be thrown
+                int clen = CENCOM(cen, pos);
+                if (clen > 0) {
+                    int start = entryPos + nlen + elen;
+                    zcp.toString(cen, start, clen);
+                }
             } catch (Exception e) {
-                zerror("invalid CEN header (bad entry name)");
+                zerror("invalid CEN header (bad entry name or comment)");
             }
             return nlen;
         }
@@ -1650,8 +1658,10 @@ public class ZipFile implements ZipConstants, Closeable {
                     this.cen = null;
                     return;         // only END header present
                 }
-                if (end.cenlen > end.endpos)
+                // Validate END header
+                if (end.cenlen > end.endpos) {
                     zerror("invalid END header (bad central directory size)");
+                }
                 long cenpos = end.endpos - end.cenlen;     // position of CEN table
                 // Get position of first local file (LOC) header, taking into
                 // account that there may be a stub prefixed to the zip file.
@@ -1659,18 +1669,22 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (locpos < 0) {
                     zerror("invalid END header (bad central directory offset)");
                 }
-                // read in the CEN and END
                 if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
                     zerror("invalid END header (central directory size too large)");
                 }
                 if (end.centot < 0 || end.centot > end.cenlen / CENHDR) {
                     zerror("invalid END header (total entries count too large)");
                 }
-                cen = this.cen = new byte[(int)(end.cenlen + ENDHDR)];
-                if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
+                // Validation ensures these are <= Integer.MAX_VALUE
+                int cenlen = Math.toIntExact(end.cenlen);
+                int centot = Math.toIntExact(end.centot);
+
+                // read in the CEN and END
+                cen = this.cen = new byte[cenlen + ENDHDR];
+                if (readFullyAt(cen, 0, cen.length, cenpos) != cenlen + ENDHDR) {
                     zerror("read CEN tables failed");
                 }
-                this.total = Math.toIntExact(end.centot);
+                this.total = centot;
             } else {
                 cen = this.cen;
                 this.total = knownTotal;
