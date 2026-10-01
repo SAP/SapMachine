@@ -1155,8 +1155,10 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     } else {
       log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
                               thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
-      // Log some OS information which might explain why creating the thread failed. Since this
-      // is a lot of output we only use warning level first and then turn it down to Info.
+      // Log some OS information which might explain why creating the thread failed.
+
+      // SapMachine 2026-10-01: Since this is a lot of output we only use warning level first and
+      // then turn it down to Info.
       static bool is_first = true;
 
       if (is_first || log_is_enabled(Info, os, thread)) {
@@ -2476,6 +2478,7 @@ static bool is_numerical_id(const char* s) {
   return *p == '\0' ? true : false;
 }
 
+// SapMachine 2026-10-01
 bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) {
   TraceTime timer("Iterating all processes", TRACETIME_LOG(Trace, os, timer));
   DIR* d = ::opendir("/proc");
