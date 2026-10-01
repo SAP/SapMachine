@@ -45,7 +45,6 @@ class OSWrapper {
 	  f(syst_si) \
 	  f(syst_so) \
 	  f(syst_p) \
-	  f(syst_t) \
 	  f(syst_tr) \
 	  f(syst_tb) \
 	  f(syst_load_average) \
