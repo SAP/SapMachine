@@ -71,6 +71,8 @@ public class ExitOnFullCodeCacheTest {
                 "-XX:+ExitOnFullCodeCache",
                 "-XX:NonNMethodCodeHeapSize=" + NON_NMETHOD_KB + "K",
                 "-XX:ReservedCodeCacheSize=" + reservedKB + "K",
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                "-XX:-UseLargePages",
                 "-version");
 
         // The invariant that must always hold, on every platform, is that the

@@ -99,7 +99,9 @@ public class CheckFiles {
         allowedEndingsLibDir.add("fontconfig.bfc");
         allowedEndingsLibDir.add("fontconfig.properties.src");
         allowedEndingsLibDir.add("ct.sym");
-        allowedEndingsLibDir.add("jrt-fs.jar");
+        // SapMachine 2026-01-28 allow all jars because of our added async-profiler
+        //allowedEndingsLibDir.add("jrt-fs.jar");
+        allowedEndingsLibDir.add(".jar");
         allowedEndingsLibDir.add("jvm.cfg");
         allowedEndingsLibDir.add("modules");
         allowedEndingsLibDir.add("psfontj2d.properties");
@@ -186,6 +188,12 @@ public class CheckFiles {
                 for (Path subfolder : stream) {
                     if (Files.isDirectory(subfolder)) {
                         System.out.println("Checking legal dir subfolder for required files: " + subfolder.getFileName());
+
+                        // SapMachine 2026-02-24: different handling for async profiler subdir we ship with SapMachine
+                        if (subfolder.getFileName().endsWith("async")) {
+                            System.out.println("Skipping async folder from SapMachine, it contains different content from the OJDK legal dirs.");
+                            continue;
+                        }
 
                         for (String fileName : requiredFilesInLegalSubdirs) {
                             Path filePath = subfolder.resolve(fileName);

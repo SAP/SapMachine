@@ -23,12 +23,15 @@
 # questions.
 #
 
-name: 'OpenJDK GHA Sanity Checks'
+# SapMachine 2022-06-22: Change the name of the GitHub Action
+name: 'SapMachine GHA Sanity Checks'
 
 on:
   push:
-    branches-ignore:
-      - pr/*
+    # SapMachine 2026-06-01: do not trigger github actions for docs files
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
   workflow_dispatch:
     inputs:
       platforms:
@@ -165,8 +168,20 @@ jobs:
                 return
               fi
 
+              # SapMachine 2025-07-14: Add sapmachine branch
+              if [[ $BRANCH == "sapmachine" ]]; then
+                echo 'true'
+                return
+              fi
+
               # ...same for stabilization branches
               if [[ $BRANCH =~ "jdk(.*)" ]]; then
+                echo 'true'
+                return
+              fi
+
+              # SapMachine 2025-07-14: Add sapmachine* branches
+              if [[ $BRANCH =~ "sapmachine([0-9]+)" ]]; then
                 echo 'true'
                 return
               fi
@@ -180,10 +195,12 @@ jobs:
           echo "linux-aarch64=$(check_platform linux-aarch64 linux aarch64)" >> $GITHUB_OUTPUT
           echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
           echo "alpine-linux-x64=$(check_platform alpine-linux-x64 alpine-linux x64)" >> $GITHUB_OUTPUT
-          echo "macos-x64=$(check_platform macos-x64 macos x64)" >> $GITHUB_OUTPUT
+          # SapMachine 2026-05-14: Disabling GHA for platforms that are not delivered
+          echo "macos-x64=false" >> $GITHUB_OUTPUT
           echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
-          echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
+          # SapMachine 2026-05-14: Disabling GHA for platforms that are not delivered
+          echo "windows-aarch64=false" >> $GITHUB_OUTPUT
           echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
           echo "dry-run=$(check_dry_run)" >> $GITHUB_OUTPUT
 
