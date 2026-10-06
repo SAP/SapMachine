@@ -5905,6 +5905,10 @@ void* os::get_default_process_handle() {
   return (void*)GetModuleHandle(nullptr);
 }
 
+void os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not supported on Windows.
+}
+
 /*
   All the defined signal names for Windows.
 
