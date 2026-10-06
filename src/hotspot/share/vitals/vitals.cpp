@@ -40,6 +40,7 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -970,6 +971,7 @@ static SampleTables* g_all_tables = nullptr;
 
 // Samples all values, but leaves timestamp unchanged
 static void sample_values(Sample* sample, Sample* long_term_sample, bool avoid_locking) {
+  TraceTime timer("Sampling the values", TRACETIME_LOG(Trace, vitals, timer));
   time_t t;
   ::time(&t);
   sample->set_timestamp(t);
@@ -1034,8 +1036,8 @@ public:
   virtual void run() {
     record_stack_base_and_size();
     for (;;) {
-      take_sample(g_all_tables->next_sample_is_for_long_term());
       os::naked_sleep(get_sample_interval_ms());
+      take_sample(g_all_tables->next_sample_is_for_long_term());
       if (_stop) {
         break;
       }

@@ -61,6 +61,8 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
+// SapMachine 2026-10-01
+#include "runtime/timerTrace.hpp"
 #include "runtime/vm_version.hpp"
 #include "semaphore_posix.hpp"
 #include "services/runtimeService.hpp"
@@ -1155,12 +1157,32 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
                               thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
       // Log some OS information which might explain why creating the thread failed.
-      log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
-      LogStream st(Log(os, thread)::info());
-      os::Posix::print_rlimit_info(&st);
-      os::print_memory_info(&st);
-      os::Linux::print_proc_sys_info(&st);
-      os::Linux::print_container_info(&st);
+
+      // SapMachine 2026-10-01: Since this is a lot of output we only use warning level first and
+      // then turn it down to Info.
+      static bool is_first = true;
+
+      if (is_first || log_is_enabled(Info, os, thread)) {
+        uint64_t procs, threads;
+
+        LogStream stw(Log(os, thread)::warning());
+        LogStream sti(Log(os, thread)::info());
+        LogStream* st = is_first ? &stw : &sti;
+
+        st->print_cr("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
+
+        if (os::Linux::get_total_procs_and_threads(&procs, &threads)) {
+          st->print_cr("Number of processes on the system: " UINT64_FORMAT, procs);
+          st->print_cr("Number of threads on the system: " UINT64_FORMAT, threads);
+        }
+
+        os::Posix::print_rlimit_info(st);
+        os::print_memory_info(st);
+        os::Linux::print_proc_sys_info(st);
+        os::Linux::print_container_info(st);
+
+        is_first = false;
+      }
     }
 
     pthread_attr_destroy(&attr);
@@ -2446,6 +2468,60 @@ bool os::Linux::query_accurate_process_memory_info(os::Linux::accurate_meminfo_t
   }
   fclose(f);
   return true;
+}
+
+// Helper function, returns true if string is a numerical id
+static bool is_numerical_id(const char* s) {
+  const char* p = s;
+  while(*p >= '0' && *p <= '9') {
+    p ++;
+  }
+  return *p == '\0' ? true : false;
+}
+
+// SapMachine 2026-10-01
+bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) {
+  TraceTime timer("Iterating all processes", TRACETIME_LOG(Trace, os, timer));
+  DIR* d = ::opendir("/proc");
+  if (d != nullptr) {
+    uint64_t procs_count = 0;
+    uint64_t threads_count = 0;
+    struct dirent* en = nullptr;
+    do {
+      en = ::readdir(d);
+      if (en != nullptr) {
+        if (is_numerical_id(en->d_name)) {
+          procs_count++;
+          if (threads == nullptr) {
+            continue;
+          }
+          char tmp[128];
+          jio_snprintf(tmp, sizeof(tmp), "/proc/%s/stat", en->d_name);
+          FILE *fp = os::fopen(tmp, "r");
+          if (fp != nullptr) {
+            // See man proc(5)
+            // (20) num_threads  %ld
+            long num_threads = 0;
+            if (fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads) == 1) {
+              threads_count += num_threads;
+            }
+            ::fclose(fp);
+          }
+        }
+      }
+    } while(en != nullptr);
+    ::closedir(d);
+    if (procs != nullptr) {
+      *procs = procs_count;
+    }
+    if (threads != nullptr) {
+      *threads = threads_count;
+    }
+
+    return true;
+  }
+
+  return false;
 }
 
 #ifdef __GLIBC__
