@@ -296,10 +296,10 @@ public:
       }
     }
 
-    _file_usg = os::strdup(ss.base()); // so, we have that.
+    _file_usg = os::strdup(ss.base(), mtInternal); // so, we have that.
 
 #define STORE_PATH(variable, filename) \
-  ss.reset(); ss.print("%s%s", path.base(), filename); variable = os::strdup(ss.base());
+  ss.reset(); ss.print("%s%s", path.base(), filename); variable = os::strdup(ss.base(), mtInternal);
 
     if (isv1) {
       STORE_PATH(_file_usgsw, "memory.memsw.usage_in_bytes");

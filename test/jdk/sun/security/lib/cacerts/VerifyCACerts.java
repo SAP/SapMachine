@@ -29,6 +29,7 @@
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
  *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
  *      8321408 8316138 8341057 8303770 8350498 8359170 8361212 8372351 8387123
+ *      8386371
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -48,13 +49,13 @@ public class VerifyCACerts {
 
     // The numbers of certs now.
     // SapMachine 2021-09-23: Additional certificate for SAP
-    private static final int COUNT = 111;
+    private static final int COUNT = 110;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     // SapMachine 2021-09-23: Additional certificate for SAP
     private static final String CHECKSUM
-            = "A6:7C:8E:66:E1:30:1E:DB:A0:AF:2A:1E:63:44:EB:D3:E5:B5:4A:75:F8:AE:A2:85:3A:1F:20:09:E4:A5:D7:33";
+            = "84:57:41:B9:A2:63:08:48:F1:FA:2E:F4:EC:AD:9B:88:E9:F9:43:CC:BF:70:09:96:4D:07:BB:A2:79:40:6C:0F";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -224,8 +225,6 @@ public class VerifyCACerts {
                     "18:CE:6C:FE:7B:F1:4E:60:B2:E3:47:B8:DF:E8:68:CB:31:D0:2E:BB:3A:DA:27:15:69:F5:03:43:B4:6D:B3:A4");
             put("amazonrootca4 [jdk]",
                     "E3:5D:28:41:9E:D0:20:25:CF:A6:90:38:CD:62:39:62:45:8D:A5:C6:95:FB:DE:A3:C2:2B:0B:FB:25:89:70:92");
-            put("entrustrootcag4 [jdk]",
-                    "DB:35:17:D1:F6:73:2A:2D:5A:B9:7C:53:3E:C7:07:79:EE:32:70:A6:2F:B4:AC:42:38:37:24:60:E6:F0:1E:88");
             put("sslrootrsaca [jdk]",
                     "85:66:6A:56:2E:E0:BE:5C:E9:25:C1:D8:89:0A:6F:76:A8:7E:C1:6D:4D:7D:5F:29:EA:74:19:CF:20:12:3B:69");
             put("sslrootevrsaca [jdk]",

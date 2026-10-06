@@ -338,6 +338,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
         vmOptFinalFlag(map, "CriticalJNINatives");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "StressIncrementalInlining");
         vmOptFinalFlag(map, "TieredCompilation");
         vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseAdaptiveSizePolicy");
@@ -365,6 +366,8 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected void vmOptFinalIntxFlags(SafeMap map) {
         vmOptFinalIntxFlag(map, "MaxVectorSize");
+        vmOptFinalIntxFlag(map, "PerMethodSpecTrapLimit");
+        vmOptFinalIntxFlag(map, "PerMethodTrapLimit");
     }
 
     /**

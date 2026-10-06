@@ -645,7 +645,7 @@ struct JcmdClosure {
 };
 
 static bool iterate_exec_string(const char* exec_string, JcmdClosure* closure) {
-  char* exec_copy = os::strdup(exec_string);
+  char* exec_copy = os::strdup(exec_string, mtInternal);
   char* save = nullptr;
   for (char* tok = strtok_r(exec_copy, ";", &save);
        tok != nullptr; tok = ::strtok_r(nullptr, ";", &save)) {
