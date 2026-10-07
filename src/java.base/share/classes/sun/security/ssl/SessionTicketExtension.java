@@ -269,7 +269,7 @@ final class SessionTicketExtension {
                 // use getOutputSize to avoid a ShortBufferException
                 // from providers that require oversized buffers. See JDK-8368514.
                 ByteBuffer out;
-                out = ByteBuffer.allocate(data.remaining() - c.getOutputSize(data.remaining()));
+                out = ByteBuffer.allocate(c.getOutputSize(data.remaining()));
                 c.doFinal(data, out);
                 out.flip();
                 return out;
