@@ -43,6 +43,7 @@
  * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
  * @requires vm.vendor != "SAP SE"
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds.default.archive.available
  * @requires os.family != "aix"
  * @comment This test relies on crashing which conflicts with ASAN checks
  * @requires !vm.asan
@@ -73,6 +74,7 @@
  * @test id=coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds.default.archive.available
  * @requires os.family != "aix"
  * @comment This test relies on crashing which conflicts with ASAN checks
  * @requires !vm.asan
