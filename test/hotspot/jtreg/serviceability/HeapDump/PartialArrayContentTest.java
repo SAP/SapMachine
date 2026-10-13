@@ -96,9 +96,6 @@ class ArrayAllocOOMApp extends ArrayAllocApp {
 }
 
 public class PartialArrayContentTest {
-    private static int charLikeLimit = 120;
-    private static int nonCharLikeLimit = 50;
-
     public static void main(String[] args) throws Exception {
         if (args[0].equals("jcmd")) {
             checkPartialContentWithJcmd();
@@ -112,9 +109,9 @@ public class PartialArrayContentTest {
         createDump(dumpFile, true,
                 "-Xmx500M",
                 "-XX:+LimitPrimitiveArrayContentInHeapDump",
-                "-XX:StringLikeContentSizeLimitInHeapDump=" + charLikeLimit,
-                "-XX:ArrayContentSizeLimitInHeapDump=" + nonCharLikeLimit);
-        verifyDump(dumpFile, true);
+                "-XX:StringLikeContentSizeLimitInHeapDump=" + 120,
+                "-XX:ArrayContentSizeLimitInHeapDump=" + 50);
+        verifyDump(dumpFile, 120, 50);
     }
 
     public static void checkPartialContentWithOOM() throws Exception {
@@ -131,18 +128,32 @@ public class PartialArrayContentTest {
                 "-XX:HeapDumpPath=" + dumpFile,
                 "-XX:+HeapDumpOverwrite",
                 "-XX:HeapDumpParallelism=1");
-        verifyDump(dumpFile, false);
+        verifyDump(dumpFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
         Asserts.assertEquals(1L, countTags(dumpFile, 0x2c), "Must have one end segment");
         Asserts.assertTrue(firstSegment.exists(), "Segment file should not have been created (parallelism=1).");
         Asserts.assertEquals(firstSegment.length(), 0L, "Segment should not be modified.");
         // Create a dump with an array > 2GB to check for integer overflows in the partial array code.
+        // First try with the lowest limits.
         createDump(dumpFile, false,
                 "-Xmx2500M",  // Ensures the 2 billion entry short array is in the heap dump.
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=" + dumpFile,
                 "-XX:+HeapDumpOverwrite",
-                "-XX:+LimitPrimitiveArrayContentInHeapDump");
-        int largestArraySize = verifyDump(dumpFile, true);
+                "-XX:+LimitPrimitiveArrayContentInHeapDump",
+                "-XX:StringLikeContentSizeLimitInHeapDump=0",
+                "-XX:ArrayContentSizeLimitInHeapDump=0");
+        int largestArraySize = verifyDump(dumpFile, 0, 0);
+        Asserts.assertEquals(largestArraySize, ArrayAllocOOMApp.largestArraySize);
+        // Check the maximum limit works.
+        createDump(dumpFile, false,
+                "-Xmx2500M",  // Ensures the 2 billion entry short array is in the heap dump.
+                "-XX:+HeapDumpOnOutOfMemoryError",
+                "-XX:HeapDumpPath=" + dumpFile,
+                "-XX:+HeapDumpOverwrite",
+                "-XX:+LimitPrimitiveArrayContentInHeapDump",
+                "-XX:StringLikeContentSizeLimitInHeapDump=" + Integer.MAX_VALUE,
+                "-XX:ArrayContentSizeLimitInHeapDump=" + Integer.MAX_VALUE);
+        largestArraySize = verifyDump(dumpFile, Integer.MAX_VALUE, Integer.MAX_VALUE);
         Asserts.assertEquals(largestArraySize, ArrayAllocOOMApp.largestArraySize);
     }
 
@@ -203,7 +214,7 @@ public class PartialArrayContentTest {
         return result;
     }
 
-    private static int verifyDump(File dumpFile, boolean isPartial) throws Exception {
+    private static int verifyDump(File dumpFile, int charLikeLimit, int nonCharLikeLimit) throws Exception {
         Asserts.assertTrue(dumpFile.exists(), "Heap dump file not found.");
         int largestArraySize = 0;
 
@@ -226,9 +237,10 @@ public class PartialArrayContentTest {
                 if (obj instanceof JavaValueArray) {
                     JavaValueArray array = (JavaValueArray) obj;
 
-                    largestArraySize = Math.max(largestArraySize, array.getLength());
+                    int arraySize = array.getLength();
+                    largestArraySize = Math.max(largestArraySize, arraySize);
 
-                    if (array.getLength() != ArrayAllocApp.arraySize) {
+                    if (arraySize != ArrayAllocApp.arraySize) {
                         continue;
                     }
 
@@ -266,13 +278,11 @@ public class PartialArrayContentTest {
                             break;
                     }
 
-                    int fullPart = isPartial ? limit : values.length;
-
-                    for (int i = 0; i < fullPart; ++i) {
+                    for (int i = 0; i < limit && i < ArrayAllocApp.arraySize; ++i) {
                         Asserts.assertEquals(exp1, values[i].toString());
                     }
 
-                    for (int i = fullPart; i < ArrayAllocApp.arraySize; ++i) {
+                    for (int i = limit; i < ArrayAllocApp.arraySize; ++i) {
                         Asserts.assertEquals(exp2, values[i].toString());
                     }
                 }
