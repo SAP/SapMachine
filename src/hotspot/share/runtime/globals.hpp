@@ -740,14 +740,14 @@ const int ObjectAlignmentInBytes = 8;
           "The number of entries in primitive char and byte arrays to "     \
           "not skip in a heap dump when "                                   \
           "LimitPrimitiveArrayContentInHeapDump is enabled.")               \
-          range(0, 100000)                                                  \
+          range(0, INT_MAX)                                                 \
                                                                             \
   /* SapMachine 2026-05-06: Allow to skip contents of arrays in dumps.*/    \
   product(int, ArrayContentSizeLimitInHeapDump, 50, MANAGEABLE,             \
           "The number of entries in a primitive array other than char and " \
           "byte arrays to not skip in a heap dump when "                    \
           "LimitPrimitiveArrayContentInHeapDump is enabled.")               \
-          range(0, 100000)                                                  \
+          range(0, INT_MAX)                                                 \
                                                                             \
   product(ccstr, NativeMemoryTracking, DEBUG_ONLY("summary") NOT_DEBUG("off"), \
           "Native memory tracking options")                                 \
