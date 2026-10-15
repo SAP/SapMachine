@@ -25,6 +25,7 @@
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
  * @requires vm.flagless
  * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
  * @requires vm.vendor != "SAP SE"
