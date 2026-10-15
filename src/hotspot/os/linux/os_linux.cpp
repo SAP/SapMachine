@@ -2470,6 +2470,7 @@ bool os::Linux::query_accurate_process_memory_info(os::Linux::accurate_meminfo_t
   return true;
 }
 
+// SapMachine 2026-10-15
 // Helper function, returns true if string is a numerical id
 static bool is_numerical_id(const char* s) {
   const char* p = s;

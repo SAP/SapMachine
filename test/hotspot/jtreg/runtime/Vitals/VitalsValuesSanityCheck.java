@@ -360,7 +360,8 @@ public class VitalsValuesSanityCheck {
             // and therefore some of them should show delta values
             for (int i = 0; i < 400; ++i) {
                 // Load some classes.
-                Proxy.getProxyClass(new URLClassLoader(new URL[0]), new Class [] { CharSequence.class });
+                Proxy.newProxyInstance(new URLClassLoader(new URL[0]), new Class [] { CharSequence.class },
+                    (p, m, a) -> null);
                 Thread.sleep(10);
             }
         } catch (InterruptedException e) {
