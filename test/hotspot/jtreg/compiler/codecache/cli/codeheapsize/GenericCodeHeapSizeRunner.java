@@ -44,7 +44,8 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                 Long.toString(expectedValues.reserved),
                 String.format("%s should have value %d.",
                         BlobType.All.sizeOptionName, expectedValues.reserved),
-                testCaseDescription.getTestOptions(options));
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 BlobType.NonNMethod.sizeOptionName,
@@ -52,7 +53,8 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                 String.format("%s should have value %d.",
                         BlobType.NonNMethod.sizeOptionName,
                         expectedValues.nonNmethods),
-                testCaseDescription.getTestOptions(options));
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 BlobType.MethodNonProfiled.sizeOptionName,
@@ -60,7 +62,8 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                 String.format("%s should have value %d.",
                         BlobType.MethodNonProfiled.sizeOptionName,
                         expectedValues.nonProfiled),
-                testCaseDescription.getTestOptions(options));
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 BlobType.MethodProfiled.sizeOptionName,
@@ -68,7 +71,8 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                 String.format("%s should have value %d.",
                         BlobType.MethodProfiled.sizeOptionName,
                         expectedValues.profiled),
-                testCaseDescription.getTestOptions(options));
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 BlobType.MethodHot.sizeOptionName,
@@ -76,6 +80,7 @@ public class GenericCodeHeapSizeRunner implements CodeCacheCLITestCase.Runner {
                 String.format("%s should have value %d.",
                         BlobType.MethodHot.sizeOptionName,
                         expectedValues.hot),
-                testCaseDescription.getTestOptions(options));
+                // SapMachine 2025-12-10 We don't get exact matches when rounding to large page sizes.
+                testCaseDescription.getTestOptions(options, "-XX:-UseLargePages"));
     }
 }
