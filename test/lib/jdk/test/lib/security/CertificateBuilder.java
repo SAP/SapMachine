@@ -361,7 +361,6 @@ public class CertificateBuilder {
      * Helper method to add DNSName types for the SAN extension
      *
      * @param dnsNames A {@code List} of names to add as DNSName types
-     *
      * @throws IOException if an encoding error occurs.
      */
     public CertificateBuilder addSubjectAltNameDNSExt(List<String> dnsNames)
