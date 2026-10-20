@@ -7874,10 +7874,12 @@ instruct compareAndExchangeB(
   effect(KILL cr);
 
   format %{ "cmpxchgb $mem_ptr,$newval\t# "
-            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
+            "If rax == $mem_ptr then store $newval into $mem_ptr, "
+            "else store $mem_ptr into rax; rax -> byte\n\t" %}
   ins_encode %{
     __ lock();
     __ cmpxchgb($newval$$Register, $mem_ptr$$Address);
+    __ narrow_subword_type($oldval$$Register, T_BYTE);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7891,10 +7893,12 @@ instruct compareAndExchangeS(
   effect(KILL cr);
 
   format %{ "cmpxchgw $mem_ptr,$newval\t# "
-            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
+            "If rax == $mem_ptr then store $newval into $mem_ptr, "
+            "else store $mem_ptr into rax; rax -> short\n\t" %}
   ins_encode %{
     __ lock();
     __ cmpxchgw($newval$$Register, $mem_ptr$$Address);
+    __ narrow_subword_type($oldval$$Register, T_SHORT);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7908,7 +7912,8 @@ instruct compareAndExchangeI(
   effect(KILL cr);
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
-            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
+            "If rax == $mem_ptr then store $newval into $mem_ptr, "
+            "else store $mem_ptr into rax\n\t" %}
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
@@ -7926,7 +7931,8 @@ instruct compareAndExchangeL(
   effect(KILL cr);
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
-            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
+            "If rax == $mem_ptr then store $newval into $mem_ptr, "
+            "else store $mem_ptr into rax\n\t" %}
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
@@ -7942,7 +7948,8 @@ instruct compareAndExchangeN(
   effect(KILL cr);
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
-            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t" %}
+            "If rax == $mem_ptr then store $newval into $mem_ptr, "
+            "else store $mem_ptr into rax\n\t" %}
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
@@ -7960,7 +7967,8 @@ instruct compareAndExchangeP(
   effect(KILL cr);
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
-            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t" %}
+            "If rax == $mem_ptr then store $newval into $mem_ptr, "
+            "else store $mem_ptr into rax\n\t" %}
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
