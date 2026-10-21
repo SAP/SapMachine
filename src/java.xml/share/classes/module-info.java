@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,7 +600,7 @@
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td id="extensionClassLoader">jdk.xml.extensionClassLoader</td>
+ * <td id="extensionClassLoader">{@systemProperty jdk.xml.extensionClassLoader}</td>
  * <td>Sets a non-null ClassLoader instance to be used for loading XSLTC java
  * extension functions.
  * </td>
@@ -616,7 +616,7 @@
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
- * <td id="extensionClassLoader">jdk.xml.xpathExprGrpLimit</td>
+ * <td id="extensionClassLoader">{@systemProperty jdk.xml.xpathExprGrpLimit}</td>
  * <td>Limits the number of groups an XPath expression can contain.
  * </td>
  * <td style="text-align:center" rowspan="2">
@@ -638,14 +638,14 @@
  * <td style="text-align:center" rowspan="3">19</td>
  * </tr>
  * <tr>
- * <td id="extensionClassLoader">jdk.xml.xpathExprOpLimit</td>
+ * <td id="extensionClassLoader">{@systemProperty jdk.xml.xpathExprOpLimit}</td>
  * <td>Limits the number of operators an XPath expression can contain.
  * </td>
  * <td style="text-align:center">100</td>
  * <td style="text-align:center">100</td>
  * </tr>
  * <tr>
- * <td id="extensionClassLoader">jdk.xml.xpathTotalOpLimit</td>
+ * <td id="extensionClassLoader">{@systemProperty jdk.xml.xpathTotalOpLimit}</td>
  * <td>Limits the total number of XPath operators in an XSL Stylesheet.
  * </td>
  * <td style="text-align:center">yes</td>
@@ -684,6 +684,29 @@
  * </tr>
  * </thead>
  * <tbody>
+ * <tr>
+ * <td id="allowNonXSLTSysProps">{@systemProperty jdk.xml.allowNonXSLTSysProps}</td>
+ * <td>controls whether XPath's {@code system-property()} function is permitted to
+ * access non-XSLT-defined JVM system properties in addition to the standard XSLT-defined
+ * properties supported by the JDK. Attempts to access non-XSLT-defined properties will
+ * fail with an XPathExpressionException during XPath expression evaluation.
+ * </td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">Boolean</td>
+ * <td>
+ * true or false. True allows access to non-XSLT JVM system properties; False
+ * restricts access to only XSLT-defined properties.
+ * </td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">Yes</td>
+ * <td style="text-align:center">
+ *     <a href="#XPATH">XPath</a>
+ * </td>
+ * <td style="text-align:center">27</td>
+ * </tr>
  * <tr>
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>Determines if XSLT and XPath extension functions are to be allowed.
@@ -743,6 +766,23 @@
  * </td>
  * <td style="text-align:center">9</td>
  * </tr>
+ * <tr>
+ * <td id="templatesImplDeserialization">{@systemProperty jdk.xml.enableTemplatesImplDeserialization}</td>
+ * <td>Enables or disables deserialization of the JDK's implementation of the
+ * {@link javax.xml.transform.Templates} interface.
+ * </td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">boolean</td>
+ * <td>true or false. True indicates that deserialization is allowed. False indicates that
+ * deserialization is disallowed.</td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">false</td>
+ * <td style="text-align:center">Yes</td>
+ * <td style="text-align:center"><a href="#Transform">Transform</a> <a href="#Note8">[8]</a></td>
+ * <td style="text-align:center">7</td>
+ * </tr>
  * </tbody>
  * </table>
  * <p id="Note1">
@@ -773,6 +813,10 @@
  * field are IDs described in table <a href="#Processor">Processors</a>.
  * <p id="Note7">
  * <b>[7]</b> Indicates the initial release the property is introduced.
+ * <p id="Note8">
+ * <b>[8]</b> This property can be set only via a system property or in the
+ * <a href="#JaxpProperties">JAXP Properties</a>. Setting this property
+ * on a transformer factory or on a {@code Transformer} instance has no effect.
  *
  * <h3>Legacy Property Names (deprecated)</h3>
  * JDK releases prior to JDK 17 support the use of URI style prefix for properties.
@@ -848,7 +892,7 @@
  * {@code http://www.oracle.com/xml/jaxp/properties/xsltcIsStandalone}</td>
  * </tr>
  * <tr>
- * <td>{@code jdk.xml.extensionClassLoader}</td>
+ * <td>{@systemProperty jdk.xml.extensionClassLoader}</td>
  * <td>{@code jdk.xml.transform.extensionClassLoader}</td>
  * </tr>
  * <tr>
