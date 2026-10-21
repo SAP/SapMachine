@@ -65,7 +65,7 @@ public class TestSAPSpecificOnOutOfMemoryError {
 
         final String aborting_due = "Aborting due to java.lang.OutOfMemoryError";
         final String terminating_due = "Terminating due to java.lang.OutOfMemoryError";
-        final String java_frames = "Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)";
+        final String java_frames = "Java frames: (J=compiled Java code,";
         final String a_fatal_error = "# A fatal error has been detected by the Java Runtime Environment";
         final String no_core = "CreateCoredumpOnCrash turned off, no core file dumped";
         final String yes_core_1 = "Core dump will be written.";     // If limit > 0

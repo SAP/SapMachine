@@ -29,6 +29,7 @@
  * @requires vm.vendor != "SAP SE"
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
+ * @requires vm.cds.nocoops.nocoh.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
@@ -42,6 +43,7 @@
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
+ * @requires vm.cds.nocoops.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
@@ -57,6 +59,7 @@
  * @requires vm.vendor != "SAP SE"
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
+ * @requires vm.cds.nocoh.archive.available
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @requires vm.gc != "Z"
@@ -98,17 +101,6 @@ public class TestDefaultArchiveLoading {
         return "classes" + archiveSuffix + archivePreviewSuffix + ".jsa";
     }
 
-    private static Path archivePath(String archiveSuffix) {
-        return Paths.get(System.getProperty("java.home"), "lib",
-                         "server", archiveName(archiveSuffix));
-    }
-
-    private static boolean isArchiveAvailable(char coops, char coh,
-                                              String archiveSuffix) throws Exception {
-        Path archive= archivePath(archiveSuffix);
-        return Files.exists(archive);
-    }
-
     public static void main(String[] args) throws Exception {
 
         if (args.length != 1) {
@@ -128,36 +120,20 @@ public class TestDefaultArchiveLoading {
             case "nocoops_nocoh":
                 coh = coops = '-';
                 archiveSuffix = "_nocoops_nocoh";
-                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
-                    throw new SkippedException("Skipping test due to " +
-                                               archivePath(archiveSuffix).toString() + " not available");
-                }
                 break;
             case "nocoops_coh":
                 coops = '-';
                 coh = '+';
                 archiveSuffix = "_nocoops";
-                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
-                    throw new SkippedException("Skipping test due to " +
-                                               archivePath(archiveSuffix).toString() + " not available");
-                }
                 break;
             case "coops_nocoh":
                 coops = '+';
                 coh = '-';
                 archiveSuffix = "_nocoh";
-                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
-                    throw new SkippedException("Skipping test due to " +
-                                               archivePath(archiveSuffix).toString() + " not available");
-                }
                 break;
             case "coops_coh":
                 coh = coops = '+';
                 archiveSuffix = "";
-                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
-                    throw new SkippedException("Skipping test due to " +
-                                               archivePath(archiveSuffix).toString() + " not available");
-                }
                 break;
             default: throw new RuntimeException("Invalid argument " + args[0]);
         }
