@@ -157,8 +157,9 @@ public class CompressedCPUSpecificClassSpaceReservation {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Test with CDS / without COH");
-        do_test(true, false);
+        // SapMachine 2026-10-19: -Xshare:on requires a jsa archive; skip CDS without COH as we don't have all jsa files
+        //System.out.println("Test with CDS / without COH");
+        //do_test(true, false);
         System.out.println("Test without CDS / without COH");
         do_test(false, false);
         System.out.println("Test with CDS / with COH");

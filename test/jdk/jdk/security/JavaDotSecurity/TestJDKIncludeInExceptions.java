@@ -34,9 +34,12 @@ import java.security.Security;
  */
 public class TestJDKIncludeInExceptions {
 
+    private static final String EXPECTED = "hostInfo,jar";
+
     public static void main(String args[]) throws Exception {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
-        if (incInExc == null || !incInExc.equals("hostInfoExclSocket")) {
+        // SapMachine 2018-11-23: SapMachine has a different default for jdk.includeInExceptions
+        if (incInExc == null || !incInExc.equals("hostInfo,jar")) {
             throw new RuntimeException("Test failed: default value of " +
                 "jdk.includeInExceptions security property does not have expected value: " +
                 incInExc);
