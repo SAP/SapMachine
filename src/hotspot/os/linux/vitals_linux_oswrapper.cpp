@@ -27,7 +27,6 @@
 #include "precompiled.hpp"
 
 #include "jvm_io.h"
-#include "logging/log.hpp"
 #include "os_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "vitals_linux_oswrapper.hpp"
