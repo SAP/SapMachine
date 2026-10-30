@@ -35,6 +35,7 @@
 #include "runtime/timerTrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "vitals/vitals_internals.hpp"
+#include "os_linux.hpp"
 
 #include <fcntl.h>
 #include <string.h>
@@ -235,15 +236,6 @@ static void mallinfo_init() {
 #undef MALLINFO_MEMBER_DO
 
 #endif // __GLIBC__
-
-// Helper function, returns true if string is a numerical id
-static bool is_numerical_id(const char* s) {
-  const char* p = s;
-  while(*p >= '0' && *p <= '9') {
-    p ++;
-  }
-  return *p == '\0' ? true : false;
-}
 
 /////////////// cgroup stuff
 // We use part of the hotspot cgroup wrapper, but not all of it.
@@ -508,38 +500,7 @@ ALL_VALUES_DO(RESETVAL)
     }
   }
 
-  // Number of processes: iterate over /proc/<pid> and count.
-  // Number of threads: read "num_threads" from /proc/<pid>/stat
-  {
-    TraceTime timer("Iterating all processes", TRACETIME_LOG(Debug, vitals, os));
-    DIR* d = ::opendir("/proc");
-    if (d != NULL) {
-      value_t v_p = 0;
-      value_t v_t = 0;
-      struct dirent* en = NULL;
-      do {
-        en = ::readdir(d);
-        if (en != NULL) {
-          if (is_numerical_id(en->d_name)) {
-            v_p ++;
-            char tmp[128];
-            jio_snprintf(tmp, sizeof(tmp), "/proc/%s/stat", en->d_name);
-            if (bf.read(tmp)) {
-              const char* text = bf.text();
-              // See man proc(5)
-              // (20) num_threads  %ld
-              long num_threads = 0;
-              ::sscanf(text, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads);
-              v_t += num_threads;
-            }
-          }
-        }
-      } while(en != NULL);
-      ::closedir(d);
-      _syst_p = v_p;
-      _syst_t = v_t;
-    }
-  }
+  os::Linux::get_total_procs_and_threads(&_syst_p, nullptr);
 
   if (bf.read("/proc/self/io")) {
     _proc_io_rd = bf.parsed_prefixed_value("rchar:");
