@@ -50,6 +50,9 @@ class G1OldGenAllocationTracker : public CHeapObj<mtGC> {
 public:
   G1OldGenAllocationTracker();
 
+  // SapMachine 2026-01-20: force G1 marking in mixed phase in case of excessive hum. allocations
+  size_t allocated_humongous_bytes_since_last_gc() const { return _allocated_humongous_bytes_since_last_gc; }
+
   void add_allocated_bytes_since_last_gc(size_t bytes) { _allocated_bytes_since_last_gc += bytes; }
   void add_allocated_humongous_bytes_since_last_gc(size_t bytes) { _allocated_humongous_bytes_since_last_gc += bytes; }
 
