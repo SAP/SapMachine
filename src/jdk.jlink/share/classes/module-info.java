@@ -62,6 +62,8 @@ module jdk.jlink {
         jdk.tools.jlink.internal.Main.JlinkToolProvider;
 
     provides jdk.tools.jlink.plugin.Plugin with
+        // SapMachine 2025-01-09: SapMachine tools plugin
+        jdk.tools.jlink.internal.plugins.AddSapMachineTools,
         jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin,
         jdk.tools.jlink.internal.plugins.StripJavaDebugAttributesPlugin,
         jdk.tools.jlink.internal.plugins.ExcludePlugin,

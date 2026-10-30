@@ -80,6 +80,9 @@ public class SharedSecrets {
     @Stable private static JavaLangAccess javaLangAccess;
     @Stable private static JavaLangInvokeAccess javaLangInvokeAccess;
     @Stable private static JavaLangModuleAccess javaLangModuleAccess;
+    // SapMachine 2024-06-12: process group extension
+    @Stable private static JavaLangProcessBuilderAccess javaLangProcessBuilderAccess;
+    @Stable private static JavaLangProcessAccess javaLangProcessAccess;
     @Stable private static JavaLangRefAccess javaLangRefAccess;
     @Stable private static JavaLangReflectAccess javaLangReflectAccess;
     @Stable private static JavaIOAccess javaIOAccess;
@@ -106,6 +109,8 @@ public class SharedSecrets {
     @Stable private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     @Stable private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
     @Stable private static JavaxSecurityAccess javaxSecurityAccess;
+	// SapMachine 2026-04-14: Support for symlink detection in zipfs.
+	@Stable private static JdkNioZipfsAccess jdkNioZipfsAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -197,6 +202,36 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(ModuleDescriptor.class);
             access = javaLangModuleAccess;
+        }
+        return access;
+    }
+
+    // SapMachine 2024-06-12: process group extension
+    public static void setJavaLangProcessBuilderAccess(JavaLangProcessBuilderAccess jlpba) {
+        javaLangProcessBuilderAccess = jlpba;
+    }
+
+    // SapMachine 2024-06-12: process group extension
+    public static JavaLangProcessBuilderAccess getJavaLangProcessBuilderAccess() {
+        var access = javaLangProcessBuilderAccess;
+        if (access == null) {
+            ensureClassInitialized(ProcessBuilder.class);
+            access = javaLangProcessBuilderAccess;
+        }
+        return access;
+    }
+
+    // SapMachine 2024-07-01: process group extension
+    public static void setJavaLangProcessAccess(JavaLangProcessAccess jlpa) {
+        javaLangProcessAccess = jlpa;
+    }
+
+    // SapMachine 2024-07-01: process group extension
+    public static JavaLangProcessAccess getJavaLangProcessAccess() {
+        var access = javaLangProcessAccess;
+        if (access == null) {
+            ensureClassInitialized(Process.class);
+            access = javaLangProcessAccess;
         }
         return access;
     }
@@ -503,5 +538,15 @@ public class SharedSecrets {
         try {
             MethodHandles.lookup().ensureInitialized(c);
         } catch (IllegalAccessException e) {}
+    }
+
+    // SapMachine 2026-04-14
+    public static void setJdkNioZipfsAccess(JdkNioZipfsAccess access) {
+        jdkNioZipfsAccess = access;
+    }
+
+    // SapMachine 2026-04-14
+    public static JdkNioZipfsAccess getJdkNioZipfsAccess() {
+        return jdkNioZipfsAccess;
     }
 }
