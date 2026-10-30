@@ -161,7 +161,9 @@ final class ProcessImpl extends Process {
                          java.util.Map<String,String> environment,
                          String dir,
                          ProcessBuilder.Redirect[] redirects,
-                         boolean redirectErrorStream)
+                         boolean redirectErrorStream,
+                         // SapMachine 2024-06-12: process group extension
+                         boolean createNewProcessGroupOnSpawn)
             throws IOException
     {
         assert cmdarray != null && cmdarray.length > 0;
@@ -244,7 +246,9 @@ final class ProcessImpl extends Process {
                             toCString(dir),
                             std_fds,
                             forceNullOutputStream,
-                            redirectErrorStream);
+                            redirectErrorStream,
+                            // SapMachine 2024-06-12: process group extension
+                            createNewProcessGroupOnSpawn);
             if (redirects != null) {
                 // Copy the fd's if they are to be redirected to another process
                 if (std_fds[0] >= 0 &&
@@ -298,7 +302,9 @@ final class ProcessImpl extends Process {
                                    byte[] envBlock, int envc,
                                    byte[] dir,
                                    int[] fds,
-                                   boolean redirectErrorStream)
+                                   boolean redirectErrorStream,
+                                   // SapMachine 2024-06-12: process group extension
+                                   boolean createNewProcessGroupOnSpawn)
         throws IOException;
 
     @SuppressWarnings("removal")
@@ -308,7 +314,9 @@ final class ProcessImpl extends Process {
                 final byte[] dir,
                 final int[] fds,
                 final boolean forceNullOutputStream,
-                final boolean redirectErrorStream)
+                final boolean redirectErrorStream,
+                // SapMachine 2024-06-12: process group extension
+                final boolean createNewProcessGroupOnSpawn)
             throws IOException {
 
         pid = forkAndExec(launchMechanism.ordinal() + 1,
@@ -318,7 +326,9 @@ final class ProcessImpl extends Process {
                           envBlock, envc,
                           dir,
                           fds,
-                          redirectErrorStream);
+                          redirectErrorStream,
+                          // SapMachine 2024-06-12: process group extension
+                          createNewProcessGroupOnSpawn);
         processHandle = ProcessHandleImpl.getInternal(pid);
 
         try {
@@ -557,6 +567,16 @@ final class ProcessImpl extends Process {
     }
 
     private static native void init();
+
+    // SapMachine 2024-07-01: process group extension
+    private static native int terminateProcessGroup(long pid, boolean force);
+
+    void terminateProcessGroup(boolean force) throws IOException {
+        int rc = terminateProcessGroup(pid, force);
+        if (rc != 0) {
+            throw new IOException("Failed to kill process group (errno = " + rc + ")");
+        }
+    }
 
     static {
         init();
