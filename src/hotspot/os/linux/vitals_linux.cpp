@@ -101,7 +101,6 @@ static Column* g_col_system_pages_swapped_in = nullptr;
 static Column* g_col_system_pages_swapped_out = nullptr;
 
 static Column* g_col_system_num_procs = nullptr;
-static Column* g_col_system_num_threads = nullptr;
 
 static Column* g_col_system_num_procs_running = nullptr;
 static Column* g_col_system_num_procs_blocked = nullptr;
@@ -173,8 +172,6 @@ bool platform_columns_initialize() {
 
   g_col_system_num_procs =
       define_column<PlainValueColumn>(system_cat, nullptr, "p", "Number of processes", true);
-  g_col_system_num_threads =
-      define_column<PlainValueColumn>(system_cat, nullptr, "t", "Number of threads", true);
 
   g_col_system_num_procs_running =
       define_column<PlainValueColumn>(system_cat, nullptr, "tr", "Number of threads running", true);
@@ -302,7 +299,6 @@ void sample_platform_values(Sample* sample, Sample* long_term_sample) {
   }
 
   set_value_in_sample(g_col_system_num_procs, sample, OSWrapper::syst_p());
-  set_value_in_sample(g_col_system_num_threads, sample, OSWrapper::syst_t());
 
   set_value_in_sample(g_col_process_virt, sample, OSWrapper::proc_virt());
   set_value_in_sample(g_col_process_swapped_out, sample, OSWrapper::proc_swdo());

@@ -187,6 +187,10 @@ class os::Linux {
   // fields will contain -1.
   static bool query_accurate_process_memory_info(accurate_meminfo_t* info);
 
+  // SapMachine 2026-10-01: Gets the total number of processes and threads on the system. If a parameter is nullptr
+  // the value isn't determined. This is useful since the thread count is somewhat expensive.
+  static bool get_total_procs_and_threads(uint64_t* procs, uint64_t* threads);
+
   // Tells if the user asked for transparent huge pages.
   static bool _thp_requested;
 
