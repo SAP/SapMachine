@@ -1203,6 +1203,9 @@ public:
   void vmovdqu(XMMRegister dst, XMMRegister    src);
   void vmovdqu(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqu(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqu(XMMRegister dst, XMMRegister    src, int vector_len);
+  void vmovdqu(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqu(Address     dst, XMMRegister    src, int vector_len);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
@@ -1388,6 +1391,7 @@ public:
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  using Assembler::evpcmpeqd;
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   // Vector compares
