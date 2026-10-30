@@ -99,6 +99,7 @@ jobs:
           # This will make GNU make available as 'make' and not only as 'gmake'
           echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
 
+      # SapMachine 2025-06-11: reduce number of cds/jsa archives
       - name: 'Configure'
         run: >
           bash configure
@@ -110,6 +111,7 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
+          --with-vendor-name="SAP SE"
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
