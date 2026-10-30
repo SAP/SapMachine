@@ -55,7 +55,7 @@ public class VerifyCACerts {
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     // SapMachine 2021-09-23: Additional certificate for SAP
     private static final String CHECKSUM
-            = "47:9C:9E:4F:10:29:4B:9E:CA:E8:CF:03:2B:E4:63:01:81:A6:04:68:86:50:C3:05:77:3A:C5:0D:EC:5D:88:1F";
+            = "33:8A:30:51:67:6F:BD:FC:F2:CB:E8:07:4C:1B:FD:DC:7C:7E:59:30:92:E6:E8:2A:2A:64:CF:A0:3E:38:3D:9F";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
