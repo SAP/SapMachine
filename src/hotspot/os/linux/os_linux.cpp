@@ -2290,6 +2290,7 @@ static bool is_numerical_id(const char* s) {
 
 // SapMachine 2026-10-01
 bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) {
+  TraceTime timer("Iterating all processes", TRACETIME_LOG(Trace, os, timer));
   DIR* d = ::opendir("/proc");
   size_t line_length = 256;
   ALLOW_C_FUNCTION(::malloc, char* line_buf = threads == nullptr ? nullptr : (char*) ::malloc(line_length);)
