@@ -2272,47 +2272,58 @@ static bool is_numerical_id(const char* s) {
 
 // SapMachine 2026-10-01
 bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) {
-    TraceTime timer("Iterating all processes", TRACETIME_LOG(Trace, os, timer));
-    DIR* d = ::opendir("/proc");
-    if (d != nullptr) {
-        uint64_t procs_count = 0;
-        uint64_t threads_count = 0;
-        struct dirent* en = nullptr;
-        do {
-            en = ::readdir(d);
-            if (en != nullptr) {
-                if (is_numerical_id(en->d_name)) {
-                    procs_count++;
-                    if (threads == nullptr) {
-                        continue;
-                    }
-                    char tmp[128];
-                    jio_snprintf(tmp, sizeof(tmp), "/proc/%s/stat", en->d_name);
-                    FILE* fp = os::fopen(tmp, "r");
-                    if (fp != nullptr) {
-                        // See man proc(5)
-                        // (20) num_threads  %ld
-                        long num_threads = 0;
-                        if (fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads) == 1) {
-                            threads_count += num_threads;
-                        }
-                        ::fclose(fp);
-                    }
-                }
-            }
-        } while (en != nullptr);
-        ::closedir(d);
-        if (procs != nullptr) {
-            *procs = procs_count;
-        }
-        if (threads != nullptr) {
-            *threads = threads_count;
-        }
+  DIR* d = ::opendir("/proc");
+  size_t line_length = 256;
+  char* line_buf = threads == nullptr ? nullptr : (char*) ::malloc(line_length);
+  bool result = false;
+  if (d != nullptr) {
+    uint64_t procs_count = 0;
+    uint64_t threads_count = 0;
+    struct dirent* en = nullptr;
+    do {
+      en = ::readdir(d);
+      if (en != nullptr) {
+        if (is_numerical_id(en->d_name)) {
+          procs_count++;
+          if (threads == nullptr) {
+            continue;
+          }
+          char tmp[128];
+          jio_snprintf(tmp, sizeof(tmp), "/proc/%s/stat", en->d_name);
+          FILE *fp = os::fopen(tmp, "r");
+          if (fp != nullptr) {
+            // See man proc(5)
+            // (20) num_threads  %ld
+            long num_threads = 0;
+            if (getline(&line_buf, &line_length, fp) > 0) {
+              char* prefix_end = strrchr(line_buf, ')');
 
-        return true;
+              if (prefix_end != nullptr) {
+                if (sscanf(prefix_end + 1, " %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld",
+                           &num_threads) == 1) {
+                  threads_count += num_threads;
+                }
+              }
+            }
+            ::fclose(fp);
+          }
+        }
+      }
+    } while(en != nullptr);
+    ::closedir(d);
+    if (procs != nullptr) {
+      *procs = procs_count;
+    }
+    if (threads != nullptr) {
+      *threads = threads_count;
     }
 
-    return false;
+    result = true;
+  }
+
+  ::free(line_buf);
+
+  return result;
 }
 
 #ifdef __GLIBC__
