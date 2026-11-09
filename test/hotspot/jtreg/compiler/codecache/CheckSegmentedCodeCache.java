@@ -231,12 +231,13 @@ public class CheckSegmentedCodeCache {
 
         // Reserved code cache is set, NonNmethod segment size is set, two other segments is automatically
         // adjusted to half of the remaining space
+        // SapMachine 2025-12-10 We support 2MB transparent huge pages, so we need a multiple of it.
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
-                                                              "-XX:ReservedCodeCacheSize=100M",
+                                                              "-XX:ReservedCodeCacheSize=102M", // original: 100M
                                                               "-XX:NonNMethodCodeHeapSize=10M",
                                                               "-XX:+PrintFlagsFinal",
                                                               "-version");
-        verifyCodeHeapSize(pb, " ProfiledCodeHeapSize", 47185920);
+        verifyCodeHeapSize(pb, " ProfiledCodeHeapSize", 48234496); // = 46M, original: 47185920
 
         // Reserved code cache is set but NonNmethodCodeHeapSize is not set.
         // It's calculated based on the number of compiler threads
