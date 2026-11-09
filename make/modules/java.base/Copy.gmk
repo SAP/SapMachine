@@ -270,3 +270,27 @@ $(eval $(call SetupTextFileProcessing, CREATE_CLASSFILE_CONSTANTS_H, \
 TARGETS += $(CREATE_CLASSFILE_CONSTANTS_H)
 
 ################################################################################
+# SapMachine 2023-11-28: Copy mallochook.h
+
+ifeq ($(call isTargetOs, linux macosx), true)
+
+  $(eval $(call SetupCopyFiles, CREATE_MALLOC_HOOKS_H, \
+      FILES := $(TOPDIR)/src/java.base/unix/native/libmallochooks/mallochooks.h, \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_include/java.base/, \
+  ))
+
+  TARGETS += $(CREATE_MALLOC_HOOKS_H)
+endif
+
+################################################################################
+# SapMachine 2025-08-11: Copy JMC agent jars
+ifeq ($(SAP_JMC_AGENT_ENABLED), true)
+  $(LIB_DST_DIR)/agent.jar: $(SAP_JMC_AGENT_PATH)/agent-$(SAP_JMC_AGENT_VERSION).jar
+	$(call install-file)
+  $(LIB_DST_DIR)/agent-boot.jar: $(SAP_JMC_AGENT_PATH)/agent-$(SAP_JMC_AGENT_VERSION)-boot.jar
+	$(call install-file)
+
+  TARGETS += $(LIB_DST_DIR)/agent.jar $(LIB_DST_DIR)/agent-boot.jar
+endif
+
+################################################################################
