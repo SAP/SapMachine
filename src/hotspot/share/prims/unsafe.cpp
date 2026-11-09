@@ -468,6 +468,13 @@ UNSAFE_LEAF (void, Unsafe_WriteBackPostSync0(JNIEnv *env, jobject unsafe)) {
   doWriteBackSync0(false);
 } UNSAFE_END
 
+// SapMachine 2025-02-05: Report error for DirectMemoryOom to exit the VM
+UNSAFE_ENTRY (void, Unsafe_ReportJavaOutOfMemory0(JNIEnv *env, jobject unsafe, jstring message)) {
+  ResourceMark rm;
+  char *utf_message = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(message));
+  report_java_out_of_memory(utf_message);
+} UNSAFE_END
+
 ////// Random queries
 
 static jlong find_field_offset(jclass clazz, jstring name, TRAPS) {
@@ -904,6 +911,8 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "shouldBeInitialized0", CC "(" CLS ")Z",         FN_PTR(Unsafe_ShouldBeInitialized0)},
 
     {CC "fullFence",          CC "()V",                  FN_PTR(Unsafe_FullFence)},
+    // SapMachine 2025-02-05: Report error for DirectMemoryOom to exit the VM
+    {CC "reportJavaOutOfMemory0", CC "(" LANG "String;)V", FN_PTR(Unsafe_ReportJavaOutOfMemory0)},
 };
 
 #undef CC

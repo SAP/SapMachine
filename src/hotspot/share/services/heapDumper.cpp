@@ -436,6 +436,8 @@ class AbstractDumpWriter : public StackObj {
   void write_symbolID(Symbol* o);
   void write_classID(Klass* k);
   void write_id(u4 x);
+  // SapMachine 2026-06-16: Writes zeros to the buffer.
+  void write_zero(size_t len);
 
   // Start a new sub-record. Starts a new heap dump segment if needed.
   void start_sub_record(u1 tag, u4 len);
@@ -541,6 +543,26 @@ void AbstractDumpWriter::write_id(u4 x) {
 #else
   write_u4(x);
 #endif
+}
+
+// SapMachine 2026-06-16: Writes zeros to the buffer.
+void AbstractDumpWriter::write_zero(size_t len) {
+  assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
+  DEBUG_ONLY(_sub_record_left -= len);
+
+  // flush buffer to make room.
+  while (len > buffer_size() - position()) {
+    assert(!_in_dump_segment || _is_huge_sub_record,
+           "Cannot overflow in non-huge sub-record.");
+    size_t to_write = buffer_size() - position();
+    memset(buffer() + position(), 0, to_write);
+    len -= to_write;
+    set_position(position() + to_write);
+    flush();
+  }
+
+  memset(buffer() + position(), 0, len);
+  set_position(position() + len);
 }
 
 // We use java mirror as the class ID
@@ -1531,6 +1553,24 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     return;
   }
 
+  // SapMachine 2026-06-16: If enabled, we don't dump the whole content of large arrays, but just the start
+  // and fill the rest with zeroes.
+  int fill_with_zero = 0;
+
+  if (LimitPrimitiveArrayContentInHeapDump) {
+    int limit = ArrayContentSizeLimitInHeapDump;
+
+    if (type == T_BYTE || type == T_CHAR) {
+      limit = StringLikeContentSizeLimitInHeapDump;
+    }
+
+    if (length > limit) {
+      fill_with_zero = length - limit;
+      length = limit;
+      length_in_bytes = (u4)length * type_size;
+    }
+  }
+
   // If the byte ordering is big endian then we can copy most types directly
 
   switch (type) {
@@ -1596,6 +1636,11 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
       break;
     }
     default : ShouldNotReachHere();
+  }
+
+  // SapMachine 2026-06-16: Fill with zeros, if we don't dump the whole content of the array.
+  if (fill_with_zero > 0) {
+    writer->write_zero((u4)fill_with_zero * type_size);
   }
 
   writer->end_sub_record();
@@ -2620,7 +2665,9 @@ void HeapDumper::set_error(char const* error) {
 // Called by out-of-memory error reporting by a single Java thread
 // outside of a JVM safepoint
 void HeapDumper::dump_heap_from_oome() {
-  HeapDumper::dump_heap(true);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  // SapMachine 2026-06-16: Handle HeapDumpOverwrite
+  HeapDumper::dump_heap(false, true, tty, -1, HeapDumpOverwrite);
 }
 
 // Called by error reporting by a single Java thread outside of a JVM safepoint,
@@ -2629,17 +2676,27 @@ void HeapDumper::dump_heap_from_oome() {
 // general use, however, this method will need modification to prevent
 // inteference when updating the static variables base_path and dump_file_seq below.
 void HeapDumper::dump_heap() {
-  HeapDumper::dump_heap(false);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  // SapMachine 2026-06-16: Handle HeapDumpOverwrite
+  HeapDumper::dump_heap(false, false, tty, -1, HeapDumpOverwrite);
 }
 
-void HeapDumper::dump_heap(bool oome) {
+// SapMachine 2024-05-10: HeapDumpPath for jcmd
+void HeapDumper::dump_heap(bool gc_before_heap_dump, outputStream* out, int compression, bool overwrite) {
+  HeapDumper::dump_heap(gc_before_heap_dump, false, out, compression, overwrite);
+}
+
+// SapMachine 2024-05-10: HeapDumpPath for jcmd
+void HeapDumper::dump_heap(bool gc_before_heap_dump, bool oome, outputStream* out, int compression, bool overwrite) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
   char* my_path;
   const int max_digit_chars = 20;
 
   const char* dump_file_name = "java_pid";
-  const char* dump_file_ext  = HeapDumpGzipLevel > 0 ? ".hprof.gz" : ".hprof";
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  const int ziplevel = compression < 0 ? HeapDumpGzipLevel : compression;
+  const char* dump_file_ext  = ziplevel > 0 ? ".hprof.gz" : ".hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
@@ -2704,8 +2761,10 @@ void HeapDumper::dump_heap(bool oome) {
   }
   dump_file_seq++;   // increment seq number for next time we dump
 
-  HeapDumper dumper(false /* no GC before heap dump */,
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  HeapDumper dumper(gc_before_heap_dump /* GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path, tty, HeapDumpGzipLevel);
+  // SapMachine 2024-05-10: HeapDumpPath for jcmd
+  dumper.dump(my_path, out, ziplevel, overwrite);
   os::free(my_path);
 }
