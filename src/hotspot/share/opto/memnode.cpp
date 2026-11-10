@@ -84,12 +84,13 @@ bool MemNode::check_if_adr_maybe_raw(Node* adr) {
 
 #ifndef PRODUCT
 void MemNode::dump_spec(outputStream *st) const {
-  if (in(Address) == nullptr)  return; // node is dead
+  if (in(Address) == nullptr) {
+    // node is dead
+    return;
+  }
 #ifndef ASSERT
   // fake the missing field
-  const TypePtr* _adr_type = nullptr;
-  if (in(Address) != nullptr)
-    _adr_type = in(Address)->bottom_type()->isa_ptr();
+  const TypePtr* _adr_type = in(Address)->bottom_type()->isa_ptr();
 #endif
   dump_adr_type(this, _adr_type, st);
 
@@ -106,6 +107,7 @@ void MemNode::dump_spec(outputStream *st) const {
   if (_unsafe_access) {
     st->print(" unsafe");
   }
+  st->print(" barrier(0x%x)", _barrier_data);
 }
 
 void MemNode::dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st) {
@@ -4000,6 +4002,26 @@ MemBarNode* LoadStoreNode::trailing_membar() const {
 
 uint LoadStoreNode::size_of() const { return sizeof(*this); }
 
+#ifndef PRODUCT
+void LoadStoreNode::dump_spec(outputStream* st) const {
+  if (in(MemNode::Address) == nullptr) {
+    // node is dead
+    return;
+  }
+#ifndef ASSERT
+  // fake the missing field
+  const TypePtr* _adr_type = in(MemNode::Address)->bottom_type()->isa_ptr();
+#endif
+  MemNode::dump_adr_type(this, _adr_type, st);
+
+  Compile* C = Compile::current();
+  if (C->alias_type(_adr_type)->is_volatile()) {
+    st->print(" Volatile!");
+  }
+  st->print(" barrier(0x%x)", _barrier_data);
+}
+#endif
+
 //=============================================================================
 //----------------------------------LoadStoreConditionalNode--------------------
 LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, nullptr, TypeInt::BOOL, 5) {
@@ -4253,6 +4275,36 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
     igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
   }
 }
+
+#ifndef PRODUCT
+void MemBarNode::dump_spec(outputStream* st) const {
+  switch (_kind) {
+  case Standalone:
+    st->print(" Standalone");
+    break;
+  case TrailingLoad:
+    st->print(" TrailingLoad");
+    break;
+  case TrailingStore:
+    st->print(" TrailingStore");
+    break;
+  case LeadingStore:
+    st->print(" LeadingStore");
+    break;
+  case TrailingLoadStore:
+    st->print(" TrailingLoadStore");
+    break;
+  case LeadingLoadStore:
+    st->print(" LeadingLoadStore");
+    break;
+  case TrailingExpandedArrayCopy:
+    st->print(" TrailingExpandedArrayCopy");
+    break;
+  default:
+    fatal("Unimplemented MemBar kind: %d", _kind);
+  }
+}
+#endif // !PRODUCT
 
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out

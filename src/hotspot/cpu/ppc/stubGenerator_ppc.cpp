@@ -567,7 +567,8 @@ class StubGenerator: public StubCodeGenerator {
   //
   //
   address generate_ghash_processBlocks() {
-    StubCodeMark mark(this, "StubRoutines", "ghash");
+    StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
 
     // Registers for parameters
@@ -3513,7 +3514,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_floatToFloat16() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    StubGenStubId stub_id = StubGenStubId::f2hf_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ f2hf(R3_RET, F1_ARG1, F0);
     __ blr();
@@ -3522,7 +3524,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_float16ToFloat() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    StubGenStubId stub_id = StubGenStubId::hf2f_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ hf2f(F1_RET, R3_ARG1);
     __ blr();
@@ -4804,7 +4807,7 @@ void generate_lookup_secondary_supers_table_stub() {
     // Generates all stubs and initializes the entry points
 
     // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
+    StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
 
     // nmethod entry barriers for concurrent class unloading
     StubRoutines::_method_entry_barrier = generate_method_entry_barrier();

@@ -349,11 +349,13 @@ static void store4regs(Register address, int offset, int sourceRegs[],
   }
 }
 
-// In all 3 invocations of this function we use the same registers:
-// xmm0-xmm7 for the input and the result,
-// xmm8-xmm15 as scratch registers and
-// xmm16-xmm17 for the constants,
-// so we don't pass register arguments.
+// This stub helper vectorizes the reduction in implKyberBarrettReduceJava.
+// In all invocations of this function we use the same registers:
+// Input:   xmm0-xmm7 (signed short coefficients)
+//          xmm16: Barrett multiplier
+//          xmm17: q
+// Scratch: xmm8-xmm15
+// Output:  xmm0-xmm7 (reduced coefficients each in [0, q])
 static void barrettReduce(MacroAssembler *_masm) {
   for (int i = 0; i < 8; i++) {
     __ evpmulhw(xmm(i + 8), k0, xmm(i), xmm16, false, Assembler::AVX_512bit);
@@ -484,7 +486,7 @@ address generate_kyberNtt_avx512(StubGenerator *stubgen,
   store4regs(coeffs, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   return start;
@@ -607,13 +609,34 @@ address generate_kyberInverseNtt_avx512(StubGenerator *stubgen,
   store4regs(coeffs, 256, xmm12_15, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   return start;
 }
 
 // Kyber multiply polynomials in the NTT domain.
+// Implements
+// static int implKyberNttMult(
+//              short[] result, short[] ntta, short[] nttb, short[] zetas) {}
+//
+// The actual algorithm that is used here differs from the one in the Java
+// implementation, it uses Montgomery multiplications instead of Barrett
+// reduction, but the end result modulo MLKEM_Q is the same. This is the
+// Java equivalent of this intrinsic implementation:
+// static void implKyberNttMultJava(short[] result, short[] ntta, short[] nttb) {
+//         for (int m = 0; m < ML_KEM_N / 2; m++) {
+//             int a0 = ntta[2 * m];
+//             int a1 = ntta[2 * m + 1];
+//             int b0 = nttb[2 * m];
+//             int b1 = nttb[2 * m + 1];
+//             int r = montMul(a0, b0) +
+//                     montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
+//             result[2 * m] = (short) montMul(r, MONT_R_SQUARE_MOD_Q);
+//             result[2 * m + 1] = (short) montMul(
+//                     (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
+//          }
+// }
 //
 // result (short[256]) = c_rarg0
 // ntta (short[256]) = c_rarg1
@@ -728,7 +751,7 @@ address generate_kyberNttMult_avx512(StubGenerator *stubgen,
   __ pop(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   return start;
@@ -773,7 +796,7 @@ address generate_kyberAddPoly_2_avx512(StubGenerator *stubgen,
   store4regs(result, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   return start;
@@ -827,7 +850,7 @@ address generate_kyberAddPoly_3_avx512(StubGenerator *stubgen,
   store4regs(result, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   return start;
@@ -908,7 +931,7 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
       __ jcc(Assembler::greater, VBMILoop);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov64(rax, 0); // return 0
+    __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
     __ ret(0);
 
     return start;
@@ -981,7 +1004,7 @@ address generate_kyber12To16_avx512(StubGenerator *stubgen,
     __ jcc(Assembler::greater, Loop);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   return start;
@@ -1018,7 +1041,7 @@ address generate_kyberBarrettReduce_avx512(StubGenerator *stubgen,
   store4regs(coeffs, 256, xmm4_7, _masm);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   return start;

@@ -1991,6 +1991,12 @@ void MethodData::release_C_heap_structures() {
 #if INCLUDE_JVMCI
   FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
 #endif
+  // The class unloading protocol guarantees that this object is
+  // unreachable at this point, so no synchronization is necessary.
+  if (_extra_data_lock != nullptr) {
+    delete _extra_data_lock;
+    _extra_data_lock = nullptr;
+  }
 }
 
 #if INCLUDE_CDS

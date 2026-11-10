@@ -1149,6 +1149,10 @@ void VM_Version::get_processor_features() {
         warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     } else {
       if (UseSSE > 2) {
         if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
@@ -1167,8 +1171,8 @@ void VM_Version::get_processor_features() {
       if (!UseAESIntrinsics) {
         if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
           warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
-          FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
         }
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
       } else {
         if (supports_sse4_1()) {
           if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
@@ -1188,16 +1192,16 @@ void VM_Version::get_processor_features() {
   } else if (UseAES || UseAESIntrinsics || UseAESCTRIntrinsics) {
     if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
       warning("AES instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAES, false);
     }
+    FLAG_SET_DEFAULT(UseAES, false);
     if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
       warning("AES intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
       warning("AES-CTR intrinsics are not available on this CPU");
-      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
   // Use CLMUL instructions if available.
@@ -1285,8 +1289,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Dilithium Intrinsics
-  // Currently we only have them for AVX512
-  if (supports_evex() && supports_avx512bw()) {
+  if (UseAVX > 1) {
       if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
           UseDilithiumIntrinsics = true;
       }
@@ -1355,16 +1358,16 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (supports_evex() && supports_avx512bw()) {
-      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
-          UseSHA3Intrinsics = true;
-      }
+  if (UseSHA && supports_evex() && supports_avx512bw()) {
+    if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+    }
   } else if (UseSHA3Intrinsics) {
-      warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
-      FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics || UseSHA3Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 

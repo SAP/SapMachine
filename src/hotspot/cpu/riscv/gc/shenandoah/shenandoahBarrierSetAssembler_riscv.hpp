@@ -48,7 +48,7 @@ private:
                     Register tmp1,
                     Register tmp2);
 
-  void card_barrier(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2);
 
   void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);

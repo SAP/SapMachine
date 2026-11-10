@@ -180,6 +180,8 @@ jobs:
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
           --with-sysroot=sysroot
           --with-jmod-compress=zip-1
+          --with-external-symbols-in-bundles=none
+          --with-native-debug-symbols-level=1
           --with-vendor-name="SAP SE"
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}

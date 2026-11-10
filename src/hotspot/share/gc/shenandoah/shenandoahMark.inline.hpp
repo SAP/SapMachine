@@ -37,6 +37,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPrefetch.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -44,7 +45,6 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/prefetch.inline.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -361,6 +361,7 @@ inline void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
     marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
   }
   if (marked) {
+    ShenandoahPrefetch::prefetch(obj);
     bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
     assert(pushed, "overflow queue should always succeed pushing");
   }
