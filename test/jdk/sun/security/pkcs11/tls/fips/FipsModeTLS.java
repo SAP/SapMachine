@@ -24,13 +24,14 @@
 
 /*
  * @test
- * @bug 8029661
+ * @bug 8029661 8368514 8368520
  * @summary Test TLS 1.2
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
  * @library /test/lib ../..
- * @run main/othervm/timeout=120 -Djdk.tls.useExtendedMasterSecret=false FipsModeTLS12
+ * @run main/othervm/timeout=120 -Djdk.tls.useExtendedMasterSecret=false
+ *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS
  */
 
 import java.io.File;
@@ -65,11 +66,12 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
 import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
-public final class FipsModeTLS12 extends SecmodTest {
+public final class FipsModeTLS extends SecmodTest {
 
     private static final boolean enableDebug = true;
 
@@ -84,29 +86,32 @@ public final class FipsModeTLS12 extends SecmodTest {
     public static void main(String[] args) throws Exception {
         // Re-enable TLS_RSA_* since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
+        // reduce the limit to trigger a key update later
+        Security.setProperty("jdk.tls.keyLimits",
+                "AES/GCM/NoPadding KeyUpdate 10000");
 
         try {
             initialize();
         } catch (Exception e) {
-            System.out.println("Test skipped: failure during" +
-                    " initialization");
             if (enableDebug) {
                 System.out.println(e);
             }
-            return;
+            throw new SkippedException("Test skipped: failure during" +
+                                       " initialization");
         }
 
         if (shouldRun()) {
             // Test against JCE
             testTlsAuthenticationCodeGeneration();
 
-            // Self-integrity test (complete TLS 1.2 communication)
-            new testTLS12SunPKCS11Communication().run();
+            // Self-integrity test (complete TLS communication)
+            testTLSSunPKCS11Communication.initSslContext();
+            testTLSSunPKCS11Communication.run();
 
             System.out.println("Test PASS - OK");
         } else {
-            System.out.println("Test skipped: TLS 1.2 mechanisms" +
-                    " not supported by current SunPKCS11 back-end");
+            throw new SkippedException("Test skipped: TLS 1.2 mechanisms" +
+                                       " not supported by current SunPKCS11 back-end");
         }
     }
 
@@ -263,15 +268,18 @@ public final class FipsModeTLS12 extends SecmodTest {
         }
     }
 
-    private static class testTLS12SunPKCS11Communication {
+    private static class testTLSSunPKCS11Communication {
         public static void run() throws Exception {
             SSLEngine[][] enginesToTest = getSSLEnginesToTest();
-
+            boolean firstSession = true;
             for (SSLEngine[] engineToTest : enginesToTest) {
 
                 SSLEngine clientSSLEngine = engineToTest[0];
                 SSLEngine serverSSLEngine = engineToTest[1];
-
+                // The first connection needs to do a full handshake.
+                // Verify that subsequent handshakes use resumption.
+                clientSSLEngine.setEnableSessionCreation(firstSession);
+                firstSession = false;
                 // SSLEngine code based on RedhandshakeFinished.java
 
                 boolean dataDone = false;
@@ -293,10 +301,11 @@ public final class FipsModeTLS12 extends SecmodTest {
                 cTOs = ByteBuffer.allocateDirect(netBufferMax);
                 sTOc = ByteBuffer.allocateDirect(netBufferMax);
 
+                // big enough to trigger a key update
                 clientOut = ByteBuffer.wrap(
-                        "Hi Server, I'm Client".getBytes());
+                        "a".repeat(16000).getBytes());
                 serverOut = ByteBuffer.wrap(
-                        "Hello Client, I'm Server".getBytes());
+                        "b".repeat(16000).getBytes());
 
                 SSLEngineResult clientResult;
                 SSLEngineResult serverResult;
@@ -406,20 +415,24 @@ public final class FipsModeTLS12 extends SecmodTest {
         static private SSLEngine createSSLEngine(boolean client)
                 throws Exception {
             SSLEngine ssle;
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
-            kmf.init(ks, passphrase);
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
-            tmf.init(ts);
-
-            SSLContext sslCtx = SSLContext.getInstance("TLSv1.2", "SunJSSE");
-            sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             ssle = sslCtx.createSSLEngine("localhost", 443);
             ssle.setUseClientMode(client);
             SSLParameters sslParameters = ssle.getSSLParameters();
             ssle.setSSLParameters(sslParameters);
 
             return ssle;
+        }
+
+        private static SSLContext sslCtx;
+        private static void initSslContext() throws Exception {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
+            kmf.init(ks, passphrase);
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
+            tmf.init(ts);
+
+            sslCtx = SSLContext.getInstance("TLS", "SunJSSE");
+            sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         }
     }
 
