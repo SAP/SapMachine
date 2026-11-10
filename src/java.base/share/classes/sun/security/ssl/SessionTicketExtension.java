@@ -266,14 +266,16 @@ final class SessionTicketExtension {
                         (byte)(keyID)}
                 );
 
+                // use getOutputSize to avoid a ShortBufferException
+                // from providers that require oversized buffers. See JDK-8368514.
                 ByteBuffer out;
-                out = ByteBuffer.allocate(data.remaining() - GCM_TAG_LEN / 8);
+                out = ByteBuffer.allocate(c.getOutputSize(data.remaining()));
                 c.doFinal(data, out);
                 out.flip();
                 return out;
             } catch (Exception e) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("Decryption failed." + e.getMessage());
+                    SSLLogger.fine("Decryption failed." + e);
                 }
             }
             return null;

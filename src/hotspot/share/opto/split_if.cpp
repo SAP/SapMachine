@@ -598,6 +598,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
     tty->print_cr("SplitIf");
   }
 
+  iff->as_If()->mark_projections_unsafe_for_fold_compare();
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
   Node *region_dom = idom(region);

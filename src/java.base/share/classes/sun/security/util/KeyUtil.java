@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,11 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
+import jdk.internal.access.SharedSecrets;
 
+import com.sun.crypto.provider.PBKDF2KeyImpl;
 import sun.security.jca.JCAUtil;
 
 /**
@@ -178,27 +182,6 @@ public final class KeyUtil {
         }
 
         return -1;
-    }
-
-    /**
-     * Returns the algorithm name of the given key object. If an EC key is
-     * specified, returns the algorithm name and its named curve.
-     *
-     * @param key the key object, cannot be null
-     * @return the algorithm name of the given key object, or return in the
-     *       form of "EC (named curve)" if the given key object is an EC key
-     */
-    public static final String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof PrivateKey || key instanceof PublicKey) {
-            AlgorithmParameterSpec paramSpec = getParams(key);
-            if (paramSpec instanceof NamedCurve nc) {
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            } else if (paramSpec instanceof NamedParameterSpec nps) {
-                result = nps.getName();
-            }
-        }
-        return result;
     }
 
     /**
@@ -454,6 +437,26 @@ public final class KeyUtil {
     public static boolean isSupportedKeyAgreementOutputAlgorithm(String alg) {
         return alg.equalsIgnoreCase("TlsPremasterSecret")
                 || alg.equalsIgnoreCase("Generic");
+    }
+
+    // destroy secret keys in a best-effort way
+    public static void destroySecretKeys(SecretKey... keys) {
+        for (SecretKey k : keys) {
+            if (k != null) {
+                if (k instanceof SecretKeySpec sk) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(sk);
+                } else if (k instanceof PBKDF2KeyImpl p2k) {
+                    p2k.clear();
+                } else {
+                    try {
+                        k.destroy();
+                    } catch (DestroyFailedException e) {
+                        // swallow
+                    }
+                }
+            }
+        }
     }
 }
 
