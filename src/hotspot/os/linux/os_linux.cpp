@@ -76,6 +76,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
+// SapMachine 2026-11-01
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
@@ -2430,6 +2432,9 @@ static bool is_numerical_id(const char* s) {
 bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) {
   TraceTime timer("Iterating all processes", TRACETIME_LOG(Trace, os, timer));
   DIR* d = ::opendir("/proc");
+  size_t line_length = 256;
+  char* line_buf = threads == nullptr ? nullptr : (char*) permit_forbidden_function::malloc(line_length);
+  bool result = false;
   if (d != nullptr) {
     uint64_t procs_count = 0;
     uint64_t threads_count = 0;
@@ -2449,8 +2454,15 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
             // See man proc(5)
             // (20) num_threads  %ld
             long num_threads = 0;
-            if (fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld", &num_threads) == 1) {
-              threads_count += num_threads;
+            if (getline(&line_buf, &line_length, fp) > 0) {
+              char* prefix_end = strrchr(line_buf, ')');
+
+              if (prefix_end != nullptr) {
+                if (sscanf(prefix_end + 1, " %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*u %*u %*d %*d %*d %*d %ld",
+                           &num_threads) == 1) {
+                  threads_count += num_threads;
+                }
+              }
             }
             ::fclose(fp);
           }
@@ -2465,10 +2477,12 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
       *threads = threads_count;
     }
 
-    return true;
+    result = true;
   }
 
-  return false;
+  permit_forbidden_function::free(line_buf);
+
+  return result;
 }
 
 #ifdef __GLIBC__
