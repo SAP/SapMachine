@@ -498,9 +498,13 @@ ALL_VALUES_DO(RESETVAL)
     // (15) stime  %lu
     long unsigned cpu_utime = 0;
     long unsigned cpu_stime = 0;
-    ::sscanf(text, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &cpu_utime, &cpu_stime);
-    _proc_cpu_us = cpu_utime;
-    _proc_cpu_sy = cpu_stime;
+    const char* prefix_end = strrchr(text, ')');
+
+    if (prefix_end != nullptr) {
+      ::sscanf(prefix_end + 1, " %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &cpu_utime, &cpu_stime);
+      _proc_cpu_us = cpu_utime;
+      _proc_cpu_sy = cpu_stime;
+    }
   }
 
 #ifdef __GLIBC__
