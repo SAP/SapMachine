@@ -500,8 +500,8 @@ ALL_VALUES_DO(RESETVAL)
     long unsigned cpu_stime = 0;
     const char* prefix_end = strrchr(text, ')');
 
-    if (prefix_end != nullptr) {
-      ::sscanf(prefix_end + 1, " %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &cpu_utime, &cpu_stime);
+    if ((prefix_end != nullptr) &&
+        (::sscanf(prefix_end + 1, " %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu", &cpu_utime, &cpu_stime) == 2)) {
       _proc_cpu_us = cpu_utime;
       _proc_cpu_sy = cpu_stime;
     }

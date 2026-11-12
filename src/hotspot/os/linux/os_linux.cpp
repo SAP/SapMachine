@@ -2509,6 +2509,7 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
             // See man proc(5)
             // (20) num_threads  %ld
             long num_threads = 0;
+            // Use getdelim to read the whole file into the buffer
             if (getdelim(&line_buf, &line_length, 0, fp) > 0) {
               char* prefix_end = strrchr(line_buf, ')');
 
@@ -2532,7 +2533,7 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
       *threads = threads_count;
     }
 
-    result = true;
+    result = (line_buf != nullptr) || (threads == nullptr);
   }
 
   permit_forbidden_function::free(line_buf);
