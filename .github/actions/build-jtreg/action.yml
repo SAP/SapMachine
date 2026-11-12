@@ -59,7 +59,9 @@ runs:
       working-directory: jtreg/src
       shell: bash
       env:
-        WGET_OPTIONS: '-q --tries=5 --waitretry=15 --retry-connrefused --retry-on-http-error=429,500,502,503,504'
+        # git.openjdk.org returns 403 to wget's default User-Agent, so override it.
+        # Keep retries for genuinely transient codeload.github.com responses.
+        WGET_OPTIONS: '-q --user-agent=Mozilla/5.0 --tries=5 --waitretry=15 --retry-connrefused --retry-on-http-error=429,500,502,503,504'
         CURL_OPTIONS: '-s -f -L --retry 5 --retry-delay 15 --retry-all-errors'
       if: (steps.get-cached.outputs.cache-hit != 'true')
 
