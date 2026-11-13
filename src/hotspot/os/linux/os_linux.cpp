@@ -36,9 +36,9 @@
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "osContainer_linux.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
+#include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -85,44 +85,41 @@
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
-// put OS-includes here
 # include <ctype.h>
-# include <stdlib.h>
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <sys/stat.h>
-# include <sys/select.h>
-# include <sys/sendfile.h>
-# include <pthread.h>
-# include <signal.h>
-# include <endian.h>
-# include <errno.h>
-# include <fenv.h>
 # include <dirent.h>
 # include <dlfcn.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/resource.h>
+# include <endian.h>
+# include <errno.h>
+# include <fcntl.h>
+# include <fenv.h>
+# include <inttypes.h>
+# include <link.h>
+# include <linux/elf-em.h>
+# include <poll.h>
 # include <pthread.h>
+# include <pwd.h>
+# include <signal.h>
+# include <stdint.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
+# include <sys/ioctl.h>
+# include <sys/ipc.h>
+# include <sys/mman.h>
+# include <sys/prctl.h>
+# include <sys/resource.h>
+# include <sys/select.h>
+# include <sys/sendfile.h>
+# include <sys/socket.h>
 # include <sys/stat.h>
+# include <sys/sysinfo.h>
 # include <sys/time.h>
 # include <sys/times.h>
+# include <sys/types.h>
 # include <sys/utsname.h>
-# include <sys/socket.h>
-# include <pwd.h>
-# include <poll.h>
-# include <fcntl.h>
-# include <string.h>
 # include <syscall.h>
 # include <time.h>
-# include <sys/sysinfo.h>
-# include <sys/ipc.h>
-# include <link.h>
-# include <stdint.h>
-# include <inttypes.h>
-# include <sys/ioctl.h>
-# include <linux/elf-em.h>
-# include <sys/prctl.h>
+# include <unistd.h>
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -221,32 +218,19 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::Linux::available_memory_in_container() {
-  julong avail_mem = static_cast<julong>(-1L);
-  if (OSContainer::is_containerized()) {
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    jlong mem_usage;
-    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
-    }
-    if (mem_limit > 0 && mem_usage > 0) {
-      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-    }
-  }
-  return avail_mem;
-}
-
 bool os::available_memory(physical_memory_size_type& value) {
-  return Linux::available_memory(value);
-}
-
-bool os::Linux::available_memory(physical_memory_size_type& value) {
-  julong avail_mem = available_memory_in_container();
-  if (avail_mem != static_cast<julong>(-1L)) {
+  julong avail_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(avail_mem)) {
     log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
     value = static_cast<physical_memory_size_type>(avail_mem);
     return true;
   }
+
+  return Linux::available_memory(value);
+}
+
+bool os::Linux::available_memory(physical_memory_size_type& value) {
+  julong avail_mem = static_cast<julong>(-1L);
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp != nullptr) {
@@ -272,24 +256,25 @@ bool os::Linux::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::free_memory(physical_memory_size_type& value) {
+  julong free_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(free_mem)) {
+    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+    value = static_cast<physical_memory_size_type>(free_mem);
+    return true;
+  }
+
   return Linux::free_memory(value);
 }
 
 bool os::Linux::free_memory(physical_memory_size_type& value) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  julong free_mem = available_memory_in_container();
-  if (free_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    value = static_cast<physical_memory_size_type>(free_mem);
-    return true;
-  }
 
   int ret = sysinfo(&si);
   if (ret != 0) {
     return false;
   }
-  free_mem = (julong)si.freeram * si.mem_unit;
+  julong free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
   value = static_cast<physical_memory_size_type>(free_mem);
   return true;
