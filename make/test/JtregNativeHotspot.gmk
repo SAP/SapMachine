@@ -72,6 +72,9 @@ ifeq ($(call isTargetOs, linux), true)
   ifeq ($(call isTargetCpuBits, 32), true)
     HOTSPOT_JTREG_LIBRARIES_LIBS_libSuspendInCritical += -latomic
   endif
+  # SapMachine 2023-10-04: Added link flags for malloc hooks tests
+  HOTSPOT_JTREG_EXECUTABLES_LIBS_exetestmallochooks := -ldl
+  HOTSPOT_JTREG_LIBRARIES_LIBS_libtestmallochooks := -ldl
 else
   HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp

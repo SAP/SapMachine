@@ -21,13 +21,14 @@
  * questions.
  */
 
+// SapMachine 2026-09-21 Disable extended socket exception for this test to avoid timeouts
 /* @test
  * @bug 6548464
  * @summary SocketChannel.open(SocketAddress) leaks file descriptor if
  *     connection cannot be established
  * @requires vm.flagless
  * @build OpenLeak
- * @run junit/othervm/timeout=480 OpenLeak
+ * @run junit/othervm/timeout=480 -Djdk.includeInExceptions= OpenLeak
  */
 
 import java.io.IOException;

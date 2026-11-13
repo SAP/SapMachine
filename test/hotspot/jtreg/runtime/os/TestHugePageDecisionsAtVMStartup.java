@@ -22,6 +22,7 @@
  * questions.
  */
 
+// SapMachine 2025-12-10 We use UseTransparentHugePages in some configurations.
 /*
  * @test id=Default
  * @summary Test JVM large page setup (default options)
@@ -30,7 +31,7 @@
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestHugePageDecisionsAtVMStartup
+ * @run driver TestHugePageDecisionsAtVMStartup -XX:-UseTransparentHugePages
  */
 
 /*

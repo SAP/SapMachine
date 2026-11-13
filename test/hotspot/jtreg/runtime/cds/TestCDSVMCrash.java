@@ -27,6 +27,8 @@
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
  * @requires vm.flagless
+ * @comment SapMachine 2025-06-11: reduce number of cds/jsa archives, test would fail
+ * @requires vm.vendor != "SAP SE"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestCDSVMCrash

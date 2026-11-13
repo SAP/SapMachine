@@ -70,6 +70,8 @@ class os::Linux {
 
   static void print_process_memory_info(outputStream* st);
   static void print_system_memory_info(outputStream* st);
+  // SapMachine 2019-07-02: 8225345: Provide Cloud IAAS related info on Linux in the hs_err file
+  static void print_cloud_info(outputStream* st);
   static bool print_container_info(outputStream* st);
   static void print_steal_info(outputStream* st);
   static void print_distro_info(outputStream* st);
@@ -184,6 +186,10 @@ class os::Linux {
   // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
   // fields will contain -1.
   static bool query_accurate_process_memory_info(accurate_meminfo_t* info);
+
+  // SapMachine 2026-10-01: Gets the total number of processes and threads on the system. If a parameter is nullptr
+  // the value isn't determined. This is useful since the thread count is somewhat expensive.
+  static bool get_total_procs_and_threads(uint64_t* procs, uint64_t* threads);
 
   // Tells if the user asked for transparent huge pages.
   static bool _thp_requested;
