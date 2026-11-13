@@ -2498,7 +2498,8 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
       if (en != nullptr) {
         if (is_numerical_id(en->d_name)) {
           procs_count++;
-          if (threads == nullptr) {
+          if (line_buf == nullptr) {
+            // No thread count to get or malloc failed.
             continue;
           }
           char tmp[128];
@@ -2508,7 +2509,8 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
             // See man proc(5)
             // (20) num_threads  %ld
             long num_threads = 0;
-            if (getline(&line_buf, &line_length, fp) > 0) {
+            // Use getdelim to read the whole file into the buffer
+            if (getdelim(&line_buf, &line_length, 0, fp) > 0) {
               char* prefix_end = strrchr(line_buf, ')');
 
               if (prefix_end != nullptr) {
@@ -2531,7 +2533,7 @@ bool os::Linux::get_total_procs_and_threads(uint64_t* procs, uint64_t* threads) 
       *threads = threads_count;
     }
 
-    result = true;
+    result = (line_buf != nullptr) || (threads == nullptr);
   }
 
   permit_forbidden_function::free(line_buf);
