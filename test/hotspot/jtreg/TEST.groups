@@ -267,11 +267,6 @@ tier3_compiler = \
   -:tier1_compiler \
   -:tier2_compiler
 
-tier1_compiler_no_valhalla = \
-  :tier1_compiler_1 \
-  :tier1_compiler_2 \
-  :tier1_compiler_3_no_valhalla
-
 ctw_1 = \
   applications/ctw/modules/ \
   -:ctw_2 \
@@ -431,10 +426,6 @@ tier1_runtime = \
  -:tier1_runtime_appcds_exclude \
  -runtime/signal \
  -runtime/stack
-
-tier1_runtime_no_valhalla = \
-  :tier1_runtime \
-  -runtime/valhalla
 
 hotspot_cds = \
   runtime/cds/ \
@@ -600,10 +591,6 @@ tier1_serviceability = \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
-
-tier1_serviceability_no_valhalla = \
-  :tier1_serviceability \
-  -serviceability/jvmti/valhalla
 
 # SapMachine 2019-02-24 : Add tests where SAPMachine has different behavior to tier1,
 #  or which tests downstream-only features.
