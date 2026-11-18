@@ -56,8 +56,10 @@ requires.extraPropDefns.vmOpts = \
     -XX:+WhiteBoxAPI \
     --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
     --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+# SapMachine 2025-06-11: reduce number of cds/jsa archives
 requires.properties= \
     sun.arch.data.model \
+    vm.vendor \
     vm.simpleArch \
     vm.bits \
     vm.flightRecorder \
