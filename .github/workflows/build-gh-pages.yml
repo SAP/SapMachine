@@ -29,12 +29,11 @@ jobs:
       name: github-pages
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo from GitHub Tools SAP
+      - name: Checkout repo from GitHub
         uses: actions/checkout@v5
         with:
           repository: SapMachine/SapMachineIOPage
-          token: ${{ secrets.GHE_PAT }}
-          github-server-url: https://github.tools.sap
+          github-server-url: https://github.com
           ref: 'main'
           sparse-checkout: |
             redirect_index.html
