@@ -109,6 +109,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
 #include "runtime/hotCodeCollector.hpp"
@@ -486,6 +487,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize the os module
   os::init();
+
+  // Initialize the ZipLibraryLoaderLock before we potentially start
+  // loading resources from jar/zip files.
+  ZipLibrary::initialize_loader_lock();
 
   // Initialize memory pools
   Arena::initialize_chunk_pool();
@@ -876,7 +881,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #if INCLUDE_MANAGEMENT
   bool start_agent = true;
 #if INCLUDE_CDS
-  start_agent = !CDSConfig::is_dumping_final_static_archive();
+  start_agent = !CDSConfig::is_dumping_aot_cache();
   if (!start_agent) {
     log_info(aot)("Not starting management agent during creation of AOT cache.");
   }
@@ -920,7 +925,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // Classic -Xshare:dump, aka "old workflow"
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
-  } else if (CDSConfig::is_dumping_final_static_archive()) {
+  } else if (CDSConfig::is_dumping_aot_cache()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
     AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   } else if (CDSConfig::is_redumping_aot_configuration()) {

@@ -104,6 +104,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.vendor", this::vmVendor);
         map.put("vm.compMode", this::vmCompMode);
         map.put("vm.bits", this::vmBits);
+        map.put("vm.endian", this::vmEndian);
         map.put("vm.flightRecorder", this::vmFlightRecorder);
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
@@ -238,6 +239,18 @@ public class VMProps implements Callable<Map<String, String>> {
             return dataModel;
         } else {
             return errorWithMessage("Can't get 'sun.arch.data.model' property");
+        }
+    }
+
+    /**
+     * @return VM endianness, the value of the "sun.cpu.endian" property.
+     */
+    protected String vmEndian() {
+        String endian = System.getProperty("sun.cpu.endian");
+        if (endian != null) {
+            return endian;
+        } else {
+            return errorWithMessage("Can't get 'sun.cpu.endian' property");
         }
     }
 
@@ -517,7 +530,6 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDSSupportsAOTCodeCaching() {
       if ("true".equals(vmCDSSupportsAOTClassLinking()) &&
-          !"true".equals(isPreviewEnabled()) &&
           !"zero".equals(vmFlavor()) &&
           (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64())) {
         return "true";

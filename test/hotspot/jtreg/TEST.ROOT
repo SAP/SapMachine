@@ -63,6 +63,7 @@ requires.properties= \
     vm.vendor \
     vm.simpleArch \
     vm.bits \
+    vm.endian \
     vm.flightRecorder \
     vm.gc.G1 \
     vm.gc.Serial \
