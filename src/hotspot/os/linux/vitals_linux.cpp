@@ -24,15 +24,15 @@
  */
 
 #include "jvm_io.h"
-#include "osContainer_linux.hpp"
-#include "vitals_linux_oswrapper.hpp"
 #include "logging/log.hpp"
+#include "osContainer_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "vitals/vitals_internals.hpp"
+#include "vitals_linux_oswrapper.hpp"
 
 namespace sapmachine_vitals {
 
