@@ -45,7 +45,7 @@ import java.util.Objects;
 public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
+    private static final long BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
 
     final long offset;
     final H base;
@@ -74,7 +74,7 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }
         JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
-        return nioAccess.newHeapByteBuffer((byte[]) base(), (int)min() - BYTE_ARR_BASE, (int) byteSize(), null);
+        return nioAccess.newHeapByteBuffer((byte[]) base(), (int)(min() - BYTE_ARR_BASE), (int) byteSize(), null);
     }
 
     // factories
