@@ -23,13 +23,15 @@
 # questions.
 #
 
-name: 'OpenJDK GHA Sanity Checks'
+# SapMachine 2022-06-22: Change the name of the GitHub Action
+name: 'SapMachine GHA Sanity Checks'
 
 on:
   push:
-    branches-ignore:
-      - master
-      - pr/*
+    # SapMachine 2026-06-01: do not trigger github actions for docs files
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
   workflow_dispatch:
     inputs:
       platforms:

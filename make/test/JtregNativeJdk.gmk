@@ -59,6 +59,9 @@ BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libAsyncStackWalk := $(LIBCXX)
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c exelauncher.c
 
+  #SapMachine 2024-06-12: Exclude libCreateNewProcessGroupOnSpawnTest.c from native compilation on Windows
+  BUILD_JDK_JTREG_EXCLUDE += libCreateNewProcessGroupOnSpawnTest.c
+
   WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
   WIN_LIB_JLI := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
