@@ -100,6 +100,8 @@ public class VMProps implements Callable<Map<String, String>> {
         log("Entering call()");
         SafeMap map = new SafeMap();
         map.put("vm.flavor", this::vmFlavor);
+        // SapMachine 2025-06-11: reduce number of cds/jsa archives
+        map.put("vm.vendor", this::vmVendor);
         map.put("vm.compMode", this::vmCompMode);
         map.put("vm.bits", this::vmBits);
         map.put("vm.flightRecorder", this::vmFlightRecorder);
@@ -201,6 +203,14 @@ public class VMProps implements Callable<Map<String, String>> {
             return m.group(1).toLowerCase();
         }
         return errorWithMessage("Can't get VM flavor from 'java.vm.name'");
+    }
+
+    // SapMachine 2025-06-11: reduce number of cds/jsa archives
+    /**
+     * @return VM vendor through the "java.vm.vendor" property.
+     */
+    protected String vmVendor() {
+        return System.getProperty("java.vm.vendor");
     }
 
     /**
