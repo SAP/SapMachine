@@ -1723,17 +1723,6 @@ jboolean ProcessPath(ProcessHandler* hnd,
     return JNI_TRUE;
 }
 
-/* TODO Add checking of the result of the malloc/realloc functions to handle
- * out of memory error and don't leak earlier allocated data
- */
-
-
-#define ALLOC(ptr, type, n) \
-    ptr = (type *)malloc((n)*sizeof(type))
-#define REALLOC(ptr, type, n) \
-    ptr = (type *)realloc(ptr, (n)*sizeof(type))
-
-
 struct _Edge;
 
 typedef struct _Point {
@@ -1980,12 +1969,18 @@ void FillPolygon(ProcessHandler* hnd,
 
     if (n <=1) return;
 
-    ALLOC(yHash, Point*, hashSize);
+    yHash = (Point**) malloc(hashSize * sizeof(Point*));
+    if (yHash == NULL) return;
+
     for (k = 0; k < hashSize; k++) {
         yHash[k] = NULL;
     }
 
-    ALLOC(active, Edge, n);
+    active = (Edge*) malloc(n * sizeof(Edge));
+    if (active == NULL) {
+        free(yHash);
+        return;
+    }
 
     /* Creating double linked list (prev, next links) describing path order and
      * hash table with points which fall between scanlines. nextByY link is
