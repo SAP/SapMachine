@@ -621,7 +621,7 @@ public final class ServiceLoader<S>
         Constructor<?> ctor = null;
         try {
             ctor = clazz.getConstructor();
-        } catch (NoSuchMethodException | LinkageError e) {
+        } catch (Throwable e) {
             String cn = clazz.getName();
             fail(service, cn + " Unable to get public no-arg constructor", e);
         }
@@ -1086,7 +1086,7 @@ public final class ServiceLoader<S>
             String cn = pending.next();
             try {
                 return Class.forName(cn, false, loader);
-            } catch (ClassNotFoundException | LinkageError e) {
+            } catch (ClassNotFoundException e) {
                 fail(service, "Provider " + cn + " not found", e);
                 return null;
             }

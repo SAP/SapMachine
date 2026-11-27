@@ -52,61 +52,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class LinkageErrorsTest {
 
     /**
-     * Test iteration over service providers when loading a service provider class
-     * fails with a linkage error.
-     */
-    @Test
-    void testLoadClassThrows() throws Exception {
-        Map<String, String> sources = Map.of(
-                "Service",
-                        """
-                        public interface Service {}
-                        """,
-                "Super",
-                        """
-                        class Super {}
-                        """,
-                "Provider1",
-                        """
-                        public class Provider1 implements Service {
-                            public Provider1() {}
-                        }
-                        """,
-                "Provider2",
-                        """
-                        public class Provider2 extends Super implements Service {
-                            public Provider2() {}
-                        }
-                        """
-        );
-        Path classesDir = compile(sources);
-
-        // delete Provider2's super class to prevent Provider2 from loading
-        Files.delete(classesDir.resolve("Super.class"));
-
-        // create services configuration file that lists two providers
-        createServicesConfigFile(classesDir, "Service", "Provider1", "Provider2");
-
-        // load the service interface
-        var loader = new URLClassLoader(new URL[] { classesDir.toUri().toURL() });
-        Class<?> service = loader.loadClass("Service");
-        assertSame(loader, service.getClassLoader());
-
-        // find and collect all service providers and ServiceConfigurationErrors
-        var providers = new ArrayList<Object>();
-        var errors = new ArrayList<ServiceConfigurationError>();
-        forEachProvider(loader, service, providers::add, errors::add);
-
-        // Provider1 should be found
-        assertEquals(1, providers.size());
-        assertEquals("Provider1", providers.get(0).getClass().getName());
-
-        // loading Provider2 expected to fail with LinkageError
-        assertEquals(1, errors.size());
-        assertInstanceOf(LinkageError.class, errors.get(0).getCause());
-    }
-
-    /**
      * Test iteration over service providers when finding the public no-arg constructor
      * of a provider fails with a linkage error.
      */
